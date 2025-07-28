@@ -186,22 +186,33 @@ async function processAndStoreEvents(events: any[], supabase: any): Promise<any[
   for (const event of events) {
     try {
       // Transform Ticketmaster event to our schema
+      const eventDate = new Date(event.dates?.start?.localDate || new Date());
+      if (event.dates?.start?.localTime) {
+        const [hours, minutes] = event.dates.start.localTime.split(':');
+        eventDate.setHours(parseInt(hours), parseInt(minutes));
+      }
+
       const transformedEvent = {
         title: event.name,
-        description: event.info || event.pleaseNote || '',
+        description: event.info || event.pleaseNote || event.name,
         venue: event._embedded?.venues?.[0]?.name || 'TBD',
-        location: `${event._embedded?.venues?.[0]?.city?.name || 'San Francisco'}, ${event._embedded?.venues?.[0]?.state?.stateCode || 'CA'}`,
-        event_date: event.dates?.start?.localDate,
-        event_time: event.dates?.start?.localTime || null,
-        url: event.url,
+        address: `${event._embedded?.venues?.[0]?.address?.line1 || ''} ${event._embedded?.venues?.[0]?.city?.name || 'San Francisco'}, ${event._embedded?.venues?.[0]?.state?.stateCode || 'CA'}`,
+        city: event._embedded?.venues?.[0]?.city?.name || 'San Francisco',
+        state: event._embedded?.venues?.[0]?.state?.stateCode || 'CA',
+        date_time: eventDate.toISOString(),
+        end_date_time: new Date(eventDate.getTime() + 3 * 60 * 60 * 1000).toISOString(), // 3 hours later
+        price_min: event.priceRanges?.[0]?.min || 0,
+        price_max: event.priceRanges?.[0]?.max || 100,
+        external_url: event.url,
+        category: getCategoryFromSegment(event.classifications?.[0]?.segment?.name),
+        tags: [event.classifications?.[0]?.genre?.name, event.classifications?.[0]?.subGenre?.name].filter(Boolean),
+        image_url: event.images?.[0]?.url || null,
         source: 'ticketmaster',
-        external_id: event.id,
-        raw_data: event,
         quality_score: calculateQualityScore(event),
         event_status: 'active'
       };
 
-      // Insert the event
+      // Insert the event into the correct table structure
       const { data: insertedEvent, error } = await supabase
         .from('events')
         .insert(transformedEvent)
@@ -239,3 +250,14 @@ function calculateQualityScore(event: any): number {
   
   return Math.min(10, score);
 }
+
+function getCategoryFromSegment(segmentName: string): string {
+  const mapping: { [key: string]: string } = {
+    'Music': 'music',
+    'Arts & Theatre': 'arts',
+    'Sports': 'sports',
+    'Film': 'film',
+    'Miscellaneous': 'general'
+  };
+  
+  return mapping[segmentName] || 'general';
