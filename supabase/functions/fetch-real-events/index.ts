@@ -22,7 +22,8 @@ serve(async (req) => {
 
   try {
     const { location, preferences } = await req.json();
-    console.log(`Fetching REAL events for location: ${location} with preferences:`, preferences);
+    console.log(`Starting search for location: ${location}`);
+    console.log(`Preferences:`, JSON.stringify(preferences, null, 2));
 
     const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -115,7 +116,7 @@ async function searchEventSource(location: string, preferences: EventPreferences
   const categories = preferences.categories?.join(' ') || 'events';
   const keywords = preferences.customKeywords?.join(' ') || '';
   
-  const query = `Find actual event listings on ${source.site} in ${location} for ${categories} ${keywords} February March 2025`;
+  const query = `Search ${source.site} for events in ${location}. Find upcoming ${categories} ${keywords} events with venues, dates, and tickets`;
 
   console.log(`Scraping ${source.type} for real events: ${query}`);
 
@@ -161,6 +162,8 @@ async function searchEventSource(location: string, preferences: EventPreferences
 
   const data = await response.json();
   const content = data.choices[0]?.message?.content;
+
+  console.log(`Raw response from ${source.type}:`, content);
 
   if (!content) {
     console.log(`No content returned for ${source.type}`);
