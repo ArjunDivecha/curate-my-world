@@ -132,7 +132,9 @@ async function searchForRealEvents(location: string, preferences: EventPreferenc
   
   // Use SINGLE simple query to avoid rate limiting
   // Based on testing: simple queries work much better than site-specific ones
-  const query = `${location} ${categories.join(' ')} events ${currentMonth} ${nextMonth} 2025 ${keywords}`.trim();
+  // Extract city name for more targeted search
+  const cityName = location.split(',')[0].trim();
+  const query = `"${cityName}" ${categories.join(' ')} events ${currentMonth} ${nextMonth} 2025 ${keywords}`.trim();
   
   console.log(`Brave Search query: ${query}`);
   
@@ -155,6 +157,26 @@ async function searchForRealEvents(location: string, preferences: EventPreferenc
   // Remove duplicates and limit results
   const uniqueEvents = removeDuplicateEvents(events);
   console.log(`Found ${uniqueEvents.length} unique events after deduplication`);
+  
+  // If no location-specific events found, try a broader search as fallback
+  if (uniqueEvents.length === 0) {
+    console.log(`No events found for ${location}, trying broader search...`);
+    try {
+      const fallbackQuery = `${cityName} events ${currentMonth} ${categories.join(' ')}`;
+      console.log(`Fallback query: ${fallbackQuery}`);
+      
+      const fallbackResults = await braveWebSearch(fallbackQuery, apiKey);
+      if (fallbackResults.web?.results) {
+        const fallbackEvents = extractEventsFromSearchResults(fallbackResults, location, preferences, true);
+        const uniqueFallbackEvents = removeDuplicateEvents(fallbackEvents);
+        console.log(`Found ${uniqueFallbackEvents.length} events with fallback search`);
+        return uniqueFallbackEvents.slice(0, 10);
+      }
+    } catch (error) {
+      console.log('Fallback search also failed:', error);
+    }
+  }
+  
   return uniqueEvents.slice(0, 15); // Reduced to 15 for better quality
 }
 
@@ -193,7 +215,7 @@ async function braveWebSearch(query: string, apiKey: string) {
 }
 
 // Extract events from Brave Search results
-function extractEventsFromSearchResults(searchResults: any, location: string, preferences: EventPreferences) {
+function extractEventsFromSearchResults(searchResults: any, location: string, preferences: EventPreferences, skipLocationFilter = false) {
   const events: any[] = [];
   
   if (!searchResults.web?.results) {
@@ -203,11 +225,25 @@ function extractEventsFromSearchResults(searchResults: any, location: string, pr
   
   console.log(`Processing ${searchResults.web.results.length} search results...`);
   
+  // Extract city and state for location filtering
+  const cityName = location.split(',')[0].trim();
+  const stateName = location.split(',')[1]?.trim() || '';
+  
   for (const result of searchResults.web.results) {
     // Look for event indicators in title and description
     const title = result.title || '';
     const description = result.description || '';
     const url = result.url || '';
+    
+    // Check if the result actually mentions the target location
+    const fullText = (title + ' ' + description).toLowerCase();
+    const cityMatch = cityName.toLowerCase();
+    const stateMatch = stateName.toLowerCase();
+    
+    const hasLocationMatch = skipLocationFilter || 
+                           fullText.includes(cityMatch) || 
+                           (stateMatch && fullText.includes(stateMatch)) ||
+                           url.includes(cityMatch.replace(' ', '').toLowerCase());
     
     // Broader event filtering - be more inclusive
     const eventKeywords = [
@@ -240,14 +276,15 @@ function extractEventsFromSearchResults(searchResults: any, location: string, pr
                          'timeout.com', 'bandsintown.com', 'seetickets.com', 'stubhub.com'];
     const hasEventDomain = eventDomains.some(domain => url.includes(domain));
     
-    // More inclusive logic: if it has event keywords OR event URL OR event domain, and no exclude keywords
-    const shouldInclude = (hasEventKeywords || hasEventUrl || hasEventDomain) && !hasExcludeKeywords;
+    // More inclusive logic: if it has event keywords OR event URL OR event domain, and no exclude keywords, AND matches location
+    const shouldInclude = (hasEventKeywords || hasEventUrl || hasEventDomain) && !hasExcludeKeywords && hasLocationMatch;
     
     console.log(`Checking: ${title.substring(0, 70)}...`);
     console.log(`  Event keywords: ${hasEventKeywords}`);
     console.log(`  Exclude keywords: ${hasExcludeKeywords}`);
     console.log(`  Event URL: ${hasEventUrl}`);
     console.log(`  Event domain: ${hasEventDomain}`);
+    console.log(`  Location match (${cityName}): ${hasLocationMatch}`);
     console.log(`  Should include: ${shouldInclude}`);
     
     

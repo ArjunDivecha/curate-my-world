@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Migration Helper</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #output { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 4px; max-height: 400px; overflow-y: auto; }
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Curate My World - Database Migration Helper</h1>
+    
+    <div class="status info">
+        <strong>Instructions:</strong>
+        <ol>
+            <li>Make sure you're signed in to your Supabase project</li>
+            <li>Click the "Apply Migration" button below</li>
+            <li>Check the output for any errors</li>
+            <li>If successful, you can delete this file</li>
+        </ol>
+    </div>
+
+    <button onclick="applyMigration()">Apply Enhanced Event Schema Migration</button>
+    
+    <div id="output"></div>
+
+    <script>
+        const SUPABASE_URL = "https://llspbinxevyitinvagvx.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxsc3BiaW54ZXZ5aXRpbnZhZ3Z4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM2Nzk3NTUsImV4cCI6MjA2OTI1NTc1NX0.1biD6WrrLT5dNwmpIkjyeR53E6Gxa_cRdO-DLsdu6c4";
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = \`status \${type}\`;
+            div.innerHTML = \`<strong>[\${timestamp}]</strong> \${message}\`;
+            output.appendChild(div);
+            output.scrollTop = output.scrollHeight;
+            console.log(\`[\${timestamp}] \${message}\`);
+        }
+        
+        // Migration SQL statements (split into manageable chunks)
+        const migrationStatements = [
+            // Extensions
+            \`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"\`,
+            \`CREATE EXTENSION IF NOT EXISTS "pg_trgm"\`,
+            
+            // Event sources table
+            \`CREATE TABLE IF NOT EXISTS event_sources (
+                id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                name text NOT NULL,
+                source_type text NOT NULL CHECK (source_type IN ('api', 'rss', 'scraper', 'social', 'ai_search')),
+                base_url text,
+                api_config jsonb DEFAULT '{}',
+                scraping_config jsonb DEFAULT '{}',
+                enabled boolean DEFAULT true,
+                last_run timestamptz,
+                last_success timestamptz,
+                success_rate numeric DEFAULT 1.0 CHECK (success_rate >= 0 AND success_rate <= 1),
+                priority integer DEFAULT 5 CHECK (priority >= 1 AND priority <= 10),
+                rate_limit_per_hour integer DEFAULT 100,
+                total_events_collected integer DEFAULT 0,
+                error_count integer DEFAULT 0,
+                created_at timestamptz DEFAULT now(),
+                updated_at timestamptz DEFAULT now()
+            )\`,
+            
+            // Event sources indexes
+            \`CREATE INDEX IF NOT EXISTS idx_event_sources_type_enabled ON event_sources(source_type, enabled)\`,
+            \`CREATE INDEX IF NOT EXISTS idx_event_sources_priority ON event_sources(priority DESC) WHERE enabled = true\`,
+            \`CREATE INDEX IF NOT EXISTS idx_event_sources_last_run ON event_sources(last_run)\`,
+            
+            // Enhanced events table columns
+            \`ALTER TABLE events ADD COLUMN IF NOT EXISTS source_id uuid REFERENCES event_sources(id)\`,
+            \`ALTER TABLE events ADD COLUMN IF NOT EXISTS duplicate_group_id uuid\`,
+            \`ALTER TABLE events ADD COLUMN IF NOT EXISTS quality_score integer CHECK (quality_score >= 1 AND quality_score <= 10)\`,
+            \`ALTER TABLE events ADD COLUMN IF NOT EXISTS relevance_score integer CHECK (relevance_score >= 1 AND relevance_score <= 10)\`,
+            \`ALTER TABLE events ADD COLUMN IF NOT EXISTS raw_data jsonb DEFAULT '{}'\`,
+            \`ALTER TABLE events ADD COLUMN IF NOT EXISTS venue_coordinates point\`,
+            \`ALTER TABLE events ADD COLUMN IF NOT EXISTS event_status text DEFAULT 'active' CHECK (event_status IN ('active', 'cancelled', 'postponed', 'sold_out'))\`,
+            \`ALTER TABLE events ADD COLUMN IF NOT EXISTS attendance_estimate integer\`,
+            \`ALTER TABLE events ADD COLUMN IF NOT EXISTS age_restriction text\`,
+            \`ALTER TABLE events ADD COLUMN IF NOT EXISTS accessibility_info text\`,
+            
+            // Events indexes
+            \`CREATE INDEX IF NOT EXISTS idx_events_source_id ON events(source_id)\`,
+            \`CREATE INDEX IF NOT EXISTS idx_events_duplicate_group ON events(duplicate_group_id) WHERE duplicate_group_id IS NOT NULL\`,
+            \`CREATE INDEX IF NOT EXISTS idx_events_quality_score ON events(quality_score DESC) WHERE quality_score IS NOT NULL\`,
+            \`CREATE INDEX IF NOT EXISTS idx_events_venue_coordinates ON events USING GIST(venue_coordinates) WHERE venue_coordinates IS NOT NULL\`,
+            \`CREATE INDEX IF NOT EXISTS idx_events_date_location ON events(date_time, city) WHERE date_time IS NOT NULL\`,
+            \`CREATE INDEX IF NOT EXISTS idx_events_category_date ON events(category, date_time) WHERE category IS NOT NULL AND date_time IS NOT NULL\`,
+            
+            // Full-text search index
+            \`CREATE INDEX IF NOT EXISTS idx_events_fulltext ON events USING GIN(to_tsvector('english', 
+                COALESCE(title, '') || ' ' || 
+                COALESCE(description, '') || ' ' || 
+                COALESCE(venue, '') || ' ' || 
+                COALESCE(array_to_string(tags, ' '), '')
+            ))\`,
+            
+            // User preferences table
+            \`CREATE TABLE IF NOT EXISTS user_preferences (
+                id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+                interests jsonb DEFAULT '{}',
+                location_preferences jsonb DEFAULT '{}',
+                time_preferences jsonb DEFAULT '{}',
+                price_preferences jsonb DEFAULT '{}',
+                venue_preferences jsonb DEFAULT '{}',
+                ai_instructions text,
+                created_at timestamptz DEFAULT now(),
+                updated_at timestamptz DEFAULT now(),
+                UNIQUE(user_id)
+            )\`,
+            
+            // User interactions table
+            \`CREATE TABLE IF NOT EXISTS user_interactions (
+                id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+                event_id uuid REFERENCES events(id) ON DELETE CASCADE,
+                interaction_type text NOT NULL CHECK (interaction_type IN ('view', 'click', 'save', 'rate', 'share', 'report')),
+                interaction_value integer,
+                interaction_data jsonb DEFAULT '{}',
+                created_at timestamptz DEFAULT now()
+            )\`,
+            
+            // User interactions indexes
+            \`CREATE INDEX IF NOT EXISTS idx_user_interactions_user_event ON user_interactions(user_id, event_id)\`,
+            \`CREATE INDEX IF NOT EXISTS idx_user_interactions_type ON user_interactions(interaction_type)\`,
+            \`CREATE INDEX IF NOT EXISTS idx_user_interactions_created ON user_interactions(created_at DESC)\`,
+            
+            // Collection runs table
+            \`CREATE TABLE IF NOT EXISTS collection_runs (
+                id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                source_id uuid REFERENCES event_sources(id),
+                run_type text NOT NULL CHECK (run_type IN ('scheduled', 'manual', 'retry')),
+                status text NOT NULL CHECK (status IN ('running', 'completed', 'failed', 'partial')),
+                events_found integer DEFAULT 0,
+                events_new integer DEFAULT 0,
+                events_updated integer DEFAULT 0,
+                events_duplicates integer DEFAULT 0,
+                error_message text,
+                execution_time_ms integer,
+                started_at timestamptz DEFAULT now(),
+                completed_at timestamptz
+            )\`,
+            
+            // Collection runs indexes
+            \`CREATE INDEX IF NOT EXISTS idx_collection_runs_source_status ON collection_runs(source_id, status)\`,
+            \`CREATE INDEX IF NOT EXISTS idx_collection_runs_started ON collection_runs(started_at DESC)\`,
+            
+            // Event duplicate groups table
+            \`CREATE TABLE IF NOT EXISTS event_duplicate_groups (
+                id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                canonical_event_id uuid REFERENCES events(id),
+                confidence_score numeric DEFAULT 0.5 CHECK (confidence_score >= 0 AND confidence_score <= 1),
+                detection_method text NOT NULL CHECK (detection_method IN ('fingerprint', 'ai', 'manual')),
+                created_at timestamptz DEFAULT now(),
+                reviewed_by uuid REFERENCES auth.users(id),
+                review_status text DEFAULT 'pending' CHECK (review_status IN ('pending', 'confirmed', 'rejected'))
+            )\`,
+            
+            // Venues table
+            \`CREATE TABLE IF NOT EXISTS venues (
+                id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                name text NOT NULL,
+                address text,
+                city text,
+                state text,
+                postal_code text,
+                country text DEFAULT 'US',
+                coordinates point,
+                venue_type text,
+                capacity integer,
+                website text,
+                phone text,
+                social_media jsonb DEFAULT '{}',
+                accessibility_info text,
+                parking_info text,
+                public_transit_info text,
+                created_at timestamptz DEFAULT now(),
+                updated_at timestamptz DEFAULT now()
+            )\`,
+            
+            // Venues indexes
+            \`CREATE INDEX IF NOT EXISTS idx_venues_location ON venues USING GIST(coordinates) WHERE coordinates IS NOT NULL\`,
+            \`CREATE INDEX IF NOT EXISTS idx_venues_city_state ON venues(city, state)\`,
+            \`CREATE INDEX IF NOT EXISTS idx_venues_name_trgm ON venues USING GIN(name gin_trgm_ops)\`,
+            
+            // Venue reference in events
+            \`ALTER TABLE events ADD COLUMN IF NOT EXISTS venue_id uuid REFERENCES venues(id)\`,
+            \`CREATE INDEX IF NOT EXISTS idx_events_venue_id ON events(venue_id) WHERE venue_id IS NOT NULL\`
+        ];
+        
+        // Insert initial SF Bay Area event sources
+        const initialSources = [
+            {
+                name: 'Eventbrite SF Bay Area',
+                source_type: 'api',
+                base_url: 'https://www.eventbriteapi.com/v3/',
+                api_config: {location: 'San Francisco, CA', categories: ['music', 'arts', 'technology']},
+                priority: 10,
+                rate_limit_per_hour: 1000
+            },
+            {
+                name: 'Ticketmaster SF Bay Area',
+                source_type: 'api',
+                base_url: 'https://app.ticketmaster.com/discovery/v2/',
+                api_config: {location: 'San Francisco', radius: '50'},
+                priority: 10,
+                rate_limit_per_hour: 5000
+            },
+            {
+                name: 'SeatGeek SF Bay Area',
+                source_type: 'api',
+                base_url: 'https://api.seatgeek.com/2/',
+                api_config: {geoip: '37.7749,-122.4194', range: '50mi'},
+                priority: 9,
+                rate_limit_per_hour: 1000
+            },
+            {
+                name: 'SF Recreation & Parks RSS',
+                source_type: 'rss',
+                base_url: 'https://sfrecpark.org/events/feed/',
+                api_config: {},
+                priority: 7,
+                rate_limit_per_hour: 24
+            },
+            {
+                name: 'Funcheap SF RSS',
+                source_type: 'rss',
+                base_url: 'https://sf.funcheap.com/feed/',
+                api_config: {},
+                priority: 8,
+                rate_limit_per_hour: 24
+            }
+        ];
+        
+        async function applyMigration() {
+            log('🚀 Starting database migration...', 'info');
+            
+            try {
+                // Execute migration statements
+                let successCount = 0;
+                let errorCount = 0;
+                
+                for (let i = 0; i < migrationStatements.length; i++) {
+                    const statement = migrationStatements[i];
+                    log(\`⚡ Executing statement \${i + 1}/\${migrationStatements.length}...\`, 'info');
+                    
+                    try {
+                        const { data, error } = await supabase.rpc('exec_sql', {
+                            sql: statement
+                        });
+                        
+                        if (error) {
+                            log(\`❌ Error in statement \${i + 1}: \${error.message}\`, 'error');
+                            console.error('Statement was:', statement);
+                            errorCount++;
+                        } else {
+                            log(\`✅ Statement \${i + 1} executed successfully\`, 'success');
+                            successCount++;
+                        }
+                    } catch (err) {
+                        log(\`❌ Exception in statement \${i + 1}: \${err.message}\`, 'error');
+                        errorCount++;
+                    }
+                    
+                    // Small delay to avoid overwhelming the database
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                // Insert initial event sources
+                log('📊 Inserting initial SF Bay Area event sources...', 'info');
+                
+                const { data: insertData, error: insertError } = await supabase
+                    .from('event_sources')
+                    .upsert(initialSources, { onConflict: 'name' });
+                
+                if (insertError) {
+                    log(\`❌ Error inserting initial sources: \${insertError.message}\`, 'error');
+                } else {
+                    log('✅ Initial event sources inserted successfully', 'success');
+                }
+                
+                // Verify the new schema
+                log('🔍 Verifying new schema...', 'info');
+                const { data: tables, error: tablesError } = await supabase
+                    .from('event_sources')
+                    .select('id, name, source_type')
+                    .limit(5);
+                
+                if (tablesError) {
+                    log(\`❌ Error verifying schema: \${tablesError.message}\`, 'error');
+                } else {
+                    log(\`✅ Schema verification successful! Found \${tables.length} event sources\`, 'success');
+                    if (tables.length > 0) {
+                        log(\`📋 Sample sources: \${tables.map(t => t.name).join(', ')}\`, 'info');
+                    }
+                }
+                
+                log(\`🎉 Migration completed! \${successCount} statements succeeded, \${errorCount} failed\`, 
+                    errorCount === 0 ? 'success' : 'error');
+                
+                if (errorCount === 0) {
+                    log('✨ You can now delete this migration-helper.html file and continue with development!', 'success');
+                }
+                
+            } catch (error) {
+                log(\`❌ Migration failed: \${error.message}\`, 'error');
+                console.error('Full error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
