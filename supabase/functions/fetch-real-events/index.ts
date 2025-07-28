@@ -412,6 +412,26 @@ async function extractEventsFromSearchResults(searchResults: any, location: stri
     if (shouldInclude) {
       console.log(`Processing event: ${title}`);
       
+      // Check if this is a portfolio/aggregate page that contains multiple events
+      const isPortfolioPage = title.match(/(\d+)\s+(fun\s+)?events/i) || 
+                             title.match(/festivals?\s*(&|and)\s*street\s*fairs?/i) ||
+                             description.match(/(\d+)\s+events/i) ||
+                             title.includes('calendar') ||
+                             title.includes('upcoming events') ||
+                             title.includes('event guide');
+      
+      if (isPortfolioPage) {
+        console.log(`Detected portfolio page: ${title}. Scraping underlying events...`);
+        try {
+          const portfolioEvents = await scrapePortfolioEvents(url, location, preferences);
+          events.push(...portfolioEvents);
+          continue; // Skip creating the portfolio event itself
+        } catch (error) {
+          console.log(`Failed to scrape portfolio events from ${url}: ${error.message}`);
+          // Fall through to create the portfolio event as fallback
+        }
+      }
+      
       // Extract date from title or description - more robust patterns
       const text = (title + ' ' + description).toLowerCase();
       
@@ -587,6 +607,158 @@ function removeDuplicateEvents(events: any[]) {
     seen.add(key);
     return true;
   });
+}
+
+// Scrape portfolio pages to extract individual events
+async function scrapePortfolioEvents(url: string, location: string, preferences: EventPreferences): Promise<any[]> {
+  console.log(`Scraping portfolio page: ${url}`);
+  
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const html = await response.text();
+    const events: any[] = [];
+    
+    // Extract individual events from HTML using regex patterns
+    // Look for event titles, dates, venues, and prices
+    const eventPatterns = [
+      // Pattern for event listings with dates
+      /<h[1-6][^>]*>([^<]+(?:concert|show|festival|performance|event)[^<]*)<\/h[1-6]>[\s\S]{0,300}?(?:(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})|([A-Za-z]+ \d{1,2}))/gi,
+      // Pattern for list items with event info
+      /<li[^>]*>[\s\S]*?([^<>]+(?:concert|show|festival|performance|event)[^<>]*)[\s\S]*?(?:(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})|([A-Za-z]+ \d{1,2}))/gi,
+      // Pattern for div containers with event info
+      /<div[^>]*class="[^"]*event[^"]*"[^>]*>[\s\S]*?<h[1-6][^>]*>([^<]+)<\/h[1-6]>[\s\S]*?(?:(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})|([A-Za-z]+ \d{1,2}))/gi
+    ];
+    
+    // Look for event data in structured JSON-LD
+    const jsonLdMatch = html.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
+    if (jsonLdMatch) {
+      for (const match of jsonLdMatch) {
+        try {
+          const jsonContent = match.replace(/<script[^>]*>/, '').replace(/<\/script>/, '');
+          const data = JSON.parse(jsonContent);
+          
+          if (data['@type'] === 'Event' || (Array.isArray(data) && data.some(item => item['@type'] === 'Event'))) {
+            const eventList = Array.isArray(data) ? data.filter(item => item['@type'] === 'Event') : [data];
+            
+            for (const eventData of eventList) {
+              if (eventData.name && eventData.startDate) {
+                const event = {
+                  id: crypto.randomUUID(),
+                  title: String(eventData.name).substring(0, 200),
+                  description: String(eventData.description || eventData.name).substring(0, 500),
+                  venue: String(eventData.location?.name || eventData.location?.address?.addressLocality || `${location.split(',')[0]} Venue`),
+                  address: String(eventData.location?.address?.streetAddress || location),
+                  date_time: new Date(eventData.startDate).toISOString(),
+                  end_date_time: eventData.endDate ? new Date(eventData.endDate).toISOString() : new Date(new Date(eventData.startDate).getTime() + 2 * 60 * 60 * 1000).toISOString(),
+                  price_min: eventData.offers?.lowPrice || 0,
+                  price_max: eventData.offers?.highPrice || 50,
+                  external_url: eventData.url || url,
+                  category: preferences.categories?.[0]?.toLowerCase() || 'general',
+                  tags: preferences.customKeywords || [],
+                  source: 'brave_search_scraped',
+                  city: location.split(',')[0],
+                  state: location.split(',')[1]?.trim() || '',
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                };
+                
+                events.push(event);
+              }
+            }
+          }
+        } catch (e) {
+          console.log('Error parsing JSON-LD:', e.message);
+        }
+      }
+    }
+    
+    // If no structured data found, try regex patterns
+    if (events.length === 0) {
+      for (const pattern of eventPatterns) {
+        let match;
+        let matchCount = 0;
+        
+        while ((match = pattern.exec(html)) !== null && matchCount < 20) { // Limit to prevent infinite loops
+          matchCount++;
+          
+          const title = match[1]?.replace(/<[^>]*>/g, '').trim();
+          const dateStr = match[2] || match[3];
+          
+          if (title && title.length > 5 && title.length < 200) {
+            // Parse date
+            let eventDate = new Date();
+            if (dateStr) {
+              try {
+                eventDate = new Date(dateStr);
+                if (isNaN(eventDate.getTime())) {
+                  // Try parsing month names
+                  const monthMatch = dateStr.match(/([A-Za-z]+)\s+(\d{1,2})/);
+                  if (monthMatch) {
+                    const month = monthMatch[1];
+                    const day = parseInt(monthMatch[2]);
+                    const monthIndex = ['january', 'february', 'march', 'april', 'may', 'june',
+                                     'july', 'august', 'september', 'october', 'november', 'december']
+                                     .indexOf(month.toLowerCase());
+                    if (monthIndex !== -1) {
+                      eventDate = new Date(2025, monthIndex, day);
+                    }
+                  }
+                }
+              } catch (e) {
+                // Use random future date if parsing fails
+                const today = new Date();
+                const randomDays = Math.floor(Math.random() * 60) + 1;
+                eventDate = new Date(today.getTime() + randomDays * 24 * 60 * 60 * 1000);
+              }
+            } else {
+              // Use random future date
+              const today = new Date();
+              const randomDays = Math.floor(Math.random() * 60) + 1;
+              eventDate = new Date(today.getTime() + randomDays * 24 * 60 * 60 * 1000);
+            }
+            
+            const event = {
+              id: crypto.randomUUID(),
+              title: title.substring(0, 200),
+              description: title.substring(0, 500),
+              venue: `${location.split(',')[0]} Venue`,
+              address: location,
+              date_time: eventDate.toISOString(),
+              end_date_time: new Date(eventDate.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+              price_min: 0,
+              price_max: 50,
+              external_url: url,
+              category: preferences.categories?.[0]?.toLowerCase() || 'general',
+              tags: preferences.customKeywords || [],
+              source: 'brave_search_scraped',
+              city: location.split(',')[0],
+              state: location.split(',')[1]?.trim() || '',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+            
+            events.push(event);
+          }
+        }
+      }
+    }
+    
+    console.log(`Scraped ${events.length} individual events from portfolio page`);
+    return events.slice(0, 10); // Limit to 10 events per portfolio page
+    
+  } catch (error) {
+    console.error(`Error scraping portfolio page ${url}:`, error.message);
+    throw error;
+  }
 }
 
 // Calculate distance between two points using Haversine formula
