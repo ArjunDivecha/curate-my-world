@@ -75,8 +75,9 @@ export const Dashboard = () => {
     return [];
   });
   const [eventsKilled, setEventsKilled] = useState(false);
+  const [savedEvents, setSavedEvents] = useState<any[]>([]);
   
-  // Debug every time events changes  
+  // Debug every time events changes
   useEffect(() => {
     console.log('🔍 EVENTS STATE CHANGED:', events.length, 'events:', events.map(e => e?.title || 'no title'));
   }, [events]);
@@ -241,18 +242,21 @@ export const Dashboard = () => {
 
   const handleSaveToCalendar = (eventId: string) => {
     const event = events.find(e => e.id === eventId);
-    toast({
-      title: "Event Saved",
-      description: `"${event?.title}" has been added to your calendar.`,
-    });
-  };
-
-  const handleViewDetails = (eventId: string) => {
-    const event = events.find(e => e.id === eventId);
-    toast({
-      title: "Event Details",
-      description: `Viewing details for "${event?.title}"`,
-    });
+    if (event) {
+      // Add to saved events if not already saved
+      if (!savedEvents.find(savedEvent => savedEvent.id === eventId)) {
+        setSavedEvents(prev => [...prev, event]);
+        toast({
+          title: "Event Saved",
+          description: `"${event.title}" has been added to your calendar.`,
+        });
+      } else {
+        toast({
+          title: "Already Saved",
+          description: `"${event.title}" is already in your calendar.`,
+        });
+      }
+    }
   };
 
   const getWeeklyStats = () => {
@@ -581,8 +585,16 @@ export const Dashboard = () => {
 
             <TabsContent value="calendar" className="space-y-6">
               <WeeklyCalendar 
-                events={events}
-                onEventClick={handleViewDetails}
+                events={savedEvents}
+                onEventClick={(eventId) => {
+                  const event = savedEvents.find(e => e.id === eventId);
+                  if (event) {
+                    toast({
+                      title: "Event Details",
+                      description: `Viewing "${event.title}" - ${event.venue.name}`,
+                    });
+                  }
+                }}
               />
             </TabsContent>
 
@@ -593,7 +605,6 @@ export const Dashboard = () => {
                     key={event.id}
                     event={event}
                     onSaveToCalendar={handleSaveToCalendar}
-                    onViewDetails={handleViewDetails}
                   />
                 ))}
               </div>

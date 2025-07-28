@@ -30,10 +30,9 @@ interface Event {
 interface EventCardProps {
   event: Event;
   onSaveToCalendar: (eventId: string) => void;
-  onViewDetails: (eventId: string) => void;
 }
 
-export const EventCard = ({ event, onSaveToCalendar, onViewDetails }: EventCardProps) => {
+export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -177,20 +176,12 @@ export const EventCard = ({ event, onSaveToCalendar, onViewDetails }: EventCardP
           {/* Action Buttons */}
           <div className="flex gap-2">
             <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => onViewDetails(event.id)}
-              className="flex-1 hover:bg-primary hover:text-primary-foreground transition-all duration-300"
-            >
-              View Details
-            </Button>
-            <Button 
               size="sm" 
               onClick={() => onSaveToCalendar(event.id)}
-              className="bg-gradient-primary hover:opacity-90 transition-all duration-300 shadow-elegant"
+              className="w-full bg-gradient-primary hover:opacity-90 transition-all duration-300 shadow-elegant"
             >
               <Calendar className="w-4 h-4 mr-2" />
-              Save
+              Save to Calendar
             </Button>
           </div>
         </div>
