@@ -63,7 +63,7 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-foreground mb-2 group-hover:text-primary transition-colors duration-300">
-              {event.title}
+              {cleanHtmlText(event.title)}
             </h3>
             <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
               <div className="flex items-center gap-1">
@@ -97,10 +97,10 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
               rel="noopener noreferrer"
               className="text-sm text-primary hover:underline"
             >
-              {event.venue.name}
+              {cleanHtmlText(event.venue.name)}
             </a>
           ) : (
-            <span className="text-sm text-muted-foreground">{event.venue.name}</span>
+            <span className="text-sm text-muted-foreground">{cleanHtmlText(event.venue.name)}</span>
           )}
           {event.venue.mapUrl && (
             <a 
@@ -126,11 +126,6 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
           ))}
         </div>
 
-        <div className="bg-muted/50 rounded-lg p-3 mb-4">
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            <span className="font-medium text-foreground">AI Insight:</span> {event.aiReasoning}
-          </p>
-        </div>
 
         <div className="space-y-3">
           {/* External Links */}
