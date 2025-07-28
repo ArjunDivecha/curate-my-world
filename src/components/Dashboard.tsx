@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +7,10 @@ import { EventCard } from "./EventCard";
 import { WeeklyCalendar } from "./WeeklyCalendar";
 import { Header } from "./Header";
 import { PreferencesModal } from "./PreferencesModal";
+import { FetchEventsButton } from "./FetchEventsButton";
 import { mockEvents } from "@/data/mockEvents";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { Calendar, Grid3X3, Brain, Sparkles, TrendingUp } from "lucide-react";
 
 interface Preferences {
@@ -53,8 +55,59 @@ export const Dashboard = () => {
   const [preferences, setPreferences] = useState<Preferences>(defaultPreferences);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'idle' | 'processing' | 'complete'>('complete');
-  const [events] = useState(mockEvents);
+  const [events, setEvents] = useState<any[]>(mockEvents);
+  const [realEvents, setRealEvents] = useState<any[]>([]);
   const { toast } = useToast();
+
+  // Fetch real events from database
+  const fetchEventsFromDB = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('date_time', { ascending: true });
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        // Transform database events to match the expected format
+        const transformedEvents = data.map(event => ({
+          id: event.id,
+          title: event.title,
+          description: event.description || '',
+          startDate: event.date_time,
+          endDate: event.end_date_time || event.date_time,
+          venue: {
+            name: event.venue || '',
+            address: event.address || '',
+            website: '',
+            mapUrl: ''
+          },
+          categories: [event.category || 'other'],
+          personalRelevanceScore: 8, // Default score for real events
+          price: event.price_min === 0 && event.price_max === 0 ? 
+            { type: "free" as const } : 
+            { 
+              type: "paid" as const, 
+              amount: event.price_max ? `$${event.price_max}` : "$0"
+            },
+          ticketUrl: event.external_url || '',
+          eventUrl: event.external_url || '',
+          aiReasoning: 'Real event found through AI search'
+        }));
+        
+        setRealEvents(transformedEvents);
+        setEvents(transformedEvents);
+      }
+    } catch (error) {
+      console.error('Error fetching events from database:', error);
+    }
+  };
+
+  // Load events on component mount
+  useEffect(() => {
+    fetchEventsFromDB();
+  }, []);
 
   const handleSaveToCalendar = (eventId: string) => {
     const event = events.find(e => e.id === eventId);
@@ -148,6 +201,20 @@ export const Dashboard = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Fetch Real Events Button */}
+        <div className="mb-8 flex justify-center">
+          <FetchEventsButton
+            location={preferences.location.address}
+            preferences={{
+              categories: Object.keys(preferences.interests.categories),
+              priceRange: { min: preferences.filters.priceRange[0], max: preferences.filters.priceRange[1] },
+              timePreferences: preferences.filters.timePreferences,
+              customKeywords: preferences.interests.keywords
+            }}
+            onEventsFetched={fetchEventsFromDB}
+          />
         </div>
 
         {/* AI Insight Banner */}
