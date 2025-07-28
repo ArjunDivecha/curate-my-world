@@ -206,8 +206,8 @@ export const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Fetch Real Events Button */}
-        <div className="mb-8 flex justify-center">
+        {/* Action Buttons */}
+        <div className="mb-8 flex justify-center gap-4">
           <FetchEventsButton
             location={preferences.location.address}
             preferences={{
@@ -218,6 +218,40 @@ export const Dashboard = () => {
             }}
             onEventsFetched={fetchEventsFromDB}
           />
+          <Button
+            onClick={async () => {
+              try {
+                // Clear all events from database
+                const { error } = await supabase
+                  .from('events')
+                  .delete()
+                  .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all events
+                
+                if (error) throw error;
+                
+                // Clear local state
+                setEvents([]);
+                setRealEvents([]);
+                
+                toast({
+                  title: "Events Cleared",
+                  description: "All events have been cleared. You can start fresh!",
+                });
+              } catch (error: any) {
+                console.error('Error clearing events:', error);
+                toast({
+                  title: "Error clearing events",
+                  description: error.message || "Failed to clear events. Please try again.",
+                  variant: "destructive",
+                });
+              }
+            }}
+            variant="outline"
+            className="text-destructive hover:text-destructive"
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            Clear All Events
+          </Button>
         </div>
 
         {/* AI Insight Banner */}
