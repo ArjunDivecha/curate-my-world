@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Clock, Star, Calendar, ExternalLink, Share2, Bookmark } from "lucide-react";
+import { cleanHtmlText } from "@/lib/utils";
 
 interface Event {
   id: string;
@@ -85,7 +86,7 @@ export const EventCard = ({ event, onSaveToCalendar, onViewDetails }: EventCardP
         </div>
 
         <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-          {event.description}
+          {cleanHtmlText(event.description)}
         </p>
 
         <div className="flex items-center gap-2 mb-4">
