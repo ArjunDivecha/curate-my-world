@@ -30,13 +30,22 @@ serve(async (req) => {
   }
 
   try {
-    const { location, preferences } = await req.json();
+    // Input validation and sanitization
+    const requestBody = await req.json();
+    const { location, preferences } = requestBody;
     
-    if (!location) {
-      throw new Error('Location is required');
+    // Validate required fields
+    if (!location || typeof location !== 'string') {
+      throw new Error('Valid location is required');
+    }
+    
+    // Sanitize location input
+    const sanitizedLocation = location.replace(/[<>'"&]/g, '').trim();
+    if (sanitizedLocation.length < 2 || sanitizedLocation.length > 100) {
+      throw new Error('Location must be between 2 and 100 characters');
     }
 
-    console.log(`Starting search for location: ${location}`);
+    console.log(`Starting search for location: ${sanitizedLocation}`);
     console.log(`Preferences:`, JSON.stringify(preferences, null, 2));
 
     // Get API keys
@@ -85,14 +94,14 @@ serve(async (req) => {
     });
 
     // Search for real events using Brave Search API
-    const events = await searchForRealEvents(location, preferences, braveApiKey, googleMapsApiKey);
+    const events = await searchForRealEvents(sanitizedLocation, preferences, braveApiKey, googleMapsApiKey);
 
     if (events.length === 0) {
       return new Response(
         JSON.stringify({ 
           success: true, 
           events: [], 
-          message: `No real events found in ${location}. Try a different location or adjust your preferences.` 
+          message: `No real events found in ${sanitizedLocation}. Try a different location or adjust your preferences.` 
         }),
         { 
           headers: { 
@@ -134,7 +143,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         events: events,
-        message: `Successfully found and stored ${events.length} real events in ${location}!` 
+        message: `Successfully found and stored ${events.length} real events in ${sanitizedLocation}!` 
       }),
       { 
         headers: { 

@@ -89,6 +89,24 @@ serve(async (req) => {
   }
 
   try {
+    // Get the authorization header for admin authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Authorization required. This function requires admin access.' 
+        }),
+        { 
+          status: 401,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          } 
+        }
+      );
+    }
+
     const { 
       mode = 'incremental', // full, incremental, or specific
       location = 'San Francisco, CA',  
