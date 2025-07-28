@@ -55,16 +55,19 @@ export const Dashboard = () => {
   const [preferences, setPreferences] = useState<Preferences>(defaultPreferences);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'idle' | 'processing' | 'complete'>('complete');
-  const [events, setEvents] = useState<any[]>(mockEvents);
+  const [events, setEvents] = useState<any[]>([]);
   const [realEvents, setRealEvents] = useState<any[]>([]);
   const { toast } = useToast();
 
   // Fetch real events from database
   const fetchEventsFromDB = async () => {
     try {
+      // Only fetch events from today forward to avoid showing old cached events
+      const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
       const { data, error } = await supabase
         .from('events')
         .select('*')
+        .gte('date_time', today)
         .order('date_time', { ascending: true });
       
       if (error) throw error;

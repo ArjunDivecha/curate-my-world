@@ -2,17 +2,20 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ValidatedInput } from '@/components/ui/validated-input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { CalendarDays, Github, Mail } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { validateUsername, validateEmail, validatePassword } from '@/lib/validation';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { user, signUp, signIn, signInWithGoogle, signInWithGitHub } = useAuth();
@@ -28,13 +31,24 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await signUp(email, password, displayName);
+    // Validate all fields before submitting
+    const usernameValidation = validateUsername(username);
+    const emailValidation = validateEmail(email);
+    const passwordValidation = validatePassword(password);
+
+    if (!usernameValidation.isValid || !emailValidation.isValid || !passwordValidation.isValid) {
+      setIsLoading(false);
+      return;
+    }
+
+    const { error } = await signUp(email, password, displayName, username);
     
     if (!error) {
       // Clear form
       setEmail('');
       setPassword('');
       setDisplayName('');
+      setUsername('');
     }
 
     setIsLoading(false);
@@ -117,42 +131,53 @@ const Auth = () => {
               
               <TabsContent value="signup" className="space-y-4">
                 <form onSubmit={handleSignUp} className="space-y-4">
+                  <ValidatedInput
+                    id="signup-username"
+                    label="Username"
+                    placeholder="Enter a unique username"
+                    value={username}
+                    onChange={setUsername}
+                    validator={validateUsername}
+                    required
+                    disabled={isLoading}
+                  />
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Display Name</Label>
                     <Input
                       id="signup-name"
                       type="text"
-                      placeholder="Your name"
+                      placeholder="Your display name"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
+                      disabled={isLoading}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="Create a strong password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
+                  <ValidatedInput
+                    id="signup-email"
+                    label="Email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={setEmail}
+                    validator={validateEmail}
+                    required
+                    disabled={isLoading}
+                  />
+                  <ValidatedInput
+                    id="signup-password"
+                    label="Password"
+                    type="password"
+                    placeholder="Create a strong password"
+                    value={password}
+                    onChange={setPassword}
+                    validator={validatePassword}
+                    required
+                    disabled={isLoading}
+                  />
                   <Button 
                     type="submit" 
                     className="w-full" 
-                    disabled={isLoading}
+                    disabled={isLoading || validateUsername(username).errors.length > 0 || validateEmail(email).errors.length > 0 || validatePassword(password).errors.length > 0}
                   >
                     {isLoading ? "Creating account..." : "Create Account"}
                   </Button>
