@@ -197,7 +197,7 @@ const ChartTooltipContent = React.forwardRef<
                 )}
               >
                 {formatter && item?.value !== undefined && item.name ? (
-                  formatter(item.value, item.name, item, index, item.payload)
+                  <span>{formatter(item.value, item.name, item, index, item.payload)}</span>
                 ) : (
                   <>
                     {itemConfig?.icon ? (
@@ -233,7 +233,7 @@ const ChartTooltipContent = React.forwardRef<
                       <div className="grid gap-1.5">
                         {nestLabel ? tooltipLabel : null}
                         <span className="text-muted-foreground">
-                          {itemConfig?.label || item.name}
+                          {itemConfig?.label || (typeof item.name === 'string' ? item.name : String(item.name || ''))}
                         </span>
                       </div>
                       {item.value && (
