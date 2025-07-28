@@ -32,22 +32,29 @@ interface Preferences {
 const defaultPreferences: Preferences = {
   interests: {
     categories: {
-      'Music': 8,
-      'Art': 9,
-      'Technology': 7,
-      'Food & Drink': 6
+      'Music': 10,
+      'Art': 10,
+      'Technology': 10,
+      'Food & Drink': 10,
+      'Business': 10,
+      'Health & Wellness': 10,
+      'Education': 10,
+      'Film': 10,
+      'Dance': 10,
+      'Fashion': 10,
+      'Outdoor Activities': 10
     },
-    keywords: ['indie', 'experimental', 'gallery', 'coffee']
+    keywords: []
   },
   location: {
-    address: 'Downtown District',
-    radius: 15
+    address: 'Berkeley, CA',
+    radius: 50
   },
   filters: {
-    timePreferences: ['Evening (5-9pm)', 'Weekend Events'],
-    priceRange: [0, 50]
+    timePreferences: ['Morning (6-12pm)', 'Afternoon (12-5pm)', 'Evening (5-9pm)', 'Night (9pm+)', 'Weekend Events', 'Weekday Events'],
+    priceRange: [0, 200]
   },
-  aiInstructions: 'I love discovering new indie music and experimental art. I prefer smaller, intimate venues where I can connect with artists and other attendees. I\'m interested in networking events for creative professionals.'
+  aiInstructions: 'Show me all events in the area regardless of category, type, or style. I want to discover everything that\'s happening.'
 };
 
 export const Dashboard = () => {
