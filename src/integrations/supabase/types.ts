@@ -14,68 +14,163 @@ export type Database = {
   }
   public: {
     Tables: {
+      event_sources: {
+        Row: {
+          api_config: Json | null
+          base_url: string | null
+          created_at: string | null
+          enabled: boolean | null
+          error_count: number | null
+          id: string
+          last_run: string | null
+          last_success: string | null
+          name: string
+          priority: number | null
+          rate_limit_per_hour: number | null
+          scraping_config: Json | null
+          source_type: string
+          success_rate: number | null
+          total_events_collected: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_config?: Json | null
+          base_url?: string | null
+          created_at?: string | null
+          enabled?: boolean | null
+          error_count?: number | null
+          id?: string
+          last_run?: string | null
+          last_success?: string | null
+          name: string
+          priority?: number | null
+          rate_limit_per_hour?: number | null
+          scraping_config?: Json | null
+          source_type: string
+          success_rate?: number | null
+          total_events_collected?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_config?: Json | null
+          base_url?: string | null
+          created_at?: string | null
+          enabled?: boolean | null
+          error_count?: number | null
+          id?: string
+          last_run?: string | null
+          last_success?: string | null
+          name?: string
+          priority?: number | null
+          rate_limit_per_hour?: number | null
+          scraping_config?: Json | null
+          source_type?: string
+          success_rate?: number | null
+          total_events_collected?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       events: {
         Row: {
+          accessibility_info: string | null
           address: string | null
+          age_restriction: string | null
+          attendance_estimate: number | null
           category: string | null
           city: string | null
           created_at: string
           date_time: string | null
           description: string | null
+          duplicate_group_id: string | null
           end_date_time: string | null
+          event_status: string | null
           external_url: string | null
           id: string
           image_url: string | null
           price_max: number | null
           price_min: number | null
+          quality_score: number | null
+          raw_data: Json | null
+          relevance_score: number | null
           source: string | null
+          source_id: string | null
           state: string | null
           tags: string[] | null
           title: string
           updated_at: string
           venue: string | null
+          venue_coordinates: unknown | null
         }
         Insert: {
+          accessibility_info?: string | null
           address?: string | null
+          age_restriction?: string | null
+          attendance_estimate?: number | null
           category?: string | null
           city?: string | null
           created_at?: string
           date_time?: string | null
           description?: string | null
+          duplicate_group_id?: string | null
           end_date_time?: string | null
+          event_status?: string | null
           external_url?: string | null
           id?: string
           image_url?: string | null
           price_max?: number | null
           price_min?: number | null
+          quality_score?: number | null
+          raw_data?: Json | null
+          relevance_score?: number | null
           source?: string | null
+          source_id?: string | null
           state?: string | null
           tags?: string[] | null
           title: string
           updated_at?: string
           venue?: string | null
+          venue_coordinates?: unknown | null
         }
         Update: {
+          accessibility_info?: string | null
           address?: string | null
+          age_restriction?: string | null
+          attendance_estimate?: number | null
           category?: string | null
           city?: string | null
           created_at?: string
           date_time?: string | null
           description?: string | null
+          duplicate_group_id?: string | null
           end_date_time?: string | null
+          event_status?: string | null
           external_url?: string | null
           id?: string
           image_url?: string | null
           price_max?: number | null
           price_min?: number | null
+          quality_score?: number | null
+          raw_data?: Json | null
+          relevance_score?: number | null
           source?: string | null
+          source_id?: string | null
           state?: string | null
           tags?: string[] | null
           title?: string
           updated_at?: string
           venue?: string | null
+          venue_coordinates?: unknown | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "events_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "event_sources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -147,7 +242,38 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      gtrgm_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_decompress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_options: {
+        Args: { "": unknown }
+        Returns: undefined
+      }
+      gtrgm_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      set_limit: {
+        Args: { "": number }
+        Returns: number
+      }
+      show_limit: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      show_trgm: {
+        Args: { "": string }
+        Returns: string[]
+      }
     }
     Enums: {
       [_ in never]: never
