@@ -155,7 +155,7 @@ export const Dashboard = () => {
             },
           ticketUrl: event.external_url || '',
           eventUrl: event.external_url || '',
-          aiReasoning: 'Real event found through AI search'
+          aiReasoning: 'Event matches your interests and location preferences'
         }));
         
         // ONLY SET EVENTS IF VAMPIRES ARE STILL DEAD
@@ -573,7 +573,7 @@ export const Dashboard = () => {
                 <span className="text-4xl">💀</span>
                 <h3 className="text-green-800 font-semibold text-lg">VAMPIRE EVENTS DESTROYED!</h3>
                 <p className="text-green-700">
-                  All cached events have been KILLED and will never resurrect. Set your location in preferences and click "Fetch Real Events" to get fresh, geographically filtered events!
+                  All cached events have been KILLED and will never resurrect. Set your location in preferences and click "Fetch Events" to get fresh, geographically filtered events!
                 </p>
               </div>
             </CardContent>
