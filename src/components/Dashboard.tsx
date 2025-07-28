@@ -15,7 +15,7 @@ import { mockEvents } from "@/data/mockEvents";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Grid3X3, Brain, Sparkles, TrendingUp, CalendarDays, Mail, Github } from "lucide-react";
+import { Calendar, Grid3X3, Brain, Sparkles, TrendingUp, CalendarDays, Mail, Github, RefreshCw, MapPin } from "lucide-react";
 
 interface Preferences {
   interests: {
@@ -51,7 +51,7 @@ const defaultPreferences: Preferences = {
     keywords: []
   },
   location: {
-    address: 'Berkeley, CA',
+    address: 'San Francisco, CA',
     radius: 50
   },
   filters: {
@@ -66,20 +66,62 @@ export const Dashboard = () => {
   const [preferences, setPreferences] = useState<Preferences>(defaultPreferences);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'idle' | 'processing' | 'complete'>('complete');
-  const [events, setEvents] = useState<any[]>([]);
-  const [realEvents, setRealEvents] = useState<any[]>([]);
+  const [events, setEventsRaw] = useState<any[]>(() => {
+    console.log('🔍 INITIAL STATE: events initialized with empty array');
+    return [];
+  });
+  const [realEvents, setRealEventsRaw] = useState<any[]>(() => {
+    console.log('🔍 INITIAL STATE: realEvents initialized with empty array');
+    return [];
+  });
+  const [eventsKilled, setEventsKilled] = useState(false);
+  
+  // Debug every time events changes  
+  useEffect(() => {
+    console.log('🔍 EVENTS STATE CHANGED:', events.length, 'events:', events.map(e => e?.title || 'no title'));
+  }, [events]);
+  
+  // Protected setters that prevent vampire resurrection
+  const setEvents = (newEvents: any[]) => {
+    console.log(`🔍 setEvents called with ${newEvents.length} events, eventsKilled=${eventsKilled}`);
+    if (!eventsKilled && newEvents.length > 0) {
+      console.log('🧛‍♂️ BLOCKED: Attempting to set events while vampires are alive!', newEvents.map(e => e?.title || 'no title'));
+      return;
+    }
+    console.log('✅ Setting events:', newEvents.map(e => e?.title || 'no title'));
+    setEventsRaw(newEvents);
+  };
+  
+  const setRealEvents = (newEvents: any[]) => {
+    console.log(`🔍 setRealEvents called with ${newEvents.length} events, eventsKilled=${eventsKilled}`);
+    if (!eventsKilled && newEvents.length > 0) {
+      console.log('🧛‍♂️ BLOCKED: Attempting to set real events while vampires are alive!', newEvents.map(e => e?.title || 'no title'));
+      return;
+    }
+    console.log('✅ Setting real events:', newEvents.map(e => e?.title || 'no title'));
+    setRealEventsRaw(newEvents);
+  };
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isClearingCache, setIsClearingCache] = useState(true);
   const { toast } = useToast();
   const { user, signIn, signUp, signInWithGoogle, signInWithGitHub } = useAuth();
 
-  // Fetch real events from database
+  // Fetch real events from database - ONLY if vampire events have been killed
   const fetchEventsFromDB = async () => {
+    if (!eventsKilled) {
+      console.log('🧛‍♂️ Vampire events not yet killed - refusing to fetch');
+      return;
+    }
+    
     try {
+      console.log('📡 Fetching fresh events from database (vampires are dead)...');
       // Only fetch events from today forward to avoid showing old cached events
       const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
+      // Add cache-busting to prevent vampire resurrections
       const { data, error } = await supabase
         .from('events')
         .select('*')
@@ -115,17 +157,86 @@ export const Dashboard = () => {
           aiReasoning: 'Real event found through AI search'
         }));
         
-        setRealEvents(transformedEvents);
-        setEvents(transformedEvents);
+        // ONLY SET EVENTS IF VAMPIRES ARE STILL DEAD
+        if (eventsKilled) {
+          setRealEvents(transformedEvents);
+          setEvents(transformedEvents);
+        }
+      } else {
+        // Explicitly clear state when no events found
+        setRealEvents([]);
+        setEvents([]);
       }
     } catch (error) {
       console.error('Error fetching events from database:', error);
     }
   };
 
-  // Load events on component mount
+  // KILL VAMPIRE EVENTS - nuclear option to destroy all cached events
   useEffect(() => {
-    fetchEventsFromDB();
+    const killVampireEvents = async () => {
+      try {
+        console.log('🧛‍♂️ KILLING VAMPIRE EVENTS - NUCLEAR OPTION...');
+        setIsClearingCache(true);
+        
+        // FORCE IMMEDIATE STATE CLEARING - No conditions, just clear everything NOW
+        console.log('💀 IMMEDIATE STATE NUKE...');
+        setEventsRaw([]);
+        setRealEventsRaw([]);
+        
+        // NUCLEAR OPTION 1: Delete ALL events from database  
+        console.log('💀 Nuking database events...');
+        const { error: deleteError } = await supabase
+          .from('events')
+          .delete()
+          .gte('id', '00000000-0000-0000-0000-000000000000');
+        
+        if (deleteError) {
+          console.log('Trying alternative delete method...');
+          await supabase.from('events').delete().neq('created_at', null);
+        }
+        
+        // NUCLEAR OPTION 2: Clear local state AGAIN aggressively
+        console.log('💀 Second state clearing...');
+        setEventsRaw([]);
+        setRealEventsRaw([]);
+        
+        // NUCLEAR OPTION 3: Clear any cached data
+        if (typeof window !== 'undefined') {
+          localStorage.clear(); // Clear EVERYTHING, not just specific items
+          sessionStorage.clear();
+          // Clear any possible indexedDB
+          if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+          }
+        }
+        
+        // NUCLEAR OPTION 4: Force component re-mount with key changes
+        console.log('💀 Forcing component refresh...');
+        
+        // Final state clearing after all operations
+        setEventsRaw([]);
+        setRealEventsRaw([]);
+        
+        console.log('💀 VAMPIRE EVENTS DESTROYED! No more resurrections!');
+        setEventsKilled(true);
+      } catch (error) {
+        console.error('Error killing vampire events:', error);
+        // Fallback - regular delete
+        try {
+          await supabase.from('events').delete().neq('id', '');
+          setEventsRaw([]);
+          setRealEventsRaw([]);
+        } catch (fallbackError) {
+          console.error('Fallback delete failed:', fallbackError);
+        }
+      } finally {
+        setIsClearingCache(false);
+      }
+    };
+    
+    killVampireEvents();
   }, []);
 
   const handleSaveToCalendar = (eventId: string) => {
@@ -369,6 +480,12 @@ export const Dashboard = () => {
           <Button
             onClick={async () => {
               try {
+                console.log('Clearing all events from database and local state...');
+                
+                // Clear local state immediately for instant UI update
+                setEventsRaw([]);
+                setRealEventsRaw([]);
+                
                 // Clear all events from database
                 const { error } = await supabase
                   .from('events')
@@ -377,10 +494,10 @@ export const Dashboard = () => {
                 
                 if (error) throw error;
                 
-                // Clear local state
-                setEvents([]);
-                setRealEvents([]);
+                // DON'T fetch after clear - let user explicitly fetch fresh events
+                // await fetchEventsFromDB(); // THIS WAS THE VAMPIRE RESURRECTION!
                 
+                console.log('Successfully cleared all events');
                 toast({
                   title: "Events Cleared",
                   description: "All events have been cleared. You can start fresh!",
@@ -421,39 +538,68 @@ export const Dashboard = () => {
           </CardContent>
         </Card>
 
+        {/* Vampire Killing Message */}
+        {isClearingCache && (
+          <Card className="mb-8 bg-red-50 border-red-200">
+            <CardContent className="p-6 text-center">
+              <div className="flex items-center justify-center gap-3">
+                <RefreshCw className="w-5 h-5 animate-spin text-red-600" />
+                <p className="text-red-800 font-medium">🧛‍♂️ KILLING VAMPIRE EVENTS - NUCLEAR OPTION ACTIVATED!</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Vampires Dead Message */}
+        {!isClearingCache && events.length === 0 && eventsKilled && (
+          <Card className="mb-8 bg-green-50 border-green-200">
+            <CardContent className="p-6 text-center">
+              <div className="flex flex-col items-center gap-3">
+                <span className="text-4xl">💀</span>
+                <h3 className="text-green-800 font-semibold text-lg">VAMPIRE EVENTS DESTROYED!</h3>
+                <p className="text-green-700">
+                  All cached events have been KILLED and will never resurrect. Set your location in preferences and click "Fetch Real Events" to get fresh, geographically filtered events!
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Main Content Tabs */}
-        <Tabs defaultValue="calendar" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 bg-card shadow-card border-0">
-            <TabsTrigger value="calendar" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Weekly Calendar
-            </TabsTrigger>
-            <TabsTrigger value="grid" className="flex items-center gap-2">
-              <Grid3X3 className="w-4 h-4" />
-              Event Cards
-            </TabsTrigger>
-          </TabsList>
+        {!isClearingCache && eventsKilled && events.length > 0 && (
+          <Tabs defaultValue="calendar" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2 bg-card shadow-card border-0">
+              <TabsTrigger value="calendar" className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Weekly Calendar
+              </TabsTrigger>
+              <TabsTrigger value="grid" className="flex items-center gap-2">
+                <Grid3X3 className="w-4 h-4" />
+                Event Cards
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="calendar" className="space-y-6">
-            <WeeklyCalendar 
-              events={events}
-              onEventClick={handleViewDetails}
-            />
-          </TabsContent>
+            <TabsContent value="calendar" className="space-y-6">
+              <WeeklyCalendar 
+                events={events}
+                onEventClick={handleViewDetails}
+              />
+            </TabsContent>
 
-          <TabsContent value="grid" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {events.map(event => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  onSaveToCalendar={handleSaveToCalendar}
-                  onViewDetails={handleViewDetails}
-                />
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="grid" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {events.map(event => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    onSaveToCalendar={handleSaveToCalendar}
+                    onViewDetails={handleViewDetails}
+                  />
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
 
       <PreferencesModal

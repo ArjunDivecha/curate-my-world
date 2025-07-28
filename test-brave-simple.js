@@ -2,8 +2,9 @@
 const testBraveSimple = async () => {
   console.log('Testing Brave Search API directly...');
   
-  const apiKey = 'BSAXThcr6XwVAvdRzzAhhhBhbGXCPaO';
-  const query = 'New York music events July 2025';
+  // Replace with your actual Brave Search API key
+  const apiKey = 'YOUR_BRAVE_SEARCH_API_KEY';
+  const query = 'San Francisco music events July 2025';
   
   const url = new URL('https://api.search.brave.com/res/v1/web/search');
   url.searchParams.set('q', query);
@@ -34,7 +35,7 @@ const testBraveSimple = async () => {
     
     if (data.web?.results) {
       data.web.results.forEach((result, index) => {
-        console.log(`\\n--- RESULT ${index + 1} ---`);
+        console.log('\n--- RESULT ' + (index + 1) + ' ---');
         console.log('Title:', result.title);
         console.log('URL:', result.url);
         console.log('Description:', result.description?.substring(0, 100) + '...');

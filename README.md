@@ -60,6 +60,14 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Environment Variables
+
+This project requires several API keys to function properly. See [ENVIRONMENT.md](ENVIRONMENT.md) for details on setting up environment variables.
+
+At a minimum, you'll need:
+- `BRAVE_SEARCH_API_KEY` for web scraping
+- `GOOGLE_MAPS_API_KEY` for improved location filtering (recommended)
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/1f3ba898-a1c1-461e-9ff3-7d241f2d501d) and click on Share -> Publish.

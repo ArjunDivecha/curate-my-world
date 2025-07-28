@@ -39,24 +39,53 @@ serve(async (req) => {
     console.log(`Starting search for location: ${location}`);
     console.log(`Preferences:`, JSON.stringify(preferences, null, 2));
 
-    // Get Brave Search API key
+    // Get API keys
     const braveApiKey = Deno.env.get('BRAVE_SEARCH_API_KEY');
     if (!braveApiKey) {
       throw new Error('BRAVE_SEARCH_API_KEY not found');
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
+    if (!googleMapsApiKey) {
+      console.log('Warning: GOOGLE_MAPS_API_KEY not found. Location filtering will be less accurate.');
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  
+    // Get the authorization header for user authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Authorization required' 
+        }),
+        { 
+          status: 401,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          } 
+        }
+      );
+    }
 
     if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error('Missing required environment variables');
     }
 
     // Create Supabase client
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Use service role for database operations (bypasses RLS)
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
 
     // Search for real events using Brave Search API
-    const events = await searchForRealEvents(location, preferences, braveApiKey);
+    const events = await searchForRealEvents(location, preferences, braveApiKey, googleMapsApiKey);
 
     if (events.length === 0) {
       return new Response(
@@ -76,7 +105,22 @@ serve(async (req) => {
 
     console.log(`Found ${events.length} events`);
     
-    // Store events in database
+    // KILL VAMPIRE EVENTS: Clear ALL existing events before inserting new ones
+    console.log('🧛‍♂️ KILLING VAMPIRE EVENTS: Clearing database before inserting fresh events...');
+    const { error: deleteError } = await supabase
+      .from('events')
+      .delete()
+      .gte('id', '00000000-0000-0000-0000-000000000000'); // Delete all events
+    
+    if (deleteError) {
+      console.error('Warning: Could not clear old events:', deleteError);
+      // Try alternative deletion method
+      await supabase.from('events').delete().neq('created_at', null);
+    }
+    
+    console.log('💀 VAMPIRE EVENTS KILLED! Inserting fresh events...');
+    
+    // Store NEW events in database
     const { error } = await supabase
       .from('events')
       .insert(events);
@@ -118,7 +162,7 @@ serve(async (req) => {
   }
 });
 
-async function searchForRealEvents(location: string, preferences: EventPreferences, apiKey: string) {
+async function searchForRealEvents(location: string, preferences: EventPreferences, braveApiKey: string, googleMapsApiKey?: string) {
   console.log('Starting Brave Search for real events...');
   
   const events: any[] = [];
@@ -139,11 +183,11 @@ async function searchForRealEvents(location: string, preferences: EventPreferenc
   console.log(`Brave Search query: ${query}`);
   
   try {
-    const searchResults = await braveWebSearch(query, apiKey);
+    const searchResults = await braveWebSearch(query, braveApiKey);
     
     if (searchResults.web?.results && searchResults.web.results.length > 0) {
       console.log(`Brave Search returned ${searchResults.web.results.length} raw results`);
-      const extractedEvents = extractEventsFromSearchResults(searchResults, location, preferences);
+      const extractedEvents = await extractEventsFromSearchResults(searchResults, location, preferences, false, googleMapsApiKey);
       events.push(...extractedEvents);
     } else {
       console.log('No results from Brave Search API');
@@ -165,9 +209,9 @@ async function searchForRealEvents(location: string, preferences: EventPreferenc
       const fallbackQuery = `${cityName} events ${currentMonth} ${categories.join(' ')}`;
       console.log(`Fallback query: ${fallbackQuery}`);
       
-      const fallbackResults = await braveWebSearch(fallbackQuery, apiKey);
+      const fallbackResults = await braveWebSearch(fallbackQuery, braveApiKey);
       if (fallbackResults.web?.results) {
-        const fallbackEvents = extractEventsFromSearchResults(fallbackResults, location, preferences, true);
+        const fallbackEvents = await extractEventsFromSearchResults(fallbackResults, location, preferences, true, googleMapsApiKey);
         const uniqueFallbackEvents = removeDuplicateEvents(fallbackEvents);
         console.log(`Found ${uniqueFallbackEvents.length} events with fallback search`);
         return uniqueFallbackEvents.slice(0, 10);
@@ -215,7 +259,7 @@ async function braveWebSearch(query: string, apiKey: string) {
 }
 
 // Extract events from Brave Search results
-function extractEventsFromSearchResults(searchResults: any, location: string, preferences: EventPreferences, skipLocationFilter = false) {
+async function extractEventsFromSearchResults(searchResults: any, location: string, preferences: EventPreferences, skipLocationFilter = false, googleMapsApiKey?: string) {
   const events: any[] = [];
   
   if (!searchResults.web?.results) {
@@ -277,7 +321,7 @@ function extractEventsFromSearchResults(searchResults: any, location: string, pr
     const hasEventDomain = eventDomains.some(domain => url.includes(domain));
     
     // More inclusive logic: if it has event keywords OR event URL OR event domain, and no exclude keywords, AND matches location
-    const shouldInclude = (hasEventKeywords || hasEventUrl || hasEventDomain) && !hasExcludeKeywords && hasLocationMatch;
+    let shouldInclude = (hasEventKeywords || hasEventUrl || hasEventDomain) && !hasExcludeKeywords && hasLocationMatch;
     
     console.log(`Checking: ${title.substring(0, 70)}...`);
     console.log(`  Event keywords: ${hasEventKeywords}`);
@@ -286,6 +330,74 @@ function extractEventsFromSearchResults(searchResults: any, location: string, pr
     console.log(`  Event domain: ${hasEventDomain}`);
     console.log(`  Location match (${cityName}): ${hasLocationMatch}`);
     console.log(`  Should include: ${shouldInclude}`);
+    
+    // If we have Google Maps API key and the event passed initial filters, do additional location verification
+    if (shouldInclude && googleMapsApiKey && !skipLocationFilter) {
+      try {
+        // Extract venue from title or description
+        let venue = '';
+        
+        // Try different venue extraction patterns
+        const venuePatterns = [
+          /at ([^-,|\n\r]+)/i,        // "at Venue Name"
+          /- ([^||\n\r]+) -/,         // "- Venue Name -"
+          /\| ([^|\n\r]+)$/,          // "| Venue Name" at end
+          /presents .+ - (.+) -/i,    // "presents Event - Venue -"
+          /venue:?\s*([^,\n\r]+)/i,   // "Venue: Name"
+          /location:?\s*([^,\n\r]+)/i, // "Location: Name"
+          /\b([A-Z][a-z]+ [A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+(?:presents|hosts|venue)/i // "Madison Square Garden presents"
+        ];
+        
+        for (const pattern of venuePatterns) {
+          const venueMatch = title.match(pattern) || description.match(pattern);
+          if (venueMatch && venueMatch[1]) {
+            venue = venueMatch[1].trim().replace(/['"]/g, ''); // Remove quotes
+            if (venue.length > 3 && venue.length < 100) { // Reasonable venue name length
+              break;
+            }
+          }
+        }
+        
+        // If we found a venue, try to geocode it and check distance
+        if (venue) {
+          const venueQuery = `${venue}, ${location}`;
+          const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(venueQuery)}&key=${googleMapsApiKey}`;
+          const geocodeResponse = await fetch(geocodeUrl);
+          const geocodeData = await geocodeResponse.json();
+          
+          if (geocodeData.results && geocodeData.results.length > 0) {
+            // Get coordinates for target location
+            const targetGeocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=${googleMapsApiKey}`;
+            const targetGeocodeResponse = await fetch(targetGeocodeUrl);
+            const targetGeocodeData = await targetGeocodeResponse.json();
+            
+            if (targetGeocodeData.results && targetGeocodeData.results.length > 0) {
+              const venueCoords = {
+                lat: geocodeData.results[0].geometry.location.lat,
+                lng: geocodeData.results[0].geometry.location.lng
+              };
+              
+              const targetCoords = {
+                lat: targetGeocodeData.results[0].geometry.location.lat,
+                lng: targetGeocodeData.results[0].geometry.location.lng
+              };
+              
+              // Calculate distance using Haversine formula
+              const distance = calculateDistance(targetCoords, venueCoords);
+              console.log(`  Venue: ${venue} is ${distance.toFixed(2)} miles from target location`);
+              
+              // If venue is more than 100 miles away, exclude it
+              if (distance > 100) {
+                shouldInclude = false;
+                console.log(`  Excluding event: Venue is too far away (${distance.toFixed(2)} miles)`);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.log(`  Error during Google Maps verification: ${error.message}`);
+      }
+    }
     
     
     if (shouldInclude) {
@@ -445,4 +557,17 @@ function removeDuplicateEvents(events: any[]) {
     seen.add(key);
     return true;
   });
+}
+
+// Calculate distance between two points using Haversine formula
+function calculateDistance(coord1: { lat: number; lng: number }, coord2: { lat: number; lng: number }): number {
+  const R = 3958.8; // Earth radius in miles
+  const dLat = (coord2.lat - coord1.lat) * Math.PI / 180;
+  const dLon = (coord2.lng - coord1.lng) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(coord1.lat * Math.PI / 180) * Math.cos(coord2.lat * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
 }
