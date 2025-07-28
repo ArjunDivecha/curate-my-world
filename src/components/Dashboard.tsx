@@ -49,6 +49,7 @@ const defaultPreferences: Preferences = {
 };
 
 export const Dashboard = () => {
+  const [currentPage, setCurrentPage] = useState('dashboard');
   const [preferences, setPreferences] = useState<Preferences>(defaultPreferences);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'idle' | 'processing' | 'complete'>('complete');
@@ -94,6 +95,8 @@ export const Dashboard = () => {
     <div className="min-h-screen bg-gradient-subtle">
       <Header 
         onOpenPreferences={() => setPreferencesOpen(true)}
+        onNavigate={setCurrentPage}
+        currentPage={currentPage}
         totalEvents={events.length}
         aiCurationStatus={aiStatus}
       />

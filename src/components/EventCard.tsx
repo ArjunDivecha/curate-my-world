@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Clock, Star, Calendar } from "lucide-react";
+import { MapPin, Clock, Star, Calendar, ExternalLink, Share2, Bookmark } from "lucide-react";
 
 interface Event {
   id: string;
@@ -12,6 +12,8 @@ interface Event {
   venue: {
     name: string;
     address: string;
+    website?: string;
+    mapUrl?: string;
   };
   categories: string[];
   personalRelevanceScore: number;
@@ -19,6 +21,8 @@ interface Event {
     type: 'free' | 'paid' | 'donation';
     amount?: string;
   };
+  ticketUrl?: string;
+  eventUrl?: string;
   aiReasoning: string;
 }
 
@@ -86,7 +90,28 @@ export const EventCard = ({ event, onSaveToCalendar, onViewDetails }: EventCardP
 
         <div className="flex items-center gap-2 mb-4">
           <MapPin className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">{event.venue.name}</span>
+          {event.venue.website ? (
+            <a 
+              href={event.venue.website} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-sm text-primary hover:underline"
+            >
+              {event.venue.name}
+            </a>
+          ) : (
+            <span className="text-sm text-muted-foreground">{event.venue.name}</span>
+          )}
+          {event.venue.mapUrl && (
+            <a 
+              href={event.venue.mapUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs text-muted-foreground hover:text-primary"
+            >
+              📍 Map
+            </a>
+          )}
           <span className="text-xs text-muted-foreground">•</span>
           <Badge variant="outline" className="text-xs">
             {event.price.type === 'free' ? 'Free' : event.price.amount}
@@ -107,23 +132,66 @@ export const EventCard = ({ event, onSaveToCalendar, onViewDetails }: EventCardP
           </p>
         </div>
 
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => onViewDetails(event.id)}
-            className="flex-1 hover:bg-primary hover:text-primary-foreground transition-all duration-300"
-          >
-            View Details
-          </Button>
-          <Button 
-            size="sm" 
-            onClick={() => onSaveToCalendar(event.id)}
-            className="bg-gradient-primary hover:opacity-90 transition-all duration-300 shadow-elegant"
-          >
-            <Calendar className="w-4 h-4 mr-2" />
-            Save
-          </Button>
+        <div className="space-y-3">
+          {/* External Links */}
+          {(event.ticketUrl || event.eventUrl) && (
+            <div className="flex flex-wrap gap-2">
+              {event.ticketUrl && (
+                <a 
+                  href={event.ticketUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-block"
+                >
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="text-xs hover:bg-accent hover:text-accent-foreground transition-all duration-300"
+                  >
+                    <ExternalLink className="w-3 h-3 mr-1" />
+                    Get Tickets
+                  </Button>
+                </a>
+              )}
+              {event.eventUrl && (
+                <a 
+                  href={event.eventUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-block"
+                >
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="text-xs hover:bg-accent hover:text-accent-foreground transition-all duration-300"
+                  >
+                    <ExternalLink className="w-3 h-3 mr-1" />
+                    Event Page
+                  </Button>
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => onViewDetails(event.id)}
+              className="flex-1 hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+            >
+              View Details
+            </Button>
+            <Button 
+              size="sm" 
+              onClick={() => onSaveToCalendar(event.id)}
+              className="bg-gradient-primary hover:opacity-90 transition-all duration-300 shadow-elegant"
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              Save
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

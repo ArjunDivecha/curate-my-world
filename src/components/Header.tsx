@@ -1,14 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Settings, Calendar, Sparkles } from "lucide-react";
+import { Brain, Settings, Calendar, Sparkles, Home, Search, Bookmark, User } from "lucide-react";
 
 interface HeaderProps {
   onOpenPreferences: () => void;
+  onNavigate: (page: string) => void;
+  currentPage: string;
   totalEvents: number;
   aiCurationStatus: 'idle' | 'processing' | 'complete';
 }
 
-export const Header = ({ onOpenPreferences, totalEvents, aiCurationStatus }: HeaderProps) => {
+export const Header = ({ onOpenPreferences, onNavigate, currentPage, totalEvents, aiCurationStatus }: HeaderProps) => {
   const getStatusBadge = () => {
     switch (aiCurationStatus) {
       case 'processing':
@@ -35,11 +37,18 @@ export const Header = ({ onOpenPreferences, totalEvents, aiCurationStatus }: Hea
     }
   };
 
+  const navigationItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: Home },
+    { id: 'search', label: 'Search', icon: Search },
+    { id: 'saved', label: 'Saved Events', icon: Bookmark },
+    { id: 'profile', label: 'Profile', icon: User }
+  ];
+
   return (
     <header className="bg-gradient-subtle border-b border-border/50 shadow-card">
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-glow">
                 <Brain className="w-6 h-6 text-white" />
@@ -49,6 +58,26 @@ export const Header = ({ onOpenPreferences, totalEvents, aiCurationStatus }: Hea
                 <p className="text-sm text-muted-foreground">AI-Curated Local Events</p>
               </div>
             </div>
+            
+            {/* Navigation */}
+            <nav className="hidden md:flex items-center gap-1">
+              {navigationItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Button
+                    key={item.id}
+                    variant={currentPage === item.id ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => onNavigate(item.id)}
+                    className="flex items-center gap-2 hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+                  >
+                    <Icon className="w-4 h-4" />
+                    {item.label}
+                  </Button>
+                );
+              })}
+            </nav>
+            
             {getStatusBadge()}
           </div>
           

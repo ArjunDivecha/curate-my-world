@@ -11,9 +11,13 @@ interface Event {
   endDate: string;
   venue: {
     name: string;
+    website?: string;
+    mapUrl?: string;
   };
   personalRelevanceScore: number;
   categories: string[];
+  ticketUrl?: string;
+  eventUrl?: string;
 }
 
 interface WeeklyCalendarProps {
