@@ -36,45 +36,19 @@ serve(async (req) => {
     // Create Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Test Perplexity connection first
-    console.log('Testing Perplexity API connection...');
-    
-    const testResponse = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${perplexityApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-sonar-large-128k-online',
-        messages: [
-          {
-            role: 'user',
-            content: `Find 3 events happening in ${location} and return as JSON array: [{"title":"Event Name", "venue":"Venue", "date":"2025-02-15"}]`
-          }
-        ],
-        temperature: 0.1,
-        max_tokens: 500
-      }),
-    });
+    // Search for real events using Perplexity web search
+    const realEvents = await searchForRealEvents(location, preferences, perplexityApiKey);
 
-    if (!testResponse.ok) {
-      throw new Error(`Perplexity API error: ${testResponse.status} ${testResponse.statusText}`);
+    if (realEvents.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          events: [], 
+          message: `No real events found in ${location}. Try a different location or adjust your preferences.` 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-
-    const testData = await testResponse.json();
-    console.log('Perplexity test response:', JSON.stringify(testData, null, 2));
-
-    // For now, return test response to see what we get
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        events: [], 
-        message: `Perplexity test completed. Check logs for response.`,
-        debug: testData.choices[0]?.message?.content
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
 
     console.log(`Found ${realEvents.length} real events, storing in database`);
 
@@ -96,6 +70,7 @@ serve(async (req) => {
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+
 
   } catch (error: any) {
     console.error('Error in fetch-real-events function:', error);
