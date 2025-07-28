@@ -261,3 +261,4 @@ function getCategoryFromSegment(segmentName: string): string {
   };
   
   return mapping[segmentName] || 'general';
+}
