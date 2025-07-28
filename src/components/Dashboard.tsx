@@ -259,6 +259,17 @@ export const Dashboard = () => {
     }
   };
 
+  const handleRemoveFromCalendar = (eventId: string) => {
+    const event = savedEvents.find(e => e.id === eventId);
+    if (event) {
+      setSavedEvents(prev => prev.filter(e => e.id !== eventId));
+      toast({
+        title: "Event Removed",
+        description: `"${event.title}" has been removed from your calendar.`,
+      });
+    }
+  };
+
   const getWeeklyStats = () => {
     const thisWeek = events.filter(event => {
       const eventDate = new Date(event.startDate);
@@ -589,10 +600,10 @@ export const Dashboard = () => {
                 onEventClick={(eventId) => {
                   const event = savedEvents.find(e => e.id === eventId);
                   if (event) {
-                    toast({
-                      title: "Event Details",
-                      description: `Viewing "${event.title}" - ${event.venue.name}`,
-                    });
+                    // Show confirmation for deletion
+                    if (confirm(`Remove "${event.title}" from your calendar?`)) {
+                      handleRemoveFromCalendar(eventId);
+                    }
                   }
                 }}
               />
