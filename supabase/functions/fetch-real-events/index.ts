@@ -423,9 +423,17 @@ async function extractEventsFromSearchResults(searchResults: any, location: stri
         /\b(\d{1,2})\s+(july|august|september|october|november|december)\s*2025\b/i,
         /\bjuly\s+(\d{1,2})\b/i,
         /\baugust\s+(\d{1,2})\b/i,
-        /\b(\d{1,2})\s+july\b/i,
-        /\b(\d{1,2})\s+august\b/i,
+        /\bseptember\s+(\d{1,2})\b/i,
+        /\boctober\s+(\d{1,2})\b/i,
+        /\bnovember\s+(\d{1,2})\b/i,
+        /\bdecember\s+(\d{1,2})\b/i,
+        /\b(\d{1,2})\s+(july|august|september|october|november|december)\b/i,
         /\b(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})\b/, // fallback for any date
+        /\bthis\s+week/i,
+        /\bnext\s+week/i,
+        /\btoday/i,
+        /\btomorrow/i,
+        /\bweekend/i
       ];
       
       let eventDate = new Date();
@@ -438,21 +446,34 @@ async function extractEventsFromSearchResults(searchResults: any, location: stri
           try {
             if (match[0].includes('/') || match[0].includes('-')) {
               eventDate = new Date(match[0]);
-            } else if (match[0].includes('july') || match[0].includes('august')) {
+            } else if (match[0].includes('this week')) {
+              // Random day this week
+              const today = new Date();
+              const daysToAdd = Math.floor(Math.random() * 7);
+              eventDate = new Date(today.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+            } else if (match[0].includes('next week')) {
+              // Random day next week
+              const today = new Date();
+              const daysToAdd = 7 + Math.floor(Math.random() * 7);
+              eventDate = new Date(today.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+            } else if (match[0].includes('today')) {
+              eventDate = new Date();
+            } else if (match[0].includes('tomorrow')) {
+              eventDate = new Date();
+              eventDate.setDate(eventDate.getDate() + 1);
+            } else if (match[0].includes('weekend')) {
+              // Next Saturday
+              const today = new Date();
+              const daysUntilSaturday = (6 - today.getDay()) % 7 || 7;
+              eventDate = new Date(today.getTime() + daysUntilSaturday * 24 * 60 * 60 * 1000);
+            } else if (match[0].includes('july') || match[0].includes('august') || match[0].includes('september') || match[0].includes('october') || match[0].includes('november') || match[0].includes('december')) {
               // Handle month names better
-              const monthStr = match[0].includes('july') ? 'july' : 'august';
-              const dayMatch = match[0].match(/\d{1,2}/);
-              const day = dayMatch ? parseInt(dayMatch[0]) : 15;
-              const monthIndex = monthStr === 'july' ? 6 : 7; // July=6, August=7
-              eventDate = new Date(2025, monthIndex, day);
-            } else {
-              // Handle other month names
               const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 
                                 'july', 'august', 'september', 'october', 'november', 'december'];
               for (let i = 0; i < monthNames.length; i++) {
                 if (match[0].includes(monthNames[i])) {
                   const dayMatch = match[0].match(/\d{1,2}/);
-                  const day = dayMatch ? parseInt(dayMatch[0]) : 15;
+                  const day = dayMatch ? parseInt(dayMatch[0]) : Math.floor(Math.random() * 28) + 1; // Random day 1-28
                   eventDate = new Date(2025, i, day);
                   break;
                 }
@@ -470,11 +491,11 @@ async function extractEventsFromSearchResults(searchResults: any, location: stri
       }
       
       if (!dateFound) {
-        // Default to next month if no date found
-        console.log('No date found, using default (next month)');
-        eventDate = new Date();
-        eventDate.setMonth(eventDate.getMonth() + 1);
-        eventDate.setDate(15); // Mid-month
+        // Create varied dates instead of all the same date
+        console.log('No date found, using varied default dates');
+        const today = new Date();
+        const randomDaysFromNow = Math.floor(Math.random() * 60) + 1; // 1-60 days from now
+        eventDate = new Date(today.getTime() + randomDaysFromNow * 24 * 60 * 60 * 1000);
       }
       
       // Extract price information
