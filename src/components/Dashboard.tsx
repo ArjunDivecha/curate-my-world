@@ -133,30 +133,74 @@ export const Dashboard = () => {
       
       if (data && data.length > 0) {
         // Transform database events to match the expected format
-        const transformedEvents = data.map(event => ({
-          id: event.id,
-          title: event.title,
-          description: event.description || '',
-          startDate: event.date_time,
-          endDate: event.end_date_time || event.date_time,
-          venue: {
-            name: event.venue || '',
-            address: event.address || '',
-            website: '',
-            mapUrl: ''
-          },
-          categories: [event.category || 'other'],
-          personalRelevanceScore: 8, // Default score for real events
-          price: event.price_min === 0 && event.price_max === 0 ? 
-            { type: "free" as const } : 
-            { 
-              type: "paid" as const, 
-              amount: event.price_max ? `$${event.price_max}` : "$0"
+        const transformedEvents = data.map(event => {
+          // Intelligently assign categories based on event content
+          const getEventCategories = (title: string, description: string) => {
+            const text = (title + ' ' + description).toLowerCase();
+            const categories = [];
+            
+            if (text.includes('music') || text.includes('concert') || text.includes('band') || text.includes('jazz') || text.includes('symphony')) {
+              categories.push('Music');
+            }
+            if (text.includes('art') || text.includes('gallery') || text.includes('museum') || text.includes('exhibit') || text.includes('painting')) {
+              categories.push('Art');
+            }
+            if (text.includes('tech') || text.includes('startup') || text.includes('innovation') || text.includes('ai') || text.includes('digital')) {
+              categories.push('Technology');
+            }
+            if (text.includes('food') || text.includes('drink') || text.includes('restaurant') || text.includes('wine') || text.includes('culinary')) {
+              categories.push('Food & Drink');
+            }
+            if (text.includes('business') || text.includes('networking') || text.includes('entrepreneur') || text.includes('conference')) {
+              categories.push('Business');
+            }
+            if (text.includes('health') || text.includes('wellness') || text.includes('fitness') || text.includes('yoga')) {
+              categories.push('Health & Wellness');
+            }
+            if (text.includes('education') || text.includes('workshop') || text.includes('class') || text.includes('seminar')) {
+              categories.push('Education');
+            }
+            if (text.includes('film') || text.includes('movie') || text.includes('cinema') || text.includes('documentary')) {
+              categories.push('Film');
+            }
+            if (text.includes('dance') || text.includes('ballet') || text.includes('choreography')) {
+              categories.push('Dance');
+            }
+            if (text.includes('fashion') || text.includes('style') || text.includes('design')) {
+              categories.push('Fashion');
+            }
+            if (text.includes('outdoor') || text.includes('park') || text.includes('hiking') || text.includes('festival') || text.includes('fair')) {
+              categories.push('Outdoor Activities');
+            }
+            
+            return categories.length > 0 ? categories : ['Events'];
+          };
+
+          return {
+            id: event.id,
+            title: event.title,
+            description: event.description || '',
+            startDate: event.date_time,
+            endDate: event.end_date_time || event.date_time,
+            venue: {
+              name: event.venue || '',
+              address: event.address || '',
+              website: '',
+              mapUrl: ''
             },
-          ticketUrl: event.external_url || '',
-          eventUrl: event.external_url || '',
-          aiReasoning: 'Event matches your interests and location preferences'
-        }));
+            categories: getEventCategories(event.title || '', event.description || ''),
+            personalRelevanceScore: 8, // Default score for real events
+            price: event.price_min === 0 && event.price_max === 0 ? 
+              { type: "free" as const } : 
+              { 
+                type: "paid" as const, 
+                amount: event.price_max ? `$${event.price_max}` : "$0"
+              },
+            ticketUrl: event.external_url || '',
+            eventUrl: event.external_url || '',
+            aiReasoning: 'Event matches your interests and location preferences'
+          };
+        });
         
         // ONLY SET EVENTS IF VAMPIRES ARE STILL DEAD
         if (eventsKilled) {
