@@ -1,5 +1,71 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.52.1'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.52.1';
+import { DOMParser, HTMLElement } from 'https://deno.land/x/deno_dom/deno-dom-wasm.ts';
+
+// Helper function to remove duplicate events based on title and date
+function removeDuplicateEvents(events: any[]): any[] {
+  const uniqueEvents = new Map<string, any>();
+  for (const event of events) {
+    const key = `${event.title}|${new Date(event.date_time).toDateString()}`;
+    if (!uniqueEvents.has(key)) {
+      uniqueEvents.set(key, event);
+    }
+  }
+  return Array.from(uniqueEvents.values());
+}
+
+// Helper function to extract a venue name
+function extractVenue(title: string, html: string, location: string): string {
+  // Prioritize patterns that are more likely to be specific
+  const patterns = [
+    /at\s+the\s+([\w\s]+)/i, // at the The Warfield
+    /at\s+([\w\s]+)/i, // at The Guild
+    /venue:\s*([\w\s]+)/i, // Venue: The Fillmore
+  ];
+  for (const pattern of patterns) {
+    const match = title.match(pattern) || html.match(pattern);
+    if (match?.[1]) return match[1].trim();
+  }
+  return `${location.split(',')[0]} Venue`; // Fallback
+}
+
+// Helper function to parse dates, including month names and relative terms
+function extractEventDates(title: string, dateStr: string): { startDate: Date | null; endDate: Date | null } {
+  try {
+    // Check for a full date with year first
+    let date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+      // If year is in the past, assume it's for the next year
+      if (date.getFullYear() < new Date().getFullYear()) {
+        date.setFullYear(date.getFullYear() + 1);
+      }
+      const endDate = new Date(date.getTime() + 2 * 60 * 60 * 1000); // Assume 2-hour duration
+      return { startDate: date, endDate };
+    }
+
+    // Handle month-day formats like "Jul 15"
+    const monthDayMatch = dateStr.match(/([a-zA-Z]{3})\s(\d{1,2})/);
+    if (monthDayMatch) {
+      const monthStr = monthDayMatch[1];
+      const day = parseInt(monthDayMatch[2], 10);
+      const monthIndex = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].findIndex(m => monthStr.toLowerCase().startsWith(m));
+      if (monthIndex !== -1) {
+        const currentYear = new Date().getFullYear();
+        date = new Date(currentYear, monthIndex, day);
+        // If the parsed date is in the past, assume it's for the next year
+        if (date < new Date()) {
+          date.setFullYear(currentYear + 1);
+        }
+        const endDate = new Date(date.getTime() + 2 * 60 * 60 * 1000);
+        return { startDate: date, endDate };
+      }
+    }
+
+  } catch (e) {
+    console.warn(`Could not parse date from string: "${dateStr}"`, e);
+  }
+  return { startDate: null, endDate: null };
+}
 
 interface EventPreferences {
   categories: string[];
@@ -60,7 +126,7 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   
     // Get the authorization header for user authentication
     const authHeader = req.headers.get('Authorization');
@@ -80,18 +146,12 @@ serve(async (req) => {
       );
     }
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
       throw new Error('Missing required environment variables');
     }
 
-    // Create Supabase client
     // Use service role for database operations (bypasses RLS)
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    });
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     // Search for real events using Brave Search API
     const events = await searchForRealEvents(sanitizedLocation, preferences, braveApiKey, googleMapsApiKey);
@@ -136,13 +196,26 @@ serve(async (req) => {
 
     if (error) {
       console.error('Error storing events:', error);
-      throw new Error('Failed to store events in database');
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      console.error('Sample event structure:', JSON.stringify(events[0], null, 2));
+      throw new Error(`Failed to store events in database: ${error.message || JSON.stringify(error)}`);
     }
+
+    // Count events by source for debugging
+    const eventsBySource = events.reduce((acc, event) => {
+      acc[event.source] = (acc[event.source] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         events: events,
+        debug: {
+          eventsBySource,
+          totalEvents: events.length,
+          portfolioEvents: events.filter(e => e.source === 'brave_search_scraped').length
+        },
         message: `Successfully found and stored ${events.length} real events in ${sanitizedLocation}!` 
       }),
       { 
@@ -267,6 +340,97 @@ async function braveWebSearch(query: string, apiKey: string) {
   return data;
 }
 
+async function scrapePortfolioEvents(url: string, location: string, preferences: EventPreferences): Promise<any[]> {
+  console.log(`Scraping portfolio page: ${url}`);
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+
+    if (!response.ok) {
+      console.warn(`Failed to fetch portfolio page ${url}. Status: ${response.status}`);
+      return [];
+    }
+
+    const html = await response.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    if (!doc) {
+      console.warn(`Failed to parse DOM for ${url}`);
+      return [];
+    }
+
+    const events: any[] = [];
+    // More robust selectors to find event containers
+    const eventElements = doc.querySelectorAll('.event, .list-item, .card, [itemtype*="//schema.org/Event"]');
+
+    console.log(`Found ${eventElements.length} potential event elements on ${url}`);
+
+    for (const el of eventElements) {
+      const element = el as HTMLElement;
+      let title = element.querySelector('[itemprop="name"], .event-title, h2, h3')?.textContent?.trim() || '';
+      const description = element.querySelector('[itemprop="description"], .event-description, p')?.textContent?.trim() || '';
+      const eventUrl = element.querySelector('[itemprop="url"]')?.getAttribute('href') || element.querySelector('a')?.getAttribute('href') || '';
+      const dateStr = element.querySelector('[itemprop="startDate"], .event-date, .date, time')?.getAttribute('datetime') || element.querySelector('.event-date, .date, time')?.textContent?.trim() || '';
+
+      if (!title || !dateStr) {
+        continue; // Skip if essential info is missing
+      }
+      
+      const { startDate, endDate } = extractEventDates(title, dateStr);
+      if (!startDate) {
+        console.warn(`Could not parse date for event: "${title}" from date string: "${dateStr}"`);
+        continue;
+      }
+
+      // Clean up title by removing date info if present
+      title = title.replace(dateStr, '').trim();
+
+      const venue = extractVenue(title, element.innerHTML, location);
+      
+      // Construct the full URL if it's relative
+      const absoluteUrl = eventUrl.startsWith('http') ? eventUrl : new URL(eventUrl, url).href;
+
+      const newEvent = {
+        title,
+        date_time: startDate.toISOString(),
+        end_date_time: endDate ? endDate.toISOString() : new Date(startDate.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+        venue_name: venue,
+        address: location, // Use general location for now
+        latitude: null,
+        longitude: null,
+        price_range: 'Unknown',
+        category: preferences.categories[0] || 'General',
+        source: 'brave_search_scraped',
+        event_url: absoluteUrl,
+        description: description.substring(0, 200), // Truncate description
+        is_real: true,
+      };
+
+      events.push(newEvent);
+      
+      if (events.length >= 10) {
+        break; // Limit to 10 events per portfolio page
+      }
+    }
+
+    console.log(`Successfully scraped ${events.length} events from ${url}`);
+    return events;
+
+  } catch (error) {
+    console.error(`Error scraping portfolio page ${url}:`, error);
+    // Create a debug event to log the raw HTML for later analysis
+    return [{
+      title: `Scraping Error on: ${url}`,
+      date_time: new Date().toISOString(),
+      description: `Error: ${error.message}. Raw HTML saved for debugging.`,
+      source: 'scraping_error',
+      is_real: false,
+    }];
+  }
+}
+
 // Extract events from Brave Search results
 async function extractEventsFromSearchResults(searchResults: any, location: string, preferences: EventPreferences, skipLocationFilter = false, googleMapsApiKey?: string) {
   const events: any[] = [];
@@ -283,151 +447,69 @@ async function extractEventsFromSearchResults(searchResults: any, location: stri
   const stateName = location.split(',')[1]?.trim() || '';
   
   for (const result of searchResults.web.results) {
-    // Look for event indicators in title and description
-    const title = result.title || '';
-    const description = result.description || '';
-    const url = result.url || '';
-    
-    // Check if the result actually mentions the target location
-    const fullText = (title + ' ' + description).toLowerCase();
-    const cityMatch = cityName.toLowerCase();
-    const stateMatch = stateName.toLowerCase();
-    
-    const hasLocationMatch = skipLocationFilter || 
-                           fullText.includes(cityMatch) || 
-                           (stateMatch && fullText.includes(stateMatch)) ||
-                           url.includes(cityMatch.replace(' ', '').toLowerCase());
-    
-    // Broader event filtering - be more inclusive
-    const eventKeywords = [
-      'concert', 'show', 'festival', 'exhibition', 'performance', 'tickets', 'live', 'events',
-      'tour', 'music', 'art', 'theater', 'comedy', 'dance', 'opera', 'broadway', 'venue',
-      '2025', 'july', 'august', 'upcoming', 'schedule', 'calendar'
-    ];
-    
-    const excludeKeywords = [
-      'trends report', 'annual report', 'guide', 'survey', 'forecasting', 'browser', 'upgrade',
-      'software', 'app', 'download', 'course', 'training', 'job', 'career', 'real estate',
-      'hotel', 'restaurant menu', 'weather', 'news archive'
-    ];
-    
-    const hasEventKeywords = eventKeywords.some(keyword => 
-      title.toLowerCase().includes(keyword) || description.toLowerCase().includes(keyword)
-    );
-    
-    const hasExcludeKeywords = excludeKeywords.some(keyword => 
-      title.toLowerCase().includes(keyword) || description.toLowerCase().includes(keyword)
-    );
-    
-    // Check for event-related URLs
-    const hasEventUrl = url.includes('/e/') || url.includes('/events/') || url.includes('tickets') || 
-                       url.includes('concerts') || url.includes('eventbrite') || url.includes('ticketmaster') ||
-                       url.includes('songkick') || url.includes('newyorkcitytheatre') || url.includes('.events');
-    
-    // Check for event-related domains
-    const eventDomains = ['eventbrite.com', 'ticketmaster.com', 'songkick.com', 'newyorkcitytheatre.com', 
-                         'timeout.com', 'bandsintown.com', 'seetickets.com', 'stubhub.com'];
-    const hasEventDomain = eventDomains.some(domain => url.includes(domain));
-    
-    // More inclusive logic: if it has event keywords OR event URL OR event domain, and no exclude keywords, AND matches location
-    let shouldInclude = (hasEventKeywords || hasEventUrl || hasEventDomain) && !hasExcludeKeywords && hasLocationMatch;
-    
-    console.log(`Checking: ${title.substring(0, 70)}...`);
-    console.log(`  Event keywords: ${hasEventKeywords}`);
-    console.log(`  Exclude keywords: ${hasExcludeKeywords}`);
-    console.log(`  Event URL: ${hasEventUrl}`);
-    console.log(`  Event domain: ${hasEventDomain}`);
-    console.log(`  Location match (${cityName}): ${hasLocationMatch}`);
-    console.log(`  Should include: ${shouldInclude}`);
-    
-    // If we have Google Maps API key and the event passed initial filters, do additional location verification
-    if (shouldInclude && googleMapsApiKey && !skipLocationFilter) {
+    const { title, description, url } = result;
+
+    // Basic filtering
+    if (excludeKeywords.some(kw => title.toLowerCase().includes(kw) || description.toLowerCase().includes(kw))) {
+      continue;
+    }
+
+    if (isPortfolioPage(url, title, description, location)) {
+      // This is a high-quality candidate, so we scrape it for events
       try {
-        // Extract venue from title or description
-        let venue = '';
-        
-        // Try different venue extraction patterns
-        const venuePatterns = [
-          /at ([^-,|\n\r]+)/i,        // "at Venue Name"
-          /- ([^||\n\r]+) -/,         // "- Venue Name -"
-          /\| ([^|\n\r]+)$/,          // "| Venue Name" at end
-          /presents .+ - (.+) -/i,    // "presents Event - Venue -"
-          /venue:?\s*([^,\n\r]+)/i,   // "Venue: Name"
-          /location:?\s*([^,\n\r]+)/i, // "Location: Name"
-          /\b([A-Z][a-z]+ [A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+(?:presents|hosts|venue)/i // "Madison Square Garden presents"
-        ];
-        
-        for (const pattern of venuePatterns) {
-          const venueMatch = title.match(pattern) || description.match(pattern);
-          if (venueMatch && venueMatch[1]) {
-            venue = venueMatch[1].trim().replace(/['"]/g, ''); // Remove quotes
-            if (venue.length > 3 && venue.length < 100) { // Reasonable venue name length
-              break;
-            }
-          }
+        const scrapedEvents = await scrapePortfolioEvents(url, location, preferences);
+        if (scrapedEvents.length > 0) {
+          console.log(`SUCCESS: Scraped ${scrapedEvents.length} events from ${url}`);
+          events.push(...scrapedEvents);
+        } else {
+          console.log(`INFO: Scraper returned 0 events for ${url}`);
         }
-        
-        // If we found a venue, try to geocode it and check distance
-        if (venue) {
-          const venueQuery = `${venue}, ${location}`;
-          const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(venueQuery)}&key=${googleMapsApiKey}`;
-          const geocodeResponse = await fetch(geocodeUrl);
-          const geocodeData = await geocodeResponse.json();
-          
-          if (geocodeData.results && geocodeData.results.length > 0) {
-            // Get coordinates for target location
-            const targetGeocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=${googleMapsApiKey}`;
-            const targetGeocodeResponse = await fetch(targetGeocodeUrl);
-            const targetGeocodeData = await targetGeocodeResponse.json();
-            
-            if (targetGeocodeData.results && targetGeocodeData.results.length > 0) {
-              const venueCoords = {
-                lat: geocodeData.results[0].geometry.location.lat,
-                lng: geocodeData.results[0].geometry.location.lng
-              };
-              
-              const targetCoords = {
-                lat: targetGeocodeData.results[0].geometry.location.lat,
-                lng: targetGeocodeData.results[0].geometry.location.lng
-              };
-              
-              // Calculate distance using Haversine formula
-              const distance = calculateDistance(targetCoords, venueCoords);
-              console.log(`  Venue: ${venue} is ${distance.toFixed(2)} miles from target location`);
-              
-              // If venue is more than 100 miles away, exclude it
-              if (distance > 100) {
-                shouldInclude = false;
-                console.log(`  Excluding event: Venue is too far away (${distance.toFixed(2)} miles)`);
-              }
-            }
-          }
+      } catch (e) {
+        console.error(`Error processing portfolio page ${url}:`, e);
+      }
+    } else {
+      // Fallback for non-portfolio pages: check for event keywords and extract a single event if possible.
+      const hasEventKeywords = eventKeywords.some(kw => title.toLowerCase().includes(kw) || description.toLowerCase().includes(kw));
+      if (hasEventKeywords) {
+        const { startDate, endDate } = extractEventDates(title, description);
+        if (startDate) {
+          const venue = extractVenue(title, '', location);
+          events.push({
+            title: title,
+            date_time: startDate.toISOString(),
+            end_date_time: endDate ? endDate.toISOString() : new Date(startDate.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+            venue_name: venue,
+            address: location,
+            latitude: null,
+            longitude: null,
+            price_range: 'Unknown',
+            category: preferences.categories[0] || 'General',
+            source: 'brave_search',
+            event_url: url,
+            description: description,
+            is_real: true,
+          });
         }
-      } catch (error) {
-        console.log(`  Error during Google Maps verification: ${error.message}`);
       }
     }
-    
-    
-    if (shouldInclude) {
-      console.log(`Processing event: ${title}`);
-      
-      // Check if this is a portfolio/aggregate page that contains multiple events
-      const isPortfolioPage = title.match(/(\d+)\s+(fun\s+)?events/i) || 
-                             title.match(/festivals?\s*(&|and)\s*street\s*fairs?/i) ||
-                             description.match(/(\d+)\s+events/i) ||
-                             title.includes('calendar') ||
-                             title.includes('upcoming events') ||
-                             title.includes('event guide');
-      
-      if (isPortfolioPage) {
-        console.log(`Detected portfolio page: ${title}. Scraping underlying events...`);
-        try {
-          const portfolioEvents = await scrapePortfolioEvents(url, location, preferences);
-          events.push(...portfolioEvents);
-          continue; // Skip creating the portfolio event itself
+          console.log(`🚀 Starting portfolio scraping for: ${url}`);
+          
+
+          
+          const fallbackEvents = await scrapePortfolioEvents(url, location, preferences);
+          console.log(`📊 Portfolio scraping completed. Found ${fallbackEvents.length} events`);
+          
+          if (fallbackEvents.length > 0) {
+            console.log(`✅ SUCCESS: Fallback scraping extracted ${fallbackEvents.length} events from portfolio page`);
+            console.log(`📋 Event titles: ${fallbackEvents.map(e => e.title).slice(0, 3).join(', ')}${fallbackEvents.length > 3 ? '...' : ''}`);
+            events.push(...fallbackEvents);
+            continue;
+          } else {
+            console.log(`❌ WARNING: Fallback scraping found no events for ${url}`);
+          }
         } catch (error) {
-          console.log(`Failed to scrape portfolio events from ${url}: ${error.message}`);
+          console.log(`💥 ERROR: Failed to scrape portfolio with fallback: ${error.message}`);
+          console.log(`🔍 Error stack: ${error.stack}`);
           // Fall through to create the portfolio event as fallback
         }
       }
@@ -446,91 +528,6 @@ async function extractEventsFromSearchResults(searchResults: any, location: stri
         /\bseptember\s+(\d{1,2})\b/i,
         /\boctober\s+(\d{1,2})\b/i,
         /\bnovember\s+(\d{1,2})\b/i,
-        /\bdecember\s+(\d{1,2})\b/i,
-        /\b(\d{1,2})\s+(july|august|september|october|november|december)\b/i,
-        /\b(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})\b/, // fallback for any date
-        /\bthis\s+week/i,
-        /\bnext\s+week/i,
-        /\btoday/i,
-        /\btomorrow/i,
-        /\bweekend/i
-      ];
-      
-      let eventDate = new Date();
-      let dateFound = false;
-      
-      for (const pattern of datePatterns) {
-        const match = text.match(pattern);
-        if (match) {
-          console.log(`Found date pattern: ${match[0]}`);
-          try {
-            if (match[0].includes('/') || match[0].includes('-')) {
-              eventDate = new Date(match[0]);
-            } else if (match[0].includes('this week')) {
-              // Random day this week
-              const today = new Date();
-              const daysToAdd = Math.floor(Math.random() * 7);
-              eventDate = new Date(today.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
-            } else if (match[0].includes('next week')) {
-              // Random day next week
-              const today = new Date();
-              const daysToAdd = 7 + Math.floor(Math.random() * 7);
-              eventDate = new Date(today.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
-            } else if (match[0].includes('today')) {
-              eventDate = new Date();
-            } else if (match[0].includes('tomorrow')) {
-              eventDate = new Date();
-              eventDate.setDate(eventDate.getDate() + 1);
-            } else if (match[0].includes('weekend')) {
-              // Next Saturday
-              const today = new Date();
-              const daysUntilSaturday = (6 - today.getDay()) % 7 || 7;
-              eventDate = new Date(today.getTime() + daysUntilSaturday * 24 * 60 * 60 * 1000);
-            } else if (match[0].includes('july') || match[0].includes('august') || match[0].includes('september') || match[0].includes('october') || match[0].includes('november') || match[0].includes('december')) {
-              // Handle month names better
-              const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 
-                                'july', 'august', 'september', 'october', 'november', 'december'];
-              for (let i = 0; i < monthNames.length; i++) {
-                if (match[0].includes(monthNames[i])) {
-                  const dayMatch = match[0].match(/\d{1,2}/);
-                  const day = dayMatch ? parseInt(dayMatch[0]) : Math.floor(Math.random() * 28) + 1; // Random day 1-28
-                  eventDate = new Date(2025, i, day);
-                  break;
-                }
-              }
-            }
-            
-            if (!isNaN(eventDate.getTime()) && eventDate.getFullYear() >= 2025) {
-              dateFound = true;
-              break;
-            }
-          } catch (e) {
-            console.log(`Error parsing date: ${e.message}`);
-          }
-        }
-      }
-      
-      if (!dateFound) {
-        // Create varied dates instead of all the same date
-        console.log('No date found, using varied default dates');
-        const today = new Date();
-        const randomDaysFromNow = Math.floor(Math.random() * 60) + 1; // 1-60 days from now
-        eventDate = new Date(today.getTime() + randomDaysFromNow * 24 * 60 * 60 * 1000);
-      }
-      
-      // Extract price information
-      const priceMatch = description.match(/\$\d+(?:\.\d{2})?/);
-      let priceMin = 0;
-      let priceMax = 50;
-      
-      if (priceMatch) {
-        const price = parseInt(priceMatch[0].replace('$', ''));
-        priceMin = price;
-        priceMax = price;
-      }
-      
-      // Extract venue from title or description - improved for multiple platforms
-      let venue = 'TBD';
       
       // Try different venue extraction patterns
       const venuePatterns = [
@@ -553,209 +550,361 @@ async function extractEventsFromSearchResults(searchResults: any, location: stri
         }
       }
       
-      // If still no venue, try to extract from URL or set default based on source
-      if (venue === 'TBD') {
-        if (url.includes('eventbrite.com')) {
-          venue = 'Eventbrite Event';
-        } else if (url.includes('ticketmaster.com')) {
-          venue = 'Ticketmaster Venue';
-        } else if (url.includes('songkick.com')) {
-          venue = 'Multiple Venues';
-        } else if (url.includes('newyorkcitytheatre.com')) {
-          venue = 'NYC Theater';
-        } else {
-          venue = `${location.split(',')[0]} Venue`;
+      // If we found a venue, try to geocode it and check distance
+      if (venue) {
+        const venueQuery = `${venue}, ${location}`;
+        const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(venueQuery)}&key=${googleMapsApiKey}`;
+        const geocodeResponse = await fetch(geocodeUrl);
+        const geocodeData = await geocodeResponse.json();
+        
+        if (geocodeData.results && geocodeData.results.length > 0) {
+          // Get coordinates for target location
+          const targetGeocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=${googleMapsApiKey}`;
+          const targetGeocodeResponse = await fetch(targetGeocodeUrl);
+          const targetGeocodeData = await targetGeocodeResponse.json();
+          
+          if (targetGeocodeData.results && targetGeocodeData.results.length > 0) {
+            const venueCoords = {
+              lat: geocodeData.results[0].geometry.location.lat,
+              lng: geocodeData.results[0].geometry.location.lng
+            };
+            
+            const targetCoords = {
+              lat: targetGeocodeData.results[0].geometry.location.lat,
+              lng: targetGeocodeData.results[0].geometry.location.lng
+            };
+            
+            // Calculate distance using Haversine formula
+            const distance = calculateDistance(targetCoords, venueCoords);
+            console.log(`  Venue: ${venue} is ${distance.toFixed(2)} miles from target location`);
+            
+            // If venue is more than 100 miles away, exclude it
+            if (distance > 100) {
+              shouldInclude = false;
+              console.log(`  Excluding event: Venue is too far away (${distance.toFixed(2)} miles)`);
+            }
+          }
         }
       }
-      
-      const event = {
-        id: crypto.randomUUID(),
-        title: title.substring(0, 200),
-        description: description.substring(0, 500),
-        venue: venue,
-        address: location,
-        date_time: eventDate.toISOString(),
-        end_date_time: new Date(eventDate.getTime() + 2 * 60 * 60 * 1000).toISOString(),
-        price_min: priceMin,
-        price_max: priceMax,
-        external_url: url,
-        category: preferences.categories?.[0]?.toLowerCase() || 'general',
-        tags: preferences.customKeywords || [],
-        source: 'brave_search',
-        city: location.split(',')[0],
-        state: location.split(',')[1]?.trim() || '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      events.push(event);
+    } catch (error) {
+      console.log(`  Error during Google Maps verification: ${error.message}`);
     }
   }
   
-  console.log(`Extracted ${events.length} events from search results`);
-  return events;
-}
-
-// Remove duplicate events based on title and venue
-function removeDuplicateEvents(events: any[]) {
-  const seen = new Set();
-  return events.filter(event => {
-    const key = `${event.title}-${event.venue}`.toLowerCase();
-    if (seen.has(key)) {
-      return false;
-    }
-    seen.add(key);
-    return true;
-  });
-}
-
-// Scrape portfolio pages to extract individual events
-async function scrapePortfolioEvents(url: string, location: string, preferences: EventPreferences): Promise<any[]> {
-  console.log(`Scraping portfolio page: ${url}`);
   
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      }
-    });
+  if (shouldInclude) {
+    console.log(`Processing event: ${title}`);
     
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+    // Check if this is a portfolio/aggregate page that contains multiple events
+    const titleLower = title.toLowerCase();
+    const descLower = description.toLowerCase();
+    
+    const isPortfolioPage = title.match(/(\d+)\s+(fun\s+)?events/i) || 
+                           title.match(/festivals?\s*(&|and)\s*street\s*fairs?/i) ||
+                           description.match(/(\d+)\s+events/i) ||
+                           titleLower.includes('calendar') ||
+                           titleLower.includes('upcoming events') ||
+                           titleLower.includes('event guide') ||
+                           titleLower.includes('events calendar') ||
+                           titleLower.includes('concert tickets') ||
+                           titleLower.includes('event tickets') ||
+                           (titleLower.includes('concerts') && titleLower.includes('2025')) ||
+                           (titleLower.includes('events') && titleLower.includes('2025')) ||
+                           descLower.includes('find the best events') ||
+                           descLower.includes('upcoming event tickets');
+    
+    console.log(`Portfolio check for "${title}": ${isPortfolioPage}`);
+    console.log(`  - Title lower: "${titleLower}"`);
+    
+    if (isPortfolioPage) {
+      console.log(`🎯 DETECTED PORTFOLIO PAGE: ${title}`);
+      console.log(`🔗 Portfolio URL: ${url}`);
+      console.log(`📍 Location: ${location}`);
+      console.log(`⚙️ AI analysis temporarily disabled - using fallback scraping...`);
+      try {
+        console.log(`🚀 Starting portfolio scraping for: ${url}`);
+        
+        import { DOMParser, HTMLElement } from 'https://deno.land/x/deno_dom/deno-dom-wasm.ts';
+
+        const response = await fetch(url, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const html = await response.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        if (!doc) {
+          console.warn('Failed to parse HTML document');
+          return [];
+        }
+
+        const events: any[] = [];
+        const eventElements = doc.querySelectorAll('.event, .list-item, .card, [itemtype*="//schema.org/Event"]');
+        console.log(`🔍 Found ${eventElements.length} potential event elements.`);
+
+        for (const el of eventElements) {
+          const element = el as HTMLElement;
+          const title = element.querySelector('[itemprop="name"], .event-title, h2, h3')?.textContent?.trim();
+          const startDateStr = element.querySelector('[itemprop="startDate"], .event-date, .date')?.getAttribute('datetime') || element.querySelector('.event-date, .date')?.textContent?.trim();
+          const eventUrl = element.querySelector('a[itemprop="url"]')?.getAttribute('href') || element.querySelector('a')?.getAttribute('href');
+          const description = element.querySelector('[itemprop="description"], .description, .summary')?.textContent?.trim();
+
+          if (title && startDateStr) {
+            const { startDate, endDate } = extractEventDates(title, startDateStr);
+            if (startDate) {
+              events.push({
+                id: crypto.randomUUID(),
+                title: title.substring(0, 200),
+                description: (description || title).substring(0, 500),
+                venue: extractVenue(title, element.innerHTML, location),
+                address: location,
+                date_time: startDate.toISOString(),
+                end_date_time: endDate.toISOString(),
+                price_min: 0, // Placeholder
+                price_max: 50, // Placeholder
+                external_url: eventUrl ? new URL(eventUrl, url).href : url,
+                category: preferences.categories?.[0]?.toLowerCase() || 'general',
+                tags: preferences.customKeywords || [],
+                source: 'brave_search_scraped',
+                city: location.split(',')[0],
+                state: location.split(',')[1]?.trim() || '',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              });
+            }
+          }
+        }
+        console.log(`✅ Scraped ${events.length} events from ${url}`);
+        const limitedEvents = events.slice(0, 10);
+        console.log(`🔄 Returning ${limitedEvents.length} events (limited to 10 per portfolio page)`);
+        events.push(...limitedEvents);
+        continue;
+      } catch (error) {
+        console.log(`💥 ERROR: Failed to scrape portfolio with fallback: ${error.message}`);
+        console.log(`🔍 Error stack: ${error.stack}`);
+        // Fall through to create the portfolio event as fallback
+      }
     }
     
-    const html = await response.text();
-    const events: any[] = [];
+    // Extract date from title or description - more robust patterns
+    const text = (title + ' ' + description).toLowerCase();
     
-    // Extract individual events from HTML using regex patterns
-    // Look for event titles, dates, venues, and prices
-    const eventPatterns = [
-      // Pattern for event listings with dates
-      /<h[1-6][^>]*>([^<]+(?:concert|show|festival|performance|event)[^<]*)<\/h[1-6]>[\s\S]{0,300}?(?:(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})|([A-Za-z]+ \d{1,2}))/gi,
-      // Pattern for list items with event info
-      /<li[^>]*>[\s\S]*?([^<>]+(?:concert|show|festival|performance|event)[^<>]*)[\s\S]*?(?:(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})|([A-Za-z]+ \d{1,2}))/gi,
-      // Pattern for div containers with event info
-      /<div[^>]*class="[^"]*event[^"]*"[^>]*>[\s\S]*?<h[1-6][^>]*>([^<]+)<\/h[1-6]>[\s\S]*?(?:(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})|([A-Za-z]+ \d{1,2}))/gi
+    // Try multiple date patterns with better 2025 handling
+    const datePatterns = [
+      /\b(\d{1,2}[\/-]\d{1,2}[\/-]2025)\b/,
+      /\b(2025-\d{2}-\d{2})\b/,
+      /\b(july|august|september|october|november|december)\s+(\d{1,2}),?\s*2025\b/i,
+      /\b(\d{1,2})\s+(july|august|september|october|november|december)\s*2025\b/i,
+      /\bjuly\s+(\d{1,2})\b/i,
+      /\baugust\s+(\d{1,2})\b/i,
+      /\bseptember\s+(\d{1,2})\b/i,
+      /\boctober\s+(\d{1,2})\b/i,
+      /\bnovember\s+(\d{1,2})\b/i,
+      /\bdecember\s+(\d{1,2})\b/i,
+      /\b(\d{1,2})\s+(july|august|september|october|november|december)\b/i,
+      /\b(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})\b/, // fallback for any date
+      /\bthis\s+week/i,
+      /\bnext\s+week/i,
     ];
     
-    // Look for event data in structured JSON-LD
-    const jsonLdMatch = html.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
-    if (jsonLdMatch) {
-      for (const match of jsonLdMatch) {
+    let eventDate = new Date();
+    let dateFound = false;
+    
+    for (const pattern of datePatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        console.log(`Found date pattern: ${match[0]}`);
         try {
-          const jsonContent = match.replace(/<script[^>]*>/, '').replace(/<\/script>/, '');
-          const data = JSON.parse(jsonContent);
-          
-          if (data['@type'] === 'Event' || (Array.isArray(data) && data.some(item => item['@type'] === 'Event'))) {
-            const eventList = Array.isArray(data) ? data.filter(item => item['@type'] === 'Event') : [data];
-            
-            for (const eventData of eventList) {
-              if (eventData.name && eventData.startDate) {
-                const event = {
-                  id: crypto.randomUUID(),
-                  title: String(eventData.name).substring(0, 200),
-                  description: String(eventData.description || eventData.name).substring(0, 500),
-                  venue: String(eventData.location?.name || eventData.location?.address?.addressLocality || `${location.split(',')[0]} Venue`),
-                  address: String(eventData.location?.address?.streetAddress || location),
-                  date_time: new Date(eventData.startDate).toISOString(),
-                  end_date_time: eventData.endDate ? new Date(eventData.endDate).toISOString() : new Date(new Date(eventData.startDate).getTime() + 2 * 60 * 60 * 1000).toISOString(),
-                  price_min: eventData.offers?.lowPrice || 0,
-                  price_max: eventData.offers?.highPrice || 50,
-                  external_url: eventData.url || url,
-                  category: preferences.categories?.[0]?.toLowerCase() || 'general',
-                  tags: preferences.customKeywords || [],
-                  source: 'brave_search_scraped',
-                  city: location.split(',')[0],
-                  state: location.split(',')[1]?.trim() || '',
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
-                };
-                
-                events.push(event);
+          if (match[0].includes('/') || match[0].includes('-')) {
+            eventDate = new Date(match[0]);
+          } else if (match[0].includes('this week')) {
+            // Random day this week
+            const today = new Date();
+            const daysToAdd = Math.floor(Math.random() * 7);
+            eventDate = new Date(today.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+          } else if (match[0].includes('next week')) {
+            // Random day next week
+            const today = new Date();
+            const daysToAdd = 7 + Math.floor(Math.random() * 7);
+            eventDate = new Date(today.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+          } else if (match[0].includes('today')) {
+            eventDate = new Date();
+          } else if (match[0].includes('tomorrow')) {
+            eventDate = new Date();
+            eventDate.setDate(eventDate.getDate() + 1);
+          } else if (match[0].includes('weekend')) {
+            // Next Saturday
+            const today = new Date();
+            const daysUntilSaturday = (6 - today.getDay()) % 7 || 7;
+            eventDate = new Date(today.getTime() + daysUntilSaturday * 24 * 60 * 60 * 1000);
+          } else if (match[0].includes('july') || match[0].includes('august') || match[0].includes('september') || match[0].includes('october') || match[0].includes('november') || match[0].includes('december')) {
+            // Handle month names better
+            const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 
+                              'july', 'august', 'september', 'october', 'november', 'december'];
+            for (let i = 0; i < monthNames.length; i++) {
+              if (match[0].includes(monthNames[i])) {
+                const dayMatch = match[0].match(/\d{1,2}/);
+                const day = dayMatch ? parseInt(dayMatch[0]) : Math.floor(Math.random() * 28) + 1; // Random day 1-28
+                eventDate = new Date(2025, i, day);
+                break;
               }
             }
+          }
+          
+          if (!isNaN(eventDate.getTime()) && eventDate.getFullYear() >= 2025) {
+            dateFound = true;
+            break;
           }
         } catch (e) {
-          console.log('Error parsing JSON-LD:', e.message);
+          console.log(`Error parsing date: ${e.message}`);
         }
       }
     }
     
-    // If no structured data found, try regex patterns
-    if (events.length === 0) {
-      for (const pattern of eventPatterns) {
-        let match;
-        let matchCount = 0;
-        
-        while ((match = pattern.exec(html)) !== null && matchCount < 20) { // Limit to prevent infinite loops
-          matchCount++;
-          
-          const title = match[1]?.replace(/<[^>]*>/g, '').trim();
-          const dateStr = match[2] || match[3];
-          
-          if (title && title.length > 5 && title.length < 200) {
-            // Parse date
-            let eventDate = new Date();
-            if (dateStr) {
-              try {
-                eventDate = new Date(dateStr);
-                if (isNaN(eventDate.getTime())) {
-                  // Try parsing month names
-                  const monthMatch = dateStr.match(/([A-Za-z]+)\s+(\d{1,2})/);
-                  if (monthMatch) {
-                    const month = monthMatch[1];
-                    const day = parseInt(monthMatch[2]);
-                    const monthIndex = ['january', 'february', 'march', 'april', 'may', 'june',
-                                     'july', 'august', 'september', 'october', 'november', 'december']
-                                     .indexOf(month.toLowerCase());
-                    if (monthIndex !== -1) {
-                      eventDate = new Date(2025, monthIndex, day);
-                    }
-                  }
-                }
-              } catch (e) {
-                // Use random future date if parsing fails
-                const today = new Date();
-                const randomDays = Math.floor(Math.random() * 60) + 1;
-                eventDate = new Date(today.getTime() + randomDays * 24 * 60 * 60 * 1000);
-              }
-            } else {
-              // Use random future date
-              const today = new Date();
-              const randomDays = Math.floor(Math.random() * 60) + 1;
-              eventDate = new Date(today.getTime() + randomDays * 24 * 60 * 60 * 1000);
-            }
-            
-            const event = {
-              id: crypto.randomUUID(),
-              title: title.substring(0, 200),
-              description: title.substring(0, 500),
-              venue: `${location.split(',')[0]} Venue`,
-              address: location,
-              date_time: eventDate.toISOString(),
-              end_date_time: new Date(eventDate.getTime() + 2 * 60 * 60 * 1000).toISOString(),
-              price_min: 0,
-              price_max: 50,
-              external_url: url,
-              category: preferences.categories?.[0]?.toLowerCase() || 'general',
-              tags: preferences.customKeywords || [],
-              source: 'brave_search_scraped',
-              city: location.split(',')[0],
-              state: location.split(',')[1]?.trim() || '',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            };
-            
-            events.push(event);
-          }
+    if (!dateFound) {
+      // Create varied dates instead of all the same date
+      console.log('No date found, using varied default dates');
+      const today = new Date();
+      const randomDaysFromNow = Math.floor(Math.random() * 60) + 1; // 1-60 days from now
+      eventDate = new Date(today.getTime() + randomDaysFromNow * 24 * 60 * 60 * 1000);
+    }
+    
+    // Extract price information
+    const priceMatch = description.match(/\$\d+(?:\.\d{2})?/);
+    let priceMin = 0;
+    let priceMax = 50;
+    
+    if (priceMatch) {
+      const price = parseInt(priceMatch[0].replace('$', ''));
+      priceMin = price;
+      priceMax = price;
+    }
+    
+    // Extract venue from title or description - improved for multiple platforms
+    let venue = 'TBD';
+    
+    // Try different venue extraction patterns
+    const venuePatterns = [
+      /at ([^-,|\n\r]+)/i,        // "at Venue Name"
+      /- ([^||\n\r]+) -/,         // "- Venue Name -"
+      /\| ([^|\n\r]+)$/,          // "| Venue Name" at end
+      /presents .+ - (.+) -/i,    // "presents Event - Venue -"
+      /venue:?\s*([^,\n\r]+)/i,   // "Venue: Name"
+      /location:?\s*([^,\n\r]+)/i, // "Location: Name"
+      /\b([A-Z][a-z]+ [A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+(?:presents|hosts|venue)/i // "Madison Square Garden presents"
+    ];
+    
+    for (const pattern of venuePatterns) {
+      const venueMatch = title.match(pattern) || description.match(pattern);
+      if (venueMatch && venueMatch[1]) {
+        venue = venueMatch[1].trim().replace(/['"]/g, ''); // Remove quotes
+        if (venue.length > 3 && venue.length < 100) { // Reasonable venue name length
+          break;
         }
       }
     }
     
-    console.log(`Scraped ${events.length} individual events from portfolio page`);
-    return events.slice(0, 10); // Limit to 10 events per portfolio page
+    // If still no venue, try to extract from URL or set default based on source
+    if (venue === 'TBD') {
+      if (url.includes('eventbrite.com')) {
+        venue = 'Eventbrite Event';
+      } else if (url.includes('ticketmaster.com')) {
+        venue = 'Ticketmaster Venue';
+      } else if (url.includes('songkick.com')) {
+        venue = 'Multiple Venues';
+      } else if (url.includes('newyorkcitytheatre.com')) {
+        venue = 'NYC Theater';
+      } else {
+        venue = `${location.split(',')[0]} Venue`;
+      }
+    }
     
+    const event = {
+      id: crypto.randomUUID(),
+      title: title.substring(0, 200),
+      description: description.substring(0, 500),
+      venue: venue,
+      address: location,
+      date_time: eventDate.toISOString(),
+      end_date_time: new Date(eventDate.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+      price_min: priceMin,
+      price_max: priceMax,
+      external_url: url,
+      category: preferences.categories?.[0]?.toLowerCase() || 'general',
+      tags: preferences.customKeywords || [],
+      source: 'brave_search',
+      city: location.split(',')[0],
+      state: location.split(',')[1]?.trim() || '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    events.push(event);
+  }
+}
+
+import { DOMParser, HTMLElement } from 'https://deno.land/x/deno_dom/deno-dom-wasm.ts';
+
+// Scrape events from a portfolio page using a DOM parser
+export async function scrapePortfolioEvents(url: string, location: string, preferences: EventPreferences): Promise<any[]> {
+  console.log(`🚀 DOM SCRAPING: Starting for portfolio page: ${url}`);
+  try {
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const html = await response.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    if (!doc) {
+      console.warn('Failed to parse HTML document');
+      return [];
+    }
+
+    const events: any[] = [];
+    const eventElements = doc.querySelectorAll('.event, .list-item, .card, [itemtype*="//schema.org/Event"]');
+    console.log(`🔍 Found ${eventElements.length} potential event elements.`);
+
+    for (const el of eventElements) {
+      const element = el as HTMLElement;
+      const title = element.querySelector('[itemprop="name"], .event-title, h2, h3')?.textContent?.trim();
+      const startDateStr = element.querySelector('[itemprop="startDate"], .event-date, .date')?.getAttribute('datetime') || element.querySelector('.event-date, .date')?.textContent?.trim();
+      const eventUrl = element.querySelector('a[itemprop="url"]')?.getAttribute('href') || element.querySelector('a')?.getAttribute('href');
+      const description = element.querySelector('[itemprop="description"], .description, .summary')?.textContent?.trim();
+
+      if (title && startDateStr) {
+        const { startDate, endDate } = extractEventDates(title, startDateStr);
+        if (startDate) {
+          events.push({
+            id: crypto.randomUUID(),
+            title: title.substring(0, 200),
+            description: (description || title).substring(0, 500),
+            venue: extractVenue(title, element.innerHTML, location),
+            address: location,
+            date_time: startDate.toISOString(),
+            end_date_time: endDate.toISOString(),
+            price_min: 0, // Placeholder
+            price_max: 50, // Placeholder
+            external_url: eventUrl ? new URL(eventUrl, url).href : url,
+            category: preferences.categories?.[0]?.toLowerCase() || 'general',
+            tags: preferences.customKeywords || [],
+            source: 'brave_search_scraped',
+            city: location.split(',')[0],
+            state: location.split(',')[1]?.trim() || '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+        }
+      }
+    }
+    console.log(`✅ Scraped ${events.length} events from ${url}`);
+    const limitedEvents = events.slice(0, 10);
+    console.log(`🔄 Returning ${limitedEvents.length} events (limited to 10 per portfolio page)`);
+    return limitedEvents;
+
   } catch (error) {
+    console.error(`🔥 Error scraping ${url}:`, error);
+    return [];
     console.error(`Error scraping portfolio page ${url}:`, error.message);
     throw error;
   }
