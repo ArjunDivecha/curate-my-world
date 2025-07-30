@@ -206,7 +206,7 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
       ) : (
         <MapPin className="w-4 h-4 mr-2" />
       )}
-      {isLoading ? 'Fetching 30+ Events...' : '🎭 Fetch Events (New API)'}
+      {isLoading ? 'Fetching Events...' : 'Fetch Events'}
     </Button>
   );
 };

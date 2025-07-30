@@ -2,31 +2,29 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { EventCard } from "./EventCard";
 import { WeeklyCalendar } from "./WeeklyCalendar";
 import { Header } from "./Header";
-import { PreferencesModal } from "./PreferencesModal";
 import { FetchEventsButton } from "./FetchEventsButton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Calendar, Grid3X3, Brain, Sparkles, TrendingUp, CalendarDays, Mail, Github } from "lucide-react";
+import { Calendar, Grid3X3, CalendarDays, Mail, Github } from "lucide-react";
 
 interface Preferences {
   interests: {
-    categories: { [key: string]: number };
+    categories: { [key: string]: boolean };
     keywords: string[];
   };
   location: {
     address: string;
-    radius: number;
   };
   filters: {
     timePreferences: string[];
-    priceRange: [number, number];
   };
   aiInstructions: string;
 }
@@ -34,28 +32,20 @@ interface Preferences {
 const defaultPreferences: Preferences = {
   interests: {
     categories: {
-      'Music': 10,
-      'Art': 10,
-      'Technology': 10,
-      'Food & Drink': 10,
-      'Business': 10,
-      'Health & Wellness': 10,
-      'Education': 10,
-      'Film': 10,
-      'Dance': 10,
-      'Fashion': 10,
-      'Outdoor Activities': 10,
-      'Theatre': 10
+      'Music': true,
+      'Theater': true,
+      'Art': true,
+      'Food & Drink': true,
+      'Tech': true,
+      'Education': true
     },
     keywords: []
   },
   location: {
-    address: 'San Francisco, CA',
-    radius: 50
+    address: 'San Francisco, CA'
   },
   filters: {
-    timePreferences: ['Morning (6-12pm)', 'Afternoon (12-5pm)', 'Evening (5-9pm)', 'Night (9pm+)', 'Weekend Events', 'Weekday Events'],
-    priceRange: [0, 200]
+    timePreferences: ['Morning (6-12pm)', 'Afternoon (12-5pm)', 'Evening (5-9pm)', 'Night (9pm+)', 'Weekend Events', 'Weekday Events']
   },
   aiInstructions: 'Show me all events in the area regardless of category, type, or style. I want to discover everything that\'s happening.'
 };
@@ -63,8 +53,6 @@ const defaultPreferences: Preferences = {
 export const Dashboard = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [preferences, setPreferences] = useState<Preferences>(defaultPreferences);
-  const [preferencesOpen, setPreferencesOpen] = useState(false);
-  const [aiStatus, setAiStatus] = useState<'idle' | 'processing' | 'complete'>('complete');
   const [events, setEvents] = useState<any[]>([]);
   const [savedEvents, setSavedEvents] = useState<any[]>([]);
   const [email, setEmail] = useState('');
@@ -104,25 +92,6 @@ export const Dashboard = () => {
     }
   };
 
-  const getWeeklyStats = () => {
-    const thisWeek = events.filter(event => {
-      const eventDate = new Date(event.startDate);
-      const today = new Date();
-      const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-      return eventDate >= today && eventDate <= weekFromNow;
-    });
-
-    const avgScore = thisWeek.length > 0 ? 
-      thisWeek.reduce((sum, event) => sum + event.personalRelevanceScore, 0) / thisWeek.length : 0;
-    
-    return {
-      total: thisWeek.length,
-      highRelevance: thisWeek.filter(e => e.personalRelevanceScore >= 8).length,
-      avgScore: avgScore.toFixed(1)
-    };
-  };
-
-  const stats = getWeeklyStats();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -259,69 +228,122 @@ export const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-subtle">
       <Header 
-        onOpenPreferences={() => setPreferencesOpen(true)}
+        onOpenPreferences={() => {}}
         onNavigate={setCurrentPage}
         currentPage={currentPage}
         totalEvents={events.length}
-        aiCurationStatus={aiStatus}
+        aiCurationStatus="complete"
       />
 
       <div className="max-w-7xl mx-auto p-6">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card className="bg-gradient-card shadow-card border-0">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">This Week</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.total}</p>
-                  <p className="text-xs text-muted-foreground">Curated Events</p>
-                </div>
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Preferences Section */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Event Preferences</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* AI Instructions */}
+            <div className="space-y-2">
+              <Label htmlFor="ai-instructions">AI Instructions</Label>
+              <Textarea
+                id="ai-instructions"
+                placeholder="Tell the AI what kinds of events you're looking for..."
+                value={preferences.aiInstructions}
+                onChange={(e) => setPreferences(prev => ({
+                  ...prev,
+                  aiInstructions: e.target.value
+                }))}
+                className="min-h-[80px]"
+              />
+            </div>
 
-          <Card className="bg-gradient-card shadow-card border-0">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">High Relevance</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.highRelevance}</p>
-                  <p className="text-xs text-muted-foreground">8+ Score Events</p>
-                </div>
-                <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-6 h-6 text-accent" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            {/* Location */}
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                placeholder="Enter city or address"
+                value={preferences.location.address}
+                onChange={(e) => setPreferences(prev => ({
+                  ...prev,
+                  location: { address: e.target.value }
+                }))}
+              />
+            </div>
 
-          <Card className="bg-gradient-card shadow-card border-0">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Avg. Relevance</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.avgScore}/10</p>
-                  <p className="text-xs text-muted-foreground">AI Curation Score</p>
-                </div>
-                <div className="w-12 h-12 bg-primary-glow/10 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-primary-glow" />
-                </div>
+            {/* Categories */}
+            <div className="space-y-3">
+              <Label>Categories</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {Object.entries(preferences.interests.categories).map(([category, checked]) => (
+                  <div key={category} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`category-${category}`}
+                      checked={checked}
+                      onCheckedChange={(isChecked) => setPreferences(prev => ({
+                        ...prev,
+                        interests: {
+                          ...prev.interests,
+                          categories: {
+                            ...prev.interests.categories,
+                            [category]: isChecked as boolean
+                          }
+                        }
+                      }))}
+                    />
+                    <Label htmlFor={`category-${category}`} className="text-sm font-normal">
+                      {category}
+                    </Label>
+                  </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+
+            {/* Time Preferences */}
+            <div className="space-y-3">
+              <Label>Time Preferences</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {['Morning (6-12pm)', 'Afternoon (12-5pm)', 'Evening (5-9pm)', 'Night (9pm+)', 'Weekend Events', 'Weekday Events'].map((timeSlot) => (
+                  <div key={timeSlot} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`time-${timeSlot}`}
+                      checked={preferences.filters.timePreferences.includes(timeSlot)}
+                      onCheckedChange={(isChecked) => {
+                        if (isChecked) {
+                          setPreferences(prev => ({
+                            ...prev,
+                            filters: {
+                              ...prev.filters,
+                              timePreferences: [...prev.filters.timePreferences, timeSlot]
+                            }
+                          }));
+                        } else {
+                          setPreferences(prev => ({
+                            ...prev,
+                            filters: {
+                              ...prev.filters,
+                              timePreferences: prev.filters.timePreferences.filter(t => t !== timeSlot)
+                            }
+                          }));
+                        }
+                      }}
+                    />
+                    <Label htmlFor={`time-${timeSlot}`} className="text-sm font-normal">
+                      {timeSlot}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Action Buttons */}
         <div className="mb-8 flex justify-center gap-4">
           <FetchEventsButton
             location={preferences.location.address}
             preferences={{
-              categories: Object.keys(preferences.interests.categories),
-              priceRange: { min: preferences.filters.priceRange[0], max: preferences.filters.priceRange[1] },
+              categories: Object.keys(preferences.interests.categories).filter(cat => preferences.interests.categories[cat]),
               timePreferences: preferences.filters.timePreferences,
               customKeywords: preferences.interests.keywords
             }}
@@ -346,25 +368,6 @@ export const Dashboard = () => {
             Clear Events
           </Button>
         </div>
-
-        {/* AI Insight Banner */}
-        <Card className="mb-8 bg-gradient-primary text-white border-0 shadow-glow">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                <Brain className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-2">AI Curation Insight</h3>
-                <p className="text-white/90 text-sm leading-relaxed">
-                  Events are fetched live from the Perplexity AI API using proven patterns. 
-                  The system prioritizes current events with networking opportunities and creative communities. 
-                  High relevance scores indicate strong alignment with your preferences.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Main Content - Show events if available */}
         {events.length > 0 && (
@@ -422,13 +425,6 @@ export const Dashboard = () => {
           </Card>
         )}
       </div>
-
-      <PreferencesModal
-        isOpen={preferencesOpen}
-        onClose={() => setPreferencesOpen(false)}
-        preferences={preferences}
-        onSave={setPreferences}
-      />
     </div>
   );
 };
