@@ -7,6 +7,7 @@ interface FetchEventsButtonProps {
   location?: string;
   preferences?: any;
   onEventsFetched?: (events: any[]) => void;
+  className?: string;
 }
 
 // Configuration for the new Node.js API
@@ -15,7 +16,8 @@ const API_BASE_URL = 'http://localhost:3001/api';
 export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
   location = "San Francisco, CA",
   preferences = {},
-  onEventsFetched
+  onEventsFetched,
+  className
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -199,7 +201,7 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
     <Button
       onClick={fetchRealEvents}
       disabled={isLoading}
-      className="bg-primary hover:bg-primary/90 text-primary-foreground"
+      className={className || "bg-primary hover:bg-primary/90 text-primary-foreground"}
     >
       {isLoading ? (
         <RefreshCw className="w-4 h-4 mr-2 animate-spin" />

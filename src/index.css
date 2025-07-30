@@ -39,12 +39,14 @@ All colors MUST be HSL.
     --ring: 245 58% 51%;
 
     /* Custom design tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(245 58% 51%), hsl(262 52% 47%));
-    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(220 14% 98%));
+    --gradient-primary: linear-gradient(135deg, #667eea, #764ba2);
+    --gradient-subtle: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(220 14% 99%));
+    --gradient-header: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
     
     --shadow-elegant: 0 10px 30px -10px hsl(245 58% 51% / 0.1);
     --shadow-card: 0 4px 20px -4px hsl(225 15% 15% / 0.08);
+    --shadow-vibrant: 0 10px 25px rgba(102, 126, 234, 0.4);
     --shadow-glow: 0 0 40px hsl(245 58% 65% / 0.15);
     
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -115,5 +117,56 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    background: var(--gradient-subtle);
   }
+}
+
+@keyframes gradient-animation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.header-gradient {
+  background: var(--gradient-header);
+  background-size: 400% 400%;
+  animation: gradient-animation 15s ease infinite;
+}
+
+.preference-card {
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  background-color: white;
+  border: 2px solid transparent;
+}
+
+.preference-card .icon-bg {
+  background-color: #f3f4f6;
+  transition: all 0.2s ease-in-out;
+}
+
+.preference-card .icon-svg {
+  color: #4b5563;
+  transition: all 0.2s ease-in-out;
+}
+
+.preference-card p {
+  transition: all 0.2s ease-in-out;
+}
+
+.preference-card.selected {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-vibrant);
+  background: var(--gradient-primary);
+  color: white;
+}
+
+.preference-card.selected .icon-bg {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.preference-card.selected .icon-svg,
+.preference-card.selected .text-gray-500 {
+  color: white;
+}
 }

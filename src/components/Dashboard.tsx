@@ -6,14 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { EventCard } from "./EventCard";
 import { WeeklyCalendar } from "./WeeklyCalendar";
 import { Header } from "./Header";
 import { FetchEventsButton } from "./FetchEventsButton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Calendar, Grid3X3, CalendarDays, Mail, Github } from "lucide-react";
+import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search } from "lucide-react";
 
 interface Preferences {
   interests: {
@@ -225,8 +224,26 @@ export const Dashboard = () => {
     );
   }
 
+  const categoryIcons = {
+    'Music': Music,
+    'Theater': Drama,
+    'Art': Palette,
+    'Food & Drink': Coffee,
+    'Tech': Zap,
+    'Education': GraduationCap
+  };
+
+  const timeSlots = [
+    { label: 'Morning', description: '6am-12pm', value: 'Morning (6-12pm)' },
+    { label: 'Afternoon', description: '12pm-5pm', value: 'Afternoon (12-5pm)' },
+    { label: 'Evening', description: '5pm-9pm', value: 'Evening (5-9pm)' },
+    { label: 'Night', description: '9pm+', value: 'Night (9pm+)' },
+    { label: 'Weekends', description: 'Sat & Sun', value: 'Weekend Events' },
+    { label: 'Weekdays', description: 'Mon-Fri', value: 'Weekday Events' }
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-subtle">
+    <div className="min-h-screen">
       <Header 
         onOpenPreferences={() => {}}
         onNavigate={setCurrentPage}
@@ -235,196 +252,203 @@ export const Dashboard = () => {
         aiCurationStatus="complete"
       />
 
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Preferences Section */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Event Preferences</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* AI Instructions */}
-            <div className="space-y-2">
-              <Label htmlFor="ai-instructions">AI Instructions</Label>
-              <Textarea
-                id="ai-instructions"
-                placeholder="Tell the AI what kinds of events you're looking for..."
-                value={preferences.aiInstructions}
-                onChange={(e) => setPreferences(prev => ({
-                  ...prev,
-                  aiInstructions: e.target.value
-                }))}
-                className="min-h-[80px]"
-              />
-            </div>
+      <main className="container mx-auto p-4 sm:p-6 lg:p-8">
+        <div className="max-w-5xl mx-auto bg-white/90 backdrop-blur-lg p-6 sm:p-10 rounded-2xl shadow-2xl">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2 text-center">Curate Your Event Feed</h2>
+          <p className="text-gray-500 mb-10 text-center">Select your interests and we'll handle the rest.</p>
 
-            {/* Location */}
-            <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                placeholder="Enter city or address"
-                value={preferences.location.address}
-                onChange={(e) => setPreferences(prev => ({
-                  ...prev,
-                  location: { address: e.target.value }
-                }))}
-              />
+          {/* AI Instructions & Location */}
+          <div className="bg-gray-50 p-8 rounded-2xl shadow-inner mb-10 border border-gray-200">
+            <div className="grid md:grid-cols-2 gap-8">
+              <div>
+                <Label htmlFor="ai-instructions" className="block text-lg font-semibold text-gray-700 mb-2">
+                  AI Instructions
+                </Label>
+                <Textarea
+                  id="ai-instructions"
+                  rows={3}
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+                  placeholder="e.g., 'Only show me events with live music.'"
+                  value={preferences.aiInstructions}
+                  onChange={(e) => setPreferences(prev => ({
+                    ...prev,
+                    aiInstructions: e.target.value
+                  }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="location" className="block text-lg font-semibold text-gray-700 mb-2">
+                  Location
+                </Label>
+                <Input
+                  id="location"
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+                  value={preferences.location.address}
+                  onChange={(e) => setPreferences(prev => ({
+                    ...prev,
+                    location: { address: e.target.value }
+                  }))}
+                />
+              </div>
             </div>
+          </div>
 
-            {/* Categories */}
-            <div className="space-y-3">
-              <Label>Categories</Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {Object.entries(preferences.interests.categories).map(([category, checked]) => (
-                  <div key={category} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`category-${category}`}
-                      checked={checked}
-                      onCheckedChange={(isChecked) => setPreferences(prev => ({
-                        ...prev,
-                        interests: {
-                          ...prev.interests,
-                          categories: {
-                            ...prev.interests.categories,
-                            [category]: isChecked as boolean
+          {/* Categories */}
+          <div className="mb-10">
+            <h3 className="text-2xl font-bold text-gray-700 mb-6">Categories</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
+              {Object.entries(preferences.interests.categories).map(([category, checked]) => {
+                const IconComponent = categoryIcons[category as keyof typeof categoryIcons];
+                return (
+                  <div 
+                    key={category}
+                    className={`preference-card rounded-2xl p-4 text-center ${checked ? 'selected' : ''}`}
+                    onClick={() => setPreferences(prev => ({
+                      ...prev,
+                      interests: {
+                        ...prev.interests,
+                        categories: {
+                          ...prev.interests.categories,
+                          [category]: !checked
+                        }
+                      }
+                    }))}
+                  >
+                    <div className="icon-bg w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                      {IconComponent && <IconComponent className="icon-svg h-8 w-8" />}
+                    </div>
+                    <p className="font-semibold">{category}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Time Preferences */}
+          <div className="mb-12">
+            <h3 className="text-2xl font-bold text-gray-700 mb-6">Time & Day</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
+              {timeSlots.map((timeSlot) => {
+                const isSelected = preferences.filters.timePreferences.includes(timeSlot.value);
+                return (
+                  <div 
+                    key={timeSlot.value}
+                    className={`preference-card rounded-2xl p-4 text-center ${isSelected ? 'selected' : ''}`}
+                    onClick={() => {
+                      if (isSelected) {
+                        setPreferences(prev => ({
+                          ...prev,
+                          filters: {
+                            ...prev.filters,
+                            timePreferences: prev.filters.timePreferences.filter(t => t !== timeSlot.value)
                           }
-                        }
-                      }))}
-                    />
-                    <Label htmlFor={`category-${category}`} className="text-sm font-normal">
-                      {category}
-                    </Label>
+                        }));
+                      } else {
+                        setPreferences(prev => ({
+                          ...prev,
+                          filters: {
+                            ...prev.filters,
+                            timePreferences: [...prev.filters.timePreferences, timeSlot.value]
+                          }
+                        }));
+                      }
+                    }}
+                  >
+                    <p className="font-semibold text-lg">{timeSlot.label}</p>
+                    <p className="text-gray-500 text-sm">{timeSlot.description}</p>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
+          </div>
 
-            {/* Time Preferences */}
-            <div className="space-y-3">
-              <Label>Time Preferences</Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {['Morning (6-12pm)', 'Afternoon (12-5pm)', 'Evening (5-9pm)', 'Night (9pm+)', 'Weekend Events', 'Weekday Events'].map((timeSlot) => (
-                  <div key={timeSlot} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`time-${timeSlot}`}
-                      checked={preferences.filters.timePreferences.includes(timeSlot)}
-                      onCheckedChange={(isChecked) => {
-                        if (isChecked) {
-                          setPreferences(prev => ({
-                            ...prev,
-                            filters: {
-                              ...prev.filters,
-                              timePreferences: [...prev.filters.timePreferences, timeSlot]
-                            }
-                          }));
-                        } else {
-                          setPreferences(prev => ({
-                            ...prev,
-                            filters: {
-                              ...prev.filters,
-                              timePreferences: prev.filters.timePreferences.filter(t => t !== timeSlot)
-                            }
-                          }));
-                        }
-                      }}
-                    />
-                    <Label htmlFor={`time-${timeSlot}`} className="text-sm font-normal">
-                      {timeSlot}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Action Buttons */}
-        <div className="mb-8 flex justify-center gap-4">
-          <FetchEventsButton
-            location={preferences.location.address}
-            preferences={{
-              categories: Object.keys(preferences.interests.categories).filter(cat => preferences.interests.categories[cat]),
-              timePreferences: preferences.filters.timePreferences,
-              customKeywords: preferences.interests.keywords
-            }}
-            onEventsFetched={(fetchedEvents) => {
-              console.log(`✅ Received ${fetchedEvents.length} events from API, displaying directly`);
-              setEvents(fetchedEvents);
-            }}
-          />
-          <Button
-            onClick={() => {
-              setEvents([]);
-              setSavedEvents([]);
-              toast({
-                title: "Events Cleared",
-                description: "All events have been cleared. Click 'Fetch Events' to get fresh events!",
-              });
-            }}
-            variant="outline"
-            className="text-destructive hover:text-destructive"
-          >
-            <Calendar className="w-4 h-4 mr-2" />
-            Clear Events
-          </Button>
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <FetchEventsButton
+              location={preferences.location.address}
+              preferences={{
+                categories: Object.keys(preferences.interests.categories).filter(cat => preferences.interests.categories[cat]),
+                timePreferences: preferences.filters.timePreferences,
+                customKeywords: preferences.interests.keywords
+              }}
+              onEventsFetched={(fetchedEvents) => {
+                console.log(`✅ Received ${fetchedEvents.length} events from API, displaying directly`);
+                setEvents(fetchedEvents);
+              }}
+              className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-2 text-white font-bold py-3 px-8 rounded-full transition hover:transform hover:-translate-y-0.5 hover:shadow-lg"
+            />
+            <Button
+              onClick={() => {
+                setEvents([]);
+                setSavedEvents([]);
+                toast({
+                  title: "Events Cleared",
+                  description: "All events have been cleared. Click 'Fetch Events' to get fresh events!",
+                });
+              }}
+              className="w-full sm:w-auto flex items-center justify-center space-x-2 bg-gray-200 text-gray-600 font-bold py-3 px-8 rounded-full hover:bg-gray-300 transition"
+            >
+              <span>Clear All</span>
+            </Button>
+          </div>
         </div>
 
         {/* Main Content - Show events if available */}
         {events.length > 0 && (
-          <Tabs defaultValue="calendar" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 bg-card shadow-card border-0">
-              <TabsTrigger value="calendar" className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Weekly Calendar
-              </TabsTrigger>
-              <TabsTrigger value="grid" className="flex items-center gap-2">
-                <Grid3X3 className="w-4 h-4" />
-                Event Cards
-              </TabsTrigger>
-            </TabsList>
+          <div className="mt-12">
+            <Tabs defaultValue="calendar" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-2 bg-card shadow-card border-0">
+                <TabsTrigger value="calendar" className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Weekly Calendar
+                </TabsTrigger>
+                <TabsTrigger value="grid" className="flex items-center gap-2">
+                  <Grid3X3 className="w-4 h-4" />
+                  Event Cards
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="calendar" className="space-y-6">
-              <WeeklyCalendar 
-                events={savedEvents}
-                onEventClick={(eventId) => {
-                  const event = savedEvents.find(e => e.id === eventId);
-                  if (event) {
-                    // Show confirmation for deletion
-                    if (confirm(`Remove "${event.title}" from your calendar?`)) {
-                      handleRemoveFromCalendar(eventId);
+              <TabsContent value="calendar" className="space-y-6">
+                <WeeklyCalendar 
+                  events={savedEvents}
+                  onEventClick={(eventId) => {
+                    const event = savedEvents.find(e => e.id === eventId);
+                    if (event) {
+                      // Show confirmation for deletion
+                      if (confirm(`Remove "${event.title}" from your calendar?`)) {
+                        handleRemoveFromCalendar(eventId);
+                      }
                     }
-                  }
-                }}
-              />
-            </TabsContent>
+                  }}
+                />
+              </TabsContent>
 
-            <TabsContent value="grid" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {events.map(event => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    onSaveToCalendar={handleSaveToCalendar}
-                  />
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
+              <TabsContent value="grid" className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {events.map(event => (
+                    <EventCard
+                      key={event.id}
+                      event={event}
+                      onSaveToCalendar={handleSaveToCalendar}
+                    />
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
         )}
 
         {/* Empty state */}
         {events.length === 0 && (
-          <Card className="text-center p-12">
-            <CardContent>
-              <Calendar className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No Events Yet</h3>
-              <p className="text-muted-foreground mb-6">
-                Click "Fetch Events" to discover amazing events using our Perplexity AI integration
-              </p>
-            </CardContent>
-          </Card>
+          <div className="mt-12 text-center p-12">
+            <Calendar className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+            <h3 className="text-xl font-semibold mb-2 text-gray-700">No Events Yet</h3>
+            <p className="text-gray-500 mb-6">
+              Click "Fetch Events" to discover amazing events using our Perplexity AI integration
+            </p>
+          </div>
         )}
-      </div>
+      </main>
     </div>
   );
 };
