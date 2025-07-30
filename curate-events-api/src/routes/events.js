@@ -20,6 +20,8 @@
 import express from 'express';
 import { EventPipeline } from '../pipeline/EventPipeline.js';
 import { CategoryManager } from '../managers/CategoryManager.js';
+import { ApyfluxClient } from '../clients/ApyfluxClient.js';
+import { EventDeduplicator } from '../utils/eventDeduplicator.js';
 import { createLogger, logRequest, logResponse } from '../utils/logger.js';
 import { config } from '../utils/config.js';
 import { eventCache } from '../utils/cache.js';
@@ -30,6 +32,301 @@ const logger = createLogger('EventsRoute');
 // Initialize pipeline with API key from config
 const eventPipeline = new EventPipeline(config.perplexityApiKey);
 const categoryManager = new CategoryManager();
+const apyfluxClient = new ApyfluxClient();
+const deduplicator = new EventDeduplicator();
+
+/**
+ * GET /api/events/:category/combined
+ * Get events from both Perplexity and Apyflux with deduplication
+ */
+router.get('/:category/combined', async (req, res) => {
+  const startTime = Date.now();
+  
+  logRequest(logger, req, 'combinedEvents');
+  
+  try {
+    const { category } = req.params;
+    const { location, date_range, limit } = req.query;
+    
+    // Validate required parameters
+    if (!location) {
+      return res.status(400).json({
+        success: false,
+        error: 'Location parameter is required',
+        example: '/api/events/theatre/combined?location=San Francisco, CA',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const eventLimit = limit ? parseInt(limit) : 20;
+    
+    logger.info('Starting combined event collection', {
+      category,
+      location,
+      dateRange: date_range,
+      limit: eventLimit
+    });
+
+    // Run both APIs in parallel
+    const [perplexityResult, apyfluxResult] = await Promise.allSettled([
+      // Perplexity via EventPipeline
+      eventPipeline.collectEvents({
+        category,
+        location,
+        dateRange: date_range,
+        options: {
+          limit: eventLimit,
+          minConfidence: 0.5,
+          maxTokens: config.perplexity.maxTokens,
+          temperature: config.perplexity.temperature
+        }
+      }),
+      
+      // Apyflux direct
+      apyfluxClient.searchEvents({
+        query: apyfluxClient.buildSearchQuery(category, location),
+        location,
+        category,
+        dateRange: date_range || 'next 30 days',
+        limit: eventLimit
+      }).then(result => {
+        if (result.success && result.events.length > 0) {
+          // Transform events to our standard format
+          const transformedEvents = result.events.map(event => 
+            apyfluxClient.transformEvent(event, category)
+          ).filter(event => event !== null);
+          
+          return {
+            success: true,
+            events: transformedEvents,
+            count: transformedEvents.length,
+            processingTime: result.processingTime,
+            source: 'apyflux_api',
+            requestId: result.requestId
+          };
+        }
+        return result;
+      })
+    ]);
+
+    // Prepare event lists for deduplication
+    const eventLists = [];
+    
+    if (perplexityResult.status === 'fulfilled' && perplexityResult.value.success) {
+      eventLists.push(perplexityResult.value);
+    }
+    
+    if (apyfluxResult.status === 'fulfilled' && apyfluxResult.value.success) {
+      eventLists.push(apyfluxResult.value);
+    }
+
+    // Deduplicate events
+    const deduplicationResult = deduplicator.deduplicateEvents(eventLists);
+    
+    const duration = Date.now() - startTime;
+
+    // Build response
+    const response = {
+      success: true,
+      events: deduplicationResult.uniqueEvents,
+      count: deduplicationResult.uniqueEvents.length,
+      deduplication: {
+        totalProcessed: deduplicationResult.totalProcessed,
+        duplicatesRemoved: deduplicationResult.duplicatesRemoved,
+        duplicateGroups: deduplicationResult.duplicateGroups,
+        sources: deduplicationResult.sources
+      },
+      sources: {
+        perplexity: {
+          status: perplexityResult.status,
+          count: perplexityResult.status === 'fulfilled' ? perplexityResult.value.count || 0 : 0,
+          success: perplexityResult.status === 'fulfilled' ? perplexityResult.value.success : false
+        },
+        apyflux: {
+          status: apyfluxResult.status,
+          count: apyfluxResult.status === 'fulfilled' ? apyfluxResult.value.count || 0 : 0,
+          success: apyfluxResult.status === 'fulfilled' ? apyfluxResult.value.success : false
+        }
+      },
+      processingTime: `${duration}ms`,
+      category,
+      location,
+      dateRange: date_range || 'next 30 days',
+      timestamp: new Date().toISOString()
+    };
+
+    logger.info('Combined event collection completed', {
+      category,
+      location,
+      totalEvents: deduplicationResult.totalProcessed,
+      uniqueEvents: deduplicationResult.uniqueEvents.length,
+      duplicatesRemoved: deduplicationResult.duplicatesRemoved,
+      duration: `${duration}ms`
+    });
+
+    logResponse(logger, res, 'combinedEvents', duration);
+    res.json(response);
+
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    
+    logger.error('Error in combined event collection', {
+      error: error.message,
+      stack: error.stack,
+      params: req.params,
+      query: req.query,
+      duration: `${duration}ms`
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error during combined collection',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * GET /api/events/:category/compare
+ * Compare Perplexity and Apyflux results side by side
+ */
+router.get('/:category/compare', async (req, res) => {
+  const startTime = Date.now();
+  
+  logRequest(logger, req, 'compareEvents');
+  
+  try {
+    const { category } = req.params;
+    const { location, date_range, limit } = req.query;
+    
+    // Validate required parameters
+    if (!location) {
+      return res.status(400).json({
+        success: false,
+        error: 'Location parameter is required',
+        example: '/api/events/theatre/compare?location=San Francisco, CA',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const eventLimit = limit ? parseInt(limit) : 10;
+    
+    logger.info('Starting event comparison', {
+      category,
+      location,
+      dateRange: date_range,
+      limit: eventLimit
+    });
+
+    // Run both APIs in parallel
+    const [perplexityResult, apyfluxResult] = await Promise.allSettled([
+      // Perplexity via EventPipeline
+      eventPipeline.collectEvents({
+        category,
+        location,
+        dateRange: date_range,
+        options: {
+          limit: eventLimit,
+          minConfidence: 0.5,
+          maxTokens: config.perplexity.maxTokens,
+          temperature: config.perplexity.temperature
+        }
+      }),
+      
+      // Apyflux direct
+      apyfluxClient.searchEvents({
+        query: apyfluxClient.buildSearchQuery(category, location),
+        location,
+        category,
+        dateRange: date_range || 'next 30 days',
+        limit: eventLimit
+      }).then(result => {
+        if (result.success && result.events.length > 0) {
+          // Transform events to our standard format
+          const transformedEvents = result.events.map(event => 
+            apyfluxClient.transformEvent(event, category)
+          ).filter(event => event !== null);
+          
+          return {
+            success: true,
+            events: transformedEvents,
+            count: transformedEvents.length,
+            processingTime: result.processingTime,
+            source: 'apyflux_api',
+            requestId: result.requestId
+          };
+        }
+        return result;
+      })
+    ]);
+
+    const duration = Date.now() - startTime;
+
+    // Process results
+    const comparison = {
+      success: true,
+      comparison: {
+        perplexity: {
+          status: perplexityResult.status,
+          ...(perplexityResult.status === 'fulfilled' ? perplexityResult.value : {
+            success: false,
+            error: perplexityResult.reason?.message || 'Unknown error',
+            events: [],
+            count: 0
+          })
+        },
+        apyflux: {
+          status: apyfluxResult.status,
+          ...(apyfluxResult.status === 'fulfilled' ? apyfluxResult.value : {
+            success: false,
+            error: apyfluxResult.reason?.message || 'Unknown error',
+            events: [],
+            count: 0
+          })
+        }
+      },
+      summary: {
+        perplexityCount: perplexityResult.status === 'fulfilled' ? perplexityResult.value.count || 0 : 0,
+        apyfluxCount: apyfluxResult.status === 'fulfilled' ? apyfluxResult.value.count || 0 : 0,
+        totalProcessingTime: `${duration}ms`,
+        category,
+        location,
+        dateRange: date_range || 'next 30 days'
+      },
+      timestamp: new Date().toISOString()
+    };
+
+    logger.info('Event comparison completed', {
+      category,
+      location,
+      perplexityEvents: comparison.summary.perplexityCount,
+      apyfluxEvents: comparison.summary.apyfluxCount,
+      duration: `${duration}ms`
+    });
+
+    logResponse(logger, res, 'compareEvents', duration);
+    res.json(comparison);
+
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    
+    logger.error('Error in event comparison', {
+      error: error.message,
+      stack: error.stack,
+      params: req.params,
+      query: req.query,
+      duration: `${duration}ms`
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error during comparison',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
 
 /**
  * GET /api/events/:category
