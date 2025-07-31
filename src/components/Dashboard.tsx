@@ -32,9 +32,9 @@ const defaultPreferences: Preferences = {
   interests: {
     categories: {
       'Music': true,
-      'Theater': true,
+      'Theatre': true,
       'Art': true,
-      'Food & Drink': true,
+      'Food': true,
       'Tech': true,
       'Education': true
     },
@@ -255,9 +255,9 @@ export const Dashboard = () => {
 
   const categoryIcons = {
     'Music': Music,
-    'Theater': Drama,
+    'Theatre': Drama,
     'Art': Palette,
-    'Food & Drink': Coffee,
+    'Food': Coffee,
     'Tech': Zap,
     'Education': GraduationCap
   };
@@ -341,7 +341,7 @@ export const Dashboard = () => {
 
               {Object.keys(categoryIcons).map((category) => {
                 const IconComponent = categoryIcons[category as keyof typeof categoryIcons];
-                const categoryKey = category.toLowerCase().replace(' & ', ''); // Match backend key
+                const categoryKey = category.toLowerCase(); // Frontend now matches backend
                 const stats = categoryStats[categoryKey] || { count: 0 };
                 const isSelected = activeCategory === categoryKey;
 

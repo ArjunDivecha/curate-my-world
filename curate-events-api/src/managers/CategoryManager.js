@@ -367,7 +367,32 @@ Search thoroughly for lectures, courses, workshops, and educational events.`,
   normalizeCategory(category) {
     const normalized = category.toLowerCase().trim();
     
-    // Check direct match first
+    // Handle common variations first
+    const commonVariations = {
+      'theater': 'theatre',
+      'food and drink': 'food',
+      'food & drink': 'food',
+      'food-and-drink': 'food',
+      'food/drink': 'food',
+      'culinary': 'food',
+      'dining': 'food',
+      'restaurants': 'food',
+      'standup': 'comedy',
+      'stand-up': 'comedy',
+      'talks': 'lectures',
+      'presentations': 'lectures',
+      'seminars': 'lectures',
+      'workshops': 'lectures',
+      'galleries': 'art',
+      'exhibitions': 'art',
+      'visual': 'art'
+    };
+    
+    if (commonVariations[normalized]) {
+      return commonVariations[normalized];
+    }
+    
+    // Check direct match
     if (this.categories[normalized]) {
       return normalized;
     }

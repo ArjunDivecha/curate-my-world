@@ -37,7 +37,7 @@ export const PreferencesModal = ({ isOpen, onClose, preferences, onSave }: Prefe
   const [newKeyword, setNewKeyword] = useState("");
 
   const defaultCategories = [
-    'Music', 'Art', 'Theater', 'Food & Drink', 'Technology', 'Business',
+    'Music', 'Art', 'Theatre', 'Food', 'Technology', 'Business',
     'Health & Wellness', 'Sports', 'Education', 'Comedy', 'Film', 'Literature',
     'Dance', 'Photography', 'Fashion', 'Gaming', 'Outdoor Activities'
   ];
