@@ -39,7 +39,7 @@ export const config = {
   
   // CORS configuration
   corsOrigins: nodeEnv === 'development' 
-    ? ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://localhost:8080', 'http://127.0.0.1:8080', 'http://localhost:8081', 'http://127.0.0.1:8081', 'http://localhost:8082', 'http://127.0.0.1:8082']
+    ? ['http://localhost:8766', 'http://127.0.0.1:8766']  // Only our frontend port
     : (process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : ['*']),
   
   // Rate limiting

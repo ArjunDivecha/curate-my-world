@@ -1,8 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Clock, Star, Calendar, ExternalLink, Share2, Bookmark } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MapPin, Clock, Star, Calendar, ExternalLink, Share2, Bookmark, ChevronDown } from "lucide-react";
 import { cleanHtmlText } from "@/lib/utils";
+import { saveToCalendar, validateEventForCalendar } from "@/lib/calendarUtils";
+import { useToast } from "@/hooks/use-toast";
 
 interface Event {
   id: string;
@@ -33,6 +36,8 @@ interface EventCardProps {
 }
 
 export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
+  const { toast } = useToast();
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -55,6 +60,59 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
     if (score >= 8) return "bg-primary text-primary-foreground";
     if (score >= 6) return "bg-accent text-accent-foreground";
     return "bg-secondary text-secondary-foreground";
+  };
+
+  const handleCalendarSave = (calendarType: 'google' | 'outlook' | 'apple' | 'download') => {
+    // Convert event to calendar format
+    const calendarEvent = {
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      startDate: event.startDate,
+      endDate: event.endDate,
+      venue: {
+        name: event.venue.name,
+        address: event.venue.address,
+        website: event.venue.website
+      },
+      eventUrl: event.eventUrl,
+      ticketUrl: event.ticketUrl
+    };
+
+    // Validate event data
+    const validation = validateEventForCalendar(calendarEvent);
+    if (!validation.valid) {
+      toast({
+        title: "Cannot Save to Calendar",
+        description: validation.errors.join(', '),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Show warnings if any
+    if (validation.warnings.length > 0) {
+      console.warn('Calendar save warnings:', validation.warnings);
+    }
+
+    try {
+      saveToCalendar(calendarEvent, calendarType);
+      
+      // Also call the original handler for internal state management
+      onSaveToCalendar(event.id);
+      
+      toast({
+        title: "Calendar Event Created",
+        description: `"${event.title}" has been added to your ${calendarType === 'download' ? 'device' : calendarType} calendar.`,
+      });
+    } catch (error) {
+      console.error('Calendar save error:', error);
+      toast({
+        title: "Calendar Save Failed",
+        description: "There was an error saving to your calendar. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -170,14 +228,56 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
 
           {/* Action Buttons */}
           <div className="flex gap-2">
-            <Button 
-              size="sm" 
-              onClick={() => onSaveToCalendar(event.id)}
-              className="w-full bg-gradient-primary hover:opacity-90 transition-all duration-300 shadow-elegant"
-            >
-              <Calendar className="w-4 h-4 mr-2" />
-              Save to Calendar
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  size="sm" 
+                  className="w-full bg-gradient-primary hover:opacity-90 transition-all duration-300 shadow-elegant"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Save to Calendar
+                  <ChevronDown className="w-3 h-3 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem 
+                  onClick={() => handleCalendarSave('google')}
+                  className="cursor-pointer"
+                >
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 rounded bg-blue-500 mr-2"></div>
+                    Google Calendar
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => handleCalendarSave('outlook')}
+                  className="cursor-pointer"
+                >
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 rounded bg-blue-600 mr-2"></div>
+                    Outlook Calendar
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => handleCalendarSave('apple')}
+                  className="cursor-pointer"
+                >
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 rounded bg-gray-800 mr-2"></div>
+                    Apple Calendar
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => handleCalendarSave('download')}
+                  className="cursor-pointer"
+                >
+                  <div className="flex items-center">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Download .ics file
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </CardContent>

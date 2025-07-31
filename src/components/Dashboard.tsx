@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +54,19 @@ export const Dashboard = () => {
   const [preferences, setPreferences] = useState<Preferences>(defaultPreferences);
   const [events, setEvents] = useState<any[]>([]);
   const [savedEvents, setSavedEvents] = useState<any[]>([]);
+
+  // Debug: Log events state changes
+  console.log('🔍 Dashboard render - events state:', events.length, events);
+  console.log('🔍 Dashboard render - savedEvents state:', savedEvents.length, savedEvents);
+
+  // Track when events state changes
+  useEffect(() => {
+    console.log('🔍 Events state CHANGED:', events.length, events);
+  }, [events]);
+
+  useEffect(() => {
+    console.log('🔍 SavedEvents state CHANGED:', savedEvents.length, savedEvents);
+  }, [savedEvents]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -373,6 +386,7 @@ export const Dashboard = () => {
               }}
               onEventsFetched={(fetchedEvents) => {
                 console.log(`✅ Received ${fetchedEvents.length} events from API, displaying directly`);
+                console.log('🔍 Dashboard: Events being set:', fetchedEvents);
                 setEvents(fetchedEvents);
               }}
               className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-2 text-white font-bold py-3 px-8 rounded-full transition hover:transform hover:-translate-y-0.5 hover:shadow-lg"
@@ -409,14 +423,22 @@ export const Dashboard = () => {
               </TabsList>
 
               <TabsContent value="calendar" className="space-y-6">
+                {console.log('🔍 Dashboard: Passing events to WeeklyCalendar:', events.length, events)}
                 <WeeklyCalendar 
-                  events={savedEvents}
+                  events={events}
+                  savedEvents={savedEvents}
                   onEventClick={(eventId) => {
-                    const event = savedEvents.find(e => e.id === eventId);
+                    const event = events.find(e => e.id === eventId);
                     if (event) {
-                      // Show confirmation for deletion
-                      if (confirm(`Remove "${event.title}" from your calendar?`)) {
-                        handleRemoveFromCalendar(eventId);
+                      const isSaved = savedEvents.find(savedEvent => savedEvent.id === eventId);
+                      if (isSaved) {
+                        // Show confirmation for deletion
+                        if (confirm(`Remove "${event.title}" from your saved events?`)) {
+                          handleRemoveFromCalendar(eventId);
+                        }
+                      } else {
+                        // Save the event
+                        handleSaveToCalendar(eventId);
                       }
                     }
                   }}

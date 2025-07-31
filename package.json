@@ -4,13 +4,17 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 8080",
+    "dev": "vite --host 0.0.0.0 --port 8766",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "./start-everything.sh",
-    "stop": "./stop-everything.sh"
+    "start": "./scripts/start-all.sh",
+    "start:frontend": "./scripts/start-frontend.sh",
+    "start:backend": "./scripts/start-backend.sh",
+    "stop": "node scripts/port-manager.js cleanup",
+    "port:status": "node scripts/port-manager.js status",
+    "port:cleanup": "node scripts/port-manager.js cleanup"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
