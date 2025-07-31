@@ -8,6 +8,7 @@ interface FetchEventsButtonProps {
   location?: string;
   preferences?: any;
   onEventsFetched?: (events: any[]) => void;
+  onAllEventsFetched?: (eventsByCategory: any, categoryStats: any) => void;
   className?: string;
 }
 
@@ -18,6 +19,7 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
   location = "San Francisco, CA",
   preferences = {},
   onEventsFetched,
+  onAllEventsFetched,
   className
 }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -53,165 +55,107 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
     }
     
     try {
-      console.log('🎭 Fetching events using new Node.js API for:', location);
+      console.log('🎭 Fetching ALL categories using all-categories endpoint for:', location);
       console.log('📍 Preferences:', preferences);
       console.log('🏥 Health Status:', currentHealth);
       
-      // Get categories from preferences, default to theatre and music
-      let categories = preferences.categories ? 
-        Object.keys(preferences.categories).filter(cat => preferences.categories[cat] > 0) : 
-        ['theatre', 'music'];
+      // Use the new all-categories endpoint
+      const url = `${API_BASE_URL}/events/all-categories?location=${encodeURIComponent(location)}&date_range=next 30 days&limit=10`;
       
-      // Ensure we always have at least some categories
-      if (categories.length === 0) {
-        categories = ['theatre', 'music'];
-        console.log('🔧 No active categories found, using defaults:', categories);
+      console.log(`📡 Fetching all categories from:`, url);
+      console.log(`🌍 Frontend running on: ${window.location.origin}`);
+      
+      console.log(`🔍 Making request to: ${url}`);
+      const response = await fetch(url);
+      console.log(`📡 Response status: ${response.status} ${response.statusText}`);
+      
+      if (!response.ok) {
+        console.error(`❌ HTTP Error: ${response.status} ${response.statusText}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
-      console.log('🎯 Categories to fetch:', categories);
-
-      // Fetch from our new Node.js API for each category
-      const eventPromises = categories.slice(0, 3).map(async (category) => {
-        const categoryName = category.toLowerCase();
-        const url = `${API_BASE_URL}/events/${categoryName}?location=${encodeURIComponent(location)}&date_range=next 30 days`;
-        
-        console.log(`📡 Fetching ${categoryName} events from:`, url);
-        console.log(`🌍 Frontend running on: ${window.location.origin}`);
-        
-        try {
-          console.log(`🔍 Making request to: ${url}`);
-          const response = await fetch(url);
-          console.log(`📡 Response status: ${response.status} ${response.statusText}`);
-          
-          if (!response.ok) {
-            console.error(`❌ HTTP Error: ${response.status} ${response.statusText}`);
-            return {
-              category: categoryName,
-              events: [],
-              count: 0,
-              success: false,
-              error: `HTTP ${response.status}: ${response.statusText}`
-            };
-          }
-          
-          const data = await response.json();
-          console.log(`📦 Response data:`, data);
-          
-          if (data.success && data.events) {
-            const cacheStatus = data.cached ? ' (cached)' : ' (fresh)';
-            console.log(`✅ ${categoryName}: ${data.events.length} events found${cacheStatus}`);
-            return {
-              category: categoryName,
-              events: data.events,
-              count: data.events.length,
-              success: true,
-              cached: data.cached || false
-            };
-          } else {
-            console.warn(`⚠️ ${categoryName} failed:`, data.error || 'No events in response');
-            return {
-              category: categoryName,
-              events: [],
-              count: 0,
-              success: false,
-              error: data.error || 'No events in response'
-            };
-          }
-        } catch (error) {
-          console.error(`❌ ${categoryName} network error:`, error);
-          return {
-            category: categoryName,
-            events: [],
-            count: 0,
-            success: false,
-            error: error.message
-          };
-        }
-      });
-
-      // Wait for all category requests to complete
-      const results = await Promise.all(eventPromises);
+      const data = await response.json();
+      console.log(`📦 All categories response:`, data);
       
-      // Calculate totals
-      let totalEvents = 0;
-      const messages = [];
-      const allEvents = [];
-      let cacheHits = 0;
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch events from all categories');
+      }
+      
+      const { eventsByCategory, categoryStats, totalEvents, processingTime } = data;
+      
+      console.log(`🎉 Total events across all categories: ${totalEvents}`);
+      console.log('📊 Category breakdown:', categoryStats);
+      console.log('📋 Events by category:', eventsByCategory);
+      
+      if (totalEvents === 0) {
+        toast({
+          title: "No events found",
+          description: "No events were found across all categories for this location. Try a different location or check back later.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      results.forEach(result => {
-        if (result.success && result.count > 0) {
-          totalEvents += result.count;
-          allEvents.push(...result.events);
-          if (result.cached) {
-            cacheHits++;
-            messages.push(`${result.count} ${result.category} events (cached)`);
-          } else {
-            messages.push(`${result.count} ${result.category} events`);
-          }
-        } else if (!result.success) {
-          console.warn(`Failed to fetch ${result.category}:`, result.error);
-        }
-      });
+      // Create summary message
+      const categoryBreakdown = Object.entries(categoryStats)
+        .filter(([_, stats]: [string, any]) => stats.count > 0)
+        .map(([category, stats]: [string, any]) => `${category}: ${stats.count}`)
+        .join(', ');
 
-      console.log(`🎉 Total events fetched: ${totalEvents}`);
-      console.log('📊 Breakdown:', messages);
-
-      // Convert API events to the format expected by the frontend
-      console.log('🔍 Raw API event sample:', allEvents[0]);
-      const transformedEvents = allEvents.map((event, index) => {
-        console.log(`🔍 Transforming event ${index}:`, event);
-        
-        // Use actual event dates from API, fallback to reasonable defaults
-        const startDate = event.startDate ? event.startDate : new Date().toISOString();
-        const endDate = event.endDate ? event.endDate : new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(); // 2 hours later
-        
-        console.log(`📅 Event dates - Start: ${startDate}, End: ${endDate}`);
-        
-        return {
-          id: `api_event_${Date.now()}_${index}`,
-          title: event.title,
-          description: event.description || '',
-          startDate: startDate,
-          endDate: endDate,
-          venue: {
-            name: event.venue || '',
-            address: event.address || location,
-            website: event.externalUrl || '',
-            mapUrl: ''
-          },
-          categories: [event.category || 'Events'],
-          personalRelevanceScore: 8, // Default score for API events
-          price: event.priceRange ? {
-            type: event.priceRange.min === 0 && event.priceRange.max === 0 ? "free" as const : "paid" as const,
-            amount: event.priceRange.min === 0 && event.priceRange.max === 0 ? undefined : `$${event.priceRange.min || 0}-$${event.priceRange.max || 50}`
-          } : { type: "free" as const },
-          ticketUrl: event.externalUrl || '',
-          eventUrl: event.externalUrl || '',
-          aiReasoning: 'Event fetched from new Node.js API using proven Perplexity patterns'
-        };
-      });
-
-      const successMessage = messages.length > 0 
-        ? `Found ${totalEvents} events using new API! (${messages.join(', ')})`
-        : `Found ${totalEvents} events using new API!`;
-
-      const cacheInfo = cacheHits > 0 ? ` • ${cacheHits}/${results.length} from cache ⚡` : '';
+      const successMessage = categoryBreakdown
+        ? `Found ${totalEvents} events across all categories! (${categoryBreakdown})`
+        : `Found ${totalEvents} events across all categories!`;
 
       toast({
-        title: "🎭 Events Updated with New API!",
-        description: successMessage + cacheInfo,
+        title: "🎭 All Categories Fetched!",
+        description: successMessage + ` • Processing time: ${Math.round(processingTime/1000)}s`,
       });
 
-      // Pass events directly to parent component
-      if (onEventsFetched && transformedEvents.length > 0) {
+      // Pass all events data to parent component for category filtering
+      if (onAllEventsFetched) {
+        onAllEventsFetched(eventsByCategory, categoryStats);
+      }
+      
+      // Also pass all events as a flat array for backward compatibility
+      if (onEventsFetched) {
+        const allEvents: any[] = [];
+        Object.values(eventsByCategory).forEach((events: any) => {
+          if (Array.isArray(events)) {
+            allEvents.push(...events);
+          }
+        });
+        
+        // Transform events to match expected format
+        const transformedEvents = allEvents.map((event: any) => {
+          return {
+            id: event.id,
+            title: event.title,
+            description: event.description || '',
+            venue: event.venue,
+            location: event.location,
+            address: event.address || '',
+            date: event.startDate,
+            time: event.dateHuman || 'Time TBD',
+            category: event.category,
+            coordinates: event.venueInfo?.coordinates || getCoordinatesFromLocation(location),
+            price: event.priceRange ? {
+              type: event.priceRange.min === 0 && event.priceRange.max === 0 ? "free" as const : "paid" as const,
+              amount: event.priceRange.min === 0 && event.priceRange.max === 0 ? undefined : `$${event.priceRange.min || 0}-$${event.priceRange.max || 50}`
+            } : { type: "free" as const },
+            ticketUrl: event.externalUrl || '',
+            eventUrl: event.externalUrl || '',
+            aiReasoning: 'Event fetched from all-categories endpoint with deduplication'
+          };
+        });
+        
         onEventsFetched(transformedEvents);
       }
 
     } catch (error: any) {
-      console.error('❌ Error fetching events with new API:', error);
+      console.error('❌ Error fetching events with all-categories endpoint:', error);
       toast({
         title: "Error fetching events",
-        description: error.message || "Failed to fetch events from new API. Make sure the API server is running on port 8765.",
+        description: error.message || "Failed to fetch events from all-categories endpoint. Make sure the API server is running on port 8765.",
         variant: "destructive",
       });
     } finally {

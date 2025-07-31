@@ -22,7 +22,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-PORT=${PORT:-3001}
+PORT=${PORT:-8765}
 HOST=${HOST:-127.0.0.1}
 BASE_URL="http://$HOST:$PORT"
 TIMEOUT=10

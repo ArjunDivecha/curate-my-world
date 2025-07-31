@@ -115,7 +115,7 @@ fi
 sleep 3
 
 # Check if server is running
-PORT=${PORT:-3001}
+PORT=${PORT:-8765}
 HOST=${HOST:-127.0.0.1}
 
 echo -e "${YELLOW}🏥 Checking server health...${NC}"

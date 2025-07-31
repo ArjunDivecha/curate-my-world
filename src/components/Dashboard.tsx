@@ -54,6 +54,10 @@ export const Dashboard = () => {
   const [preferences, setPreferences] = useState<Preferences>(defaultPreferences);
   const [events, setEvents] = useState<any[]>([]);
   const [savedEvents, setSavedEvents] = useState<any[]>([]);
+  const [eventsByCategory, setEventsByCategory] = useState<any>({});
+  const [categoryStats, setCategoryStats] = useState<any>({});
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [transformedEventsByCategory, setTransformedEventsByCategory] = useState<any>({});
 
   // Debug: Log events state changes
   console.log('🔍 Dashboard render - events state:', events.length, events);
@@ -101,6 +105,18 @@ export const Dashboard = () => {
         title: "Event Removed",
         description: `"${event.title}" has been removed from your calendar.`,
       });
+    }
+  };
+
+  const handleCategoryFilter = (category: string | null) => {
+    setActiveCategory(category);
+    if (category === null) {
+      // Show all TRANSFORMED events from all categories
+      const allTransformedEvents = Object.values(transformedEventsByCategory).flat();
+      setEvents(allTransformedEvents);
+    } else {
+      // Show TRANSFORMED events only from the selected category
+      setEvents(transformedEventsByCategory[category] || []);
     }
   };
 
@@ -306,31 +322,40 @@ export const Dashboard = () => {
             </div>
           </div>
 
-          {/* Categories */}
+          {/* Category Filters */}
           <div className="mb-10">
-            <h3 className="text-2xl font-bold text-gray-700 mb-6">Categories</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
-              {Object.entries(preferences.interests.categories).map(([category, checked]) => {
+            <h3 className="text-2xl font-bold text-gray-700 mb-6">Filter by Category</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-5">
+              {/* "All" Category Button */}
+              <div 
+                key="all"
+                className={`preference-card rounded-2xl p-4 text-center ${activeCategory === null ? 'selected' : ''}`}
+                onClick={() => handleCategoryFilter(null)}
+              >
+                <div className="icon-bg w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Search className="icon-svg h-8 w-8" />
+                </div>
+                <p className="font-semibold">All</p>
+                <p className="text-sm text-gray-500">{Object.values(categoryStats).reduce((acc: number, cur: any) => acc + (cur.count || 0), 0)} events</p>
+              </div>
+
+              {Object.keys(categoryIcons).map((category) => {
                 const IconComponent = categoryIcons[category as keyof typeof categoryIcons];
+                const categoryKey = category.toLowerCase().replace(' & ', ''); // Match backend key
+                const stats = categoryStats[categoryKey] || { count: 0 };
+                const isSelected = activeCategory === categoryKey;
+
                 return (
                   <div 
                     key={category}
-                    className={`preference-card rounded-2xl p-4 text-center ${checked ? 'selected' : ''}`}
-                    onClick={() => setPreferences(prev => ({
-                      ...prev,
-                      interests: {
-                        ...prev.interests,
-                        categories: {
-                          ...prev.interests.categories,
-                          [category]: !checked
-                        }
-                      }
-                    }))}
+                    className={`preference-card rounded-2xl p-4 text-center ${isSelected ? 'selected' : ''}`}
+                    onClick={() => handleCategoryFilter(categoryKey)}
                   >
                     <div className="icon-bg w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                       {IconComponent && <IconComponent className="icon-svg h-8 w-8" />}
                     </div>
                     <p className="font-semibold">{category}</p>
+                    <p className="text-sm text-gray-500">{stats.count} events</p>
                   </div>
                 );
               })}
@@ -384,10 +409,44 @@ export const Dashboard = () => {
                 timePreferences: preferences.filters.timePreferences,
                 customKeywords: preferences.interests.keywords
               }}
-              onEventsFetched={(fetchedEvents) => {
-                console.log(`✅ Received ${fetchedEvents.length} events from API, displaying directly`);
-                console.log('🔍 Dashboard: Events being set:', fetchedEvents);
-                setEvents(fetchedEvents);
+              onAllEventsFetched={(fetchedEventsByCategory, fetchedCategoryStats) => {
+                console.log('✅ Received raw events by category:', fetchedEventsByCategory);
+                setEventsByCategory(fetchedEventsByCategory); // Store raw data
+                setCategoryStats(fetchedCategoryStats);
+
+                // Transform events for each category and store them
+                const newTransformedEventsByCategory = Object.entries(fetchedEventsByCategory).reduce((acc, [category, events]) => {
+                  acc[category] = (events as any[]).map((event: any) => ({
+                    id: event.id,
+                    title: event.title,
+                    description: event.description || 'No description available.',
+                    startDate: event.startDate,
+                    endDate: event.endDate || event.startDate,
+                    venue: {
+                      name: event.venue || 'Venue TBD',
+                      address: event.address || event.location || 'Location TBD',
+                      website: event.venueInfo?.website,
+                      mapUrl: event.venueInfo?.googleMapsUrl,
+                    },
+                    categories: [event.category || 'General'],
+                    personalRelevanceScore: event.relevance || 8,
+                    price: event.priceRange ? {
+                      type: event.priceRange.min === 0 && event.priceRange.max === 0 ? 'free' : 'paid',
+                      amount: event.priceRange.min === 0 && event.priceRange.max === 0 ? undefined : `$${event.priceRange.min || '??'} - $${event.priceRange.max || '??'}`,
+                    } : { type: 'free' },
+                    ticketUrl: event.ticketUrl || event.externalUrl,
+                    eventUrl: event.eventUrl || event.externalUrl,
+                    aiReasoning: event.aiReasoning || 'Fetched from curated sources.',
+                  }));
+                  return acc;
+                }, {} as any);
+
+                setTransformedEventsByCategory(newTransformedEventsByCategory);
+
+                // Combine all TRANSFORMED events for initial display
+                const allTransformedEvents = Object.values(newTransformedEventsByCategory).flat();
+                setEvents(allTransformedEvents);
+                setActiveCategory(null); // Show 'All' events initially
               }}
               className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-2 text-white font-bold py-3 px-8 rounded-full transition hover:transform hover:-translate-y-0.5 hover:shadow-lg"
             />

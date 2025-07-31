@@ -49,7 +49,7 @@ cd ..
 # Wait for API to be ready
 echo -e "${YELLOW}⏳ Waiting for API server...${NC}"
 for i in {1..10}; do
-  if curl -s http://127.0.0.1:3001/api/health > /dev/null 2>&1; then
+  if curl -s http://127.0.0.1:8765/api/health > /dev/null 2>&1; then
     echo -e "${GREEN}✅ API server ready${NC}"
     break
   fi
@@ -68,7 +68,7 @@ FRONTEND_PID=$!
 # Wait for frontend to be ready
 echo -e "${YELLOW}⏳ Waiting for frontend...${NC}"
 for i in {1..15}; do
-  if curl -s http://localhost:8080 > /dev/null 2>&1; then
+  if curl -s http://localhost:8766 > /dev/null 2>&1; then
     echo -e "${GREEN}✅ Frontend ready${NC}"
     break
   fi
@@ -88,18 +88,18 @@ EOF
 # Open browser
 echo -e "${YELLOW}🌐 Opening browser...${NC}"
 if command -v open &> /dev/null; then
-  open http://localhost:8080
+  open http://localhost:8766
 elif command -v xdg-open &> /dev/null; then
-  xdg-open http://localhost:8080
+  xdg-open http://localhost:8766
 fi
 
 echo ""
 echo -e "${GREEN}🎉 Curate My World is now running!${NC}"
 echo "========================================"
 echo -e "${BLUE}📊 Services:${NC}"
-echo "  Frontend: http://localhost:8080"
-echo "  API:      http://127.0.0.1:3001"
-echo "  Health:   http://127.0.0.1:3001/api/health"
+echo "  Frontend: http://localhost:8766"
+echo "  API:      http://127.0.0.1:8765"
+echo "  Health:   http://127.0.0.1:8765/api/health"
 echo ""
 echo -e "${BLUE}🛑 To stop everything:${NC}"
 echo "  ./stop-everything.sh"

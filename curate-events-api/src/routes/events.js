@@ -331,6 +331,217 @@ router.get('/:category/compare', async (req, res) => {
 });
 
 /**
+ * GET /api/events/all-categories
+ * Get events from all categories using the best-performing source combination
+ */
+router.get('/all-categories', async (req, res) => {
+  const startTime = Date.now();
+  const { location = 'San Francisco, CA', date_range, limit } = req.query;
+  
+  logRequest(logger, req, 'allCategoriesEvents', { location, date_range, limit });
+  
+  try {
+    const eventLimit = Math.min(parseInt(limit) || 15, config.api.maxLimit); // Lower limit per category
+    
+    // Get all supported categories
+    const supportedCategories = categoryManager.getSupportedCategories()
+      .filter(cat => ['theatre', 'music', 'art', 'food', 'tech', 'education'].includes(cat.name))
+      .map(cat => cat.name);
+    
+    logger.info('Fetching events for all categories', {
+      categories: supportedCategories,
+      location,
+      eventLimitPerCategory: eventLimit
+    });
+    
+    // Fetch events for all categories in parallel using the combined endpoint approach
+    const categoryPromises = supportedCategories.map(async (category) => {
+      try {
+        // Use the all-sources approach for comprehensive coverage
+        const [perplexityResult, apyfluxResult, predictHQResult] = await Promise.allSettled([
+          // Perplexity via EventPipeline
+          eventPipeline.collectEvents({
+            category,
+            location,
+            dateRange: date_range,
+            options: {
+              limit: eventLimit,
+              minConfidence: 0.5,
+              maxTokens: config.perplexity.maxTokens,
+              temperature: config.perplexity.temperature
+            }
+          }),
+          
+          // Apyflux direct
+          apyfluxClient.searchEvents({
+            query: apyfluxClient.buildSearchQuery(category, location),
+            location,
+            category,
+            dateRange: date_range || 'next 30 days',
+            limit: eventLimit
+          }).then(result => {
+            if (result.success && result.events.length > 0) {
+              const transformedEvents = result.events.map(event => 
+                apyfluxClient.transformEvent(event, category)
+              ).filter(event => event !== null);
+              
+              return {
+                success: true,
+                events: transformedEvents,
+                count: transformedEvents.length,
+                processingTime: result.processingTime,
+                source: 'apyflux_api',
+                requestId: result.requestId
+              };
+            }
+            return result;
+          }),
+          
+          // PredictHQ direct
+          predictHQClient.searchEvents({
+            category,
+            location,
+            dateRange: date_range || 'next 30 days',
+            limit: eventLimit
+          }).then(result => {
+            if (result.success && result.events.length > 0) {
+              const transformedEvents = result.events.map(event => 
+                predictHQClient.transformEvent(event, category)
+              ).filter(event => event !== null);
+              
+              return {
+                success: true,
+                events: transformedEvents,
+                count: transformedEvents.length,
+                processingTime: result.processingTime,
+                source: 'predicthq_api',
+                totalAvailable: result.totalAvailable
+              };
+            }
+            return result;
+          })
+        ]);
+        
+        // Prepare event lists for deduplication
+        const eventLists = [];
+        
+        if (perplexityResult.status === 'fulfilled' && perplexityResult.value.success) {
+          eventLists.push(perplexityResult.value);
+        }
+        
+        if (apyfluxResult.status === 'fulfilled' && apyfluxResult.value.success) {
+          eventLists.push(apyfluxResult.value);
+        }
+        
+        if (predictHQResult.status === 'fulfilled' && predictHQResult.value.success) {
+          eventLists.push(predictHQResult.value);
+        }
+        
+        // Deduplicate events for this category
+        const deduplicationResult = deduplicator.deduplicateEvents(eventLists);
+        
+        return {
+          category,
+          success: true,
+          events: deduplicationResult.uniqueEvents,
+          count: deduplicationResult.uniqueEvents.length,
+          sourceStats: {
+            perplexity: perplexityResult.status === 'fulfilled' && perplexityResult.value.success ? 
+              { count: perplexityResult.value.events.length, processingTime: perplexityResult.value.processingTime } : 
+              { count: 0, error: perplexityResult.reason?.message || 'Unknown error' },
+            apyflux: apyfluxResult.status === 'fulfilled' && apyfluxResult.value.success ? 
+              { count: apyfluxResult.value.events.length, processingTime: apyfluxResult.value.processingTime } : 
+              { count: 0, error: apyfluxResult.reason?.message || 'Unknown error' },
+            predicthq: predictHQResult.status === 'fulfilled' && predictHQResult.value.success ? 
+              { count: predictHQResult.value.events.length, processingTime: predictHQResult.value.processingTime } : 
+              { count: 0, error: predictHQResult.reason?.message || 'Unknown error' }
+          }
+        };
+        
+      } catch (error) {
+        logger.error(`Error fetching events for category ${category}`, {
+          error: error.message,
+          category
+        });
+        
+        return {
+          category,
+          success: false,
+          error: error.message,
+          events: [],
+          count: 0
+        };
+      }
+    });
+    
+    // Wait for all categories to complete
+    const categoryResults = await Promise.all(categoryPromises);
+    
+    const duration = Date.now() - startTime;
+    
+    // Organize results by category
+    const eventsByCategory = {};
+    const categoryStats = {};
+    let totalEvents = 0;
+    
+    categoryResults.forEach(result => {
+      eventsByCategory[result.category] = result.events || [];
+      categoryStats[result.category] = {
+        count: result.count || 0,
+        success: result.success,
+        error: result.error || null,
+        sourceStats: result.sourceStats || null
+      };
+      totalEvents += result.count || 0;
+    });
+    
+    const response = {
+      success: true,
+      eventsByCategory,
+      categoryStats,
+      totalEvents,
+      categories: supportedCategories,
+      processingTime: duration,
+      metadata: {
+        location,
+        dateRange: date_range || 'next 30 days',
+        limitPerCategory: eventLimit,
+        categoriesFetched: supportedCategories.length,
+        requestId: `all_categories_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      }
+    };
+    
+    res.json(response);
+    logResponse(logger, res, 'allCategoriesEvents', duration, { 
+      totalEvents,
+      categoriesFetched: supportedCategories.length,
+      categoryStats 
+    });
+    
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    
+    logger.error('All categories events error', {
+      error: error.message,
+      location,
+      processingTime: `${duration}ms`
+    });
+    
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      eventsByCategory: {},
+      categoryStats: {},
+      totalEvents: 0,
+      categories: [],
+      processingTime: duration
+    });
+    
+    logResponse(logger, res, 'allCategoriesEvents', duration, { error: error.message });
+  }
+});
+
+/**
  * GET /api/events/:category
  * Fetch events for a specific category
  */

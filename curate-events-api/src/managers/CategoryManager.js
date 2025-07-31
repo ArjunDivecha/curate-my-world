@@ -58,8 +58,18 @@ export class CategoryManager {
         priority: 'low'
       },
       lectures: {
-        aliases: ['talks', 'presentations', 'seminars', 'workshops', 'discussions'],
-        keywords: ['lecture', 'talk', 'presentation', 'seminar', 'workshop', 'discussion', 'speaker', 'author'],
+        aliases: ['talks', 'presentations', 'seminars', 'workshops', 'discussions', 'education'],
+        keywords: ['lecture', 'talk', 'presentation', 'seminar', 'workshop', 'discussion', 'speaker', 'author', 'educational'],
+        priority: 'medium'
+      },
+      tech: {
+        aliases: ['technology', 'startup', 'innovation', 'digital', 'ai', 'software'],
+        keywords: ['tech', 'technology', 'startup', 'innovation', 'digital', 'ai', 'software', 'conference', 'meetup', 'hackathon'],
+        priority: 'medium'
+      },
+      education: {
+        aliases: ['learning', 'academic', 'school', 'university', 'courses'],
+        keywords: ['education', 'learning', 'academic', 'school', 'university', 'course', 'class', 'training'],
         priority: 'medium'
       }
     };
@@ -272,6 +282,68 @@ MAJOR LECTURE VENUES TO SEARCH:
 ]
 
 Search each venue thoroughly for lectures, talks, author events, and presentations. Provide actual real events with accurate information.`,
+
+      tech: `Find all technology and innovation events for {location} for the {dateRange}. Include tech conferences, startup events, hackathons, AI/ML meetups, software launches, and innovation showcases.
+
+Search these tech venues and any other innovation spaces:
+
+MAJOR TECH VENUES TO SEARCH:
+- Moscone Center (San Francisco) - https://moscone.com
+- Salesforce Tower (San Francisco)
+- Google Campus (Mountain View)
+- Meta Campus (Menlo Park)
+- Apple Park (Cupertino)
+- Stanford University (Palo Alto)
+- UC Berkeley (Berkeley)
+- TechCrunch Disrupt venues
+- Various co-working spaces and startup hubs
+
+Provide results in JSON format:
+[
+{
+  "title": "Event Title",
+  "venue": "Venue Name",
+  "location": "City, State",
+  "date": "Date range or specific dates",
+  "show_times": ["Time 1", "Time 2"],
+  "website": "https://event-website.com",
+  "price_range": "Price information or Free",
+  "description": "Brief description",
+  "topic": "Technology focus area"
+}
+]
+
+Search thoroughly for tech conferences, meetups, product launches, and innovation events.`,
+
+      education: `Find all educational and learning events for {location} for the {dateRange}. Include university lectures, workshops, courses, seminars, academic conferences, and learning opportunities.
+
+Search these educational venues and institutions:
+
+MAJOR EDUCATIONAL VENUES TO SEARCH:
+- Stanford University (Palo Alto) - https://stanford.edu
+- UC Berkeley (Berkeley) - https://berkeley.edu
+- UC San Francisco (San Francisco) - https://ucsf.edu
+- San Francisco State University - https://sfsu.edu
+- City College of San Francisco - https://ccsf.edu
+- Various libraries and community centers
+- Educational conferences and workshops
+
+Provide results in JSON format:
+[
+{
+  "title": "Event Title",
+  "venue": "Venue Name",
+  "location": "City, State",
+  "date": "Date range or specific dates",
+  "show_times": ["Time 1", "Time 2"],
+  "website": "https://event-website.com",
+  "price_range": "Price information or Free",
+  "description": "Brief description",
+  "topic": "Educational focus area"
+}
+]
+
+Search thoroughly for lectures, courses, workshops, and educational events.`,
       
       default: `Find all {category} events for {location} for the {dateRange} - give me the results in JSON format with delimiters for title, venue, location, date, show_times, website, and price_range. Provide actual real events with accurate information.`
     };
