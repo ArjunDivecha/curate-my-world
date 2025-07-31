@@ -29,7 +29,7 @@ Frontend → Node.js API Server → Perplexity API
 
 4. **Test the API:**
    ```bash
-   curl http://localhost:3001/api/events/theatre?location=NYC
+   curl http://localhost:8765/api/events/theatre?location=NYC
    ```
 
 ## API Endpoints
@@ -117,6 +117,6 @@ Required:
 - `PERPLEXITY_API_KEY` - Your Perplexity API key
 
 Optional:
-- `PORT` - Server port (default: 3001)
+- `PORT` - Server port (default: 8765)
 - `NODE_ENV` - Environment (development/production)
 - `FRONTEND_URL` - Frontend URL for CORS

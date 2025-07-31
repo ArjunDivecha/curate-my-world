@@ -26,13 +26,16 @@ export const config = {
   isProduction: nodeEnv === 'production',
   
   // Server configuration
-  port: parseInt(process.env.PORT) || 3001,
+  port: parseInt(process.env.PORT) || 8765,
   host: process.env.HOST || '127.0.0.1',
   
   // API keys
   perplexityApiKey: process.env.PERPLEXITY_API_KEY || 
                    process.env.PPLX_API_KEY || 
                    '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',
+  
+  predictHQApiKey: process.env.PREDICTHQ_API_KEY || 
+                  '8K2-8oWxCmuJ09HuFBwafivPpoK3Dqmab0qpmEkR',
   
   // Logging
   logLevel: process.env.LOG_LEVEL || (nodeEnv === 'development' ? 'debug' : 'info'),

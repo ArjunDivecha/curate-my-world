@@ -21,6 +21,7 @@ import express from 'express';
 import { EventPipeline } from '../pipeline/EventPipeline.js';
 import { CategoryManager } from '../managers/CategoryManager.js';
 import { ApyfluxClient } from '../clients/ApyfluxClient.js';
+import { PredictHQClient } from '../clients/PredictHQClient.js';
 import { EventDeduplicator } from '../utils/eventDeduplicator.js';
 import { createLogger, logRequest, logResponse } from '../utils/logger.js';
 import { config } from '../utils/config.js';
@@ -33,11 +34,12 @@ const logger = createLogger('EventsRoute');
 const eventPipeline = new EventPipeline(config.perplexityApiKey);
 const categoryManager = new CategoryManager();
 const apyfluxClient = new ApyfluxClient();
+const predictHQClient = new PredictHQClient(config.predictHQApiKey);
 const deduplicator = new EventDeduplicator();
 
 /**
  * GET /api/events/:category/combined
- * Get events from both Perplexity and Apyflux with deduplication
+ * Get events from all three sources (Perplexity, Apyflux, PredictHQ) with deduplication
  */
 router.get('/:category/combined', async (req, res) => {
   const startTime = Date.now();
@@ -548,5 +550,283 @@ if (config.isDevelopment) {
     logResponse(logger, res, 'clearCache', 0);
   });
 }
+
+/**
+ * GET /api/events/:category/predicthq
+ * Get events from PredictHQ API only
+ */
+router.get('/:category/predicthq', async (req, res) => {
+  const startTime = Date.now();
+  const { category } = req.params;
+  const { location = 'San Francisco, CA', date_range, limit } = req.query;
+  
+  logRequest(logger, req, 'predictHQEvents', { category, location, date_range, limit });
+  
+  try {
+    const eventLimit = Math.min(parseInt(limit) || 20, config.api.maxLimit);
+    
+    // Validate category
+    const validation = categoryManager.validateQuery({ category, location });
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: validation.errors.join(', '),
+        validCategories: categoryManager.getSupportedCategories().map(c => c.name),
+        source: 'predicthq_api'
+      });
+    }
+    
+    // Search PredictHQ events
+    const result = await predictHQClient.searchEvents({
+      category,
+      location,
+      dateRange: date_range || 'next 30 days',
+      limit: eventLimit
+    });
+    
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error,
+        events: [],
+        count: 0,
+        source: 'predicthq_api',
+        processingTime: result.processingTime
+      });
+    }
+    
+    // Transform events to our standard format
+    const transformedEvents = result.events.map(event => 
+      predictHQClient.transformEvent(event, category)
+    ).filter(event => event !== null);
+    
+    const duration = Date.now() - startTime;
+    
+    const response = {
+      success: true,
+      events: transformedEvents,
+      count: transformedEvents.length,
+      totalAvailable: result.totalAvailable,
+      source: 'predicthq_api',
+      processingTime: duration,
+      metadata: {
+        category,
+        location,
+        dateRange: date_range || 'next 30 days',
+        limit: eventLimit,
+        requestId: `predicthq_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      }
+    };
+    
+    res.json(response);
+    logResponse(logger, res, 'predictHQEvents', duration, { eventsFound: transformedEvents.length });
+    
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    
+    logger.error('PredictHQ events error', {
+      error: error.message,
+      category,
+      location,
+      processingTime: `${duration}ms`
+    });
+    
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      events: [],
+      count: 0,
+      source: 'predicthq_api',
+      processingTime: duration
+    });
+    
+    logResponse(logger, res, 'predictHQEvents', duration, { error: error.message });
+  }
+});
+
+/**
+ * GET /api/events/:category/all-sources
+ * Get events from all three sources (Perplexity, Apyflux, PredictHQ) with deduplication
+ */
+router.get('/:category/all-sources', async (req, res) => {
+  const startTime = Date.now();
+  const { category } = req.params;
+  const { location = 'San Francisco, CA', date_range, limit } = req.query;
+  
+  logRequest(logger, req, 'allSourcesEvents', { category, location, date_range, limit });
+  
+  try {
+    const eventLimit = Math.min(parseInt(limit) || 20, config.api.maxLimit);
+    
+    // Validate category
+    const validation = categoryManager.validateQuery({ category, location });
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: validation.errors.join(', '),
+        validCategories: categoryManager.getSupportedCategories().map(c => c.name),
+        sources: ['perplexity_api', 'apyflux_api', 'predicthq_api']
+      });
+    }
+    
+    // Run all three APIs in parallel
+    const [perplexityResult, apyfluxResult, predictHQResult] = await Promise.allSettled([
+      // Perplexity via EventPipeline
+      eventPipeline.collectEvents({
+        category,
+        location,
+        dateRange: date_range,
+        options: {
+          limit: eventLimit,
+          minConfidence: 0.5,
+          maxTokens: config.perplexity.maxTokens,
+          temperature: config.perplexity.temperature
+        }
+      }),
+      
+      // Apyflux direct
+      apyfluxClient.searchEvents({
+        query: apyfluxClient.buildSearchQuery(category, location),
+        location,
+        category,
+        dateRange: date_range || 'next 30 days',
+        limit: eventLimit
+      }).then(result => {
+        if (result.success && result.events.length > 0) {
+          const transformedEvents = result.events.map(event => 
+            apyfluxClient.transformEvent(event, category)
+          ).filter(event => event !== null);
+          
+          return {
+            success: true,
+            events: transformedEvents,
+            count: transformedEvents.length,
+            processingTime: result.processingTime,
+            source: 'apyflux_api',
+            requestId: result.requestId
+          };
+        }
+        return result;
+      }),
+      
+      // PredictHQ direct
+      predictHQClient.searchEvents({
+        category,
+        location,
+        dateRange: date_range || 'next 30 days',
+        limit: eventLimit
+      }).then(result => {
+        if (result.success && result.events.length > 0) {
+          const transformedEvents = result.events.map(event => 
+            predictHQClient.transformEvent(event, category)
+          ).filter(event => event !== null);
+          
+          return {
+            success: true,
+            events: transformedEvents,
+            count: transformedEvents.length,
+            processingTime: result.processingTime,
+            source: 'predicthq_api',
+            totalAvailable: result.totalAvailable
+          };
+        }
+        return result;
+      })
+    ]);
+    
+    // Prepare event lists for deduplication
+    const eventLists = [];
+    const sourceStats = {};
+    
+    if (perplexityResult.status === 'fulfilled' && perplexityResult.value.success) {
+      eventLists.push(perplexityResult.value);
+      sourceStats.perplexity = {
+        count: perplexityResult.value.events.length,
+        processingTime: perplexityResult.value.processingTime
+      };
+    } else {
+      sourceStats.perplexity = {
+        count: 0,
+        error: perplexityResult.reason?.message || 'Unknown error'
+      };
+    }
+    
+    if (apyfluxResult.status === 'fulfilled' && apyfluxResult.value.success) {
+      eventLists.push(apyfluxResult.value);
+      sourceStats.apyflux = {
+        count: apyfluxResult.value.events.length,
+        processingTime: apyfluxResult.value.processingTime
+      };
+    } else {
+      sourceStats.apyflux = {
+        count: 0,
+        error: apyfluxResult.reason?.message || 'Unknown error'
+      };
+    }
+    
+    if (predictHQResult.status === 'fulfilled' && predictHQResult.value.success) {
+      eventLists.push(predictHQResult.value);
+      sourceStats.predicthq = {
+        count: predictHQResult.value.events.length,
+        processingTime: predictHQResult.value.processingTime,
+        totalAvailable: predictHQResult.value.totalAvailable
+      };
+    } else {
+      sourceStats.predicthq = {
+        count: 0,
+        error: predictHQResult.reason?.message || 'Unknown error'
+      };
+    }
+    
+    // Deduplicate events across all sources
+    const deduplicatedEvents = deduplicator.deduplicateEvents(eventLists);
+    
+    const duration = Date.now() - startTime;
+    
+    const response = {
+      success: true,
+      events: deduplicatedEvents,
+      count: deduplicatedEvents.length,
+      sources: ['perplexity_api', 'apyflux_api', 'predicthq_api'],
+      sourceStats,
+      processingTime: duration,
+      metadata: {
+        category,
+        location,
+        dateRange: date_range || 'next 30 days',
+        limit: eventLimit,
+        deduplicationApplied: true,
+        requestId: `all_sources_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      }
+    };
+    
+    res.json(response);
+    logResponse(logger, res, 'allSourcesEvents', duration, { 
+      eventsFound: deduplicatedEvents.length,
+      sourceStats 
+    });
+    
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    
+    logger.error('All sources events error', {
+      error: error.message,
+      category,
+      location,
+      processingTime: `${duration}ms`
+    });
+    
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      events: [],
+      count: 0,
+      sources: ['perplexity_api', 'apyflux_api', 'predicthq_api'],
+      processingTime: duration
+    });
+    
+    logResponse(logger, res, 'allSourcesEvents', duration, { error: error.message });
+  }
+});
 
 export default router;

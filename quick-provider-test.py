@@ -11,10 +11,10 @@ import time
 def test_predicthq_quick():
     print("=== Testing PredictHQ API ===")
     
-    # Try different location approaches
+    # Try different location approaches - use coordinates for SF
     locations_to_try = [
+        ("10km@37.7749,-122.4194", "location.within"),  # San Francisco coordinates
         ("Los Angeles", "q"),
-        ("Los Angeles, CA", "q"), 
         ("california", "q"),
         ("us", "place.scope")
     ]
@@ -66,7 +66,7 @@ def test_our_api_quick():
         print("Testing Perplexity endpoint...")
         start_time = time.time()
         
-        url = "http://127.0.0.1:3001/api/events/comedy"
+        url = "http://127.0.0.1:8765/api/events/comedy"
         params = {'location': 'Los Angeles, CA', 'limit': 5}
         
         response = requests.get(url, params=params, timeout=90)  # Longer timeout
@@ -104,7 +104,7 @@ def test_apyflux_quick():
         print("Testing Apyflux comparison endpoint...")
         start_time = time.time()
         
-        url = "http://127.0.0.1:3001/api/events/comedy/compare"
+        url = "http://127.0.0.1:8765/api/events/comedy/compare"
         params = {'location': 'Los Angeles, CA', 'limit': 5}
         
         response = requests.get(url, params=params, timeout=90)

@@ -211,7 +211,7 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
       console.error('❌ Error fetching events with new API:', error);
       toast({
         title: "Error fetching events",
-        description: error.message || "Failed to fetch events from new API. Make sure the API server is running on port 3001.",
+        description: error.message || "Failed to fetch events from new API. Make sure the API server is running on port 8765.",
         variant: "destructive",
       });
     } finally {

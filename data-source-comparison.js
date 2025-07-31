@@ -33,7 +33,7 @@ import { fileURLToPath } from 'url';
 
 // Configuration
 const CONFIG = {
-  API_BASE_URL: 'http://127.0.0.1:3001/api',
+  API_BASE_URL: 'http://127.0.0.1:8765/api',
   PREDICTHQ_API_KEY: '8K2-8oWxCmuJ09HuFBwafivPpoK3Dqmab0qpmEkR',
   PREDICTHQ_BASE_URL: 'https://api.predicthq.com/v1',
   DEFAULT_LIMIT: 5,
@@ -192,11 +192,25 @@ async function testPredictHQAPI(category, location) {
     };
     
     const phqCategory = categoryMapping[category.toLowerCase()] || 'performing-arts';
-    const locationQuery = location.includes(',') ? location.split(',')[0].trim() : location;
+    
+    // Handle location for PredictHQ - use coordinates for San Francisco
+    let locationParams = {};
+    if (location.toLowerCase().includes('san francisco')) {
+      // Use San Francisco coordinates and radius
+      locationParams = {
+        'location.within': '10km@37.7749,-122.4194' // SF coordinates with 10km radius
+      };
+    } else {
+      // For other locations, try place.scope with proper formatting
+      const locationQuery = location.includes(',') ? location.split(',')[0].trim() : location;
+      locationParams = {
+        'place.scope': locationQuery
+      };
+    }
     
     const url = `${CONFIG.PREDICTHQ_BASE_URL}/events?` + new URLSearchParams({
       category: phqCategory,
-      'place.scope': locationQuery,
+      ...locationParams,
       limit: CONFIG.DEFAULT_LIMIT,
       sort: 'start'
     });

@@ -290,17 +290,25 @@ class ProviderTester:
             phq_category = category_mapping.get(category.lower(), 'performing-arts')
             
             # Handle location formatting for PredictHQ
-            # Remove location qualifiers and use just the city name
-            location_query = location.split(',')[0].strip()
-            
-            # Try different location formats for better compatibility
             url = f"{CONFIG['PREDICTHQ_BASE_URL']}/events"
-            params = {
-                'category': phq_category,
-                'q': location_query,  # Use general query instead of place.scope
-                'limit': limit,
-                'sort': 'start'
-            }
+            
+            if 'san francisco' in location.lower():
+                # Use San Francisco coordinates with radius (same fix as JavaScript)
+                params = {
+                    'category': phq_category,
+                    'location.within': '10km@37.7749,-122.4194',  # SF coordinates with 10km radius
+                    'limit': limit,
+                    'sort': 'start'
+                }
+            else:
+                # For other locations, use general query
+                location_query = location.split(',')[0].strip()
+                params = {
+                    'category': phq_category,
+                    'q': location_query,
+                    'limit': limit,
+                    'sort': 'start'
+                }
             
             headers = {
                 'Authorization': f"Bearer {CONFIG['PREDICTHQ_API_KEY']}",

@@ -49,42 +49,104 @@ router.get('/', async (req, res) => {
         maxTokens: config.perplexity.maxTokens,
         temperature: config.perplexity.temperature,
         hasApiKey: !!config.perplexityApiKey
+      },
+      predicthq: {
+        hasApiKey: !!config.predictHQApiKey
+      },
+      apyflux: {
+        available: true // No API key required
       }
     };
 
-    // Check Perplexity API connectivity if requested
+    // Check all API connectivity if requested
     let apiStatus = null;
     if (req.query.check_api === 'true') {
-      try {
-        // Import dynamically to avoid circular dependencies
-        const { PerplexityClient } = await import('../clients/PerplexityClient.js');
-        const client = new PerplexityClient(config.perplexityApiKey);
-        
-        logger.info('Testing Perplexity API connectivity');
-        const testResult = await client.testConnection();
-        
-        apiStatus = {
-          perplexity: {
-            available: testResult.success,
-            responseTime: testResult.processingTime,
-            eventPatterns: testResult.eventPatterns,
-            meetsExpectation: testResult.meetsExpectation,
-            error: testResult.error || null
+      logger.info('Testing all API connectivity');
+      
+      // Test all APIs in parallel
+      const [perplexityResult, apyfluxResult, predictHQResult] = await Promise.allSettled([
+        // Perplexity test
+        (async () => {
+          try {
+            const { PerplexityClient } = await import('../clients/PerplexityClient.js');
+            const client = new PerplexityClient(config.perplexityApiKey);
+            const testResult = await client.testConnection();
+            
+            return {
+              available: testResult.success,
+              responseTime: testResult.processingTime,
+              eventPatterns: testResult.eventPatterns,
+              meetsExpectation: testResult.meetsExpectation,
+              error: testResult.error || null
+            };
+          } catch (error) {
+            return {
+              available: false,
+              error: error.message
+            };
           }
-        };
+        })(),
         
-        logger.info('API connectivity test completed', apiStatus);
-        
-      } catch (error) {
-        logger.error('API connectivity test failed', { error: error.message });
-        
-        apiStatus = {
-          perplexity: {
-            available: false,
-            error: error.message
+        // Apyflux test
+        (async () => {
+          try {
+            const { ApyfluxClient } = await import('../clients/ApyfluxClient.js');
+            const client = new ApyfluxClient();
+            const healthStatus = await client.getHealthStatus();
+            
+            return {
+              available: healthStatus.status === 'healthy',
+              responseTime: healthStatus.latency,
+              message: healthStatus.message,
+              error: healthStatus.status !== 'healthy' ? healthStatus.message : null
+            };
+          } catch (error) {
+            return {
+              available: false,
+              error: error.message
+            };
           }
-        };
-      }
+        })(),
+        
+        // PredictHQ test
+        (async () => {
+          try {
+            const { PredictHQClient } = await import('../clients/PredictHQClient.js');
+            const client = new PredictHQClient(config.predictHQApiKey);
+            const healthStatus = await client.getHealthStatus();
+            
+            return {
+              available: healthStatus.status === 'healthy',
+              responseTime: healthStatus.latency,
+              message: healthStatus.message,
+              totalAvailable: healthStatus.totalAvailable,
+              error: healthStatus.status !== 'healthy' ? healthStatus.message : null
+            };
+          } catch (error) {
+            return {
+              available: false,
+              error: error.message
+            };
+          }
+        })()
+      ]);
+      
+      apiStatus = {
+        perplexity: perplexityResult.status === 'fulfilled' ? perplexityResult.value : {
+          available: false,
+          error: perplexityResult.reason?.message || 'Unknown error'
+        },
+        apyflux: apyfluxResult.status === 'fulfilled' ? apyfluxResult.value : {
+          available: false,
+          error: apyfluxResult.reason?.message || 'Unknown error'
+        },
+        predicthq: predictHQResult.status === 'fulfilled' ? predictHQResult.value : {
+          available: false,
+          error: predictHQResult.reason?.message || 'Unknown error'
+        }
+      };
+      
+      logger.info('All API connectivity tests completed', apiStatus);
     }
 
     const responseTime = Date.now() - startTime;
