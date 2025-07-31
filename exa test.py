@@ -5,7 +5,7 @@ import datetime
 from exa_py import Exa
 
 def main():
-    api_key = os.getenv("EXA_API_KEY")
+    api_key = "2070cfb2-927b-4f3f-a64b-7d0ca3d04e7a"
     if not api_key:
         raise RuntimeError("Please set the EXA_API_KEY environment variable")
     exa = Exa(api_key=api_key)

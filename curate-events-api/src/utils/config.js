@@ -33,9 +33,10 @@ export const config = {
   perplexityApiKey: process.env.PERPLEXITY_API_KEY || 
                    process.env.PPLX_API_KEY || 
                    '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',
-  
   predictHQApiKey: process.env.PREDICTHQ_API_KEY || 
                   '8K2-8oWxCmuJ09HuFBwafivPpoK3Dqmab0qpmEkR',
+  exaApiKey: process.env.EXA_API_KEY,
+  serpApiKey: process.env.SERPAPI_API_KEY,
   
   // Logging
   logLevel: process.env.LOG_LEVEL || (nodeEnv === 'development' ? 'debug' : 'info'),

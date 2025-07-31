@@ -23,6 +23,8 @@ import { CategoryManager } from '../managers/CategoryManager.js';
 import { ApyfluxClient } from '../clients/ApyfluxClient.js';
 import { PredictHQClient } from '../clients/PredictHQClient.js';
 import { EventDeduplicator } from '../utils/eventDeduplicator.js';
+import { ExaClient } from '../clients/ExaClient.js';
+import { SerpApiClient } from '../clients/SerpApiClient.js';
 import { createLogger, logRequest, logResponse } from '../utils/logger.js';
 import { config } from '../utils/config.js';
 import { eventCache } from '../utils/cache.js';
@@ -35,6 +37,8 @@ const eventPipeline = new EventPipeline(config.perplexityApiKey);
 const categoryManager = new CategoryManager();
 const apyfluxClient = new ApyfluxClient();
 const predictHQClient = new PredictHQClient(config.predictHQApiKey);
+const exaClient = new ExaClient();
+const serpApiClient = new SerpApiClient();
 const deduplicator = new EventDeduplicator();
 
 /**
@@ -358,7 +362,7 @@ router.get('/all-categories', async (req, res) => {
     const categoryPromises = supportedCategories.map(async (category) => {
       try {
         // Use the all-sources approach for comprehensive coverage
-        const [perplexityResult, apyfluxResult, predictHQResult] = await Promise.allSettled([
+        const [perplexityResult, apyfluxResult, predictHQResult, exaResult, serpApiResult] = await Promise.allSettled([
           // Perplexity via EventPipeline
           eventPipeline.collectEvents({
             category,
@@ -419,6 +423,20 @@ router.get('/all-categories', async (req, res) => {
               };
             }
             return result;
+          }),
+          
+          // Exa direct
+          exaClient.searchEvents({
+            category,
+            location,
+            limit: eventLimit
+          }),
+          
+          // SerpAPI direct
+          serpApiClient.searchEvents({
+            category,
+            location,
+            limit: eventLimit
           })
         ]);
         
@@ -435,6 +453,14 @@ router.get('/all-categories', async (req, res) => {
         
         if (predictHQResult.status === 'fulfilled' && predictHQResult.value.success) {
           eventLists.push(predictHQResult.value);
+        }
+        
+        if (exaResult.status === 'fulfilled' && exaResult.value.success) {
+          eventLists.push(exaResult.value);
+        }
+        
+        if (serpApiResult.status === 'fulfilled' && serpApiResult.value.success) {
+          eventLists.push(serpApiResult.value);
         }
         
         // Deduplicate events for this category
@@ -454,7 +480,13 @@ router.get('/all-categories', async (req, res) => {
               { count: 0, error: apyfluxResult.reason?.message || 'Unknown error' },
             predicthq: predictHQResult.status === 'fulfilled' && predictHQResult.value.success ? 
               { count: predictHQResult.value.events.length, processingTime: predictHQResult.value.processingTime } : 
-              { count: 0, error: predictHQResult.reason?.message || 'Unknown error' }
+              { count: 0, error: predictHQResult.reason?.message || 'Unknown error' },
+            exa: exaResult.status === 'fulfilled' && exaResult.value.success ? 
+              { count: exaResult.value.events.length, processingTime: exaResult.value.processingTime } : 
+              { count: 0, error: exaResult.reason?.message || 'Unknown error' },
+            serpapi: serpApiResult.status === 'fulfilled' && serpApiResult.value.success ? 
+              { count: serpApiResult.value.events.length, processingTime: serpApiResult.value.processingTime } : 
+              { count: 0, error: serpApiResult.reason?.message || 'Unknown error' }
           }
         };
         

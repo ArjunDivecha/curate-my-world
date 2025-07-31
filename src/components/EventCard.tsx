@@ -28,6 +28,8 @@ interface Event {
   ticketUrl?: string;
   eventUrl?: string;
   aiReasoning: string;
+  source?: string;
+  sources?: string[];
 }
 
 interface EventCardProps {
@@ -60,6 +62,28 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
     if (score >= 8) return "bg-primary text-primary-foreground";
     if (score >= 6) return "bg-accent text-accent-foreground";
     return "bg-secondary text-secondary-foreground";
+  };
+
+  const formatSources = (event: Event) => {
+    const sourceMap: { [key: string]: string } = {
+      'perplexity_api': 'Perplexity',
+      'apyflux_api': 'Apyflux',
+      'predicthq_api': 'PredictHQ',
+      'exa_api': 'Exa',
+      'serpapi_api': 'SerpAPI'
+    };
+    
+    // Handle multiple sources (from deduplication)
+    if (event.sources && event.sources.length > 0) {
+      return event.sources.map(source => sourceMap[source] || source).join(', ');
+    }
+    
+    // Handle single source
+    if (event.source) {
+      return sourceMap[event.source] || event.source;
+    }
+    
+    return 'Unknown';
   };
 
   const handleCalendarSave = (calendarType: 'google' | 'outlook' | 'apple' | 'download') => {
@@ -182,6 +206,14 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
               {category}
             </Badge>
           ))}
+        </div>
+
+        {/* Data Sources */}
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-xs text-muted-foreground">Source:</span>
+          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+            {formatSources(event)}
+          </Badge>
         </div>
 
 

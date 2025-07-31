@@ -1,0 +1,2596 @@
+{
+  "session_start": "2025-07-30T23:01:27.997081",
+  "session_end": "2025-07-30T23:02:09.592359",
+  "total_tests": 2,
+  "tests": [
+    {
+      "timestamp": "2025-07-30T23:01:37.504757",
+      "category": "food",
+      "location": "Austin, TX",
+      "limit": 10,
+      "results": [
+        {
+          "provider": "perplexity",
+          "success": false,
+          "error": "HTTPConnectionPool(host='127.0.0.1', port=3001): Max retries exceeded with url: /api/events/food?location=Austin%2C+TX&limit=10 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x1026d1ca0>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+          "count": 0,
+          "events": [],
+          "duration_ms": 0
+        },
+        {
+          "provider": "apyflux",
+          "success": false,
+          "error": "HTTPConnectionPool(host='127.0.0.1', port=3001): Max retries exceeded with url: /api/events/food/compare?location=Austin%2C+TX&limit=10 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x102af1880>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+          "count": 0,
+          "events": [],
+          "duration_ms": 0
+        },
+        {
+          "provider": "predicthq",
+          "success": true,
+          "count": 10,
+          "total_available": 180,
+          "events": [
+            {
+              "relevance": null,
+              "id": "ERojvuA7pg7MUNU2SF",
+              "title": "Calf Fry Music Fest",
+              "alternate_titles": [
+                "Austin Williams @ Tumbleweed Dance Hall in Stillwater",
+                "Calf Fry Music Fest at Tumbleweed Dance Hall & Concert Arena"
+              ],
+              "description": "Sourced from predicthq.com",
+              "category": "festivals",
+              "rank": 68,
+              "local_rank": 98,
+              "phq_attendance": 8000,
+              "entities": [
+                {
+                  "entity_id": "iresM5cCFNmzkhPGdfieqP",
+                  "name": "Tanner Usrey",
+                  "type": "person"
+                },
+                {
+                  "entity_id": "32Cb5yDw93gemy2yffaD57k",
+                  "name": "Kashus Culpepper",
+                  "type": "person"
+                },
+                {
+                  "entity_id": "JnpbkY8bBcWv8H7zuq5HLE",
+                  "name": "Austin Williams",
+                  "type": "organization"
+                },
+                {
+                  "entity_id": "XT6KHkPJKaGzr4DEbamnym",
+                  "name": "Tumbleweed Dancehall & Concert Venue",
+                  "type": "venue",
+                  "formatted_address": "Lakeview &, N Country Club Rd, Stillwater, OK 74075, USA"
+                }
+              ],
+              "duration": 259199,
+              "start": "2025-05-01T05:00:00Z",
+              "start_local": "2025-05-01T00:00:00",
+              "end": "2025-05-04T04:59:59Z",
+              "end_local": "2025-05-03T23:59:59",
+              "updated": "2025-04-10T07:09:33Z",
+              "first_seen": "2025-01-28T21:59:18Z",
+              "timezone": "America/Chicago",
+              "location": [
+                -97.12632390000002,
+                36.1456779
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -97.12632390000002,
+                    36.1456779
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "zzy-222@5qv-24q-cwk",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "Lakeview &, N Country Club Rd, Stillwater, OK 74075, USA",
+                  "postcode": "74075",
+                  "locality": "Stillwater",
+                  "region": "Oklahoma"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-04-29",
+                      "value": 214,
+                      "position": "leading"
+                    },
+                    {
+                      "date_local": "2025-04-30",
+                      "value": 747,
+                      "position": "leading"
+                    },
+                    {
+                      "date_local": "2025-05-01",
+                      "value": 2133,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 2667,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 3200,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-04",
+                      "value": 1120,
+                      "position": "lagging"
+                    },
+                    {
+                      "date_local": "2025-05-05",
+                      "value": 320,
+                      "position": "lagging"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-04-30",
+                      "value": 1067,
+                      "position": "leading"
+                    },
+                    {
+                      "date_local": "2025-05-01",
+                      "value": 2133,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 2667,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 3200,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-04",
+                      "value": 1056,
+                      "position": "lagging"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-01",
+                      "value": 2133,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 2667,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 3200,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-04",
+                      "value": 960,
+                      "position": "lagging"
+                    },
+                    {
+                      "date_local": "2025-05-05",
+                      "value": 960,
+                      "position": "lagging"
+                    },
+                    {
+                      "date_local": "2025-05-06",
+                      "value": 320,
+                      "position": "lagging"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4544379",
+                  "4547701",
+                  "4552215"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 436186,
+              "predicted_event_spend_industries": {
+                "accommodation": 72357,
+                "hospitality": 267765,
+                "transportation": 96064
+              },
+              "phq_labels": [
+                {
+                  "label": "music",
+                  "weight": 1.0
+                }
+              ]
+            },
+            {
+              "relevance": null,
+              "id": "D6vRmjmpQ76RfsV8Bu",
+              "title": "SKAWEST FEST '25",
+              "description": "Sourced from predicthq.com - Join us for Texas' premier Ska, Punk, Rocksteady, Two-Tone, and adjacent Music Festival. Day 1 in Denton, Day 2 in Austin, TX.",
+              "category": "festivals",
+              "rank": 45,
+              "local_rank": 65,
+              "phq_attendance": 547,
+              "entities": [],
+              "duration": 21600,
+              "start": "2025-05-02T22:00:00Z",
+              "start_local": "2025-05-02T17:00:00",
+              "end": "2025-05-03T04:00:00Z",
+              "end_local": "2025-05-02T23:00:00",
+              "updated": "2025-02-14T04:51:23Z",
+              "first_seen": "2025-02-14T04:49:49Z",
+              "timezone": "America/Chicago",
+              "location": [
+                -97.1268711,
+                33.2125164
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -97.1268711,
+                    33.2125164
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "222-222@5qv-w4j-5fz",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "East Sycamore Street, Denton, TX 76205, United States of America",
+                  "locality": "Denton",
+                  "postcode": "76205",
+                  "region": "Texas"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 547,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-01",
+                      "value": 165,
+                      "position": "leading"
+                    },
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 547,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 99,
+                      "position": "lagging"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 547,
+                      "position": "event_day"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4685912",
+                  "4685907"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 16378,
+              "predicted_event_spend_industries": {
+                "accommodation": 3144,
+                "hospitality": 8040,
+                "transportation": 5193
+              },
+              "phq_labels": [
+                {
+                  "label": "music",
+                  "weight": 1.0
+                }
+              ]
+            },
+            {
+              "relevance": null,
+              "id": "9vVtzQKuDycd5dctzp",
+              "title": "Spring Pecan Street Festival",
+              "alternate_titles": [
+                "Bella Soaps ATX @ Pecan Street Festival"
+              ],
+              "description": "Sourced from predicthq.com - The Pecan Street Festival is a free two-day arts festival held twice yearly in downtown Austin\u2019s Sixth Street Historic District.",
+              "category": "festivals",
+              "rank": 100,
+              "local_rank": 100,
+              "phq_attendance": 400000,
+              "entities": [
+                {
+                  "entity_id": "MinD5q4RN9s8LVMYX3ReSp",
+                  "name": "Hill Country Galleria",
+                  "type": "venue",
+                  "formatted_address": "12700 Hill Country Boulevard, Austin, TX 78738, United States of America"
+                },
+                {
+                  "entity_id": "qdnY8y6P7UYL6pW2fKjXtN",
+                  "name": "Pecan Street Festival - Spring",
+                  "type": "event-group",
+                  "category": "festivals",
+                  "labels": [
+                    "entertainment",
+                    "event-group",
+                    "festival",
+                    "food",
+                    "music",
+                    "recurring"
+                  ],
+                  "description": "The Pecan Street Festival is a free two-day arts festival held twice yearly in downtown Austin\u2019s Sixth Street Historic District.",
+                  "recurring": {
+                    "ical": "DTSTART;VALUE=DATE:20110507\nDURATION:P1DT9H\nRRULE:FREQ=YEARLY;INTERVAL=1"
+                  }
+                }
+              ],
+              "duration": 172799,
+              "start": "2025-05-03T05:00:00Z",
+              "start_local": "2025-05-03T00:00:00",
+              "end": "2025-05-05T04:59:59Z",
+              "end_local": "2025-05-04T23:59:59",
+              "updated": "2025-07-16T01:01:04Z",
+              "first_seen": "2024-10-28T01:49:39Z",
+              "timezone": "America/Chicago",
+              "location": [
+                -97.94057493942151,
+                30.30909701537246
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    [
+                      [
+                        -97.9440173,
+                        30.3124343
+                      ],
+                      [
+                        -97.9461094,
+                        30.3111839
+                      ],
+                      [
+                        -97.9454442,
+                        30.3085442
+                      ],
+                      [
+                        -97.9353162,
+                        30.3052096
+                      ],
+                      [
+                        -97.9362388,
+                        30.3101373
+                      ],
+                      [
+                        -97.9440173,
+                        30.3124343
+                      ]
+                    ]
+                  ],
+                  "type": "Polygon"
+                },
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "Hill Country Boulevard, Bee Cave, TX 78738, United States of America",
+                  "locality": "Bee Cave",
+                  "postcode": "78738",
+                  "region": "Texas"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-04-30",
+                      "value": 65455,
+                      "position": "leading"
+                    },
+                    {
+                      "date_local": "2025-05-01",
+                      "value": 98182,
+                      "position": "leading"
+                    },
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 185455,
+                      "position": "leading"
+                    },
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 218182,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-04",
+                      "value": 181818,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-05",
+                      "value": 72728,
+                      "position": "lagging"
+                    },
+                    {
+                      "date_local": "2025-05-06",
+                      "value": 18182,
+                      "position": "lagging"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 109091,
+                      "position": "leading"
+                    },
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 218182,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-04",
+                      "value": 181818,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-05",
+                      "value": 60000,
+                      "position": "lagging"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-04-30",
+                      "value": 43637,
+                      "position": "leading"
+                    },
+                    {
+                      "date_local": "2025-05-01",
+                      "value": 54546,
+                      "position": "leading"
+                    },
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 65455,
+                      "position": "leading"
+                    },
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 218182,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-04",
+                      "value": 181818,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-05",
+                      "value": 90909,
+                      "position": "lagging"
+                    },
+                    {
+                      "date_local": "2025-05-06",
+                      "value": 45455,
+                      "position": "lagging"
+                    },
+                    {
+                      "date_local": "2025-05-07",
+                      "value": 45455,
+                      "position": "lagging"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4737316",
+                  "4673132"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 29731765,
+              "predicted_event_spend_industries": {
+                "accommodation": 5734999,
+                "hospitality": 17544292,
+                "transportation": 6452472
+              }
+            },
+            {
+              "relevance": null,
+              "id": "3NfTqDhxGfuyCGHvVU",
+              "title": "Austin Metaphysical and Holistic Fair",
+              "description": "Sourced from predicthq.com - Join us at the Austin Metaphysical and Holistic Fair for a day of exploring all things spiritual, mystical, and healing!",
+              "category": "festivals",
+              "rank": 38,
+              "local_rank": 60,
+              "phq_attendance": 252,
+              "entities": [],
+              "duration": 21600,
+              "start": "2025-05-03T16:00:00Z",
+              "start_local": "2025-05-03T11:00:00",
+              "end": "2025-05-03T22:00:00Z",
+              "end_local": "2025-05-03T17:00:00",
+              "updated": "2025-06-05T00:23:23Z",
+              "first_seen": "2025-01-24T07:08:48Z",
+              "timezone": "America/Chicago",
+              "location": [
+                -97.6762802,
+                30.3736121
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -97.6762802,
+                    30.3736121
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "12bsfrsav6@8t2-f4z-m49",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "North Interstate Highway 35, Austin, TX 78753, United States of America",
+                  "locality": "Austin",
+                  "postcode": "78753",
+                  "region": "Texas"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 252,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 252,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 252,
+                      "position": "event_day"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4737316",
+                  "4739275"
+                ],
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4742143",
+                  "4671654"
+                ],
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4737316",
+                  "4671654"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 5022,
+              "predicted_event_spend_industries": {
+                "accommodation": 0,
+                "hospitality": 2909,
+                "transportation": 2113
+              },
+              "phq_labels": [
+                {
+                  "label": "religion",
+                  "weight": 1.0
+                }
+              ]
+            },
+            {
+              "relevance": null,
+              "id": "E6CK63jYUqMN7q4WF4",
+              "title": "CelebrASIA Austin 2025",
+              "description": "Sourced from predicthq.com - Free and family friendly festival, featuring performances, art, culture, food, and more!",
+              "category": "festivals",
+              "rank": 44,
+              "local_rank": 62,
+              "phq_attendance": 482,
+              "entities": [
+                {
+                  "entity_id": "32fYBHeSPxc2cBBgL57JrQu",
+                  "name": "CelebrASIA Austin",
+                  "type": "event-group",
+                  "formatted_address": "8401 Cameron Rd, Austin, TX 78754, USA",
+                  "category": "festivals",
+                  "labels": [
+                    "event-group",
+                    "festival",
+                    "recurring"
+                  ],
+                  "recurring": {
+                    "ical": "DTSTART;VALUE=DATE-TIME:20240518T110000\nRRULE:FREQ=YEARLY;INTERVAL=1"
+                  }
+                }
+              ],
+              "duration": 14400,
+              "start": "2025-05-03T16:00:00Z",
+              "start_local": "2025-05-03T11:00:00",
+              "end": "2025-05-03T20:00:00Z",
+              "end_local": "2025-05-03T15:00:00",
+              "updated": "2025-07-13T04:11:23Z",
+              "first_seen": "2025-03-06T18:15:24Z",
+              "timezone": "America/Chicago",
+              "location": [
+                -97.6809444,
+                30.3398639
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -97.6809444,
+                    30.3398639
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "zzw-222@8t2-dz5-9cq",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "Cameron Road, Austin, TX 78754, United States of America",
+                  "locality": "Austin",
+                  "postcode": "78754",
+                  "region": "Texas"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 482,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 482,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-04",
+                      "value": 58,
+                      "position": "lagging"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 482,
+                      "position": "event_day"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4737316",
+                  "4739275"
+                ],
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4742143",
+                  "4671654"
+                ],
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4737316",
+                  "4671654"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 15198,
+              "predicted_event_spend_industries": {
+                "accommodation": 3189,
+                "hospitality": 6956,
+                "transportation": 5052
+              },
+              "phq_labels": [
+                {
+                  "label": "food-and-beverage",
+                  "weight": 0.287
+                },
+                {
+                  "label": "family-activities",
+                  "weight": 0.269
+                },
+                {
+                  "label": "art-and-cultural",
+                  "weight": 0.236
+                },
+                {
+                  "label": "educational",
+                  "weight": 0.208
+                }
+              ]
+            },
+            {
+              "relevance": null,
+              "id": "FBAL9Lu6Z6dsDL3opJ",
+              "title": "Raise Your Spiritual IQ! \u2014ECK Info Table at Austin Metaphysical Fair",
+              "description": "Sourced from predicthq.com - Gain a new perspective on your purpose in life. Learn ways to access your divine intuition and  handle challenges from a spiritual viewpoint",
+              "category": "festivals",
+              "rank": 38,
+              "local_rank": 60,
+              "phq_attendance": 252,
+              "entities": [],
+              "duration": 21600,
+              "start": "2025-05-03T16:00:00Z",
+              "start_local": "2025-05-03T11:00:00",
+              "end": "2025-05-03T22:00:00Z",
+              "end_local": "2025-05-03T17:00:00",
+              "updated": "2025-06-05T09:31:12Z",
+              "first_seen": "2025-05-01T12:47:07Z",
+              "timezone": "America/Chicago",
+              "location": [
+                -97.6762802,
+                30.3736121
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -97.6762802,
+                    30.3736121
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "1jy7wfzzcg@8t2-f4z-m49",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "North Interstate Highway 35, Austin, TX 78753, United States of America",
+                  "locality": "Austin",
+                  "postcode": "78753",
+                  "region": "Texas"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 252,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 252,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 252,
+                      "position": "event_day"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4737316",
+                  "4739275"
+                ],
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4742143",
+                  "4671654"
+                ],
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4737316",
+                  "4671654"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 5022,
+              "predicted_event_spend_industries": {
+                "accommodation": 0,
+                "hospitality": 2909,
+                "transportation": 2113
+              },
+              "phq_labels": [
+                {
+                  "label": "religion",
+                  "weight": 1.0
+                }
+              ]
+            },
+            {
+              "relevance": null,
+              "id": "8tNeuLtxzFouPDG7YR",
+              "title": "Grand Opening of The Cosmos Ranch Foundation - a Beltane Celebration",
+              "description": "Sourced from predicthq.com - Celebrate the awakening of summer with us at THE GRAND OPENING of the Cosmos Ranch Foundation on May 3rd, a vibrant new venue space n Austin",
+              "category": "festivals",
+              "rank": 39,
+              "local_rank": 69,
+              "phq_attendance": 284,
+              "entities": [],
+              "duration": 37800,
+              "start": "2025-05-03T18:00:00Z",
+              "start_local": "2025-05-03T13:00:00",
+              "end": "2025-05-04T04:30:00Z",
+              "end_local": "2025-05-03T23:30:00",
+              "updated": "2025-06-05T00:48:46Z",
+              "first_seen": "2025-04-03T08:12:23Z",
+              "timezone": "America/Chicago",
+              "location": [
+                -97.60669879999999,
+                30.1351874
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -97.60669879999999,
+                    30.1351874
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "17b2r3ffap@8t2-fh6-d5f",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "Fagerquist Road, TX 78617, United States of America",
+                  "postcode": "78617",
+                  "region": "Texas"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 284,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 284,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 284,
+                      "position": "event_day"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4737316",
+                  "4689116"
+                ],
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4742143",
+                  "4671654"
+                ],
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4737316",
+                  "4671654"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 5660,
+              "predicted_event_spend_industries": {
+                "accommodation": 0,
+                "hospitality": 3279,
+                "transportation": 2381
+              },
+              "phq_labels": [
+                {
+                  "label": "religion",
+                  "weight": 1.0
+                }
+              ]
+            },
+            {
+              "relevance": null,
+              "id": "DFwFeMT6Rr6hXJngJo",
+              "title": "The Market at Zach",
+              "description": "Sourced from predicthq.com - Experience The Market at Zach, a vibrant open-air pop-up celebrating Austin and Central Texas\u2019s best local artisans and makers.",
+              "category": "festivals",
+              "rank": 44,
+              "local_rank": 64,
+              "phq_attendance": 477,
+              "entities": [
+                {
+                  "entity_id": "CmwT4PtQKXVUvrje5tSMHs",
+                  "name": "The Market at Zach",
+                  "type": "event-group",
+                  "formatted_address": "202 South Lamar Boulevard, Austin, TX 78704, United States",
+                  "category": "festivals",
+                  "labels": [
+                    "community",
+                    "event-group",
+                    "festival"
+                  ],
+                  "description": "Experience The Market at Zach, a vibrant open-air pop-up celebrating Austin and Central Texas\u2019s best local artisans and makers.",
+                  "timezone": "America/Chicago"
+                }
+              ],
+              "duration": 14400,
+              "start": "2025-05-03T21:00:00Z",
+              "start_local": "2025-05-03T16:00:00",
+              "end": "2025-05-04T01:00:00Z",
+              "end_local": "2025-05-03T20:00:00",
+              "updated": "2025-06-05T02:04:31Z",
+              "first_seen": "2025-02-16T07:41:06Z",
+              "timezone": "America/Chicago",
+              "location": [
+                -97.7582114,
+                30.2641836
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -97.7582114,
+                    30.2641836
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "222-224@8t2-fjb-ffz",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "South Lamar Boulevard, Austin, TX 78704, United States of America",
+                  "locality": "Austin",
+                  "postcode": "78704",
+                  "region": "Texas"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 477,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 144,
+                      "position": "leading"
+                    },
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 477,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-04",
+                      "value": 86,
+                      "position": "lagging"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 477,
+                      "position": "event_day"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4737316",
+                  "4671654"
+                ],
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4742143",
+                  "4671654"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 15040,
+              "predicted_event_spend_industries": {
+                "accommodation": 3156,
+                "hospitality": 6884,
+                "transportation": 5000
+              },
+              "phq_labels": [
+                {
+                  "label": "nature-and-outdoor-activities",
+                  "weight": 0.565
+                },
+                {
+                  "label": "educational",
+                  "weight": 0.435
+                }
+              ]
+            },
+            {
+              "relevance": null,
+              "id": "HvBB2ehWmScGTsuRXT",
+              "title": "Austin Witches Market @ Cosmic Pickle Rd! \u2728 May 3",
+              "description": "Sourced from predicthq.com - Visit the Austin Witches Market at Cosmic Pickle!! It's 21+ after 7pm, free to attend, and friendly pets are welcome!",
+              "category": "festivals",
+              "rank": 40,
+              "local_rank": 61,
+              "phq_attendance": 321,
+              "entities": [],
+              "duration": 14400,
+              "start": "2025-05-03T23:00:00Z",
+              "start_local": "2025-05-03T18:00:00",
+              "end": "2025-05-04T03:00:00Z",
+              "end_local": "2025-05-03T22:00:00",
+              "updated": "2025-06-05T03:00:42Z",
+              "first_seen": "2025-04-25T18:37:16Z",
+              "timezone": "America/Chicago",
+              "location": [
+                -97.7624945,
+                30.226957
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -97.7624945,
+                    30.226957
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "1okytcbwuo@8t2-fj7-q2k",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "Pickle Road, Austin, TX 78704, United States of America",
+                  "locality": "Austin",
+                  "postcode": "78704",
+                  "region": "Texas"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 321,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 321,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 321,
+                      "position": "event_day"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4737316",
+                  "4739345"
+                ],
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4737316",
+                  "4671654"
+                ],
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4742143",
+                  "4671654"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 6398,
+              "predicted_event_spend_industries": {
+                "accommodation": 0,
+                "hospitality": 3706,
+                "transportation": 2691
+              },
+              "phq_labels": [
+                {
+                  "label": "religion",
+                  "weight": 1.0
+                }
+              ]
+            },
+            {
+              "relevance": null,
+              "id": "j9yoGqPSHjXZsUCjyC",
+              "title": "ART HOUSE presented by Austin Creative Pulse",
+              "description": "Sourced from predicthq.com - Roam, vibe, & immerse\u2014ART HOUSE is where Austin\u2019s boldest creatives take over. One night only. Limited tix. Don\u2019t miss it.",
+              "category": "festivals",
+              "rank": 39,
+              "local_rank": 62,
+              "phq_attendance": 285,
+              "entities": [],
+              "duration": 10800,
+              "start": "2025-05-03T23:00:00Z",
+              "start_local": "2025-05-03T18:00:00",
+              "end": "2025-05-04T02:00:00Z",
+              "end_local": "2025-05-03T21:00:00",
+              "updated": "2025-04-17T08:04:40Z",
+              "first_seen": "2025-04-17T07:42:59Z",
+              "timezone": "America/Chicago",
+              "location": [
+                -97.7713406,
+                30.276741
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -97.7713406,
+                    30.276741
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "1b3g2e6sc4@8t2-fj5-snq",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "Atlanta Street, Austin, TX 78703, United States of America",
+                  "locality": "Austin",
+                  "postcode": "78703",
+                  "region": "Texas"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 285,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 285,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 285,
+                      "position": "event_day"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4737316",
+                  "11205431"
+                ],
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4742143",
+                  "4671654"
+                ],
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "4736286",
+                  "4737316",
+                  "4671654"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 5680,
+              "predicted_event_spend_industries": {
+                "accommodation": 0,
+                "hospitality": 3290,
+                "transportation": 2389
+              },
+              "phq_labels": [
+                {
+                  "label": "art-and-cultural",
+                  "weight": 0.505
+                },
+                {
+                  "label": "family-activities",
+                  "weight": 0.495
+                }
+              ]
+            }
+          ],
+          "duration_ms": 677.020788192749
+        },
+        {
+          "provider": "combined",
+          "success": false,
+          "error": "HTTPConnectionPool(host='127.0.0.1', port=3001): Max retries exceeded with url: /api/events/food/combined?location=Austin%2C+TX&limit=10 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x102af1fd0>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+          "count": 0,
+          "events": [],
+          "duration_ms": 0
+        }
+      ]
+    },
+    {
+      "timestamp": "2025-07-30T23:02:03.133191",
+      "category": "theatre",
+      "location": "San Francisco, CA",
+      "limit": 10,
+      "results": [
+        {
+          "provider": "perplexity",
+          "success": false,
+          "error": "HTTPConnectionPool(host='127.0.0.1', port=3001): Max retries exceeded with url: /api/events/theatre?location=San+Francisco%2C+CA&limit=10 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x102af2390>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+          "count": 0,
+          "events": [],
+          "duration_ms": 0
+        },
+        {
+          "provider": "apyflux",
+          "success": false,
+          "error": "HTTPConnectionPool(host='127.0.0.1', port=3001): Max retries exceeded with url: /api/events/theatre/compare?location=San+Francisco%2C+CA&limit=10 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x102af1550>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+          "count": 0,
+          "events": [],
+          "duration_ms": 0
+        },
+        {
+          "provider": "predicthq",
+          "success": true,
+          "count": 10,
+          "total_available": 411,
+          "events": [
+            {
+              "relevance": null,
+              "id": "5kXiacyC4T73eUYxm6",
+              "title": "Cheaper Than Therapy, Stand-up Comedy: Thu, May 1",
+              "description": "Sourced from predicthq.com - San Francisco stand-up comedy every Wed @8pm, Thu @8pm, Fri-Sat @8 & 10pm, and Sun @8pm. No drink minimum.",
+              "category": "performing-arts",
+              "rank": 25,
+              "local_rank": 29,
+              "phq_attendance": 58,
+              "entities": [],
+              "duration": 5400,
+              "start": "2025-05-02T03:00:00Z",
+              "start_local": "2025-05-01T20:00:00",
+              "end": "2025-05-02T04:30:00Z",
+              "end_local": "2025-05-01T21:30:00",
+              "updated": "2025-05-16T04:05:56Z",
+              "first_seen": "2025-02-23T05:59:28Z",
+              "timezone": "America/Los_Angeles",
+              "location": [
+                -122.4091439,
+                37.7890249
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -122.4091439,
+                    37.7890249
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "22v-223@5vg-7gw-w8v",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "Sutter Street, San Francisco, CA 94102, United States of America",
+                  "locality": "San Francisco",
+                  "postcode": "94102",
+                  "region": "California"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-01",
+                      "value": 58,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-01",
+                      "value": 58,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-01",
+                      "value": 58,
+                      "position": "event_day"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "5332921",
+                  "5391997",
+                  "5391959"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 1344,
+              "predicted_event_spend_industries": {
+                "accommodation": 0,
+                "hospitality": 852,
+                "transportation": 492
+              },
+              "phq_labels": [
+                {
+                  "label": "comedy-club",
+                  "weight": 1.0
+                }
+              ]
+            },
+            {
+              "relevance": null,
+              "id": "64fcJK8AMJmKAWumRp",
+              "title": "An Evening with Flamy Grant",
+              "description": "Sourced from predicthq.com - Come out with your friends at City Church San Francisco for some shame-slaying & hip-swaying with Flamy Grant. $20 | 7pm (6pm doors)",
+              "category": "performing-arts",
+              "rank": 36,
+              "local_rank": 44,
+              "phq_attendance": 196,
+              "entities": [],
+              "duration": 7200,
+              "start": "2025-05-03T02:00:00Z",
+              "start_local": "2025-05-02T19:00:00",
+              "end": "2025-05-03T04:00:00Z",
+              "end_local": "2025-05-02T21:00:00",
+              "updated": "2025-06-05T09:10:35Z",
+              "first_seen": "2025-02-02T02:20:33Z",
+              "timezone": "America/Los_Angeles",
+              "location": [
+                -122.4346696,
+                37.7597602
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -122.4346696,
+                    37.7597602
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "23h-222@5vg-7gz-4n5",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "Castro Street, San Francisco, CA 94114, United States of America",
+                  "locality": "San Francisco",
+                  "postcode": "94114",
+                  "region": "California"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 196,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 196,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 196,
+                      "position": "event_day"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "5332921",
+                  "5391997",
+                  "5391959"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 4543,
+              "predicted_event_spend_industries": {
+                "accommodation": 0,
+                "hospitality": 2879,
+                "transportation": 1663
+              },
+              "phq_labels": [
+                {
+                  "label": "concert",
+                  "weight": 0.581
+                },
+                {
+                  "label": "celebration",
+                  "weight": 0.419
+                }
+              ]
+            },
+            {
+              "relevance": null,
+              "id": "9D3GokKPCTXkudZgea",
+              "title": "Stand Up Stars! Comedy Showcase at the Great Star",
+              "description": "Sourced from predicthq.com - The Best Comedy Show in San Francisco! Nonstop laughs at the Great Star Theatre featuring the Bay Area's funniest up-and-coming comedians!",
+              "category": "performing-arts",
+              "rank": 31,
+              "local_rank": 37,
+              "phq_attendance": 109,
+              "entities": [],
+              "duration": 12600,
+              "start": "2025-05-03T02:00:00Z",
+              "start_local": "2025-05-02T19:00:00",
+              "end": "2025-05-03T05:30:00Z",
+              "end_local": "2025-05-02T22:30:00",
+              "updated": "2025-05-17T02:01:33Z",
+              "first_seen": "2025-04-19T03:42:10Z",
+              "timezone": "America/Los_Angeles",
+              "location": [
+                -122.4058174,
+                37.7962679
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -122.4058174,
+                    37.7962679
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "223-223@5vg-7gw-5cq",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "Jackson Street, San Francisco, CA 94133, United States of America",
+                  "locality": "San Francisco",
+                  "postcode": "94133",
+                  "region": "California"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 109,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 109,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 109,
+                      "position": "event_day"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "5332921",
+                  "5391997",
+                  "5391959"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 2526,
+              "predicted_event_spend_industries": {
+                "accommodation": 0,
+                "hospitality": 1601,
+                "transportation": 925
+              },
+              "phq_labels": [
+                {
+                  "label": "comedy-club",
+                  "weight": 1.0
+                }
+              ]
+            },
+            {
+              "relevance": null,
+              "id": "9vg9JBCr5kuFUvp5m4",
+              "title": "Petty Theft \u2013 San Francisco Tribute to Tom Petty at Golden State Theatre",
+              "description": "Sourced from predicthq.com",
+              "category": "performing-arts",
+              "rank": 0,
+              "local_rank": 0,
+              "phq_attendance": null,
+              "entities": [],
+              "duration": 0,
+              "start": "2025-05-03T02:00:00Z",
+              "start_local": "2025-05-02T19:00:00",
+              "end": "2025-05-03T02:00:00Z",
+              "end_local": "2025-05-02T19:00:00",
+              "updated": "2025-03-30T03:19:16Z",
+              "first_seen": "2025-03-23T04:45:55Z",
+              "timezone": "America/Los_Angeles",
+              "location": [
+                -121.89425,
+                36.59951
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -121.89425,
+                    36.59951
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "1xc5uqywdb@5xs-cqx-fxq",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "Alvarado Street, Monterey, CA 93940, United States of America",
+                  "locality": "Monterey",
+                  "postcode": "93940",
+                  "region": "California"
+                }
+              },
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "5332921",
+                  "5374376",
+                  "5374361"
+                ],
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "5332921",
+                  "5374376",
+                  "5391295"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "phq_labels": [
+                {
+                  "label": "general-theatre",
+                  "weight": 0.458
+                },
+                {
+                  "label": "concert",
+                  "weight": 0.35
+                },
+                {
+                  "label": "celebration",
+                  "weight": 0.192
+                }
+              ]
+            },
+            {
+              "relevance": null,
+              "id": "FgvSzk4uWPtLLjMFxT",
+              "title": "SF's First Fridays Free Comedy Night at Music City (2025)",
+              "description": "Sourced from predicthq.com - The home of the San Francisco Music Hall of Fame Gallery hosts a new monthly comedy takeover with Funcheap and HellaFunny",
+              "category": "performing-arts",
+              "rank": 26,
+              "local_rank": 29,
+              "phq_attendance": 62,
+              "entities": [
+                {
+                  "entity_id": "35BKjrVTmsJxRXyCgzERDAX",
+                  "name": "SF's First Fridays Free Comedy Night at Music City (2025)",
+                  "type": "event-group",
+                  "formatted_address": "1355 Bush Street, San Francisco, CA 94109, United States",
+                  "category": "performing-arts",
+                  "labels": [
+                    "concert",
+                    "event-group",
+                    "music",
+                    "performing-arts"
+                  ],
+                  "description": "The home of the San Francisco Music Hall of Fame Gallery hosts a new monthly comedy takeover with Funcheap and HellaFunny",
+                  "timezone": "America/Los_Angeles"
+                }
+              ],
+              "duration": 5400,
+              "start": "2025-05-03T02:00:00Z",
+              "start_local": "2025-05-02T19:00:00",
+              "end": "2025-05-03T03:30:00Z",
+              "end_local": "2025-05-02T20:30:00",
+              "updated": "2025-04-12T16:17:13Z",
+              "first_seen": "2025-04-12T15:35:33Z",
+              "timezone": "America/Los_Angeles",
+              "location": [
+                -122.4195254,
+                37.78852730000001
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -122.4195254,
+                    37.78852730000001
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "1wvoa6dvoc@5vg-7gw-h5z",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "Bush Street, San Francisco, CA 94109, United States of America",
+                  "locality": "San Francisco",
+                  "postcode": "94109",
+                  "region": "California"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 62,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 62,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 62,
+                      "position": "event_day"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "5332921",
+                  "5391997",
+                  "5391959"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 1437,
+              "predicted_event_spend_industries": {
+                "accommodation": 0,
+                "hospitality": 910,
+                "transportation": 526
+              },
+              "phq_labels": [
+                {
+                  "label": "comedy-club",
+                  "weight": 0.673
+                },
+                {
+                  "label": "lifestyle",
+                  "weight": 0.327
+                }
+              ]
+            },
+            {
+              "relevance": null,
+              "id": "CdDBo8bLMRRKvva3Rt",
+              "title": "Rush Hour Comedy Night Featuring the Best Black & Asian Stand-Up Comedians!",
+              "alternate_titles": [
+                "Crazy Funny Asians Comedy Night (Free with RSVP)",
+                "Hella DESI Comedy Night at SF's Newest Comedy Club!",
+                "HellaSecret \"Crazy Funny Asians\" Comedy Show / LIVE IN SAN FRANCISCO",
+                "Rush Hour Comedy Night w/ SFs Best Black & Asian Stand-Up Comedians",
+                "SF's Hella DESI Comedy Night / LIVE AT THE FUNCTION"
+              ],
+              "description": "Sourced from predicthq.com - ONLY 100 TIX AVAILABLE!",
+              "category": "performing-arts",
+              "rank": 27,
+              "local_rank": 33,
+              "phq_attendance": 69,
+              "entities": [],
+              "duration": 4500,
+              "start": "2025-05-03T03:45:00Z",
+              "start_local": "2025-05-02T20:45:00",
+              "end": "2025-05-03T05:00:00Z",
+              "end_local": "2025-05-02T22:00:00",
+              "updated": "2025-05-01T17:04:49Z",
+              "first_seen": "2025-04-10T23:41:10Z",
+              "timezone": "America/Los_Angeles",
+              "location": [
+                -122.418289,
+                37.7763734
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -122.418289,
+                    37.7763734
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "22k-224@5vg-7gq-7kf",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "Market Street, San Francisco, CA 94102, United States of America",
+                  "locality": "San Francisco",
+                  "postcode": "94102",
+                  "region": "California"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 69,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 69,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 69,
+                      "position": "event_day"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "5332921",
+                  "5391997",
+                  "5391959"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 1599,
+              "predicted_event_spend_industries": {
+                "accommodation": 0,
+                "hospitality": 1013,
+                "transportation": 585
+              },
+              "phq_labels": [
+                {
+                  "label": "comedy-club",
+                  "weight": 1.0
+                }
+              ]
+            },
+            {
+              "relevance": null,
+              "id": "BkgZcCG8fobLQt27EN",
+              "title": "NICO DE ANDREA [AFRO HOUSE] at Madarae",
+              "description": "Sourced from predicthq.com - NICO DE ANDREA [AFRO HOUSE] at Madarae   Nightclub San Francisco",
+              "category": "performing-arts",
+              "rank": 50,
+              "local_rank": 56,
+              "phq_attendance": 951,
+              "entities": [],
+              "duration": 23400,
+              "start": "2025-05-03T04:00:00Z",
+              "start_local": "2025-05-02T21:00:00",
+              "end": "2025-05-03T10:30:00Z",
+              "end_local": "2025-05-03T03:30:00",
+              "updated": "2025-05-17T04:01:39Z",
+              "first_seen": "2025-04-11T08:34:42Z",
+              "timezone": "America/Los_Angeles",
+              "location": [
+                -122.3982078,
+                37.7885614
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -122.3982078,
+                    37.7885614
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "22c-224@5vg-7gt-5vf",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "Minna Street, San Francisco, CA 94105, United States of America",
+                  "locality": "San Francisco",
+                  "postcode": "94105",
+                  "region": "California"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 951,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 951,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-01",
+                      "value": 267,
+                      "position": "leading"
+                    },
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 951,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 951,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-04",
+                      "value": 10,
+                      "position": "lagging"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 951,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 951,
+                      "position": "event_day"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "5332921",
+                  "5391997",
+                  "5391959"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 61153,
+              "predicted_event_spend_industries": {
+                "accommodation": 6045,
+                "hospitality": 34925,
+                "transportation": 20182
+              },
+              "phq_labels": [
+                {
+                  "label": "community-event",
+                  "weight": 1.0
+                }
+              ]
+            },
+            {
+              "relevance": null,
+              "id": "4QBVcDv3pWcVj3jJsN",
+              "title": "\"Friday Night Mic\" Late Night Comedy Show / SAN FRANCISCO",
+              "description": "Sourced from predicthq.com - Don't miss this curated mixed open mic of the Bay Area's best up and coming comics, singer-songwriters, jugglers, poets, magicians and more",
+              "category": "performing-arts",
+              "rank": 27,
+              "local_rank": 33,
+              "phq_attendance": 72,
+              "entities": [
+                {
+                  "entity_id": "AidLgLF2Fmkg7N8FPxZrz4",
+                  "name": "\"Friday Night Mic\" Late Night Comedy Show / SAN FRANCISCO",
+                  "type": "event-group",
+                  "formatted_address": "1414 Market Street, San Francisco, CA 94102, United States",
+                  "category": "performing-arts",
+                  "labels": [
+                    "concert",
+                    "event-group",
+                    "music",
+                    "performing-arts"
+                  ],
+                  "description": "Don't miss this curated mixed open mic of the Bay Area's best up and coming comics, singer-songwriters, jugglers, poets, magicians and more",
+                  "timezone": "America/Los_Angeles"
+                }
+              ],
+              "duration": 5400,
+              "start": "2025-05-03T05:00:00Z",
+              "start_local": "2025-05-02T22:00:00",
+              "end": "2025-05-03T06:30:00Z",
+              "end_local": "2025-05-02T23:30:00",
+              "updated": "2025-05-17T05:01:15Z",
+              "first_seen": "2025-05-01T17:00:43Z",
+              "timezone": "America/Los_Angeles",
+              "location": [
+                -122.418289,
+                37.7763734
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -122.418289,
+                    37.7763734
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "22k-224@5vg-7gq-7kf",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "Market Street, San Francisco, CA 94102, United States of America",
+                  "locality": "San Francisco",
+                  "postcode": "94102",
+                  "region": "California"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 72,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 72,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 72,
+                      "position": "event_day"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "5332921",
+                  "5391997",
+                  "5391959"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 1668,
+              "predicted_event_spend_industries": {
+                "accommodation": 0,
+                "hospitality": 1057,
+                "transportation": 611
+              },
+              "phq_labels": [
+                {
+                  "label": "comedy-club",
+                  "weight": 1.0
+                }
+              ]
+            },
+            {
+              "relevance": null,
+              "id": "BLPgVHnEYZGmiXthTC",
+              "title": "Cheaper Than Therapy, Stand-up Comedy: Fri, May 2 Late Show",
+              "description": "Sourced from predicthq.com - Late show starts @10pm. San Francisco stand-up comedy every Wed @8pm, Thu @8pm, Fri-Sat @8 & 10pm, and Sun @8pm. No drink minimum.",
+              "category": "performing-arts",
+              "rank": 25,
+              "local_rank": 29,
+              "phq_attendance": 59,
+              "entities": [],
+              "duration": 5400,
+              "start": "2025-05-03T05:00:00Z",
+              "start_local": "2025-05-02T22:00:00",
+              "end": "2025-05-03T06:30:00Z",
+              "end_local": "2025-05-02T23:30:00",
+              "updated": "2025-05-17T05:00:59Z",
+              "first_seen": "2025-02-23T05:46:09Z",
+              "timezone": "America/Los_Angeles",
+              "location": [
+                -122.4091439,
+                37.7890249
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -122.4091439,
+                    37.7890249
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "22v-223@5vg-7gw-w8v",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "Sutter Street, San Francisco, CA 94102, United States of America",
+                  "locality": "San Francisco",
+                  "postcode": "94102",
+                  "region": "California"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 59,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 59,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 59,
+                      "position": "event_day"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "5332921",
+                  "5391997",
+                  "5391959"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 1367,
+              "predicted_event_spend_industries": {
+                "accommodation": 0,
+                "hospitality": 866,
+                "transportation": 500
+              },
+              "phq_labels": [
+                {
+                  "label": "comedy-club",
+                  "weight": 1.0
+                }
+              ]
+            },
+            {
+              "relevance": null,
+              "id": "FWm3AJda4pq9wGLLtL",
+              "title": "Night Owls in San Francisco",
+              "description": "Sourced from predicthq.com",
+              "category": "performing-arts",
+              "rank": 33,
+              "local_rank": 39,
+              "phq_attendance": 145,
+              "entities": [],
+              "duration": 12600,
+              "start": "2025-05-03T05:00:00Z",
+              "start_local": "2025-05-02T22:00:00",
+              "end": "2025-05-03T08:30:00Z",
+              "end_local": "2025-05-03T01:30:00",
+              "updated": "2025-05-04T23:11:16Z",
+              "first_seen": "2025-05-04T22:26:34Z",
+              "timezone": "America/Los_Angeles",
+              "location": [
+                -122.40749,
+                37.79939
+              ],
+              "geo": {
+                "geometry": {
+                  "coordinates": [
+                    -122.40749,
+                    37.79939
+                  ],
+                  "type": "Point"
+                },
+                "placekey": "zzw-225@5vg-7gw-35z",
+                "address": {
+                  "country_code": "US",
+                  "formatted_address": "Grant Avenue, San Francisco, CA 94133, United States of America",
+                  "locality": "San Francisco",
+                  "postcode": "94133",
+                  "region": "California"
+                }
+              },
+              "impact_patterns": [
+                {
+                  "vertical": "accommodation",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 145,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 145,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "hospitality",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 145,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 145,
+                      "position": "event_day"
+                    }
+                  ]
+                },
+                {
+                  "vertical": "retail",
+                  "impact_type": "phq_attendance",
+                  "impacts": [
+                    {
+                      "date_local": "2025-05-02",
+                      "value": 145,
+                      "position": "event_day"
+                    },
+                    {
+                      "date_local": "2025-05-03",
+                      "value": 145,
+                      "position": "event_day"
+                    }
+                  ]
+                }
+              ],
+              "scope": "locality",
+              "country": "US",
+              "place_hierarchies": [
+                [
+                  "6295630",
+                  "6255149",
+                  "6252001",
+                  "5332921",
+                  "5391997",
+                  "5391959"
+                ]
+              ],
+              "state": "active",
+              "brand_safe": true,
+              "private": false,
+              "predicted_event_spend": 6721,
+              "predicted_event_spend_industries": {
+                "accommodation": 0,
+                "hospitality": 4260,
+                "transportation": 2461
+              },
+              "phq_labels": [
+                {
+                  "label": "general-theatre",
+                  "weight": 1.0
+                }
+              ]
+            }
+          ],
+          "duration_ms": 457.31282234191895
+        },
+        {
+          "provider": "combined",
+          "success": false,
+          "error": "HTTPConnectionPool(host='127.0.0.1', port=3001): Max retries exceeded with url: /api/events/theatre/combined?location=San+Francisco%2C+CA&limit=10 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x102af28a0>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+          "count": 0,
+          "events": [],
+          "duration_ms": 0
+        }
+      ]
+    }
+  ]
+}
