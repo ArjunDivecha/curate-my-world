@@ -29,12 +29,12 @@ export const config = {
   port: parseInt(process.env.PORT) || 8765,
   host: process.env.HOST || '127.0.0.1',
   
-  // API keys
-  perplexityApiKey: process.env.PERPLEXITY_API_KEY || 
-                   process.env.PPLX_API_KEY || 
-                   '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',
-  predictHQApiKey: process.env.PREDICTHQ_API_KEY || 
-                  '8K2-8oWxCmuJ09HuFBwafivPpoK3Dqmab0qpmEkR',
+  // API keys - ALL from environment variables
+  perplexityApiKey: process.env.PERPLEXITY_API_KEY || process.env.PPLX_API_KEY,
+  apyfluxApiKey: process.env.APYFLUX_API_KEY,
+  apyfluxAppId: process.env.APYFLUX_APP_ID,
+  apyfluxClientId: process.env.APYFLUX_CLIENT_ID,
+  predictHQApiKey: process.env.PREDICTHQ_API_KEY,
   exaApiKey: process.env.EXA_API_KEY,
   serpApiKey: process.env.SERPAPI_API_KEY,
   
@@ -93,15 +93,23 @@ export const config = {
  * Validate required configuration
  */
 export function validateConfig() {
-  const required = ['perplexityApiKey'];
+  const required = [
+    'perplexityApiKey',
+    'apyfluxApiKey', 
+    'apyfluxAppId', 
+    'apyfluxClientId',
+    'predictHQApiKey',
+    'exaApiKey',
+    'serpApiKey'
+  ];
   const missing = required.filter(key => !config[key]);
   
   if (missing.length > 0) {
-    throw new Error(`Missing required configuration: ${missing.join(', ')}`);
+    throw new Error(`Missing required API keys: ${missing.join(', ')}`);
   }
   
-  // Validate API key format
-  if (!config.perplexityApiKey.startsWith('pplx-')) {
+  // Validate API key formats
+  if (config.perplexityApiKey && !config.perplexityApiKey.startsWith('pplx-')) {
     console.warn('Warning: Perplexity API key format may be invalid (should start with pplx-)');
   }
   

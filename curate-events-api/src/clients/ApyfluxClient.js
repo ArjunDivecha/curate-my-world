@@ -19,6 +19,7 @@
  * =============================================================================
  */
 
+import config from '../utils/config.js';
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('ApyfluxClient');
@@ -27,9 +28,9 @@ export class ApyfluxClient {
   constructor() {
     this.baseUrl = 'https://gateway.apyflux.com/v1';
     this.headers = {
-      'x-app-id': '928a8cb5-a978-455b-a65e-8b23f2f1ff82',
-      'x-client-id': 'S0OCG4fOhxUy6WNFwgBiVi7yV8K2',
-      'x-api-key': 'Zt53NYzQr5woo9X+d2G0wLABitCxebOTOTUCBvgCWYU='
+      'x-app-id': config.apyfluxAppId,
+      'x-client-id': config.apyfluxClientId,
+      'x-api-key': config.apyfluxApiKey
     };
     this.timeout = 10000; // 10 seconds
   }
