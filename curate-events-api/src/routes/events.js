@@ -349,7 +349,7 @@ router.get('/all-categories', async (req, res) => {
     
     // Get all supported categories
     const supportedCategories = categoryManager.getSupportedCategories()
-      .filter(cat => ['theatre', 'music', 'art', 'food', 'tech', 'education'].includes(cat.name))
+      .filter(cat => ['theatre', 'music', 'art', 'food', 'tech', 'education', 'movies'].includes(cat.name))
       .map(cat => cat.name);
     
     logger.info('Fetching events for all categories', {
