@@ -12,7 +12,7 @@ import { Header } from "./Header";
 import { FetchEventsButton } from "./FetchEventsButton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search } from "lucide-react";
+import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film } from "lucide-react";
 
 interface Preferences {
   interests: {
@@ -36,7 +36,8 @@ const defaultPreferences: Preferences = {
       'Art': true,
       'Food': true,
       'Tech': true,
-      'Education': true
+      'Education': true,
+      'Movies': true
     },
     keywords: []
   },
@@ -259,7 +260,8 @@ export const Dashboard = () => {
     'Art': Palette,
     'Food': Coffee,
     'Tech': Zap,
-    'Education': GraduationCap
+    'Education': GraduationCap,
+    'Movies': Film
   };
 
   const timeSlots = [
@@ -325,7 +327,7 @@ export const Dashboard = () => {
           {/* Category Filters */}
           <div className="mb-10">
             <h3 className="text-2xl font-bold text-gray-700 mb-6">Filter by Category</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-5">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-8 gap-5">
               {/* "All" Category Button */}
               <div 
                 key="all"
@@ -437,6 +439,8 @@ export const Dashboard = () => {
                     ticketUrl: event.ticketUrl || event.externalUrl,
                     eventUrl: event.eventUrl || event.externalUrl,
                     aiReasoning: event.aiReasoning || 'Fetched from curated sources.',
+                    source: event.source,
+                    sources: event.sources,
                   }));
                   return acc;
                 }, {} as any);

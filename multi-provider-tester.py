@@ -5,10 +5,11 @@ SCRIPT NAME: multi-provider-tester.py
 =============================================================================
 
 DESCRIPTION:
-Interactive Python program to test various prompts with all three event providers:
-- Perplexity AI (via our Node.js API)
-- Apyflux API (via our Node.js API)  
-- PredictHQ API (direct Python integration)
+Interactive Python program to test various prompts with all four event providers:
+- Perplexity AI (via backend API)
+- PredictHQ API (via backend API)
+- Exa API (direct API call)
+- SerpAPI (direct API call)
 
 Allows you to experiment with different search queries, categories, and locations
 to compare results across all providers.
@@ -35,15 +36,20 @@ DEPENDENCIES:
 - tabulate (pip install tabulate)
 
 NOTES:
-- Requires Node.js API server running on localhost:3001
+- Requires Node.js API server running on localhost:8765
 - PredictHQ API key included for direct testing
+- SerpAPI and Exa API keys included for direct testing
 - Results saved to outputs/ directory
 =============================================================================
 """
 
+import os
+from dotenv import load_dotenv
+load_dotenv(dotenv_path="/Users/macbook2024/Dropbox/AAA Backup/A Working/Curate-My-World/curate-events-api/.env")
 import requests
 import json
 import sys
+import random
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 import time
@@ -56,12 +62,25 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "tabulate"])
     from tabulate import tabulate
 
+"""
+PORT MANAGEMENT (see PORT_MANAGEMENT.md):
+- Backend API: http://127.0.0.1:8765/api
+- Frontend Dev Server: http://127.0.0.1:8766
+
+To start the backend:
+    npm run start:backend
+or
+    ./scripts/start-all.sh
+
+If you see connection errors, verify the backend is running on port 8765.
+"""
+
 # Configuration
 CONFIG = {
-    'API_BASE_URL': 'http://127.0.0.1:3001/api',
-    'PREDICTHQ_API_KEY': '8K2-8oWxCmuJ09HuFBwafivPpoK3Dqmab0qpmEkR',
+    'API_BASE_URL': 'http://127.0.0.1:8765/api',
+    'PREDICTHQ_API_KEY': os.getenv('PREDICTHQ_API_KEY'),
     'PREDICTHQ_BASE_URL': 'https://api.predicthq.com/v1',
-    'DEFAULT_LIMIT': 10,
+    'DEFAULT_LIMIT': 100,
     'TIMEOUT': 90
 }
 
@@ -114,16 +133,66 @@ class ProviderTester:
         self.results = []
         self.session_start = datetime.now()
     
-    def test_perplexity(self, category: str, location: str, limit: int = 10) -> Dict[str, Any]:
+    def test_all_providers(self, category: str, location: str, limit: int = 100) -> Dict[str, Any]:
+        """Test all providers via backend API and extract Perplexity, PredictHQ, Exa, SerpAPI"""
+        try:
+            print_section("Testing All Providers (Perplexity, PredictHQ, Exa, SerpAPI)")
+            start_time = time.time()
+            url = f"{CONFIG['API_BASE_URL']}/events/{category}"
+            # Add cache-busting timestamp to ensure fresh results
+            time.sleep(0.1)  # Small delay to ensure unique timestamps
+            cache_buster = f"{int(time.time() * 1000000)}_{random.randint(1000, 9999)}"  # Use microseconds + random for better uniqueness
+            params = {'location': location, 'limit': limit, '_t': cache_buster}
+            print_info(f"URL: {url}")
+            print_info(f"Params: {params}")
+            session = requests.Session()
+            # Add cache-busting headers
+            headers = {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+            response = session.get(url, params=params, headers=headers, timeout=CONFIG['TIMEOUT'])
+            duration = (time.time() - start_time) * 1000
+            if response.status_code == 200:
+                data = response.json()
+                results = []
+                for provider in ['perplexity', 'predicthq', 'exa', 'serpapi']:
+                    prov = data.get('sourceStats', {}).get(provider, {})
+                    results.append({
+                        'provider': provider,
+                        'success': prov.get('count', 0) > 0,
+                        'count': prov.get('count', 0),
+                        'duration_ms': prov.get('processingTime', 'N/A'),
+                        'error': prov.get('error', None)
+                    })
+                
+                return {
+                    'results': results,
+                    'duration': duration,
+                    'raw': data
+                }
+            else:
+                print_error(f"API Error: {response.text}")
+                return {'results': [], 'duration': duration, 'raw': {}}
+        except Exception as e:
+            print_error(f"Exception: {str(e)}")
+            return {'results': [], 'duration': 0, 'raw': {}}
+    
+    def test_perplexity(self, category: str, location: str, limit: int = 100) -> Dict[str, Any]:
         """Test Perplexity API via our Node.js endpoint"""
         try:
             print_section("Testing Perplexity AI")
             start_time = time.time()
             
             url = f"{CONFIG['API_BASE_URL']}/events/{category}"
+            # Add cache-busting timestamp to ensure fresh results
+            time.sleep(0.1)  # Small delay to ensure unique timestamps
+            cache_buster = f"{int(time.time() * 1000000)}_{random.randint(1000, 9999)}"  # Use microseconds + random for better uniqueness
             params = {
                 'location': location,
-                'limit': limit
+                'limit': limit,
+                '_t': cache_buster
             }
             
             print_info(f"URL: {url}")
@@ -131,7 +200,13 @@ class ProviderTester:
             
             # Use a fresh session for each request to avoid connection pooling issues
             session = requests.Session()
-            response = session.get(url, params=params, timeout=CONFIG['TIMEOUT'])
+            # Add cache-busting headers
+            headers = {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+            response = session.get(url, params=params, headers=headers, timeout=CONFIG['TIMEOUT'])
             duration = (time.time() - start_time) * 1000
             
             if response.status_code == 200:
@@ -147,7 +222,7 @@ class ProviderTester:
                             print(f"  {i+1}. {event.get('title', 'Untitled')}")
                             print(f"     Venue: {event.get('venue', 'Unknown')}")
                             print(f"     Date: {event.get('date', event.get('startDate', 'TBD'))}")
-                            print(f"     Confidence: {event.get('confidence', 'N/A')}")
+                            print(f"     Confidence: {os.getenv('PERPLEXITY_API_KEY')}")
                     
                     return {
                         'provider': 'perplexity',
@@ -189,86 +264,7 @@ class ProviderTester:
                 'duration_ms': 0
             }
     
-    def test_apyflux(self, category: str, location: str, limit: int = 10) -> Dict[str, Any]:
-        """Test Apyflux API via direct Node.js client call"""
-        try:
-            print_section("Testing Apyflux API")
-            start_time = time.time()
-            
-            # Use our combined endpoint to get Apyflux results
-            url = f"{CONFIG['API_BASE_URL']}/events/{category}/compare"
-            params = {
-                'location': location,
-                'limit': limit
-            }
-            
-            print_info(f"URL: {url}")
-            print_info(f"Params: {params}")
-            
-            # Use a fresh session for each request to avoid connection pooling issues
-            session = requests.Session()
-            response = session.get(url, params=params, timeout=CONFIG['TIMEOUT'])
-            duration = (time.time() - start_time) * 1000
-            
-            if response.status_code == 200:
-                data = response.json()
-                apyflux_data = data.get('comparison', {}).get('apyflux', {})
-                
-                if apyflux_data.get('success'):
-                    count = apyflux_data.get('count', 0)
-                    print_success(f"Found {count} events in {duration:.0f}ms")
-                    
-                    # Show sample events
-                    events = apyflux_data.get('events', [])
-                    if events:
-                        print("\nSample Events:")
-                        for i, event in enumerate(events[:3]):
-                            print(f"  {i+1}. {event.get('title', event.get('name', 'Untitled'))}")
-                            print(f"     Venue: {event.get('venue', event.get('venueInfo', {}).get('name', 'Unknown'))}")
-                            print(f"     Date: {event.get('dateHuman', event.get('startDate', 'TBD'))}")
-                            print(f"     Tickets: {len(event.get('ticketLinks', []))} sources")
-                    
-                    return {
-                        'provider': 'apyflux',
-                        'success': True,
-                        'count': count,
-                        'events': events,
-                        'duration_ms': duration,
-                        'processing_time': apyflux_data.get('processingTime', 'N/A')
-                    }
-                else:
-                    print_error(f"API Error: {apyflux_data.get('error', 'Unknown error')}")
-                    return {
-                        'provider': 'apyflux',
-                        'success': False,
-                        'error': apyflux_data.get('error', 'Unknown error'),
-                        'count': 0,
-                        'events': [],
-                        'duration_ms': duration
-                    }
-            else:
-                print_error(f"HTTP {response.status_code}: {response.text}")
-                return {
-                    'provider': 'apyflux',
-                    'success': False,
-                    'error': f"HTTP {response.status_code}",
-                    'count': 0,
-                    'events': [],
-                    'duration_ms': duration
-                }
-                
-        except Exception as e:
-            print_error(f"Exception: {str(e)}")
-            return {
-                'provider': 'apyflux',
-                'success': False,
-                'error': str(e),
-                'count': 0,
-                'events': [],
-                'duration_ms': 0
-            }
-    
-    def test_predicthq(self, category: str, location: str, limit: int = 10) -> Dict[str, Any]:
+    def test_predicthq(self, category: str, location: str, limit: int = 100) -> Dict[str, Any]:
         """Test PredictHQ API directly"""
         try:
             print_section("Testing PredictHQ API")
@@ -360,7 +356,6 @@ class ProviderTester:
                     'events': [],
                     'duration_ms': duration
                 }
-                
         except Exception as e:
             print_error(f"Exception: {str(e)}")
             return {
@@ -372,72 +367,60 @@ class ProviderTester:
                 'duration_ms': 0
             }
     
-    def test_combined(self, category: str, location: str, limit: int = 10) -> Dict[str, Any]:
-        """Test combined API with deduplication"""
+    def test_serpapi(self, category: str, location: str, limit: int = 100) -> Dict[str, Any]:
+        """Test SerpAPI directly"""
         try:
-            print_section("Testing Combined API (Perplexity + Apyflux)")
+            print_section("Testing SerpAPI")
             start_time = time.time()
             
-            url = f"{CONFIG['API_BASE_URL']}/events/{category}/combined"
+            # SerpAPI parameters
             params = {
-                'location': location,
-                'limit': limit
+                'engine': 'google_events',
+                'q': f'{category} events in {location}',
+                'hl': 'en',
+                'api_key': os.getenv('SERPAPI_API_KEY')
             }
             
+            url = 'https://serpapi.com/search'
             print_info(f"URL: {url}")
             print_info(f"Params: {params}")
             
-            # Use a fresh session for each request to avoid connection pooling issues
+            # Use a fresh session for each request
             session = requests.Session()
             response = session.get(url, params=params, timeout=CONFIG['TIMEOUT'])
             duration = (time.time() - start_time) * 1000
             
             if response.status_code == 200:
                 data = response.json()
-                if data.get('success'):
-                    count = data.get('count', 0)
-                    dedup = data.get('deduplication', {})
-                    sources = data.get('sources', {})
-                    
-                    print_success(f"Found {count} unique events in {duration:.0f}ms")
-                    print_info(f"Deduplication: {dedup.get('duplicatesRemoved', 0)} duplicates removed from {dedup.get('totalProcessed', 0)} total")
-                    print_info(f"Sources: Perplexity ({sources.get('perplexity', {}).get('count', 0)}), Apyflux ({sources.get('apyflux', {}).get('count', 0)})")
-                    
-                    # Show sample events
-                    events = data.get('events', [])
-                    if events:
-                        print("\nSample Deduplicated Events:")
-                        for i, event in enumerate(events[:3]):
-                            print(f"  {i+1}. {event.get('title', 'Untitled')}")
-                            print(f"     Venue: {event.get('venue', 'Unknown')}")
-                            print(f"     Date: {event.get('dateHuman', event.get('startDate', 'TBD'))}")
-                            print(f"     Source: {event.get('source', 'unknown')}")
-                            if event.get('_duplicateCount', 1) > 1:
-                                print(f"     🔗 Merged from {event.get('_duplicateCount')} sources")
-                    
-                    return {
-                        'provider': 'combined',
-                        'success': True,
-                        'count': count,
-                        'events': events,
-                        'duration_ms': duration,
-                        'deduplication': dedup,
-                        'sources': sources
-                    }
-                else:
-                    print_error(f"API Error: {data.get('error', 'Unknown error')}")
-                    return {
-                        'provider': 'combined',
-                        'success': False,
-                        'error': data.get('error', 'Unknown error'),
-                        'count': 0,
-                        'events': [],
-                        'duration_ms': duration
-                    }
+                events = data.get('events_results', [])
+                
+                # Limit the results
+                events = events[:limit]
+                
+                print_success(f"Found {len(events)} events in {duration:.0f}ms")
+                
+                # Show sample events
+                if events:
+                    print("\nSample Events:")
+                    for i, event in enumerate(events[:3]):
+                        print(f"  {i+1}. {event.get('title', 'Untitled')}")
+                        venue = ', '.join(event.get('address', [])) if event.get('address') else 'Unknown'
+                        date = event.get('date', {}).get('start_date', 'TBD')
+                        print(f"     Venue: {venue}")
+                        print(f"     Date: {date}")
+                        print(f"     Source: serpapi")
+                
+                return {
+                    'provider': 'serpapi',
+                    'success': True,
+                    'count': len(events),
+                    'events': events,
+                    'duration_ms': duration
+                }
             else:
                 print_error(f"HTTP {response.status_code}: {response.text}")
                 return {
-                    'provider': 'combined',
+                    'provider': 'serpapi',
                     'success': False,
                     'error': f"HTTP {response.status_code}",
                     'count': 0,
@@ -448,7 +431,7 @@ class ProviderTester:
         except Exception as e:
             print_error(f"Exception: {str(e)}")
             return {
-                'provider': 'combined',
+                'provider': 'serpapi',
                 'success': False,
                 'error': str(e),
                 'count': 0,
@@ -456,53 +439,169 @@ class ProviderTester:
                 'duration_ms': 0
             }
     
-    def run_full_comparison(self, category: str, location: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """Run comparison across all providers"""
-        print_header(f"TESTING ALL PROVIDERS")
-        print_info(f"Category: {category}")
-        print_info(f"Location: {location}")
-        print_info(f"Limit: {limit}")
+    def test_exa(self, category: str, location: str, limit: int = 100) -> Dict[str, Any]:
+        """Test Exa API directly"""
+        try:
+            print_section("Testing Exa API")
+            start_time = time.time()
+            
+            # Exa API parameters
+            query = f'{category} events in {location} for the next 30 days'
+            payload = {
+                'query': query,
+                'type': 'fast',
+                'numResults': limit,
+                'contents': {
+                    'text': {
+                        'maxCharacters': 2000
+                    },
+                    'summary': {
+                        'query': 'For each event found, list its name, venue, full date, and a ticket link if available. Format as a list.',
+                        'maxCharacters': 500
+                    }
+                }
+            }
+            
+            headers = {
+                'x-api-key': os.getenv('EXA_API_KEY'),
+                'Content-Type': 'application/json'
+            }
+            
+            url = 'https://api.exa.ai/search'
+            print_info(f"URL: {url}")
+            print_info(f"Payload: {payload}")
+            
+            # Use a fresh session for each request
+            session = requests.Session()
+            response = session.post(url, json=payload, headers=headers, timeout=CONFIG['TIMEOUT'])
+            duration = (time.time() - start_time) * 1000
+            
+            if response.status_code == 200:
+                data = response.json()
+                events = data.get('results', [])
+                
+                print_success(f"Found {len(events)} events in {duration:.0f}ms")
+                
+                # Show sample events
+                if events:
+                    print("\nSample Events:")
+                    for i, event in enumerate(events[:3]):
+                        print(f"  {i+1}. {event.get('title', 'Untitled')}")
+                        summary = event.get('summary', 'No summary available')
+                        published_date = event.get('publishedDate', 'TBD')
+                        print(f"     Summary: {summary[:100]}...")
+                        print(f"     Date: {published_date}")
+                        print(f"     Source: exa")
+                
+                return {
+                    'provider': 'exa',
+                    'success': True,
+                    'count': len(events),
+                    'events': events,
+                    'duration_ms': duration
+                }
+            else:
+                print_error(f"HTTP {response.status_code}: {response.text}")
+                return {
+                    'provider': 'exa',
+                    'success': False,
+                    'error': f"HTTP {response.status_code}",
+                    'count': 0,
+                    'events': [],
+                    'duration_ms': duration
+                }
+                
+        except Exception as e:
+            print_error(f"Exception: {str(e)}")
+            return {
+                'provider': 'exa',
+                'success': False,
+                'error': str(e),
+                'count': 0,
+                'events': [],
+                'duration_ms': 0
+            }
+    
+    def test_combined(self, category: str, location: str, limit: int = 100) -> Dict[str, Any]:
+        """Test all providers separately without deduplication"""
+        try:
+            print_section("Testing All Providers Separately")
+            start_time = time.time()
+            
+            # Run individual providers
+            providers = ['perplexity', 'predicthq', 'serpapi', 'exa']
+            results = []
+            for provider in providers:
+                result = getattr(self, f'test_{provider}')(category, location, limit)
+                results.append(result)
+            
+            # Count total events
+            total_events = sum(r.get('count', 0) for r in results if r['success'])
+            total_duration = (time.time() - start_time) * 1000
+            
+            # Create sources dict
+            sources = {}
+            for provider in providers:
+                prov = next((r for r in results if r['provider'] == provider), None)
+                if prov:
+                    sources[provider] = {'count': prov['count'], 'duration_ms': prov['duration_ms']}
+            
+            print_success(f"Found {total_events} total events in {total_duration:.0f}ms")
+            print_info(f"Sources: Perplexity ({sources.get('perplexity', {}).get('count', 0)}), PredictHQ ({sources.get('predicthq', {}).get('count', 0)}), SerpAPI ({sources.get('serpapi', {}).get('count', 0)}), Exa ({sources.get('exa', {}).get('count', 0)})")
+            
+            return {
+                'provider': 'all_providers',
+                'success': True,
+                'count': total_events,
+                'events': [],
+                'duration_ms': total_duration,
+                'sources': sources
+            }
+        except Exception as e:
+            print_error(f"Exception: {str(e)}")
+            return {
+                'provider': 'all_providers',
+                'success': False,
+                'error': str(e),
+                'count': 0,
+                'events': [],
+                'duration_ms': 0
+            }
+    
+    def run_full_comparison(self, category: str, location: str, limit: int = 100):
+        """Run full comparison of all providers"""
+        print_header(f"FULL COMPARISON: {category.title()} in {location}")
         
+        # Test all providers
         results = []
         
-        # Test each provider
-        results.append(self.test_perplexity(category, location, limit))
-        results.append(self.test_apyflux(category, location, limit))
-        results.append(self.test_predicthq(category, location, limit))
-        results.append(self.test_combined(category, location, limit))
+        # Test Perplexity
+        result = self.test_perplexity(category, location, limit)
+        results.append(result)
         
-        # Generate summary
-        self.print_comparison_summary(results, category, location, limit)
+        # Test PredictHQ
+        result = self.test_predicthq(category, location, limit)
+        results.append(result)
         
-        # Store results
-        self.results.append({
-            'timestamp': datetime.now().isoformat(),
-            'category': category,
-            'location': location,
-            'limit': limit,
-            'results': results
-        })
+        # Test SerpAPI
+        result = self.test_serpapi(category, location, limit)
+        results.append(result)
         
-        return results
-    
-    def print_comparison_summary(self, results: List[Dict[str, Any]], category: str, location: str, limit: int):
-        """Print a formatted comparison summary"""
-        print_header("COMPARISON SUMMARY")
+        # Test Exa
+        result = self.test_exa(category, location, limit)
+        results.append(result)
         
-        # Create summary table
+        # Test combined
+        result = self.test_combined(category, location, limit)
+        results.append(result)
+        
+        # Display results in table
         table_data = []
         for result in results:
-            status = "✅ OK" if result['success'] else "❌ FAIL"
-            count = result['count']
-            duration = f"{result['duration_ms']:.0f}ms"
-            notes = ""
-            
-            if result['provider'] == 'combined' and result.get('deduplication'):
-                notes = f"{result['deduplication'].get('duplicatesRemoved', 0)} dupes removed"
-            elif result['provider'] == 'predicthq' and result.get('total_available'):
-                notes = f"{result['total_available']} total available"
-            elif not result['success']:
-                notes = result.get('error', 'Unknown error')[:30]
+            status = "✅ PASS" if result['success'] else "❌ FAIL"
+            count = result.get('count', 0)
+            duration = f"{result.get('duration_ms', 'N/A'):.0f}ms" if isinstance(result.get('duration_ms'), (int, float)) else str(result.get('duration_ms', 'N/A'))
+            notes = result.get('error', 'Unknown error')[:30] if not result['success'] else ""
             
             table_data.append([
                 result['provider'].upper(),
@@ -523,6 +622,15 @@ class ProviderTester:
             
             print_success(f"Most events: {most_events['provider'].upper()} ({most_events['count']} events)")
             print_success(f"Fastest: {fastest['provider'].upper()} ({fastest['duration_ms']:.0f}ms)")
+        
+        # Save results
+        self.results.append({
+            'category': category,
+            'location': location,
+            'limit': limit,
+            'timestamp': datetime.now().isoformat(),
+            'results': results
+        })
     
     def save_results(self, filename: Optional[str] = None):
         """Save all results to a JSON file"""
@@ -550,6 +658,19 @@ class ProviderTester:
         except Exception as e:
             print_error(f"Failed to save results: {str(e)}")
 
+def deduplicate_events(events_list):
+    """Simple deduplication function that just returns events as they are"""
+    # Flatten the list of events
+    all_events = []
+    for events in events_list:
+        all_events.extend(events)
+    
+    return {
+        'events': all_events,
+        'duplicatesRemoved': 0,
+        'totalProcessed': len(all_events)
+    }
+
 def show_menu():
     """Show the main menu"""
     print_header("MULTI-PROVIDER EVENT TESTING TOOL")
@@ -569,7 +690,22 @@ def get_user_input(prompt: str, default: str = None) -> str:
     else:
         return input(f"{prompt}: ").strip()
 
+def check_backend_api_available():
+    import requests
+    try:
+        # Try a simple health check endpoint
+        url = CONFIG['API_BASE_URL'] + '/health'
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            return True
+    except Exception:
+        pass
+    print_error(f"Cannot connect to backend API at {CONFIG['API_BASE_URL']}.\n\nMake sure your backend is running on port 8765!\nStart it with: npm run start:backend or ./scripts/start-all.sh\nSee PORT_MANAGEMENT.md for details.")
+    return False
+
 def main():
+    if not check_backend_api_available():
+        return
     """Main program loop"""
     tester = ProviderTester()
     

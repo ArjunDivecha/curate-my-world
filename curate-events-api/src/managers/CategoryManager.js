@@ -71,6 +71,11 @@ export class CategoryManager {
         aliases: ['learning', 'academic', 'school', 'university', 'courses'],
         keywords: ['education', 'learning', 'academic', 'school', 'university', 'course', 'class', 'training'],
         priority: 'medium'
+      },
+      movies: {
+        aliases: ['films', 'cinema', 'movie theaters', 'showtimes', 'screenings'],
+        keywords: ['movie', 'film', 'cinema', 'theater', 'screening', 'showtime', 'premiere'],
+        priority: 'high'
       }
     };
 
@@ -344,6 +349,49 @@ Provide results in JSON format:
 ]
 
 Search thoroughly for lectures, courses, workshops, and educational events.`,
+
+      movies: `Find all movies currently playing and coming soon for {location} for the {dateRange}. Include major theater chains, independent cinemas, drive-ins, and special screenings.
+
+Search these specific movie theaters and any other cinemas in the Bay Area:
+
+MAJOR MOVIE THEATERS TO SEARCH:
+- AMC Metreon 16 (San Francisco) - https://www.amctheatres.com
+- Century Theaters San Francisco Centre 9 - https://www.centurytheaters.com
+- Landmark Theatres (San Francisco) - https://www.landmarktheatres.com
+- The Castro Theatre (San Francisco) - https://thecastrotheatre.com
+- Roxie Theater (San Francisco) - https://www.roxie.com
+- Clay Theater (San Francisco) - https://www.landmarktheatres.com
+- Balboa Theatre (San Francisco) - https://www.landmarktheatres.com
+- Embarcadero Center Cinema - https://www.landmarktheatres.com
+- Opera Plaza Cinema (San Francisco) - https://www.landmarktheatres.com
+- Century 20 Daly City - https://www.centurytheaters.com
+- Century at Pacific Commons (Fremont) - https://www.centurytheaters.com
+- AMC NewPark 12 (Newark) - https://www.amctheatres.com
+- Century 16 Mountain View - https://www.centurytheaters.com
+- AMC Saratoga 14 - https://www.amctheatres.com
+- Century 20 Oakridge (San Jose) - https://www.centurytheaters.com
+- Cinemark Century Theaters 16 (Union City) - https://www.cinemark.com
+- Century 25 Union Landing (Union City) - https://www.centurytheaters.com
+- Century Theaters 20 Great Mall (Milpitas) - https://www.centurytheaters.com
+
+Provide results in JSON format:
+[
+{
+  "title": "Movie Title (Year)",
+  "venue": "Theater Name",
+  "location": "City, State",
+  "date": "Date range or specific dates",
+  "show_times": ["Time 1", "Time 2", "Time 3"],
+  "website": "https://theater-website.com",
+  "price_range": "Ticket price range",
+  "description": "Brief movie description",
+  "genre": "Movie genre",
+  "rating": "Movie rating (G, PG, PG-13, R, etc.)",
+  "runtime": "Duration in minutes"
+}
+]
+
+Search each theater thoroughly for current movies, showtimes, and special screenings. Include both mainstream releases and indie films. Provide actual real movies with accurate showtimes.`,
       
       default: `Find all {category} events for {location} for the {dateRange} - give me the results in JSON format with delimiters for title, venue, location, date, show_times, website, and price_range. Provide actual real events with accurate information.`
     };
@@ -385,7 +433,12 @@ Search thoroughly for lectures, courses, workshops, and educational events.`,
       'workshops': 'lectures',
       'galleries': 'art',
       'exhibitions': 'art',
-      'visual': 'art'
+      'visual': 'art',
+      'films': 'movies',
+      'cinema': 'movies',
+      'movie theaters': 'movies',
+      'showtimes': 'movies',
+      'screenings': 'movies'
     };
     
     if (commonVariations[normalized]) {
