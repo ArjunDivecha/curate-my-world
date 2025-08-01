@@ -102,6 +102,25 @@ export class SerpApiClient {
     try {
       if (!serpEvent.title) return null;
 
+      // Handle date parsing more robustly
+      let startDate, endDate;
+      try {
+        // Try parsing the date from different possible fields
+        const dateStr = serpEvent.date?.start_date || 
+                       serpEvent.date?.when || 
+                       serpEvent.start_date ||
+                       serpEvent.when ||
+                       new Date().toISOString(); // fallback to today
+
+        startDate = new Date(dateStr).toISOString();
+        endDate = serpEvent.date?.when ? new Date(serpEvent.date.when).toISOString() : startDate;
+      } catch (dateError) {
+        // If date parsing fails, use a default date
+        const today = new Date();
+        startDate = today.toISOString();
+        endDate = startDate;
+      }
+
       return {
         id: `serpapi_${serpEvent.title.replace(/\s+/g, '_')}`,
         title: serpEvent.title,
@@ -109,8 +128,8 @@ export class SerpApiClient {
         category: category,
         venue: serpEvent.address?.join(', ') || 'See Event Page',
         location: serpEvent.address?.join(', ') || 'See Event Page',
-        startDate: new Date(serpEvent.date.start_date).toISOString(),
-        endDate: new Date(serpEvent.date.when).toISOString(),
+        startDate: startDate,
+        endDate: endDate,
         eventUrl: serpEvent.link,
         ticketUrl: serpEvent.ticket_info?.find(t => t.link)?.link,
         source: 'serpapi_api',

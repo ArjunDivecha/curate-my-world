@@ -644,13 +644,175 @@ router.get('/:category', async (req, res) => {
       cacheKey
     });
 
-    // Collect events using the pipeline
-    const result = await eventPipeline.collectEvents({
-      category,
-      location,
-      dateRange: date_range,
-      options
-    });
+    // Collect events from all 5 sources in parallel
+    const [perplexityResult, apyfluxResult, predictHQResult, exaResult, serpApiResult] = await Promise.allSettled([
+      // Perplexity via EventPipeline
+      eventPipeline.collectEvents({
+        category,
+        location,
+        dateRange: date_range,
+        options
+      }),
+      
+      // Apyflux direct
+      apyfluxClient.searchEvents({
+        query: apyfluxClient.buildSearchQuery(category, location),
+        location,
+        category,
+        dateRange: date_range || 'next 30 days',
+        limit: options.limit
+      }).then(result => {
+        if (result.success && result.events.length > 0) {
+          const transformedEvents = result.events.map(event => 
+            apyfluxClient.transformEvent(event, category)
+          ).filter(event => event !== null);
+          
+          return {
+            success: true,
+            events: transformedEvents,
+            count: transformedEvents.length,
+            processingTime: result.processingTime,
+            source: 'apyflux_api',
+            requestId: result.requestId
+          };
+        }
+        return result;
+      }),
+      
+      // PredictHQ direct
+      predictHQClient.searchEvents({
+        category,
+        location,
+        dateRange: date_range || 'next 30 days',
+        limit: options.limit
+      }).then(result => {
+        if (result.success && result.events.length > 0) {
+          const transformedEvents = result.events.map(event => 
+            predictHQClient.transformEvent(event, category)
+          ).filter(event => event !== null);
+          
+          return {
+            success: true,
+            events: transformedEvents,
+            count: transformedEvents.length,
+            processingTime: result.processingTime,
+            source: 'predicthq_api',
+            totalAvailable: result.totalAvailable
+          };
+        }
+        return result;
+      }),
+      
+      // Exa direct
+      exaClient.searchEvents({
+        category,
+        location,
+        limit: options.limit
+      }),
+      
+      // SerpAPI direct
+      serpApiClient.searchEvents({
+        category,
+        location,
+        limit: options.limit
+      })
+    ]);
+
+    // Prepare event lists for deduplication
+    const eventLists = [];
+    const sourceStats = {};
+    
+    if (perplexityResult.status === 'fulfilled' && perplexityResult.value.success) {
+      eventLists.push(perplexityResult.value);
+      sourceStats.perplexity = {
+        count: perplexityResult.value.events.length,
+        processingTime: perplexityResult.value.processingTime
+      };
+    } else {
+      sourceStats.perplexity = {
+        count: 0,
+        error: perplexityResult.reason?.message || 'Unknown error'
+      };
+    }
+    
+    if (apyfluxResult.status === 'fulfilled' && apyfluxResult.value.success) {
+      eventLists.push(apyfluxResult.value);
+      sourceStats.apyflux = {
+        count: apyfluxResult.value.events.length,
+        processingTime: apyfluxResult.value.processingTime
+      };
+    } else {
+      sourceStats.apyflux = {
+        count: 0,
+        error: apyfluxResult.reason?.message || 'Unknown error'
+      };
+    }
+    
+    if (predictHQResult.status === 'fulfilled' && predictHQResult.value.success) {
+      eventLists.push(predictHQResult.value);
+      sourceStats.predicthq = {
+        count: predictHQResult.value.events.length,
+        processingTime: predictHQResult.value.processingTime,
+        totalAvailable: predictHQResult.value.totalAvailable
+      };
+    } else {
+      sourceStats.predicthq = {
+        count: 0,
+        error: predictHQResult.reason?.message || 'Unknown error'
+      };
+    }
+    
+    if (exaResult.status === 'fulfilled' && exaResult.value.success) {
+      eventLists.push(exaResult.value);
+      sourceStats.exa = {
+        count: exaResult.value.events.length,
+        processingTime: exaResult.value.processingTime
+      };
+    } else {
+      sourceStats.exa = {
+        count: 0,
+        error: exaResult.reason?.message || 'Unknown error'
+      };
+    }
+    
+    if (serpApiResult.status === 'fulfilled' && serpApiResult.value.success) {
+      eventLists.push(serpApiResult.value);
+      sourceStats.serpapi = {
+        count: serpApiResult.value.events.length,
+        processingTime: serpApiResult.value.processingTime
+      };
+    } else {
+      sourceStats.serpapi = {
+        count: 0,
+        error: serpApiResult.reason?.message || 'Unknown error'
+      };
+    }
+
+    // Deduplicate events across all sources
+    const deduplicationResult = deduplicator.deduplicateEvents(eventLists);
+    
+    // Create the result using the deduplicated events
+    const result = {
+      success: true,
+      events: deduplicationResult.uniqueEvents,
+      count: deduplicationResult.uniqueEvents.length,
+      sources: ['perplexity_api', 'apyflux_api', 'predicthq_api', 'exa_api', 'serpapi'],
+      sourceStats,
+      deduplication: {
+        totalProcessed: deduplicationResult.totalProcessed,
+        duplicatesRemoved: deduplicationResult.duplicatesRemoved,
+        duplicateGroups: deduplicationResult.duplicateGroups,
+        sources: deduplicationResult.sources
+      },
+      requestId: `multi_source_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      metadata: {
+        category,
+        location,
+        dateRange: date_range || 'next 30 days',
+        limit: options.limit,
+        deduplicationApplied: true
+      }
+    };
 
     // Cache successful results
     if (result.success && result.events && result.events.length > 0) {
