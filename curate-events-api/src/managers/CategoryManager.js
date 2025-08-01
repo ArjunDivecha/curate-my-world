@@ -639,6 +639,75 @@ Search each theater thoroughly for current movies, showtimes, and special screen
     
     return suggestions;
   }
+
+  /**
+   * Get venue-to-category mapping for high-confidence categorization
+   * Uses generic venue patterns that work across all locations
+   * @returns {Object} Venue category mappings with generic patterns
+   */
+  getVenueCategoryMap() {
+    return {
+      music: [
+        // Generic venue types
+        'symphony hall', 'opera house', 'jazz club', 'amphitheater', 'amphitheatre',
+        'conservatory', 'music hall', 'concert hall', 'music center', 'philharmonic',
+        'auditorium', 'arena', 'coliseum', 'pavilion', 'bandshell',
+        // Common venue name patterns
+        'civic center', 'performing arts', 'music venue', 'concert venue',
+        // Chain venues
+        'house of blues', 'blue note', 'fillmore', 'greek theatre'
+      ],
+      theatre: [
+        // Generic theater types
+        'theatre', 'theater', 'playhouse', 'performing arts center', 'drama center',
+        'repertory', 'rep theatre', 'community theater', 'opera house',
+        // Common patterns
+        'stage', 'drama', 'broadway', 'off-broadway', 'west end'
+      ],
+      art: [
+        // Art venue types
+        'museum', 'gallery', 'art center', 'contemporary art', 'modern art',
+        'sculpture garden', 'exhibition hall', 'cultural center',
+        // Common patterns
+        'moma', 'guggenheim', 'whitney', 'tate', 'louvre'
+      ],
+      food: [
+        // Food venue types
+        'restaurant', 'culinary institute', 'food festival', 'wine country',
+        'farmers market', 'food hall', 'tasting room', 'brewery', 'winery',
+        'culinary center', 'cooking school', 'food court'
+      ],
+      movies: [
+        // Cinema types
+        'cinema', 'movie theater', 'movie theatre', 'cineplex', 'multiplex',
+        'drive-in', 'film center', 'screening room', 'imax',
+        // Chain theaters
+        'amc', 'regal', 'cinemark', 'landmark', 'showcase'
+      ],
+      tech: [
+        // Tech venues
+        'convention center', 'expo center', 'tech center', 'innovation hub',
+        'startup campus', 'conference center', 'meetup space'
+      ],
+      education: [
+        // Educational venues
+        'university', 'college', 'school', 'library', 'lecture hall',
+        'academic center', 'learning center', 'institute'
+      ]
+    };
+  }
+
+  /**
+   * Get all category keywords for content analysis
+   * @returns {Object} All category keywords
+   */
+  getAllCategoryKeywords() {
+    const keywords = {};
+    Object.entries(this.categories).forEach(([category, config]) => {
+      keywords[category] = config.keywords || [];
+    });
+    return keywords;
+  }
 }
 
 export default CategoryManager;

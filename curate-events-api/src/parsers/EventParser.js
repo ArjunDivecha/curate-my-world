@@ -7,11 +7,16 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { createLogger } from '../utils/logger.js';
+import { CategoryManager } from '../managers/CategoryManager.js';
+import { VenueManager } from '../managers/VenueManager.js';
 
 const logger = createLogger('EventParser');
 
 export class EventParser {
   constructor() {
+    this.categoryManager = new CategoryManager();
+    this.venueManager = new VenueManager();
+    
     // Event title patterns observed in successful responses
     this.titlePatterns = [
       /^-\s*\*\*([^*]+)\*\*/,               // "- **Event Name**" (most common)
@@ -277,11 +282,11 @@ export class EventParser {
     const startDate = this.parseEventDate(eventData.date);
     const endDate = new Date(startDate.getTime() + 3 * 60 * 60 * 1000); // Default 3 hour duration
 
-    return {
+    // Create initial event object
+    const event = {
       id: uuidv4(),
       title: eventData.title.trim(),
       description: eventData.description || '',
-      category: category,
       venue: eventData.venue || 'TBD',
       address: eventData.address || `${cityName}, ${stateName}`,
       city: cityName,
@@ -294,9 +299,23 @@ export class EventParser {
       confidence: eventData.venue ? 0.8 : 0.6,
       metadata: {
         lineNumber: eventData.lineNumber,
-        rawDate: eventData.date
+        rawDate: eventData.date,
+        originalCategory: category
       }
     };
+
+    // Apply content-based categorization
+    const location = `${cityName}, ${stateName}`;
+    const finalCategory = this.reCategorizeEvent(event, category, location);
+    event.category = finalCategory;
+    
+    // Update metadata if category was changed
+    if (finalCategory !== category) {
+      event.metadata.categoryChanged = true;
+      event.metadata.originalCategory = category;
+    }
+
+    return event;
   }
 
   /**
@@ -338,12 +357,12 @@ export class EventParser {
     if (event.artist_info) description += ` Artist: ${event.artist_info}.`;
     if (event.sport_type) description += ` Sport: ${event.sport_type}.`;
 
-    return {
+    // Create initial event object
+    const eventObj = {
       id: uuidv4(),
       title: event.title || event.event_name || event.conference_name || 
              event.name || 'Untitled Event',
       description: description.trim(),
-      category: category,
       venue: event.venue || event.venue_name || event.location || 'TBD',
       address: event.location || event.address || location,
       city: cityName,
@@ -356,9 +375,129 @@ export class EventParser {
       confidence: 0.9,
       metadata: {
         show_times: event.show_times || [],
-        original_format: 'json'
+        original_format: 'json',
+        originalCategory: category
       }
     };
+
+    // Apply content-based categorization
+    const eventLocation = `${cityName}, ${stateName}`;
+    const finalCategory = this.reCategorizeEvent(eventObj, category, eventLocation);
+    eventObj.category = finalCategory;
+    
+    // Update metadata if category was changed
+    if (finalCategory !== category) {
+      eventObj.metadata.categoryChanged = true;
+      eventObj.metadata.originalCategory = category;
+    }
+
+    return eventObj;
+  }
+
+  /**
+   * Re-categorize event based on content analysis
+   * @param {object} event - Event object
+   * @param {string} originalCategory - Original requested category
+   * @param {string} location - Event location for venue learning
+   * @returns {string} Final category (original or corrected)
+   */
+  reCategorizeEvent(event, originalCategory, location = null) {
+    try {
+      // Get all category keywords and venue mappings
+      const categoryKeywords = this.categoryManager.getAllCategoryKeywords();
+      const venueCategoryMap = this.categoryManager.getVenueCategoryMap();
+      
+      // Analyze event content
+      const analysisText = `${event.title || ''} ${event.description || ''} ${event.venue || ''}`.toLowerCase();
+      
+      // Score each category
+      const categoryScores = {};
+      
+      // 1. Location-specific learned venue categorization (highest confidence)
+      if (location && event.venue) {
+        const learnedVenue = this.venueManager.getVenueCategory(event.venue, location);
+        if (learnedVenue.category && learnedVenue.confidence > 0.5) {
+          categoryScores[learnedVenue.category] = learnedVenue.confidence * 0.7;
+          logger.debug('Using learned venue category', {
+            venue: event.venue,
+            category: learnedVenue.category,
+            confidence: learnedVenue.confidence,
+            source: learnedVenue.source
+          });
+        }
+      }
+      
+      // 2. Generic venue-based categorization
+      const venueText = (event.venue || '').toLowerCase();
+      for (const [category, venuePatterns] of Object.entries(venueCategoryMap)) {
+        let venueScore = 0;
+        
+        for (const pattern of venuePatterns) {
+          if (venueText.includes(pattern.toLowerCase())) {
+            // Exact matches get higher scores
+            if (venueText === pattern.toLowerCase()) {
+              venueScore = Math.max(venueScore, 1.0);
+            } else {
+              venueScore = Math.max(venueScore, 0.8);
+            }
+          }
+        }
+        
+        // Weight generic venue patterns lower if we have learned data
+        const weight = categoryScores[category] > 0 ? 0.3 : 0.6;
+        categoryScores[category] = (categoryScores[category] || 0) + venueScore * weight;
+      }
+      
+      // 3. Keyword-based categorization
+      for (const [category, keywords] of Object.entries(categoryKeywords)) {
+        const keywordScore = keywords.reduce((score, keyword) => {
+          const regex = new RegExp(`\\b${keyword.toLowerCase()}\\b`, 'g');
+          const matches = (analysisText.match(regex) || []).length;
+          return score + matches;
+        }, 0);
+        
+        // Normalize keyword score (max 1.0)
+        const normalizedKeywordScore = Math.min(keywordScore / 5, 1.0);
+        categoryScores[category] = (categoryScores[category] || 0) + normalizedKeywordScore * 0.4;
+      }
+      
+      // Find the highest scoring category
+      const bestMatch = Object.entries(categoryScores)
+        .sort(([,a], [,b]) => b - a)[0];
+      
+      const [bestCategory, bestScore] = bestMatch || [originalCategory, 0];
+      
+      const finalCategory = bestScore > 0.6 && bestCategory !== originalCategory ? bestCategory : originalCategory;
+      
+      // Learn venue-category association for future categorization
+      if (location && event.venue && bestScore > 0.5) {
+        this.venueManager.learnVenueCategory(event.venue, finalCategory, location, bestScore);
+      }
+      
+      if (finalCategory !== originalCategory) {
+        logger.info('Event recategorized', {
+          title: event.title,
+          originalCategory,
+          newCategory: finalCategory,
+          confidence: bestScore.toFixed(3),
+          venue: event.venue,
+          scores: Object.entries(categoryScores)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 3)
+            .map(([cat, score]) => `${cat}:${score.toFixed(2)}`)
+            .join(', ')
+        });
+      }
+      
+      return finalCategory;
+      
+    } catch (error) {
+      logger.warn('Error in reCategorizeEvent', { 
+        error: error.message,
+        title: event.title 
+      });
+      return originalCategory;
+    }
   }
 
   /**
