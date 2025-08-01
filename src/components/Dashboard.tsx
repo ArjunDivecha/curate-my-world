@@ -273,6 +273,12 @@ export const Dashboard = () => {
     { label: 'Weekdays', description: 'Mon-Fri', value: 'Weekday Events' }
   ];
 
+  // Calculate total event count for the "All" category
+  const totalEventCount = Object.values(categoryStats).reduce((acc: number, cur: unknown) => {
+    const stat = cur as { count?: number };
+    return acc + (stat?.count || 0);
+  }, 0);
+
   return (
     <div className="min-h-screen">
       <Header 
@@ -338,7 +344,7 @@ export const Dashboard = () => {
                   <Search className="icon-svg h-8 w-8" />
                 </div>
                 <p className="font-semibold">All</p>
-                <p className="text-sm text-gray-500">{Object.values(categoryStats).reduce((acc: number, cur: any) => acc + (cur.count || 0), 0)} events</p>
+                <p className="text-sm text-gray-500">{totalEventCount} events</p>
               </div>
 
               {Object.keys(categoryIcons).map((category) => {
@@ -486,8 +492,7 @@ export const Dashboard = () => {
               </TabsList>
 
               <TabsContent value="calendar" className="space-y-6">
-                {console.log('🔍 Dashboard: Passing events to WeeklyCalendar:', events.length, events)}
-                <WeeklyCalendar 
+                <WeeklyCalendar
                   events={events}
                   savedEvents={savedEvents}
                   onEventClick={(eventId) => {
