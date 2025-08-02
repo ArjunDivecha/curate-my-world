@@ -99,6 +99,25 @@ export const Dashboard = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [transformedEventsByCategory, setTransformedEventsByCategory] = useState<any>({});
 
+  // Category mapping: Frontend display names to backend API names
+  const mapCategoryToBackend = (frontendCategory: string): string => {
+    const categoryMap: Record<string, string> = {
+      'Technology': 'technology',
+      'Finance': 'finance', 
+      'Automotive': 'automotive',
+      'Data Analysis': 'data-analysis',
+      'Education': 'education',
+      'Business': 'business',
+      'Science': 'science',
+      'Music': 'music',
+      'Theatre': 'theatre',
+      'Art': 'art',
+      'Food': 'food',
+      'Movies': 'movies'
+    };
+    return categoryMap[frontendCategory] || frontendCategory.toLowerCase();
+  };
+
   // Debug: Log events state changes
   console.log('🔍 Dashboard render - events state:', events.length, events);
   console.log('🔍 Dashboard render - savedEvents state:', savedEvents.length, savedEvents);
@@ -393,7 +412,7 @@ export const Dashboard = () => {
 
               {Object.keys(categoryIcons).map((category) => {
                 const IconComponent = categoryIcons[category as keyof typeof categoryIcons];
-                const categoryKey = category.toLowerCase(); // Frontend now matches backend
+                const categoryKey = mapCategoryToBackend(category); // Map frontend to backend category names
                 const stats = categoryStats[categoryKey] || { count: 0 };
                 const isSelected = activeCategory === categoryKey;
 

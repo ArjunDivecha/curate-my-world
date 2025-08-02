@@ -76,6 +76,37 @@ export class CategoryManager {
         aliases: ['films', 'cinema', 'movie theaters', 'showtimes', 'screenings'],
         keywords: ['movie', 'film', 'cinema', 'theater', 'screening', 'showtime', 'premiere'],
         priority: 'high'
+      },
+      // New personalized categories based on conversation analysis
+      technology: {
+        aliases: ['tech', 'programming', 'coding', 'software', 'development', 'ai', 'ml'],
+        keywords: ['technology', 'programming', 'coding', 'software', 'development', 'ai', 'machine learning', 'data science', 'python', 'javascript', 'web development'],
+        priority: 'high'
+      },
+      finance: {
+        aliases: ['investment', 'trading', 'fintech', 'banking', 'economics'],
+        keywords: ['finance', 'investment', 'trading', 'fintech', 'banking', 'economics', 'stock market', 'cryptocurrency', 'blockchain', 'financial planning'],
+        priority: 'high'
+      },
+      automotive: {
+        aliases: ['cars', 'vehicles', 'electric vehicles', 'ev', 'tesla', 'auto'],
+        keywords: ['automotive', 'cars', 'vehicles', 'electric vehicles', 'ev', 'tesla', 'auto', 'car show', 'automotive technology', 'self-driving'],
+        priority: 'high'
+      },
+      'data-analysis': {
+        aliases: ['data science', 'analytics', 'big data', 'statistics', 'visualization'],
+        keywords: ['data analysis', 'data science', 'analytics', 'big data', 'statistics', 'visualization', 'tableau', 'power bi', 'sql', 'python data'],
+        priority: 'high'
+      },
+      business: {
+        aliases: ['entrepreneurship', 'startup', 'networking', 'corporate', 'professional'],
+        keywords: ['business', 'entrepreneurship', 'startup', 'networking', 'corporate', 'professional', 'leadership', 'management', 'strategy'],
+        priority: 'medium'
+      },
+      science: {
+        aliases: ['research', 'scientific', 'laboratory', 'innovation', 'discovery'],
+        keywords: ['science', 'research', 'scientific', 'laboratory', 'innovation', 'discovery', 'biology', 'chemistry', 'physics', 'engineering'],
+        priority: 'medium'
       }
     };
 
@@ -392,6 +423,183 @@ Provide results in JSON format:
 ]
 
 Search each theater thoroughly for current movies, showtimes, and special screenings. Include both mainstream releases and indie films. Provide actual real movies with accurate showtimes.`,
+
+      // New personalized category templates
+      technology: `Find all technology and programming events for {location} for the {dateRange}. Focus on Python programming, data science, machine learning, software development, and coding workshops.
+
+Search these tech venues and programming communities:
+
+MAJOR TECH VENUES TO SEARCH:
+- General Assembly (San Francisco) - https://generalassemb.ly
+- Galvanize (San Francisco) - https://www.galvanize.com
+- Hack Reactor (San Francisco) - https://www.hackreactor.com
+- The Hacker Dojo (Mountain View) - https://www.hackerdojo.org
+- Noisebridge (San Francisco) - https://www.noisebridge.net
+- SF Python Meetup venues
+- PyBay Conference venues
+- Various co-working spaces and startup hubs
+
+Provide results in JSON format:
+[
+{
+  "title": "Event Title",
+  "venue": "Venue Name",
+  "location": "City, State",
+  "date": "Date range or specific dates",
+  "show_times": ["Time 1", "Time 2"],
+  "website": "https://event-website.com",
+  "price_range": "Price information or Free",
+  "description": "Brief description",
+  "topic": "Programming/Tech focus area"
+}
+]
+
+Search thoroughly for programming workshops, coding bootcamps, tech meetups, and software development events.`,
+
+      finance: `Find all finance and investment events for {location} for the {dateRange}. Focus on stock market analysis, trading strategies, fintech, investment seminars, and financial planning workshops.
+
+Search these financial venues and organizations:
+
+MAJOR FINANCE VENUES TO SEARCH:
+- San Francisco Finance Center
+- CFA Institute San Francisco
+- Financial Planning Association venues
+- Various investment clubs and trading groups
+- Fintech meetup venues
+- Bank and financial institution event spaces
+
+Provide results in JSON format:
+[
+{
+  "title": "Event Title",
+  "venue": "Venue Name",
+  "location": "City, State",
+  "date": "Date range or specific dates",
+  "show_times": ["Time 1", "Time 2"],
+  "website": "https://event-website.com",
+  "price_range": "Price information or Free",
+  "description": "Brief description",
+  "topic": "Finance focus area"
+}
+]
+
+Search thoroughly for investment seminars, trading workshops, fintech events, and financial education sessions.`,
+
+      automotive: `Find all automotive and electric vehicle events for {location} for the {dateRange}. Focus on Tesla meetups, EV technology, car shows, automotive innovation, and electric vehicle conferences.
+
+Search these automotive venues and organizations:
+
+MAJOR AUTOMOTIVE VENUES TO SEARCH:
+- Tesla Fremont Factory (tours and events)
+- Tesla Service Centers (community events)
+- Various Tesla Owners Club meetup locations
+- Auto shows and car exhibition venues
+- EV charging station events
+- Automotive technology conference venues
+
+Provide results in JSON format:
+[
+{
+  "title": "Event Title",
+  "venue": "Venue Name",
+  "location": "City, State",
+  "date": "Date range or specific dates",
+  "show_times": ["Time 1", "Time 2"],
+  "website": "https://event-website.com",
+  "price_range": "Price information or Free",
+  "description": "Brief description",
+  "topic": "Automotive focus area"
+}
+]
+
+Search thoroughly for Tesla events, EV meetups, car shows, and automotive technology conferences.`,
+
+      'data-analysis': `Find all data science and analytics events for {location} for the {dateRange}. Focus on data visualization, statistical analysis, business intelligence, Python data science, and analytics workshops.
+
+Search these data science venues and organizations:
+
+MAJOR DATA SCIENCE VENUES TO SEARCH:
+- Data Science meetup venues
+- Tableau User Group locations
+- Python data science workshop venues
+- Business intelligence conference locations
+- University data science departments
+- Analytics and visualization workshop spaces
+
+Provide results in JSON format:
+[
+{
+  "title": "Event Title",
+  "venue": "Venue Name",
+  "location": "City, State",
+  "date": "Date range or specific dates",
+  "show_times": ["Time 1", "Time 2"],
+  "website": "https://event-website.com",
+  "price_range": "Price information or Free",
+  "description": "Brief description",
+  "topic": "Data analysis focus area"
+}
+]
+
+Search thoroughly for data science workshops, analytics seminars, visualization training, and statistical analysis events.`,
+
+      business: `Find all business and entrepreneurship events for {location} for the {dateRange}. Focus on startup networking, business strategy, leadership development, and professional networking events.
+
+Search these business venues and organizations:
+
+MAJOR BUSINESS VENUES TO SEARCH:
+- Startup networking event venues
+- Business incubators and accelerators
+- Professional association meeting spaces
+- Corporate training venues
+- Entrepreneurship workshop locations
+- Business conference centers
+
+Provide results in JSON format:
+[
+{
+  "title": "Event Title",
+  "venue": "Venue Name",
+  "location": "City, State",
+  "date": "Date range or specific dates",
+  "show_times": ["Time 1", "Time 2"],
+  "website": "https://event-website.com",
+  "price_range": "Price information or Free",
+  "description": "Brief description",
+  "topic": "Business focus area"
+}
+]
+
+Search thoroughly for networking events, business seminars, startup meetups, and professional development workshops.`,
+
+      science: `Find all science and research events for {location} for the {dateRange}. Focus on scientific conferences, research presentations, laboratory tours, and innovation showcases.
+
+Search these science venues and organizations:
+
+MAJOR SCIENCE VENUES TO SEARCH:
+- University research departments
+- Science museums and centers
+- Research laboratory open houses
+- Scientific conference venues
+- Innovation and discovery showcases
+- STEM education event locations
+
+Provide results in JSON format:
+[
+{
+  "title": "Event Title",
+  "venue": "Venue Name",
+  "location": "City, State",
+  "date": "Date range or specific dates",
+  "show_times": ["Time 1", "Time 2"],
+  "website": "https://event-website.com",
+  "price_range": "Price information or Free",
+  "description": "Brief description",
+  "topic": "Science focus area"
+}
+]
+
+Search thoroughly for scientific conferences, research presentations, lab tours, and STEM events.`,
       
       default: `Find all {category} events for {location} for the {dateRange} - give me the results in JSON format with delimiters for title, venue, location, date, show_times, website, and price_range. Provide actual real events with accurate information.`
     };
