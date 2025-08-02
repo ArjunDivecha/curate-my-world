@@ -7,6 +7,7 @@ import { MapPin, Clock, Calendar, ExternalLink, Share2, Bookmark, Eye } from "lu
 import { cleanHtmlText } from "@/lib/utils";
 import { saveToCalendar, validateEventForCalendar } from "@/lib/calendarUtils";
 import { useToast } from "@/hooks/use-toast";
+import { getCategoryColor, getCategoryBadgeClasses } from "@/utils/categoryColors";
 
 interface Event {
   id: string;
@@ -42,6 +43,9 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
   const { toast } = useToast();
   const [isHovering, setIsHovering] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  
+  // Get category colors for this event
+  const categoryColor = getCategoryColor(event.categories);
 
   // Handle hover with delay for preview
   React.useEffect(() => {
@@ -153,7 +157,7 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
   };
 
   return (
-    <Card className="group bg-gradient-card shadow-card hover:shadow-elegant transition-all duration-300 hover:-translate-y-1 animate-fade-in border-0 h-full">
+    <Card className={`group shadow-card hover:shadow-elegant transition-all duration-300 hover:-translate-y-1 animate-fade-in h-full ${categoryColor.background} ${categoryColor.border} ${categoryColor.hover}`}>
       <CardContent className="p-6 h-full flex flex-col">
         {/* Header Section - Fixed Height */}
         <div className="mb-4">
@@ -195,11 +199,17 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
         {/* Categories Section - Fixed Height */}
         <div className="mb-4 min-h-[2rem]">
           <div className="flex flex-wrap gap-2">
-            {event.categories.slice(0, 3).map((category) => (
-              <Badge key={category} variant="secondary" className="text-xs">
-                {category}
-              </Badge>
-            ))}
+            {event.categories.slice(0, 3).map((category) => {
+              const badgeColor = getCategoryColor(category);
+              return (
+                <Badge 
+                  key={category} 
+                  className={`text-xs ${badgeColor.background} ${badgeColor.border} ${badgeColor.accent} border transition-colors`}
+                >
+                  {category}
+                </Badge>
+              );
+            })}
           </div>
         </div>
 

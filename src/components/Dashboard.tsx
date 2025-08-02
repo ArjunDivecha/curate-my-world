@@ -14,6 +14,7 @@ import SuggestedCategories from './SuggestedCategories';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film } from "lucide-react";
+import { getCategoryColor } from "@/utils/categoryColors";
 
 interface Preferences {
   interests: {
@@ -508,18 +509,23 @@ export const Dashboard = () => {
                 const categoryKey = mapCategoryToBackend(category);
                 const stats = categoryStats[categoryKey] || { count: 0 };
                 const isSelected = activeCategory === categoryKey;
+                const categoryColors = getCategoryColor(category);
 
                 return (
                   <div 
                     key={category}
-                    className={`preference-card rounded-2xl p-4 text-center ${isSelected ? 'selected' : ''}`}
+                    className={`rounded-2xl p-4 text-center transition-all duration-300 cursor-pointer transform hover:scale-105 hover:shadow-lg ${
+                      isSelected 
+                        ? `${categoryColors.background} ${categoryColors.border} border-2 shadow-md` 
+                        : `${categoryColors.background} ${categoryColors.border} border ${categoryColors.hover}`
+                    }`}
                     onClick={() => handleCategoryFilter(categoryKey)}
                   >
-                    <div className="icon-bg w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                      {IconComponent && <IconComponent className="icon-svg h-8 w-8" />}
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${categoryColors.background} ${categoryColors.border} border-2`}>
+                      {IconComponent && <IconComponent className={`h-8 w-8 ${categoryColors.icon}`} />}
                     </div>
-                    <p className="font-semibold">{category}</p>
-                    <p className="text-sm text-gray-500">{stats.count} events</p>
+                    <p className={`font-semibold ${categoryColors.text}`}>{category}</p>
+                    <p className={`text-sm ${categoryColors.accent}`}>{stats.count} events</p>
                   </div>
                 );
               })}
@@ -532,18 +538,23 @@ export const Dashboard = () => {
                 const categoryKey = mapCategoryToBackend(category);
                 const stats = categoryStats[categoryKey] || { count: 0 };
                 const isSelected = activeCategory === categoryKey;
+                const categoryColors = getCategoryColor(category);
 
                 return (
                   <div 
                     key={category}
-                    className={`preference-card rounded-2xl p-4 text-center ${isSelected ? 'selected' : ''}`}
+                    className={`rounded-2xl p-4 text-center transition-all duration-300 cursor-pointer transform hover:scale-105 hover:shadow-lg ${
+                      isSelected 
+                        ? `${categoryColors.background} ${categoryColors.border} border-2 shadow-md` 
+                        : `${categoryColors.background} ${categoryColors.border} border ${categoryColors.hover}`
+                    }`}
                     onClick={() => handleCategoryFilter(categoryKey)}
                   >
-                    <div className="icon-bg w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                      {IconComponent && <IconComponent className="icon-svg h-8 w-8" />}
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${categoryColors.background} ${categoryColors.border} border-2`}>
+                      {IconComponent && <IconComponent className={`h-8 w-8 ${categoryColors.icon}`} />}
                     </div>
-                    <p className="font-semibold">{category}</p>
-                    <p className="text-sm text-gray-500">{stats.count} events</p>
+                    <p className={`font-semibold ${categoryColors.text}`}>{category}</p>
+                    <p className={`text-sm ${categoryColors.accent}`}>{stats.count} events</p>
                   </div>
                 );
               })}

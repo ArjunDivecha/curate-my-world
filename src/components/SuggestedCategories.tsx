@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Brain, TrendingUp, ArrowRight, Info, DollarSign, Car, BarChart3 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getCategoryColor, getCategoryIconClasses } from '@/utils/categoryColors';
 
 interface SuggestedCategory {
   name: string;
@@ -105,21 +106,25 @@ const SuggestedCategories: React.FC<SuggestedCategoriesProps> = ({
 
         {/* Suggested Categories */}
         <div className="space-y-4">
-          {categoriesWithCounts.map((category) => (
-            <Card key={category.name} className="border border-gray-200 hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className={`p-1.5 rounded-full ${category.color} text-white`}>
-                      {category.icon}
+          {categoriesWithCounts.map((category) => {
+            const categoryColors = getCategoryColor(category.name);
+            return (
+              <Card key={category.name} className={`${categoryColors.background} ${categoryColors.border} ${categoryColors.hover} transition-all duration-300 hover:shadow-md border`}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className={`p-1.5 rounded-full ${categoryColors.background} ${categoryColors.border} border-2`}>
+                        <div className={categoryColors.icon}>
+                          {category.icon}
+                        </div>
+                      </div>
+                      <CardTitle className={`text-sm font-semibold ${categoryColors.text}`}>
+                        {category.displayName}
+                      </CardTitle>
+                      <Badge className={`text-xs ${categoryColors.background} ${categoryColors.border} ${categoryColors.accent} border`}>
+                        {category.confidence}%
+                      </Badge>
                     </div>
-                    <CardTitle className="text-sm font-semibold">
-                      {category.displayName}
-                    </CardTitle>
-                    <Badge variant="secondary" className="text-xs">
-                      {category.confidence}%
-                    </Badge>
-                  </div>
                   
                   <TooltipProvider>
                     <Tooltip>
@@ -147,7 +152,7 @@ const SuggestedCategories: React.FC<SuggestedCategoriesProps> = ({
                 </div>
 
                 {/* AI Reasoning */}
-                <div className="mb-4 p-2 bg-blue-50 rounded text-xs text-gray-600 italic">
+                <div className={`mb-4 p-2 rounded text-xs italic ${categoryColors.background} ${categoryColors.text}`}>
                   "{category.reasoning.split(' ').slice(0, 12).join(' ')}..."
                 </div>
 
@@ -156,14 +161,15 @@ const SuggestedCategories: React.FC<SuggestedCategoriesProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={() => onCategoryClick(category.name)}
-                  className="w-full text-xs flex items-center justify-center space-x-1 hover:bg-gray-100"
+                  className={`w-full text-xs flex items-center justify-center space-x-1 ${categoryColors.hover} ${categoryColors.border} border ${categoryColors.text}`}
                 >
                   <span>Show Events</span>
                   <ArrowRight className="w-3 h-3" />
                 </Button>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
 
         {/* Footer */}
