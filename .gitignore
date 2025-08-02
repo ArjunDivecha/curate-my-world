@@ -24,12 +24,19 @@ dist-ssr
 *.sw?
 # Environment files
 .env
+**/.env
 .env.local
+**/.env.local
 .env.development
+**/.env.development
 .env.production
+**/.env.production
 .env.staging
+**/.env.staging
 .env.test
+**/.env.test
 .env*.local
+**/.env*.local
 
 # API Keys and secrets
 *.key
