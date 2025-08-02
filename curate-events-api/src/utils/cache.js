@@ -55,30 +55,13 @@ class ResponseCache {
   }
 
   /**
-   * Get cached response
+   * Get cached response - DISABLED FOR DEVELOPMENT
    */
   get(key) {
-    const entry = this.cache.get(key);
-    
-    if (!entry) {
-      this.stats.misses++;
-      return null;
-    }
-    
-    // Check if expired
-    if (Date.now() > entry.expiry) {
-      this.cache.delete(key);
-      this.stats.misses++;
-      return null;
-    }
-    
-    this.stats.hits++;
-    logger.debug('Cache hit', { 
-      key, 
-      hitRate: `${(this.stats.hits / (this.stats.hits + this.stats.misses) * 100).toFixed(1)}%`
-    });
-    
-    return entry.data;
+    // Always return null to disable caching during development
+    this.stats.misses++;
+    logger.debug('Cache disabled - always miss', { key });
+    return null;
   }
 
   /**
@@ -168,7 +151,7 @@ class ResponseCache {
   }
 }
 
-// Create global cache instance
-export const eventCache = new ResponseCache(300000); // 5 minutes TTL
+// Create global cache instance - DISABLED FOR DEVELOPMENT
+export const eventCache = new ResponseCache(0); // 0 TTL = disabled
 
 export default ResponseCache;

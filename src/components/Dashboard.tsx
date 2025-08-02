@@ -397,23 +397,139 @@ export const Dashboard = () => {
           {/* Category Filters */}
           <div className="mb-10">
             <h3 className="text-2xl font-bold text-gray-700 mb-6">Filter by Category</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-8 gap-5">
-              {/* "All" Category Button */}
-              <div 
-                key="all"
-                className={`preference-card rounded-2xl p-4 text-center ${activeCategory === null ? 'selected' : ''}`}
+            
+            {/* Top Row - All, Fetch Events, Clear All */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+              {/* "All" Button */}
+              <Button
                 onClick={() => handleCategoryFilter(null)}
+                className={`w-full sm:w-auto flex items-center justify-center space-x-2 font-bold py-4 px-8 rounded-full transition hover:transform hover:-translate-y-0.5 hover:shadow-lg ${
+                  activeCategory === null 
+                    ? 'bg-gradient-primary text-white' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
               >
-                <div className="icon-bg w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Search className="icon-svg h-8 w-8" />
-                </div>
-                <p className="font-semibold">All</p>
-                <p className="text-sm text-gray-500">{totalEventCount} events</p>
-              </div>
+                <Search className="w-5 h-5" />
+                <span>All ({totalEventCount} events)</span>
+              </Button>
+              
+              {/* Fetch Events Button */}
+              <FetchEventsButton
+                location={preferences.location.address}
+                preferences={{
+                  categories: Object.keys(preferences.interests.categories).filter(cat => preferences.interests.categories[cat]),
+                  timePreferences: preferences.filters.timePreferences,
+                  customKeywords: preferences.interests.keywords
+                }}
+                onAllEventsFetched={(fetchedEventsByCategory, fetchedCategoryStats) => {
+                  console.log('✅ Received raw events by category:', fetchedEventsByCategory);
+                  setEventsByCategory(fetchedEventsByCategory);
+                  setCategoryStats(fetchedCategoryStats);
 
-              {Object.keys(categoryIcons).map((category) => {
+                  // Transform events for each category and store them
+                  const newTransformedEventsByCategory = Object.entries(fetchedEventsByCategory).reduce((acc, [category, events]) => {
+                    acc[category] = (events as any[]).map((event: any, index: number) => {
+                      // Debug logging for date issues
+                      console.log(`🔍 Event ${index} in ${category}:`, {
+                        id: event.id,
+                        title: event.title,
+                        startDate: event.startDate,
+                        endDate: event.endDate,
+                        rawEvent: event
+                      });
+                      
+                      // Ensure dates are properly formatted
+                      const formatEventDate = (dateStr: string | Date) => {
+                        if (!dateStr) return new Date().toISOString();
+                        if (dateStr instanceof Date) return dateStr.toISOString();
+                        // Try to parse the date string
+                        const parsed = new Date(dateStr);
+                        return isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+                      };
+                      
+                      return {
+                        id: event.id || `event-${category}-${index}`,
+                        title: event.title || 'Untitled Event',
+                        description: event.description || 'No description available.',
+                        startDate: formatEventDate(event.startDate),
+                        endDate: formatEventDate(event.endDate || event.startDate),
+                        venue: {
+                          name: event.venue || 'Venue TBD',
+                          address: event.address || event.location || 'Location TBD',
+                          website: event.venueInfo?.website,
+                          mapUrl: event.venueInfo?.googleMapsUrl,
+                        },
+                        categories: [event.category || 'General'],
+                        personalRelevanceScore: event.relevance || 8,
+                        price: event.priceRange ? {
+                          type: event.priceRange.min === 0 && event.priceRange.max === 0 ? 'free' : 'paid',
+                          amount: event.priceRange.min === 0 && event.priceRange.max === 0 ? undefined : `$${event.priceRange.min || '??'} - $${event.priceRange.max || '??'}`,
+                        } : { type: 'free' },
+                        ticketUrl: event.ticketUrl || event.externalUrl,
+                        eventUrl: event.eventUrl || event.externalUrl,
+                        aiReasoning: event.aiReasoning || 'Fetched from curated sources.',
+                        source: event.source,
+                        sources: event.sources,
+                      };
+                    });
+                    return acc;
+                  }, {} as any);
+
+                  setTransformedEventsByCategory(newTransformedEventsByCategory);
+
+                  // Combine all TRANSFORMED events for initial display
+                  const allTransformedEvents = Object.values(newTransformedEventsByCategory).flat();
+                  setEvents(allTransformedEvents);
+                  setActiveCategory(null); // Show 'All' events initially
+                }}
+                className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-2 text-white font-bold py-4 px-8 rounded-full transition hover:transform hover:-translate-y-0.5 hover:shadow-lg"
+              />
+              
+              {/* Clear All Button */}
+              <Button
+                onClick={() => {
+                  setEvents([]);
+                  setSavedEvents([]);
+                  toast({
+                    title: "Events Cleared",
+                    description: "All events have been cleared. Click 'Fetch Events' to get fresh events!",
+                  });
+                }}
+                className="w-full sm:w-auto flex items-center justify-center space-x-2 bg-gray-200 text-gray-600 font-bold py-4 px-8 rounded-full hover:bg-gray-300 transition"
+              >
+                <span>Clear All</span>
+              </Button>
+            </div>
+            
+            {/* First Row - 6 categories */}
+            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5 mb-5">
+              {Object.keys(categoryIcons).slice(0, 6).map((category) => {
                 const IconComponent = categoryIcons[category as keyof typeof categoryIcons];
-                const categoryKey = mapCategoryToBackend(category); // Map frontend to backend category names
+                const categoryKey = mapCategoryToBackend(category);
+                const stats = categoryStats[categoryKey] || { count: 0 };
+                const isSelected = activeCategory === categoryKey;
+
+                return (
+                  <div 
+                    key={category}
+                    className={`preference-card rounded-2xl p-4 text-center ${isSelected ? 'selected' : ''}`}
+                    onClick={() => handleCategoryFilter(categoryKey)}
+                  >
+                    <div className="icon-bg w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                      {IconComponent && <IconComponent className="icon-svg h-8 w-8" />}
+                    </div>
+                    <p className="font-semibold">{category}</p>
+                    <p className="text-sm text-gray-500">{stats.count} events</p>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Second Row - 6 categories */}
+            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
+              {Object.keys(categoryIcons).slice(6).map((category) => {
+                const IconComponent = categoryIcons[category as keyof typeof categoryIcons];
+                const categoryKey = mapCategoryToBackend(category);
                 const stats = categoryStats[categoryKey] || { count: 0 };
                 const isSelected = activeCategory === categoryKey;
 
@@ -472,72 +588,7 @@ export const Dashboard = () => {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <FetchEventsButton
-              location={preferences.location.address}
-              preferences={{
-                categories: Object.keys(preferences.interests.categories).filter(cat => preferences.interests.categories[cat]),
-                timePreferences: preferences.filters.timePreferences,
-                customKeywords: preferences.interests.keywords
-              }}
-              onAllEventsFetched={(fetchedEventsByCategory, fetchedCategoryStats) => {
-                console.log('✅ Received raw events by category:', fetchedEventsByCategory);
-                setEventsByCategory(fetchedEventsByCategory); // Store raw data
-                setCategoryStats(fetchedCategoryStats);
 
-                // Transform events for each category and store them
-                const newTransformedEventsByCategory = Object.entries(fetchedEventsByCategory).reduce((acc, [category, events]) => {
-                  acc[category] = (events as any[]).map((event: any) => ({
-                    id: event.id,
-                    title: event.title,
-                    description: event.description || 'No description available.',
-                    startDate: event.startDate,
-                    endDate: event.endDate || event.startDate,
-                    venue: {
-                      name: event.venue || 'Venue TBD',
-                      address: event.address || event.location || 'Location TBD',
-                      website: event.venueInfo?.website,
-                      mapUrl: event.venueInfo?.googleMapsUrl,
-                    },
-                    categories: [event.category || 'General'],
-                    personalRelevanceScore: event.relevance || 8,
-                    price: event.priceRange ? {
-                      type: event.priceRange.min === 0 && event.priceRange.max === 0 ? 'free' : 'paid',
-                      amount: event.priceRange.min === 0 && event.priceRange.max === 0 ? undefined : `$${event.priceRange.min || '??'} - $${event.priceRange.max || '??'}`,
-                    } : { type: 'free' },
-                    ticketUrl: event.ticketUrl || event.externalUrl,
-                    eventUrl: event.eventUrl || event.externalUrl,
-                    aiReasoning: event.aiReasoning || 'Fetched from curated sources.',
-                    source: event.source,
-                    sources: event.sources,
-                  }));
-                  return acc;
-                }, {} as any);
-
-                setTransformedEventsByCategory(newTransformedEventsByCategory);
-
-                // Combine all TRANSFORMED events for initial display
-                const allTransformedEvents = Object.values(newTransformedEventsByCategory).flat();
-                setEvents(allTransformedEvents);
-                setActiveCategory(null); // Show 'All' events initially
-              }}
-              className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-2 text-white font-bold py-3 px-8 rounded-full transition hover:transform hover:-translate-y-0.5 hover:shadow-lg"
-            />
-            <Button
-              onClick={() => {
-                setEvents([]);
-                setSavedEvents([]);
-                toast({
-                  title: "Events Cleared",
-                  description: "All events have been cleared. Click 'Fetch Events' to get fresh events!",
-                });
-              }}
-              className="w-full sm:w-auto flex items-center justify-center space-x-2 bg-gray-200 text-gray-600 font-bold py-3 px-8 rounded-full hover:bg-gray-300 transition"
-            >
-              <span>Clear All</span>
-            </Button>
-          </div>
         </div>
 
         {/* Main Content - Show events if available */}
@@ -557,7 +608,7 @@ export const Dashboard = () => {
 
               <TabsContent value="calendar" className="space-y-6">
                 <WeeklyCalendar
-                  events={events}
+                  events={savedEvents}
                   savedEvents={savedEvents}
                   onEventClick={(eventId) => {
                     const event = events.find(e => e.id === eventId);

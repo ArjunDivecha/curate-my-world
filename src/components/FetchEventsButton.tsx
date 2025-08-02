@@ -193,7 +193,7 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
   const getButtonText = () => {
     if (isLoading) return 'Fetching Events...';
     if (!healthStatus) return 'Fetch Events';
-    if (healthStatus.isHealthy) return `Fetch Events (${healthStatus.api.sampleEventCount} available)`;
+    if (healthStatus.isHealthy) return 'Fetch Events';
     if (healthStatus.consecutiveFailures > 3) return 'Backend Offline - Retrying...';
     return 'Connection Issues - Fetch Events';
   };
