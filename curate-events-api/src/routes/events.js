@@ -25,6 +25,7 @@ import { PredictHQClient } from '../clients/PredictHQClient.js';
 import { EventDeduplicator } from '../utils/eventDeduplicator.js';
 import { ExaClient } from '../clients/ExaClient.js';
 import { SerpApiClient } from '../clients/SerpApiClient.js';
+import { LocationFilter } from '../utils/locationFilter.js';
 import { createLogger, logRequest, logResponse } from '../utils/logger.js';
 import { config } from '../utils/config.js';
 import { eventCache } from '../utils/cache.js';
@@ -40,6 +41,7 @@ const predictHQClient = new PredictHQClient(config.predictHQApiKey);
 const exaClient = new ExaClient();
 const serpApiClient = new SerpApiClient();
 const deduplicator = new EventDeduplicator();
+const locationFilter = new LocationFilter();
 
 /**
  * GET /api/events/:category/combined
@@ -796,11 +798,30 @@ router.get('/:category', async (req, res) => {
     // Deduplicate events across all sources
     const deduplicationResult = deduplicator.deduplicateEvents(eventLists);
     
-    // Create the result using the deduplicated events
+    // Apply location filtering to remove events from incorrect locations
+    const preFilterCount = deduplicationResult.uniqueEvents.length;
+    const filteredEvents = locationFilter.filterEventsByLocation(
+      deduplicationResult.uniqueEvents, 
+      location, 
+      {
+        radiusKm: 50, // 50km radius for Bay Area
+        allowBayArea: true, // Allow Bay Area cities for SF searches
+        strictMode: false // Keep events if location is unclear
+      }
+    );
+    const postFilterCount = filteredEvents.length;
+    const locationFilterStats = {
+      preFilterCount,
+      postFilterCount,
+      removedCount: preFilterCount - postFilterCount,
+      removalRate: preFilterCount > 0 ? ((preFilterCount - postFilterCount) / preFilterCount * 100).toFixed(1) + '%' : '0%'
+    };
+    
+    // Create the result using the location-filtered events
     const result = {
       success: true,
-      events: deduplicationResult.uniqueEvents,
-      count: deduplicationResult.uniqueEvents.length,
+      events: filteredEvents,
+      count: filteredEvents.length,
       sources: ['perplexity_api', 'apyflux_api', 'predicthq_api', 'exa_api', 'serpapi'],
       sourceStats,
       deduplication: {
@@ -809,6 +830,7 @@ router.get('/:category', async (req, res) => {
         duplicateGroups: deduplicationResult.duplicateGroups,
         sources: deduplicationResult.sources
       },
+      locationFilter: locationFilterStats,
       requestId: `multi_source_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       metadata: {
         category,

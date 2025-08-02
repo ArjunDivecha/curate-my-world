@@ -207,8 +207,31 @@ export class EventParser {
           currentEvent.date = dateMatch[0];
         }
 
+        // Look for URLs in the line
+        const urlMatch = line.match(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g);
+        if (urlMatch && urlMatch.length > 0 && !currentEvent.url) {
+          // Prioritize event-related domains
+          const eventDomains = ['eventbrite.com', 'meetup.com', 'facebook.com', 'lu.ma', 
+                               'ticketmaster.com', 'universe.com', 'brownpapertickets.com'];
+          
+          for (const url of urlMatch) {
+            for (const domain of eventDomains) {
+              if (url.includes(domain)) {
+                currentEvent.url = url;
+                break;
+              }
+            }
+            if (currentEvent.url) break;
+          }
+          
+          // If no event-specific domain found, use first URL
+          if (!currentEvent.url) {
+            currentEvent.url = urlMatch[0];
+          }
+        }
+
         // Look for description (lines that aren't titles, venues, or dates)
-        if (line.length > 20 && !venueMatch && !dateMatch && line.includes(' ')) {
+        if (line.length > 20 && !venueMatch && !dateMatch && !urlMatch && line.includes(' ')) {
           if (!currentEvent.description) {
             currentEvent.description = line;
           } else if (currentEvent.description.length < 200) {
@@ -282,6 +305,9 @@ export class EventParser {
     const startDate = this.parseEventDate(eventData.date);
     const endDate = new Date(startDate.getTime() + 3 * 60 * 60 * 1000); // Default 3 hour duration
 
+    // Extract URL from event data or description
+    const extractedUrl = this.extractEventUrl(eventData);
+
     // Create initial event object
     const event = {
       id: uuidv4(),
@@ -294,7 +320,7 @@ export class EventParser {
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       priceRange: { min: null, max: null },
-      externalUrl: null,
+      externalUrl: extractedUrl,
       source: 'perplexity_api',
       confidence: eventData.venue ? 0.8 : 0.6,
       metadata: {
@@ -370,7 +396,7 @@ export class EventParser {
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       priceRange: { min: priceMin, max: priceMax },
-      externalUrl: event.website || event.website_url || event.url || null,
+      externalUrl: this.extractEventUrl(event),
       source: 'perplexity_api',
       confidence: 0.9,
       metadata: {
@@ -497,6 +523,62 @@ export class EventParser {
         title: event.title 
       });
       return originalCategory;
+    }
+  }
+
+  /**
+   * Extract event URL from event data or description
+   * @param {object} eventData - Event data object
+   * @returns {string|null} Extracted URL or null
+   */
+  extractEventUrl(eventData) {
+    if (!eventData) return null;
+
+    // Check direct URL fields (including the 'url' field from narrative parsing)
+    const directUrl = eventData.url || eventData.website || eventData.website_url || 
+                     eventData.eventUrl || eventData.ticketUrl || eventData.link ||
+                     eventData.event_url || eventData.ticket_url || eventData.registration_url;
+    
+    if (directUrl && this.isValidUrl(directUrl)) {
+      return directUrl;
+    }
+
+    // Extract URLs from description or title text
+    const textToSearch = `${eventData.description || ''} ${eventData.title || ''} ${eventData.venue || ''}`;
+    const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
+    const urls = textToSearch.match(urlRegex);
+    
+    if (urls && urls.length > 0) {
+      // Prioritize event-related domains
+      const eventDomains = ['eventbrite.com', 'meetup.com', 'facebook.com', 'lu.ma', 
+                           'ticketmaster.com', 'universe.com', 'brownpapertickets.com'];
+      
+      for (const url of urls) {
+        for (const domain of eventDomains) {
+          if (url.includes(domain)) {
+            return url;
+          }
+        }
+      }
+      
+      // Return first valid URL if no event-specific domain found
+      return urls[0];
+    }
+
+    return null;
+  }
+
+  /**
+   * Validate if a string is a valid URL
+   * @param {string} string - String to validate
+   * @returns {boolean} True if valid URL
+   */
+  isValidUrl(string) {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 

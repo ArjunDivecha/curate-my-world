@@ -140,6 +140,7 @@ export class ExaClient {
         endDate: this.extractDate(content) || new Date().toISOString(),
         eventUrl: eventUrl,
         ticketUrl: finalTicketUrl,
+        externalUrl: eventUrl, // Add externalUrl field for frontend compatibility
         source: 'exa_api',
         confidence: 0.8, // Higher confidence with better extraction
         aiReasoning: exaResult.summary
