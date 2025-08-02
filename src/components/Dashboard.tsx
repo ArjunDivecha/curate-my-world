@@ -10,6 +10,7 @@ import { EventCard } from "./EventCard";
 import { WeeklyCalendar } from "./WeeklyCalendar";
 import { Header } from "./Header";
 import { FetchEventsButton } from "./FetchEventsButton";
+import SuggestedCategories from './SuggestedCategories';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film } from "lucide-react";
@@ -352,7 +353,7 @@ export const Dashboard = () => {
         aiCurationStatus="complete"
       />
 
-      <main className="container mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="container mx-auto p-4 sm:p-6 lg:p-8 mr-80">
         <div className="max-w-5xl mx-auto bg-white/90 backdrop-blur-lg p-6 sm:p-10 rounded-2xl shadow-2xl">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2 text-center">Curate Your Event Feed</h2>
           <p className="text-gray-500 mb-10 text-center">Select your interests and we'll handle the rest.</p>
@@ -602,6 +603,24 @@ export const Dashboard = () => {
           </div>
         )}
       </main>
+      
+      {/* Suggested Categories Sidebar - Fixed Position */}
+      <SuggestedCategories
+        onCategoryClick={(category) => {
+          console.log('🎯 Suggested category clicked:', category);
+          handleCategoryFilter(category);
+        }}
+        onEventClick={(eventId) => {
+          console.log('📅 Suggested event clicked:', eventId);
+          // Find and highlight the event in the main view
+          const event = events.find(e => e.id === eventId);
+          if (event) {
+            // Scroll to event or show details
+            console.log('Found event:', event.title);
+          }
+        }}
+        eventsByCategory={eventsByCategory}
+      />
     </div>
   );
 };
