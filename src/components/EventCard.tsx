@@ -45,14 +45,18 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
 
   // Handle hover with delay for preview
   React.useEffect(() => {
+    console.log('🔍 Hover state changed:', { isHovering, eventId: event.id });
     let timeoutId: NodeJS.Timeout;
     
     if (isHovering) {
-      // Show preview after 800ms of hovering
+      console.log('⏱️ Starting hover timer for preview...');
+      // Show preview after 300ms of hovering (reduced for testing)
       timeoutId = setTimeout(() => {
+        console.log('✅ Showing preview popup!');
         setShowPreview(true);
-      }, 800);
+      }, 300);
     } else {
+      console.log('❌ Hiding preview popup');
       // Hide preview immediately when not hovering
       setShowPreview(false);
     }
@@ -209,8 +213,18 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
             {(event.eventUrl || event.ticketUrl) && (
               <div 
                 className="relative"
-                onMouseEnter={() => setIsHovering(true)}
-                onMouseLeave={() => setIsHovering(false)}
+                onMouseEnter={() => {
+                  console.log('🐭 Mouse entered Event Page button area');
+                  setIsHovering(true);
+                }}
+                onMouseLeave={(e) => {
+                  console.log('🐭 Mouse left Event Page button area');
+                  // Don't hide if mouse is moving to the popup area
+                  const relatedTarget = e.relatedTarget as HTMLElement;
+                  if (!relatedTarget || !relatedTarget.closest('.preview-popup')) {
+                    setIsHovering(false);
+                  }
+                }}
               >
                 {/* Event Page Button with Hover Preview */}
                 <a 
@@ -232,7 +246,7 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
                     size="sm"
                     className={`text-xs transition-all duration-300 transform ${
                       isHovering 
-                        ? 'bg-accent text-accent-foreground scale-105 shadow-lg' 
+                        ? 'bg-blue-500 text-white scale-110 shadow-xl border-2 border-blue-300' 
                         : 'hover:bg-accent hover:text-accent-foreground'
                     }`}
                   >
@@ -248,9 +262,30 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
           </div>
           
           {/* Hover Preview Popup */}
-          {showPreview && (event.eventUrl || event.ticketUrl) && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 animate-in fade-in duration-300">
-              <div className="bg-white rounded-xl shadow-2xl max-w-5xl max-h-[85vh] w-[95vw] overflow-hidden animate-in zoom-in-95 duration-300 border">
+          {showPreview && (event.eventUrl || event.ticketUrl) && (() => {
+            console.log('🎆 POPUP RENDERING NOW!', { showPreview, hasUrl: !!(event.eventUrl || event.ticketUrl) });
+            return true;
+          })() && (
+            <div 
+              className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-60 preview-popup"
+              style={{ pointerEvents: 'auto' }}
+              onMouseEnter={() => {
+                console.log('🐭 Mouse entered popup area');
+                setIsHovering(true);
+              }}
+              onMouseLeave={() => {
+                console.log('🐭 Mouse left popup area');
+                setIsHovering(false);
+              }}
+              onClick={() => {
+                setShowPreview(false);
+                setIsHovering(false);
+              }}
+            >
+              <div 
+                className="bg-white rounded-xl shadow-2xl max-w-5xl max-h-[85vh] w-[95vw] overflow-hidden border-2 border-gray-200"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="p-4 border-b bg-gradient-to-r from-blue-50 to-purple-50">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -264,7 +299,7 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
                         setShowPreview(false);
                         setIsHovering(false);
                       }}
-                      className="text-gray-500 hover:text-gray-700 hover:bg-white/50"
+                      className="text-gray-500 hover:text-gray-700"
                     >
                       ✕
                     </Button>
