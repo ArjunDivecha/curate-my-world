@@ -347,9 +347,14 @@ router.get('/all-categories', async (req, res) => {
   try {
     const eventLimit = Math.min(parseInt(limit) || 15, config.api.maxLimit); // Lower limit per category
     
-    // Get all supported categories
+    // Get all supported categories including new personalized ones
     const supportedCategories = categoryManager.getSupportedCategories()
-      .filter(cat => ['theatre', 'music', 'art', 'food', 'tech', 'education', 'movies'].includes(cat.name))
+      .filter(cat => [
+        // Original categories
+        'theatre', 'music', 'art', 'food', 'tech', 'education', 'movies',
+        // New personalized categories
+        'technology', 'finance', 'automotive', 'data-analysis', 'business', 'science'
+      ].includes(cat.name))
       .map(cat => cat.name);
     
     logger.info('Fetching events for all categories', {
