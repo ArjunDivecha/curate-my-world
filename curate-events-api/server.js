@@ -12,6 +12,7 @@ import { config, validateConfig } from './src/utils/config.js';
 import { createLogger, logRequest, logResponse, logError } from './src/utils/logger.js';
 import healthRoutes from './src/routes/health.js';
 import eventsRoutes from './src/routes/events.js';
+import personalizationRoutes from './src/routes/personalization.js';
 
 // Validate configuration on startup
 try {
@@ -83,6 +84,7 @@ if (config.rateLimiting.enabled) {
 // API routes
 app.use('/api/health', healthRoutes);
 app.use('/api/events', eventsRoutes);
+app.use('/api/personalization', personalizationRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -93,8 +95,10 @@ app.get('/', (req, res) => {
     endpoints: {
       health: '/api/health',
       healthDeep: '/api/health/deep',
-      events: '/api/events (coming soon)',
-      eventsByCategory: '/api/events/:category (coming soon)'
+      events: '/api/events/:category/combined',
+      eventsByCategory: '/api/events/:category/compare',
+      personalization: '/api/personalization/curate',
+      feedback: '/api/personalization/feedback'
     },
     documentation: 'https://github.com/your-repo/curate-events-api'
   });

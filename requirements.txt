@@ -1,0 +1,8 @@
+requests
+python-dotenv
+tabulate
+# Additional dependencies for user input processor
+argparse  # Built-in, but listed for clarity
+json  # Built-in
+pathlib  # Built-in
+datetime  # Built-in

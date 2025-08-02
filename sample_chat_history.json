@@ -1,0 +1,41 @@
+{
+  "messages": [
+    {
+      "timestamp": "2025-07-15T10:30:00Z",
+      "content": "I love going to art galleries and museums on weekends. The SFMOMA is one of my favorite places."
+    },
+    {
+      "timestamp": "2025-07-16T14:22:00Z", 
+      "content": "Just got back from an amazing jazz concert at the Blue Note. Live music really energizes me."
+    },
+    {
+      "timestamp": "2025-07-18T19:45:00Z",
+      "content": "Thinking about taking a cooking workshop this weekend. I've been really into learning new cuisines lately."
+    },
+    {
+      "timestamp": "2025-07-20T09:15:00Z",
+      "content": "The tech conference last week was incredible. I especially loved the AI and machine learning sessions."
+    },
+    {
+      "timestamp": "2025-07-22T16:30:00Z",
+      "content": "Went hiking in Marin County yesterday. Nature photography workshop sounds interesting too."
+    },
+    {
+      "timestamp": "2025-07-25T20:10:00Z",
+      "content": "Book reading at City Lights was so inspiring. I should go to more literary events."
+    },
+    {
+      "timestamp": "2025-07-28T11:45:00Z",
+      "content": "The food festival in Golden Gate Park was amazing. Street food and live music - perfect combination!"
+    },
+    {
+      "timestamp": "2025-07-30T15:20:00Z",
+      "content": "Thinking about joining a yoga class. Mind-body wellness events seem really appealing lately."
+    }
+  ],
+  "metadata": {
+    "source": "sample_chat_export",
+    "total_messages": 8,
+    "date_range": "2025-07-15 to 2025-07-30"
+  }
+}

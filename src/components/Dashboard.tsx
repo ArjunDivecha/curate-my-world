@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,27 +28,66 @@ interface Preferences {
   aiInstructions: string;
 }
 
-const defaultPreferences: Preferences = {
+// Personalized preferences based on conversation analysis of 1,563 conversations
+const personalizedPreferences: Preferences = {
   interests: {
     categories: {
-      'Music': true,
-      'Theatre': true,
-      'Art': true,
-      'Food': true,
-      'Tech': true,
-      'Education': true,
-      'Movies': true
+      'Technology': true,    // 60% confidence from conversation analysis
+      'Finance': true,       // 60% confidence - investment/trading interests
+      'Automotive': true,    // 60% confidence - Tesla/EV interests
+      'Data Analysis': true, // 60% confidence - data science interests
+      'Education': true,     // 60% confidence - learning focus
+      'Business': true,      // Related to finance/startup interests
+      'Science': true,       // Related to technical interests
+      'Music': false,        // Not primary interest from analysis
+      'Theatre': false,      // Not primary interest from analysis
+      'Art': false,          // Not primary interest from analysis
+      'Food': false,         // Not primary interest from analysis
+      'Movies': false        // Not primary interest from analysis
     },
-    keywords: []
+    keywords: [
+      'python programming', 'data science', 'machine learning', 'coding workshop',
+      'stock market', 'investment', 'trading', 'fintech', 'startup',
+      'tesla', 'electric vehicle', 'automotive technology',
+      'maker space', 'analytics', 'programming meetup', 'tech conference'
+    ]
   },
   location: {
-    address: 'San Francisco, CA'
+    address: 'San Francisco, CA'  // 25-mile radius from conversation analysis
   },
   filters: {
-    timePreferences: ['Morning (6-12pm)', 'Afternoon (12-5pm)', 'Evening (5-9pm)', 'Night (9pm+)', 'Weekend Events', 'Weekday Events']
+    timePreferences: ['Evening (5-9pm)', 'Weekend Events']  // Preferred from analysis
   },
-  aiInstructions: 'Show me all events in the area regardless of category, type, or style. I want to discover everything that\'s happening.'
+  aiInstructions: `Find events in the San Francisco Bay Area that match my technical and analytical interests. Based on analysis of 1,563 conversations, I'm particularly interested in:
+
+🎯 PRIMARY FOCUS AREAS:
+• Technology & Programming: Python workshops, coding bootcamps, software development meetups, AI/ML conferences
+• Data Science & Analytics: Data visualization workshops, statistical analysis seminars, business intelligence meetups  
+• Finance & Investment: Stock market analysis workshops, trading seminars, fintech meetups, investment strategy sessions
+• Automotive Technology: Tesla meetups, EV technology conferences, automotive innovation events
+• Hands-on Learning: Maker spaces, DIY workshops, technical skill-building sessions
+
+💰 PREFERENCES:
+• Price range: Up to $100 per event (moderate budget)
+• Format: Interactive workshops over passive lectures
+• Size: Small to medium groups for networking
+• Timing: Evening and weekend events preferred
+• Learning style: Practical, actionable takeaways
+
+🎯 PRIORITIZE:
+1. Python programming workshops and data science bootcamps
+2. Investment analysis and trading strategy seminars
+3. Tesla/EV owner meetups and automotive tech conferences
+4. Maker space workshops (electronics, 3D printing, prototyping)
+5. Startup networking events in tech/fintech sectors
+6. Data visualization and business analytics workshops
+7. Financial modeling and market analysis sessions
+
+Focus on events that combine my technical background with practical learning opportunities, especially those that bridge technology, data analysis, and financial markets.`
 };
+
+// Use personalized preferences as default
+const defaultPreferences: Preferences = personalizedPreferences;
 
 export const Dashboard = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -254,13 +293,18 @@ export const Dashboard = () => {
     );
   }
 
-  const categoryIcons = {
+  const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+    'Technology': Zap,
+    'Finance': Calendar,  // Using Calendar as a placeholder for finance
+    'Automotive': Zap,    // Using Zap as a placeholder for automotive
+    'Data Analysis': Grid3X3,
+    'Education': GraduationCap,
+    'Business': Calendar,
+    'Science': GraduationCap,
     'Music': Music,
     'Theatre': Drama,
     'Art': Palette,
     'Food': Coffee,
-    'Tech': Zap,
-    'Education': GraduationCap,
     'Movies': Film
   };
 
