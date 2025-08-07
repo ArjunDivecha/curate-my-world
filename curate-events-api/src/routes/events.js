@@ -24,7 +24,7 @@ import { ApyfluxClient } from '../clients/ApyfluxClient.js';
 import { PredictHQClient } from '../clients/PredictHQClient.js';
 import { EventDeduplicator } from '../utils/eventDeduplicator.js';
 import { ExaClient } from '../clients/ExaClient.js';
-import { SerpApiClient } from '../clients/SerpApiClient.js';
+import { SerperClient } from '../clients/SerperClient.js';
 import { LocationFilter } from '../utils/locationFilter.js';
 import { createLogger, logRequest, logResponse } from '../utils/logger.js';
 import { config } from '../utils/config.js';
@@ -39,7 +39,7 @@ const categoryManager = new CategoryManager();
 const apyfluxClient = new ApyfluxClient();
 const predictHQClient = new PredictHQClient(config.predictHQApiKey);
 const exaClient = new ExaClient();
-const serpApiClient = new SerpApiClient();
+const serperClient = new SerperClient();
 const deduplicator = new EventDeduplicator();
 const locationFilter = new LocationFilter();
 
@@ -439,8 +439,8 @@ router.get('/all-categories', async (req, res) => {
             limit: eventLimit
           }),
           
-          // SerpAPI direct
-          serpApiClient.searchEvents({
+          // Serper direct
+          serperClient.searchEvents({
             category,
             location,
             limit: eventLimit
@@ -717,8 +717,8 @@ router.get('/:category', async (req, res) => {
         limit: options.limit
       }),
       
-      // SerpAPI direct
-      serpApiClient.searchEvents({
+      // Serper direct
+      serperClient.searchEvents({
         category,
         location,
         limit: options.limit

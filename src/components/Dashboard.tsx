@@ -170,14 +170,21 @@ export const Dashboard = () => {
   };
 
   const handleCategoryFilter = (category: string | null) => {
+    console.log('🎯 handleCategoryFilter called with category:', category);
+    console.log('🗂️ Available categories in transformedEventsByCategory:', Object.keys(transformedEventsByCategory));
+    console.log('📊 Events per category:', Object.entries(transformedEventsByCategory).map(([key, events]) => `${key}: ${events.length}`));
+    
     setActiveCategory(category);
     if (category === null) {
       // Show all TRANSFORMED events from all categories
       const allTransformedEvents = Object.values(transformedEventsByCategory).flat();
+      console.log('🌐 Showing all events, total count:', allTransformedEvents.length);
       setEvents(allTransformedEvents);
     } else {
       // Show TRANSFORMED events only from the selected category
-      setEvents(transformedEventsByCategory[category] || []);
+      const categoryEvents = transformedEventsByCategory[category] || [];
+      console.log(`📂 Showing events for category '${category}', count:`, categoryEvents.length);
+      setEvents(categoryEvents);
     }
   };
 
@@ -424,11 +431,13 @@ export const Dashboard = () => {
                 }}
                 onAllEventsFetched={(fetchedEventsByCategory, fetchedCategoryStats) => {
                   console.log('✅ Received raw events by category:', fetchedEventsByCategory);
+                  console.log('🔑 Raw category keys:', Object.keys(fetchedEventsByCategory));
                   setEventsByCategory(fetchedEventsByCategory);
                   setCategoryStats(fetchedCategoryStats);
 
                   // Transform events for each category and store them
                   const newTransformedEventsByCategory = Object.entries(fetchedEventsByCategory).reduce((acc, [category, events]) => {
+                    console.log(`🔄 Transforming category '${category}' with ${events.length} events`);
                     acc[category] = (events as any[]).map((event: any, index: number) => {
                       // Debug logging for date issues
                       console.log(`🔍 Event ${index} in ${category}:`, {
@@ -476,10 +485,13 @@ export const Dashboard = () => {
                     return acc;
                   }, {} as any);
 
+                  console.log('🎉 Final transformed categories:', Object.keys(newTransformedEventsByCategory));
+                  console.log('📊 Final events per category:', Object.entries(newTransformedEventsByCategory).map(([key, events]) => `${key}: ${events.length}`));
                   setTransformedEventsByCategory(newTransformedEventsByCategory);
 
                   // Combine all TRANSFORMED events for initial display
                   const allTransformedEvents = Object.values(newTransformedEventsByCategory).flat();
+                  console.log('🌍 Total transformed events for display:', allTransformedEvents.length);
                   setEvents(allTransformedEvents);
                   setActiveCategory(null); // Show 'All' events initially
                 }}

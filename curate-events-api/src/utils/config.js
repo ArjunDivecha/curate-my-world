@@ -36,7 +36,7 @@ export const config = {
   apyfluxClientId: process.env.APYFLUX_CLIENT_ID,
   predictHQApiKey: process.env.PREDICTHQ_API_KEY,
   exaApiKey: process.env.EXA_API_KEY,
-  serpApiKey: process.env.SERPAPI_API_KEY,
+  serperApiKey: process.env.SERPER_API_KEY,
   
   // Logging
   logLevel: process.env.LOG_LEVEL || (nodeEnv === 'development' ? 'debug' : 'info'),
@@ -100,7 +100,7 @@ export function validateConfig() {
     'apyfluxClientId',
     'predictHQApiKey',
     'exaApiKey',
-    'serpApiKey'
+    'serperApiKey'
   ];
   const missing = required.filter(key => !config[key]);
   

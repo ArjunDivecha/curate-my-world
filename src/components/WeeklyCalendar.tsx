@@ -188,7 +188,7 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventClick }: Weekl
                 <div className="space-y-2">
                   {dayEvents.length === 0 ? (
                     <div className="text-xs text-muted-foreground text-center py-8">
-                      No events
+                      No saved events
                     </div>
                   ) : (
                     dayEvents.map((event) => {
@@ -250,7 +250,7 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventClick }: Weekl
       <Card className="bg-muted/30">
         <CardContent className="pt-4">
           <div className="text-xs text-muted-foreground">
-            <strong>Debug Info:</strong> {events.length} events loaded, {savedEvents.length} saved. 
+            <strong>Your Calendar:</strong> {events.length} saved events. 
             Current week: {weekDates[0].toDateString()} to {weekDates[6].toDateString()}
           </div>
         </CardContent>

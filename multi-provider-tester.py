@@ -522,31 +522,27 @@ class ProviderTester:
                 'duration_ms': 0
             }
     
-    def test_combined(self, category: str, location: str, limit: int = 100) -> Dict[str, Any]:
-        """Test all providers separately without deduplication"""
+    def test_combined_from_results(self, individual_results: List[Dict[str, Any]], category: str, location: str, limit: int = 100) -> Dict[str, Any]:
+        """Combine results from individual provider tests without re-running them"""
         try:
-            print_section("Testing All Providers Separately")
+            print_section("Combining Results from All Providers")
             start_time = time.time()
             
-            # Run individual providers
-            providers = ['perplexity', 'predicthq', 'serpapi', 'exa']
-            results = []
-            for provider in providers:
-                result = getattr(self, f'test_{provider}')(category, location, limit)
-                results.append(result)
-            
-            # Count total events
-            total_events = sum(r.get('count', 0) for r in results if r['success'])
+            # Count total events from existing results
+            total_events = sum(r.get('count', 0) for r in individual_results if r.get('success', False))
             total_duration = (time.time() - start_time) * 1000
             
-            # Create sources dict
+            # Create sources dict from existing results
             sources = {}
-            for provider in providers:
-                prov = next((r for r in results if r['provider'] == provider), None)
-                if prov:
-                    sources[provider] = {'count': prov['count'], 'duration_ms': prov['duration_ms']}
+            for result in individual_results:
+                provider = result.get('provider', 'unknown')
+                if result.get('success', False):
+                    sources[provider] = {
+                        'count': result.get('count', 0), 
+                        'duration_ms': result.get('duration_ms', 0)
+                    }
             
-            print_success(f"Found {total_events} total events in {total_duration:.0f}ms")
+            print_success(f"Combined {total_events} total events from {len([r for r in individual_results if r.get('success', False)])} successful providers")
             print_info(f"Sources: Perplexity ({sources.get('perplexity', {}).get('count', 0)}), PredictHQ ({sources.get('predicthq', {}).get('count', 0)}), SerpAPI ({sources.get('serpapi', {}).get('count', 0)}), Exa ({sources.get('exa', {}).get('count', 0)})")
             
             return {
@@ -591,8 +587,8 @@ class ProviderTester:
         result = self.test_exa(category, location, limit)
         results.append(result)
         
-        # Test combined
-        result = self.test_combined(category, location, limit)
+        # Test combined (reuse existing results)
+        result = self.test_combined_from_results(results, category, location, limit)
         results.append(result)
         
         # Display results in table

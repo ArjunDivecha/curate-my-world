@@ -20,7 +20,7 @@ export class PerplexityClient {
     
     // Default parameters that proved successful in testing
     this.defaults = {
-      model: 'sonar-reasoning',
+      model: 'sonar-pro',
       max_tokens: 8000,
       temperature: 0.1
     };
