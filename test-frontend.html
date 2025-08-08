@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Frontend Category Filter Test</title>
+</head>
+<body>
+    <h1>Frontend Category Filter Test</h1>
+    <p>This will test the category filtering by injecting JavaScript into the running frontend.</p>
+    
+    <script>
+        // Test function to simulate fetching events and clicking technology category
+        async function testCategoryFiltering() {
+            console.log('🧪 Testing Frontend Category Filtering...');
+            
+            try {
+                // Open the frontend in a new window/tab
+                const frontendWindow = window.open('http://localhost:8766', '_blank');
+                
+                // Wait for the page to load
+                setTimeout(async () => {
+                    console.log('📡 Injecting test script into frontend...');
+                    
+                    // Inject script to test category filtering
+                    frontendWindow.eval(`
+                        console.log('🎯 Frontend test script loaded');
+                        
+                        // Function to simulate clicking the fetch events button
+                        function simulateFetchEvents() {
+                            console.log('🔄 Simulating fetch events...');
+                            
+                            // Find the fetch events button and click it
+                            const fetchButton = document.querySelector('button[class*="btn-primary"]');
+                            if (fetchButton && fetchButton.textContent.includes('Fetch Events')) {
+                                console.log('✅ Found fetch events button, clicking...');
+                                fetchButton.click();
+                                
+                                // Wait for events to load, then test category filtering
+                                setTimeout(() => {
+                                    testCategoryClick();
+                                }, 5000);
+                            } else {
+                                console.log('❌ Fetch events button not found');
+                            }
+                        }
+                        
+                        // Function to test clicking technology category
+                        function testCategoryClick() {
+                            console.log('🎯 Testing technology category click...');
+                            
+                            // Find technology category button in suggested categories
+                            const categoryButtons = document.querySelectorAll('button');
+                            let technologyButton = null;
+                            
+                            categoryButtons.forEach(button => {
+                                if (button.textContent.includes('Show Events') && 
+                                    button.closest('.space-y-4')) {
+                                    // This might be a category button in suggested categories
+                                    const card = button.closest('[class*="Card"]');
+                                    if (card && card.textContent.includes('Technology')) {
+                                        technologyButton = button;
+                                    }
+                                }
+                            });
+                            
+                            if (technologyButton) {
+                                console.log('✅ Found technology category button, clicking...');
+                                technologyButton.click();
+                                
+                                // Check results after click
+                                setTimeout(() => {
+                                    checkFilterResults();
+                                }, 1000);
+                            } else {
+                                console.log('❌ Technology category button not found');
+                                console.log('Available buttons:', Array.from(categoryButtons).map(b => b.textContent.substring(0, 50)));
+                            }
+                        }
+                        
+                        // Function to check filter results
+                        function checkFilterResults() {
+                            console.log('📊 Checking filter results...');
+                            
+                            // Look for event cards or event count indicators
+                            const eventElements = document.querySelectorAll('[class*="event"], [class*="Event"]');
+                            console.log('📋 Found event elements:', eventElements.length);
+                            
+                            // Check if events are displayed
+                            const eventCards = document.querySelectorAll('.space-y-6 > div, .grid > div');
+                            console.log('🎴 Found potential event cards:', eventCards.length);
+                            
+                            console.log('✅ Category filtering test completed!');
+                        }
+                        
+                        // Start the test
+                        console.log('🚀 Starting frontend test in 2 seconds...');
+                        setTimeout(simulateFetchEvents, 2000);
+                    `);
+                    
+                }, 3000);
+                
+            } catch (error) {
+                console.error('❌ Frontend test failed:', error);
+            }
+        }
+        
+        // Auto-start test
+        testCategoryFiltering();
+    </script>
+</body>
+</html>

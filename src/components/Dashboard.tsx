@@ -181,9 +181,21 @@ export const Dashboard = () => {
       console.log('🌐 Showing all events, total count:', allTransformedEvents.length);
       setEvents(allTransformedEvents);
     } else {
-      // Show TRANSFORMED events only from the selected category
-      const categoryEvents = transformedEventsByCategory[category] || [];
-      console.log(`📂 Showing events for category '${category}', count:`, categoryEvents.length);
+      // Handle category consolidation - combine related categories
+      let categoryEvents: any[] = [];
+      
+      if (category === 'technology') {
+        // Combine both 'technology' and 'tech' events
+        const techEvents = transformedEventsByCategory['tech'] || [];
+        const technologyEvents = transformedEventsByCategory['technology'] || [];
+        categoryEvents = [...techEvents, ...technologyEvents];
+        console.log(`📂 Combining 'tech' (${techEvents.length}) + 'technology' (${technologyEvents.length}) = ${categoryEvents.length} events`);
+      } else {
+        // Show TRANSFORMED events only from the selected category
+        categoryEvents = transformedEventsByCategory[category] || [];
+        console.log(`📂 Showing events for category '${category}', count:`, categoryEvents.length);
+      }
+      
       setEvents(categoryEvents);
     }
   };
@@ -682,6 +694,8 @@ export const Dashboard = () => {
       <SuggestedCategories
         onCategoryClick={(category) => {
           console.log('🎯 Suggested category clicked:', category);
+          console.log('🗂️ Available transformed categories:', Object.keys(transformedEventsByCategory));
+          console.log('📊 Transformed events per category:', Object.entries(transformedEventsByCategory).map(([key, events]) => `${key}: ${events.length}`));
           handleCategoryFilter(category);
         }}
         onEventClick={(eventId) => {
@@ -693,7 +707,7 @@ export const Dashboard = () => {
             console.log('Found event:', event.title);
           }
         }}
-        eventsByCategory={eventsByCategory}
+        eventsByCategory={transformedEventsByCategory}
       />
     </div>
   );

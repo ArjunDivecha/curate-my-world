@@ -81,6 +81,14 @@ const SuggestedCategories: React.FC<SuggestedCategoriesProps> = ({
   // Get event count for each category
   const getCategoryEventCount = (categoryName: string): number => {
     const mappedName = mapCategoryName(categoryName);
+    
+    if (categoryName === 'technology') {
+      // Combine both 'tech' and 'technology' events for accurate count
+      const techEvents = eventsByCategory['tech'] || [];
+      const technologyEvents = eventsByCategory['technology'] || [];
+      return techEvents.length + technologyEvents.length;
+    }
+    
     const events = eventsByCategory[mappedName] || [];
     return events.length;
   };
