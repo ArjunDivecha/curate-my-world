@@ -1,0 +1,37 @@
+# Backend-specific .gitignore for curate-events-api
+# Created: 2025-08-07
+
+# Node
+node_modules/
+.npm/
+.pnpm-store/
+
+# Logs
+logs/
+logs/**
+*.log
+combined.log
+
+# Env files (keep examples)
+.env
+.env.*
+!.env.example
+
+# Builds / Coverage / Caches
+/dist/
+/build/
+/coverage/
+.nyc_output/
+.cache/
+.tmp/
+.temp/
+
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# PIDs and runtime artifacts
+*.pid
