@@ -67,6 +67,10 @@ const personalizedPreferences: Preferences = {
 const defaultPreferences: Preferences = personalizedPreferences;
 
 export const Dashboard = () => {
+  // Simple local cache to survive refresh/hot-reload
+  const LOCAL_EVENTS_CACHE_KEY = 'cmw_events_cache_v1';
+  const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [preferences, setPreferences] = useState<Preferences>(defaultPreferences);
   const [events, setEvents] = useState<any[]>([]);
@@ -145,6 +149,27 @@ export const Dashboard = () => {
     }
   };
 
+  // Restore from local cache on load
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem(LOCAL_EVENTS_CACHE_KEY);
+      if (!cached) return;
+      const data = JSON.parse(cached);
+      if (!data || !data.buckets) return;
+      const isFresh = Date.now() - (data.timestamp || 0) < CACHE_TTL_MS;
+      if (!isFresh) return;
+      setTransformedEventsByCategory(data.buckets);
+      setCategoryStats(data.stats || {});
+      const allEvents = Object.values(data.buckets).flat();
+      setEvents(allEvents);
+      setActiveCategory(null);
+      setActiveTab('grid');
+      console.log('♻️ Restored events from cache:', allEvents.length);
+    } catch (err) {
+      console.error('Cache restore failed', err);
+    }
+  }, []);
+
   const handleCategoryFilter = (category: string | null) => {
     console.log('🎯 handleCategoryFilter called with category:', category);
     console.log('🗂️ Available categories in transformedEventsByCategory:', Object.keys(transformedEventsByCategory));
@@ -181,6 +206,12 @@ export const Dashboard = () => {
     }
   };
 
+  // Scroll to top when category changes to make UI change obvious
+  useEffect(() => {
+    if (activeCategory !== undefined) {
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+    }
+  }, [activeCategory]);
 
   // Compute displayed events from source-of-truth buckets to avoid any state overrides
   const displayedEvents = React.useMemo(() => {
@@ -195,6 +226,10 @@ export const Dashboard = () => {
     }
     return transformedEventsByCategory[activeCategory] || [];
   }, [activeCategory, transformedEventsByCategory, events]);
+
+  useEffect(() => {
+    console.log('🧭 Active category:', activeCategory, ' | displayedEvents:', displayedEvents.length, ' | buckets:', Object.keys(transformedEventsByCategory));
+  }, [activeCategory, displayedEvents, transformedEventsByCategory]);
 
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -490,6 +525,17 @@ export const Dashboard = () => {
                   console.log('📊 Final events per category:', Object.entries(newTransformedEventsByCategory).map(([key, events]) => `${key}: ${events.length}`));
                   setTransformedEventsByCategory(newTransformedEventsByCategory);
 
+                  // Persist to cache for refresh-survival
+                  try {
+                    localStorage.setItem(LOCAL_EVENTS_CACHE_KEY, JSON.stringify({
+                      buckets: newTransformedEventsByCategory,
+                      stats: fetchedCategoryStats,
+                      timestamp: Date.now()
+                    }));
+                  } catch (err) {
+                    console.error('Cache save failed', err);
+                  }
+
                   // Combine all TRANSFORMED events for initial display
                   const allTransformedEvents = Object.values(newTransformedEventsByCategory).flat();
                   console.log('🌍 Total transformed events for display:', allTransformedEvents.length);
@@ -517,6 +563,7 @@ export const Dashboard = () => {
                 onClick={() => {
                   setEvents([]);
                   setSavedEvents([]);
+                  try { localStorage.removeItem(LOCAL_EVENTS_CACHE_KEY); } catch {}
                   toast({
                     title: "Events Cleared",
                     description: "All events have been cleared. Click 'Fetch Events' to get fresh events!",
@@ -632,7 +679,7 @@ export const Dashboard = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                   {displayedEvents.map(event => (
                     <EventCard
-                      key={event.id}
+                      key={`${event.id}-${activeCategory ?? 'all'}`}
                       event={event}
                       onSaveToCalendar={handleSaveToCalendar}
                     />
