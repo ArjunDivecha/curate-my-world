@@ -180,7 +180,6 @@ export const Dashboard = () => {
       // Show all TRANSFORMED events from all categories
       const allTransformedEvents = Object.values(transformedEventsByCategory).flat();
       console.log('🌐 Showing all events, total count:', allTransformedEvents.length);
-      setEvents([...allTransformedEvents]);
       setActiveTab('grid');
     } else {
       // Handle category consolidation - combine related categories
@@ -200,22 +199,16 @@ export const Dashboard = () => {
         console.log(`🔍 Category '${category}' events:`, categoryEvents.slice(0, 2).map(e => e.title));
       }
       
-      // Force new array ref to ensure React re-renders
-      setEvents([...categoryEvents]);
       setActiveTab('grid');
     }
   };
 
-  // Scroll to top when category changes to make UI change obvious
-  useEffect(() => {
-    if (activeCategory !== undefined) {
-      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
-    }
-  }, [activeCategory]);
+  // Removed auto scroll-to-top on category change per user request
 
   // Compute displayed events from source-of-truth buckets to avoid any state overrides
   const displayedEvents = React.useMemo(() => {
-    if (!Object.keys(transformedEventsByCategory).length) return events;
+    // Derive strictly from buckets + activeCategory
+    if (!Object.keys(transformedEventsByCategory).length) return [] as any[];
     if (activeCategory === null) {
       return Object.values(transformedEventsByCategory).flat();
     }
@@ -225,7 +218,7 @@ export const Dashboard = () => {
       return [...techEvents, ...technologyEvents];
     }
     return transformedEventsByCategory[activeCategory] || [];
-  }, [activeCategory, transformedEventsByCategory, events]);
+  }, [activeCategory, transformedEventsByCategory]);
 
   useEffect(() => {
     console.log('🧭 Active category:', activeCategory, ' | displayedEvents:', displayedEvents.length, ' | buckets:', Object.keys(transformedEventsByCategory));
@@ -675,7 +668,7 @@ export const Dashboard = () => {
                 />
               </TabsContent>
 
-              <TabsContent value="grid" className="space-y-6">
+              <TabsContent key={activeCategory ?? 'all'} value="grid" className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                   {displayedEvents.map(event => (
                     <EventCard
