@@ -42,7 +42,8 @@ export class ExaClient {
 
     const payload = {
       query: query,
-      type: 'auto',
+      type: "fast", // Use the new fast search option for better performance
+      livecrawl: "never", // Disable live crawling for faster results
       numResults: limit,
       // Enhanced content extraction to get better event details and URLs
       contents: {
@@ -58,13 +59,14 @@ export class ExaClient {
       // Removed includeDomains filter to allow broader event discovery
     };
 
-    logger.info('Searching Exa for events', { query });
+    logger.info('Searching Exa for events', { query, type: 'fast' });
 
     try {
       // Create AbortController for timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.timeout);
       
+      // Use the correct search endpoint
       const response = await fetch(`${this.baseUrl}/search`, {
         method: 'POST',
         headers: this.headers,
@@ -84,14 +86,14 @@ export class ExaClient {
       const data = await response.json();
       const transformedEvents = data.results.map(result => this.transformEvent(result, category)).filter(Boolean);
 
-      logger.info(`Exa search successful, found ${transformedEvents.length} events.`, { processingTime: `${processingTime}ms` });
+      logger.info(`Exa fast search successful, found ${transformedEvents.length} events.`, { processingTime: `${processingTime}ms` });
 
       return {
         success: true,
         events: transformedEvents,
         count: transformedEvents.length,
         processingTime,
-        source: 'exa'
+        source: 'exa_fast' // Updated source to indicate fast search
       };
     } catch (error) {
       const processingTime = Date.now() - startTime;
@@ -102,7 +104,7 @@ export class ExaClient {
         events: [],
         count: 0,
         processingTime,
-        source: 'exa'
+        source: 'exa_fast'
       };
     }
   }
@@ -141,7 +143,7 @@ export class ExaClient {
         eventUrl: eventUrl,
         ticketUrl: finalTicketUrl,
         externalUrl: eventUrl, // Add externalUrl field for frontend compatibility
-        source: 'exa_api',
+        source: 'exa_fast',
         confidence: 0.8, // Higher confidence with better extraction
         aiReasoning: exaResult.summary
       };

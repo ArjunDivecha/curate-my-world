@@ -1,0 +1,81 @@
+{
+  "metadata": {
+    "timestamp": "20250801_225231",
+    "system_version": "2.0_llm_enhanced",
+    "llm_analysis_available": true
+  },
+  "user_preferences": {
+    "location": {
+      "primary_location": "San Francisco, CA",
+      "radius_miles": 25
+    },
+    "price_preference": {
+      "max": 100,
+      "preference": "moderate"
+    },
+    "ai_instructions": "Focus on technical workshops, data science meetups, and hands-on learning experiences"
+  },
+  "llm_analysis": {
+    "interest_categories": [
+      {
+        "category": "technology",
+        "confidence": 0.6
+      },
+      {
+        "category": "finance",
+        "confidence": 0.6
+      },
+      {
+        "category": "automotive",
+        "confidence": 0.6
+      },
+      {
+        "category": "data_analysis",
+        "confidence": 0.6
+      },
+      {
+        "category": "education",
+        "confidence": 0.6
+      }
+    ],
+    "analysis_method": "basic_keyword_matching",
+    "total_conversations": 1563
+  },
+  "curation_instructions": {
+    "location": {
+      "primary_location": "San Francisco, CA",
+      "radius_miles": 25
+    },
+    "price_constraints": {
+      "max": 100,
+      "preference": "moderate"
+    },
+    "ai_insights": {
+      "interest_categories": [
+        {
+          "category": "technology",
+          "confidence": 0.6
+        },
+        {
+          "category": "finance",
+          "confidence": 0.6
+        },
+        {
+          "category": "automotive",
+          "confidence": 0.6
+        },
+        {
+          "category": "data_analysis",
+          "confidence": 0.6
+        },
+        {
+          "category": "education",
+          "confidence": 0.6
+        }
+      ],
+      "analysis_method": "basic_keyword_matching",
+      "total_conversations": 1563
+    },
+    "llm_enhanced_instructions": "\n🎯 LLM-ENHANCED PERSONALIZATION:\n\nPrimary Interests: technology, finance, automotive\nEvent Types: \nLearning Style: Not specified\nStrategy: Standard curation\n\nUse these AI insights to curate highly personalized events.\n"
+  }
+}

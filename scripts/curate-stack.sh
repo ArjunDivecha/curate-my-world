@@ -14,7 +14,7 @@
 set -e
 
 # Configuration
-PROJECT_DIR="/Users/macbook2024/Dropbox/AAA Backup/A Working/Curate-My-World"
+PROJECT_DIR="/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Working/Curate-My-World"
 BACKEND_DIR="$PROJECT_DIR/curate-events-api"
 SCRIPTS_DIR="$PROJECT_DIR/scripts"
 BACKEND_PORT=8765

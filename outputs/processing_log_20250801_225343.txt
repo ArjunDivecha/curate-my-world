@@ -1,0 +1,5 @@
+LLM-ENHANCED PROCESSING LOG
+==============================
+
+[2025-08-01 22:53:42] ⚠️ No valid Anthropic API key found in .env file
+[2025-08-01 22:53:42] Parsed 1563 conversations

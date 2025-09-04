@@ -7,7 +7,7 @@ import sys
 import os
 
 # Add the directory containing multi-provider-tester.py to the path
-sys.path.append('/Users/macbook2024/Dropbox/AAA Backup/A Working/Curate-My-World')
+sys.path.append('/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Working/Curate-My-World')
 
 from multi_provider_tester import ProviderTester
 

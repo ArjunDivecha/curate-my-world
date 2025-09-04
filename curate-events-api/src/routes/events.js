@@ -24,7 +24,8 @@ import { ApyfluxClient } from '../clients/ApyfluxClient.js';
 import { PredictHQClient } from '../clients/PredictHQClient.js';
 import { EventDeduplicator } from '../utils/eventDeduplicator.js';
 import { ExaClient } from '../clients/ExaClient.js';
-import { SerperClient } from '../clients/SerperClient.js';
+import SerperClient from '../clients/SerperClient.js';
+import TicketmasterClient from '../clients/TicketmasterClient.js';
 import { LocationFilter } from '../utils/locationFilter.js';
 import { createLogger, logRequest, logResponse } from '../utils/logger.js';
 import { config } from '../utils/config.js';
@@ -40,6 +41,7 @@ const apyfluxClient = new ApyfluxClient();
 const predictHQClient = new PredictHQClient(config.predictHQApiKey);
 const exaClient = new ExaClient();
 const serperClient = new SerperClient();
+const ticketmasterClient = new TicketmasterClient();
 const deduplicator = new EventDeduplicator();
 const locationFilter = new LocationFilter();
 
@@ -342,14 +344,65 @@ router.get('/:category/compare', async (req, res) => {
  */
 router.get('/all-categories', async (req, res) => {
   const startTime = Date.now();
-  const { location = 'San Francisco, CA', date_range, limit } = req.query;
+  const { location = 'San Francisco, CA', date_range, limit, custom_prompt } = req.query;
   
   logRequest(logger, req, 'allCategoriesEvents', { location, date_range, limit });
   
   try {
-    const eventLimit = Math.min(parseInt(limit) || 15, config.api.maxLimit); // Lower limit per category
+    const customPrompt = (custom_prompt || '').trim();
+    const isCustomMode = customPrompt.length > 0;
+    const eventLimit = Math.min(parseInt(limit) || 15, config.api.maxLimit);
     
-    // Get all supported categories including new personalized ones
+    
+    if (isCustomMode) {
+      // Custom AI Instructions mode: Use only the custom prompt, skip category-based search
+      logger.info('Using custom AI instructions mode', {
+        customPrompt: customPrompt.substring(0, 100) + '...',
+        location,
+        eventLimit: eventLimit * 5 // Higher limit for custom search
+      });
+      
+      // Single search with custom prompt instead of category-based searches
+      const customResult = await eventPipeline.collectEvents({
+        category: 'general', // Placeholder category
+        location,
+        dateRange: date_range,
+        customPrompt: customPrompt,
+        options: {
+          limit: eventLimit * 5, // Higher limit for custom search
+          minConfidence: 0.5,
+          maxTokens: config.perplexity.maxTokens,
+          temperature: config.perplexity.temperature
+        }
+      });
+      
+      const duration = Date.now() - startTime;
+      
+      // Return custom search results
+      if (customResult.success) {
+        const response = {
+          success: true,
+          eventsByCategory: {
+            'custom_search': customResult.events
+          },
+          categoryStats: {
+            'custom_search': { count: customResult.events.length }
+          },
+          totalEvents: customResult.events.length,
+          processingTime: duration,
+          searchMode: 'custom_ai_instructions',
+          customPrompt: customPrompt.substring(0, 200) + '...',
+          timestamp: new Date().toISOString()
+        };
+        
+        logResponse(logger, req, response, 'allCategoriesEvents');
+        return res.json(response);
+      } else {
+        throw new Error(customResult.error || 'Custom search failed');
+      }
+    }
+    
+    // Regular category-based search mode
     const supportedCategories = categoryManager.getSupportedCategories()
       .filter(cat => [
         // Original categories
@@ -359,7 +412,7 @@ router.get('/all-categories', async (req, res) => {
       ].includes(cat.name))
       .map(cat => cat.name);
     
-    logger.info('Fetching events for all categories', {
+    logger.info('Using regular category-based search', {
       categories: supportedCategories,
       location,
       eventLimitPerCategory: eventLimit
@@ -488,7 +541,7 @@ router.get('/all-categories', async (req, res) => {
             predicthq: predictHQResult.status === 'fulfilled' && predictHQResult.value.success ? 
               { count: predictHQResult.value.events.length, processingTime: predictHQResult.value.processingTime } : 
               { count: 0, error: predictHQResult.reason?.message || 'Unknown error' },
-            exa: exaResult.status === 'fulfilled' && exaResult.value.success ? 
+            exa_fast: exaResult.status === 'fulfilled' && exaResult.value.success ? 
               { count: exaResult.value.events.length, processingTime: exaResult.value.processingTime } : 
               { count: 0, error: exaResult.reason?.message || 'Unknown error' },
             serpapi: serpApiResult.status === 'fulfilled' && serpApiResult.value.success ? 
@@ -546,6 +599,7 @@ router.get('/all-categories', async (req, res) => {
         dateRange: date_range || 'next 30 days',
         limitPerCategory: eventLimit,
         categoriesFetched: supportedCategories.length,
+        customMode: isCustomMode,
         requestId: `all_categories_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       }
     };
@@ -591,7 +645,7 @@ router.get('/:category', async (req, res) => {
   
   try {
     const { category } = req.params;
-    const { location, date_range, limit, min_confidence } = req.query;
+    const { location, date_range, limit, min_confidence, custom_prompt } = req.query;
     
     // Validate required parameters
     if (!location) {
@@ -622,7 +676,7 @@ router.get('/:category', async (req, res) => {
     }
 
     // Check cache first
-    const cacheKey = eventCache.generateKey(category, location, date_range, options);
+    const cacheKey = eventCache.generateKey(category, location, date_range, options, custom_prompt);
     const cachedResult = eventCache.get(cacheKey);
     
     if (cachedResult) {
@@ -771,12 +825,12 @@ router.get('/:category', async (req, res) => {
     
     if (exaResult.status === 'fulfilled' && exaResult.value.success) {
       eventLists.push(exaResult.value);
-      sourceStats.exa = {
+      sourceStats.exa_fast = {
         count: exaResult.value.events.length,
         processingTime: exaResult.value.processingTime
       };
     } else {
-      sourceStats.exa = {
+      sourceStats.exa_fast = {
         count: 0,
         error: exaResult.reason?.message || 'Unknown error'
       };
@@ -822,7 +876,7 @@ router.get('/:category', async (req, res) => {
       success: true,
       events: filteredEvents,
       count: filteredEvents.length,
-      sources: ['perplexity_api', 'apyflux_api', 'predicthq_api', 'exa_api', 'serpapi'],
+      sources: ['perplexity_api', 'apyflux_api', 'predicthq_api', 'exa_fast', 'serpapi'],
       sourceStats,
       deduplication: {
         totalProcessed: deduplicationResult.totalProcessed,
@@ -1108,6 +1162,7 @@ router.get('/:category/all-sources', async (req, res) => {
         category,
         location,
         dateRange: date_range,
+        customPrompt: custom_prompt,
         options: {
           limit: eventLimit,
           minConfidence: 0.5,
@@ -1258,6 +1313,252 @@ router.get('/:category/all-sources', async (req, res) => {
     });
     
     logResponse(logger, res, 'allSourcesEvents', duration, { error: error.message });
+  }
+});
+
+/**
+ * GET /api/events/:category/perplexity
+ * Get events from Perplexity API only
+ */
+router.get('/:category/perplexity', async (req, res) => {
+  const startTime = Date.now();
+  const { category } = req.params;
+  const { location = 'San Francisco, CA', date_range, limit, custom_prompt } = req.query;
+  
+  logRequest(logger, req, 'perplexityEvents');
+  
+  try {
+    const result = await eventPipeline.collectEvents({
+      category,
+      location,
+      dateRange: date_range,
+      customPrompt: custom_prompt,
+      options: {
+        limit: parseInt(limit) || 10,
+        minConfidence: 0.5,
+        maxTokens: config.perplexity.maxTokens,
+        temperature: config.perplexity.temperature
+      }
+    });
+
+    const responseTime = Date.now() - startTime;
+    
+    res.json({
+      success: true,
+      events: result.events || [],
+      count: result.events?.length || 0,
+      source: 'perplexity',
+      processingTime: responseTime,
+      timestamp: new Date().toISOString(),
+      category,
+      location
+    });
+
+  } catch (error) {
+    logger.error('Perplexity API error', { error: error.message, category, location });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch Perplexity events',
+      source: 'perplexity',
+      processingTime: Date.now() - startTime
+    });
+  }
+});
+
+/**
+ * GET /api/events/:category/apyflux
+ * Get events from Apyflux API only
+ */
+router.get('/:category/apyflux', async (req, res) => {
+  const startTime = Date.now();
+  const { category } = req.params;
+  const { location = 'San Francisco, CA', date_range, limit, custom_prompt } = req.query;
+  
+  logRequest(logger, req, 'apyfluxEvents');
+  
+  try {
+    const result = await apyfluxClient.searchEvents({
+      query: custom_prompt || apyfluxClient.buildSearchQuery(category, location),
+      location,
+      category,
+      dateRange: date_range || 'next 30 days',
+      limit: parseInt(limit) || 10
+    });
+
+    const responseTime = Date.now() - startTime;
+    
+    if (result.success && result.events.length > 0) {
+      const transformedEvents = result.events.map(event => 
+        apyfluxClient.transformEvent(event, category)
+      ).filter(event => event !== null);
+      
+      res.json({
+        success: true,
+        events: transformedEvents,
+        count: transformedEvents.length,
+        source: 'apyflux',
+        processingTime: responseTime,
+        timestamp: new Date().toISOString(),
+        category,
+        location
+      });
+    } else {
+      res.json({
+        success: false,
+        events: [],
+        count: 0,
+        source: 'apyflux',
+        error: result.error || 'No events found',
+        processingTime: responseTime
+      });
+    }
+
+  } catch (error) {
+    logger.error('Apyflux API error', { error: error.message, category, location });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch Apyflux events',
+      source: 'apyflux',
+      processingTime: Date.now() - startTime
+    });
+  }
+});
+
+/**
+ * GET /api/events/:category/exa
+ * Get events from Exa API only
+ */
+router.get('/:category/exa', async (req, res) => {
+  const startTime = Date.now();
+  const { category } = req.params;
+  const { location = 'San Francisco, CA', date_range, limit, custom_prompt } = req.query;
+  
+  logRequest(logger, req, 'exaEvents');
+  
+  try {
+    const result = await exaClient.searchEvents({
+      query: custom_prompt || `${category} events in ${location}`,
+      location,
+      category,
+      dateRange: date_range || 'next 30 days',
+      limit: parseInt(limit) || 10
+    });
+
+    const responseTime = Date.now() - startTime;
+    
+    res.json({
+      success: result.success || false,
+      events: result.events || [],
+      count: result.events?.length || 0,
+      source: 'exa',
+      processingTime: responseTime,
+      timestamp: new Date().toISOString(),
+      category,
+      location,
+      error: result.error || null
+    });
+
+  } catch (error) {
+    logger.error('Exa API error', { error: error.message, category, location });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch Exa events',
+      source: 'exa',
+      processingTime: Date.now() - startTime
+    });
+  }
+});
+
+/**
+ * GET /api/events/:category/serper
+ * Get events from Serper API only
+ */
+router.get('/:category/serper', async (req, res) => {
+  const startTime = Date.now();
+  const { category } = req.params;
+  const { location = 'San Francisco, CA', date_range, limit, custom_prompt } = req.query;
+  
+  logRequest(logger, req, 'serperEvents');
+  
+  try {
+    const result = await serperClient.searchEvents({
+      query: custom_prompt || `${category} events in ${location}`,
+      location,
+      category,
+      dateRange: date_range || 'next 30 days',
+      limit: parseInt(limit) || 10
+    });
+
+    const responseTime = Date.now() - startTime;
+    
+    res.json({
+      success: result.success || false,
+      events: result.events || [],
+      count: result.events?.length || 0,
+      source: 'serper',
+      processingTime: responseTime,
+      timestamp: new Date().toISOString(),
+      category,
+      location,
+      error: result.error || null
+    });
+
+  } catch (error) {
+    logger.error('Serper API error', { error: error.message, category, location });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch Serper events',
+      source: 'serper',
+      processingTime: Date.now() - startTime
+    });
+  }
+});
+
+/**
+ * GET /api/events/:category/ticketmaster
+ * Get events from Ticketmaster API only
+ */
+router.get('/:category/ticketmaster', async (req, res) => {
+  const startTime = Date.now();
+  
+  logRequest(logger, req, 'ticketmasterEvents');
+  
+  try {
+    const { category } = req.params;
+    const { location = 'San Francisco, CA', limit = 10 } = req.query;
+
+    logger.info('Fetching Ticketmaster events', { category, location, limit });
+
+    const response = await ticketmasterClient.searchEvents({
+      category,
+      location,
+      limit: parseInt(limit)
+    });
+
+    const processingTime = Date.now() - startTime;
+
+    logResponse(logger, req, response, processingTime);
+
+    res.json({
+      success: response.success,
+      events: response.events || [],
+      count: response.count || 0,
+      source: 'ticketmaster',
+      processingTime,
+      timestamp: new Date().toISOString(),
+      category,
+      location,
+      error: response.error || null
+    });
+
+  } catch (error) {
+    logger.error('Ticketmaster API error', { error: error.message, category, location });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch Ticketmaster events',
+      source: 'ticketmaster',
+      processingTime: Date.now() - startTime
+    });
   }
 });
 

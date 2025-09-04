@@ -102,7 +102,7 @@ check_resources() {
 
 # Function to check logs for errors
 check_logs() {
-  local log_dir="/Users/macbook2024/Dropbox/AAA Backup/A Working/Curate-My-World/curate-events-api/logs"
+  local log_dir="/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Working/Curate-My-World/curate-events-api/logs"
   
   if [ -d "$log_dir" ]; then
     echo -e "\n${BLUE}📋 Recent Log Activity${NC}"

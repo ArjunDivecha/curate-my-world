@@ -45,7 +45,7 @@ NOTES:
 
 import os
 from dotenv import load_dotenv
-load_dotenv(dotenv_path="/Users/macbook2024/Dropbox/AAA Backup/A Working/Curate-My-World/curate-events-api/.env")
+load_dotenv(dotenv_path="/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Working/Curate-My-World/curate-events-api/.env")
 import requests
 import json
 import sys

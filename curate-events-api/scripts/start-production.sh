@@ -23,7 +23,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 NODE_ENV=${NODE_ENV:-production}
-API_DIR="/Users/macbook2024/Dropbox/AAA Backup/A Working/Curate-My-World/curate-events-api"
+API_DIR="/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Working/Curate-My-World/curate-events-api"
 LOG_DIR="$API_DIR/logs"
 PID_FILE="$API_DIR/curate-events-api.pid"
 

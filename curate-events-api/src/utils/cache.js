@@ -42,13 +42,14 @@ class ResponseCache {
   /**
    * Generate cache key from request parameters
    */
-  generateKey(category, location, dateRange, options = {}) {
+  generateKey(category, location, dateRange, options = {}, customPrompt = '') {
     const keyParts = [
       category.toLowerCase(),
       location.toLowerCase().replace(/[^a-z0-9]/g, ''),
       dateRange || 'default',
       options.limit || 50,
-      options.minConfidence || 0.5
+      options.minConfidence || 0.5,
+      customPrompt ? customPrompt.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 50) : 'default'
     ];
     
     return keyParts.join('|');

@@ -22,7 +22,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-API_DIR="/Users/macbook2024/Dropbox/AAA Backup/A Working/Curate-My-World/curate-events-api"
+API_DIR="/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Working/Curate-My-World/curate-events-api"
 PID_FILE="$API_DIR/curate-events-api.pid"
 
 echo -e "${BLUE}🎭 Curate Events API - Production Shutdown${NC}"

@@ -271,7 +271,7 @@ curl "http://127.0.0.1:8765/api/venue-stats"
   "success": true,
   "events": [...],
   "count": 17,
-  "sources": ["perplexity_api", "predicthq_api", "exa_api", "serpapi"],
+  "sources": ["perplexity_api", "predicthq_api", "exa_fast", "serpapi"],
   "sourceStats": {
     "perplexity": {"count": 3, "processingTime": "22027ms"},
     "predicthq": {"count": 5, "processingTime": 706},

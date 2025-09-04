@@ -50,7 +50,7 @@ export class EventPipeline {
    * @param {Object} params.options - Optional processing options
    * @returns {Promise<Object>} Processed event results
    */
-  async collectEvents({ category, location, dateRange, options = {} }) {
+  async collectEvents({ category, location, dateRange, customPrompt, options = {} }) {
     const startTime = Date.now();
     const requestId = this.generateRequestId();
     
@@ -59,6 +59,7 @@ export class EventPipeline {
       category,
       location,
       dateRange,
+      customPrompt,
       options
     });
 
@@ -69,8 +70,8 @@ export class EventPipeline {
         return this.createErrorResponse('Validation failed', validation.errors, requestId);
       }
 
-      // Step 2: Build optimized query
-      const query = this.categoryManager.buildQuery({
+      // Step 2: Build optimized query (use custom prompt if provided)
+      const query = customPrompt || this.categoryManager.buildQuery({
         category: validation.normalizedCategory,
         location,
         dateRange: dateRange || 'next 30 days'

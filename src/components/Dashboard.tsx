@@ -13,7 +13,7 @@ import { FetchEventsButton } from "./FetchEventsButton";
 import SuggestedCategories from './SuggestedCategories';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film } from "lucide-react";
+import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Brain, Eye, EyeOff } from "lucide-react";
 import { getCategoryColor } from "@/utils/categoryColors";
 
 interface Preferences {
@@ -60,32 +60,7 @@ const personalizedPreferences: Preferences = {
   filters: {
     timePreferences: ['Evening (5-9pm)', 'Weekend Events']  // Preferred from analysis
   },
-  aiInstructions: `Find events in the San Francisco Bay Area that match my technical and analytical interests. Based on analysis of 1,563 conversations, I'm particularly interested in:
-
-🎯 PRIMARY FOCUS AREAS:
-• Technology & Programming: Python workshops, coding bootcamps, software development meetups, AI/ML conferences
-• Data Science & Analytics: Data visualization workshops, statistical analysis seminars, business intelligence meetups  
-• Finance & Investment: Stock market analysis workshops, trading seminars, fintech meetups, investment strategy sessions
-• Automotive Technology: Tesla meetups, EV technology conferences, automotive innovation events
-• Hands-on Learning: Maker spaces, DIY workshops, technical skill-building sessions
-
-💰 PREFERENCES:
-• Price range: Up to $100 per event (moderate budget)
-• Format: Interactive workshops over passive lectures
-• Size: Small to medium groups for networking
-• Timing: Evening and weekend events preferred
-• Learning style: Practical, actionable takeaways
-
-🎯 PRIORITIZE:
-1. Python programming workshops and data science bootcamps
-2. Investment analysis and trading strategy seminars
-3. Tesla/EV owner meetups and automotive tech conferences
-4. Maker space workshops (electronics, 3D printing, prototyping)
-5. Startup networking events in tech/fintech sectors
-6. Data visualization and business analytics workshops
-7. Financial modeling and market analysis sessions
-
-Focus on events that combine my technical background with practical learning opportunities, especially those that bridge technology, data analysis, and financial markets.`
+  aiInstructions: ''
 };
 
 // Use personalized preferences as default
@@ -100,6 +75,9 @@ export const Dashboard = () => {
   const [categoryStats, setCategoryStats] = useState<any>({});
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [transformedEventsByCategory, setTransformedEventsByCategory] = useState<any>({});
+  const [showSuggestions, setShowSuggestions] = useState<boolean>(false); // Toggle for "Suggested for You"
+  // Control which tab is visible to guarantee UI reflects filtered events
+  const [activeTab, setActiveTab] = useState<'calendar' | 'grid'>('grid');
 
   // Category mapping: Frontend display names to backend API names
   const mapCategoryToBackend = (frontendCategory: string): string => {
@@ -120,9 +98,7 @@ export const Dashboard = () => {
     return categoryMap[frontendCategory] || frontendCategory.toLowerCase();
   };
 
-  // Debug: Log events state changes
-  console.log('🔍 Dashboard render - events state:', events.length, events);
-  console.log('🔍 Dashboard render - savedEvents state:', savedEvents.length, savedEvents);
+  // Debug: Log events state changes (moved to useEffect to avoid render loops)
 
   // Track when events state changes
   useEffect(() => {
@@ -179,7 +155,8 @@ export const Dashboard = () => {
       // Show all TRANSFORMED events from all categories
       const allTransformedEvents = Object.values(transformedEventsByCategory).flat();
       console.log('🌐 Showing all events, total count:', allTransformedEvents.length);
-      setEvents(allTransformedEvents);
+      setEvents([...allTransformedEvents]);
+      setActiveTab('grid');
     } else {
       // Handle category consolidation - combine related categories
       let categoryEvents: any[] = [];
@@ -194,11 +171,30 @@ export const Dashboard = () => {
         // Show TRANSFORMED events only from the selected category
         categoryEvents = transformedEventsByCategory[category] || [];
         console.log(`📂 Showing events for category '${category}', count:`, categoryEvents.length);
+        console.log('🔍 First few events in this category:', categoryEvents.slice(0, 3).map(e => ({title: e.title, categories: e.categories})));
+        console.log(`🔍 Category '${category}' events:`, categoryEvents.slice(0, 2).map(e => e.title));
       }
       
-      setEvents(categoryEvents);
+      // Force new array ref to ensure React re-renders
+      setEvents([...categoryEvents]);
+      setActiveTab('grid');
     }
   };
+
+
+  // Compute displayed events from source-of-truth buckets to avoid any state overrides
+  const displayedEvents = React.useMemo(() => {
+    if (!Object.keys(transformedEventsByCategory).length) return events;
+    if (activeCategory === null) {
+      return Object.values(transformedEventsByCategory).flat();
+    }
+    if (activeCategory === 'technology') {
+      const techEvents = transformedEventsByCategory['tech'] || [];
+      const technologyEvents = transformedEventsByCategory['technology'] || [];
+      return [...techEvents, ...technologyEvents];
+    }
+    return transformedEventsByCategory[activeCategory] || [];
+  }, [activeCategory, transformedEventsByCategory, events]);
 
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -348,14 +344,6 @@ export const Dashboard = () => {
     'Movies': Film
   };
 
-  const timeSlots = [
-    { label: 'Morning', description: '6am-12pm', value: 'Morning (6-12pm)' },
-    { label: 'Afternoon', description: '12pm-5pm', value: 'Afternoon (12-5pm)' },
-    { label: 'Evening', description: '5pm-9pm', value: 'Evening (5-9pm)' },
-    { label: 'Night', description: '9pm+', value: 'Night (9pm+)' },
-    { label: 'Weekends', description: 'Sat & Sun', value: 'Weekend Events' },
-    { label: 'Weekdays', description: 'Mon-Fri', value: 'Weekday Events' }
-  ];
 
   // Calculate total event count for the "All" category
   const totalEventCount = Object.values(categoryStats).reduce((acc: number, cur: unknown) => {
@@ -369,7 +357,7 @@ export const Dashboard = () => {
         onOpenPreferences={() => {}}
         onNavigate={setCurrentPage}
         currentPage={currentPage}
-        totalEvents={events.length}
+        totalEvents={displayedEvents.length}
         aiCurationStatus="complete"
       />
 
@@ -439,7 +427,8 @@ export const Dashboard = () => {
                 preferences={{
                   categories: Object.keys(preferences.interests.categories).filter(cat => preferences.interests.categories[cat]),
                   timePreferences: preferences.filters.timePreferences,
-                  customKeywords: preferences.interests.keywords
+                  customKeywords: preferences.interests.keywords,
+                  aiInstructions: preferences.aiInstructions
                 }}
                 onAllEventsFetched={(fetchedEventsByCategory, fetchedCategoryStats) => {
                   console.log('✅ Received raw events by category:', fetchedEventsByCategory);
@@ -509,6 +498,19 @@ export const Dashboard = () => {
                 }}
                 className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-2 text-white font-bold py-4 px-8 rounded-full transition hover:transform hover:-translate-y-0.5 hover:shadow-lg"
               />
+              
+              {/* Toggle Suggestions Button */}
+              <Button
+                onClick={() => setShowSuggestions(!showSuggestions)}
+                variant="outline"
+                size="sm"
+                className="flex items-center space-x-2"
+                title={showSuggestions ? "Hide AI Suggestions" : "Show AI Suggestions"}
+              >
+                {showSuggestions ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                <Brain className="w-4 h-4" />
+                <span>{showSuggestions ? "Hide" : "Show"} Suggestions</span>
+              </Button>
               
               {/* Clear All Button */}
               <Button
@@ -585,51 +587,14 @@ export const Dashboard = () => {
             </div>
           </div>
 
-          {/* Time Preferences */}
-          <div className="mb-12">
-            <h3 className="text-2xl font-bold text-gray-700 mb-6">Time & Day</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
-              {timeSlots.map((timeSlot) => {
-                const isSelected = preferences.filters.timePreferences.includes(timeSlot.value);
-                return (
-                  <div 
-                    key={timeSlot.value}
-                    className={`preference-card rounded-2xl p-4 text-center ${isSelected ? 'selected' : ''}`}
-                    onClick={() => {
-                      if (isSelected) {
-                        setPreferences(prev => ({
-                          ...prev,
-                          filters: {
-                            ...prev.filters,
-                            timePreferences: prev.filters.timePreferences.filter(t => t !== timeSlot.value)
-                          }
-                        }));
-                      } else {
-                        setPreferences(prev => ({
-                          ...prev,
-                          filters: {
-                            ...prev.filters,
-                            timePreferences: [...prev.filters.timePreferences, timeSlot.value]
-                          }
-                        }));
-                      }
-                    }}
-                  >
-                    <p className="font-semibold text-lg">{timeSlot.label}</p>
-                    <p className="text-gray-500 text-sm">{timeSlot.description}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
 
 
         </div>
 
         {/* Main Content - Show events if available */}
-        {events.length > 0 && (
+        {displayedEvents.length > 0 && (
           <div className="mt-12">
-            <Tabs defaultValue="calendar" className="space-y-6">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'calendar' | 'grid')} className="space-y-6">
               <TabsList className="grid w-full grid-cols-2 bg-card shadow-card border-0">
                 <TabsTrigger value="calendar" className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
@@ -665,7 +630,7 @@ export const Dashboard = () => {
 
               <TabsContent value="grid" className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {events.map(event => (
+                  {displayedEvents.map(event => (
                     <EventCard
                       key={event.id}
                       event={event}
@@ -679,7 +644,7 @@ export const Dashboard = () => {
         )}
 
         {/* Empty state */}
-        {events.length === 0 && (
+        {displayedEvents.length === 0 && (
           <div className="mt-12 text-center p-12">
             <Calendar className="w-16 h-16 mx-auto text-gray-400 mb-4" />
             <h3 className="text-xl font-semibold mb-2 text-gray-700">No Events Yet</h3>
@@ -690,25 +655,27 @@ export const Dashboard = () => {
         )}
       </main>
       
-      {/* Suggested Categories Sidebar - Fixed Position */}
-      <SuggestedCategories
-        onCategoryClick={(category) => {
-          console.log('🎯 Suggested category clicked:', category);
-          console.log('🗂️ Available transformed categories:', Object.keys(transformedEventsByCategory));
-          console.log('📊 Transformed events per category:', Object.entries(transformedEventsByCategory).map(([key, events]) => `${key}: ${events.length}`));
-          handleCategoryFilter(category);
-        }}
-        onEventClick={(eventId) => {
-          console.log('📅 Suggested event clicked:', eventId);
-          // Find and highlight the event in the main view
-          const event = events.find(e => e.id === eventId);
-          if (event) {
-            // Scroll to event or show details
-            console.log('Found event:', event.title);
-          }
-        }}
-        eventsByCategory={transformedEventsByCategory}
-      />
+      {/* Suggested Categories Sidebar - Fixed Position (Conditional) */}
+      {showSuggestions && (
+        <SuggestedCategories
+          onCategoryClick={(category) => {
+            console.log('🎯 Suggested category clicked:', category);
+            console.log('🗂️ Available transformed categories:', Object.keys(transformedEventsByCategory));
+            console.log('📊 Transformed events per category:', Object.entries(transformedEventsByCategory).map(([key, events]) => `${key}: ${events.length}`));
+            handleCategoryFilter(category);
+          }}
+          onEventClick={(eventId) => {
+            console.log('📅 Suggested event clicked:', eventId);
+            // Find and highlight the event in the main view
+            const event = events.find(e => e.id === eventId);
+            if (event) {
+              // Scroll to event or show details
+              console.log('Found event:', event.title);
+            }
+          }}
+          eventsByCategory={transformedEventsByCategory}
+        />
+      )}
     </div>
   );
 };

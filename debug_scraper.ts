@@ -1,8 +1,8 @@
-// /Users/macbook2024/Dropbox/AAA Backup/A Working/curate-my-world/debug_scraper.ts
+// /Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Working/curate-my-world/debug_scraper.ts
 
 /**
  * INPUT FILES:
- *  - /Users/macbook2024/Dropbox/AAA Backup/A Working/curate-my-world/supabase/functions/fetch-real-events/index.ts
+ *  - /Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Working/curate-my-world/supabase/functions/fetch-real-events/index.ts
  *
  * OUTPUT FILES:
  *  - Console output with scraped event data or error messages.

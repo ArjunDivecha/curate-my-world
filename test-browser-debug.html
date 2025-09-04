@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrowserTools MCP Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        button {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: #ee5a5a;
+            transform: translateY(-2px);
+        }
+        .error-demo {
+            background: #ffeaa7;
+            color: #d63031;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        #output {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 BrowserTools MCP Test Page</h1>
+        <p>This page will help test if Cursor agent can see browser content and errors.</p>
+        
+        <div class="error-demo">
+            <h3>⚠️ Error Testing Zone</h3>
+            <p>Click the buttons below to generate different types of errors that BrowserTools should detect:</p>
+        </div>
+
+        <button onclick="generateConsoleError()">Generate Console Error</button>
+        <button onclick="generateNetworkError()">Generate Network Error</button>
+        <button onclick="generateJSError()">Generate JavaScript Error</button>
+        <button onclick="showSuccess()">Show Success Message</button>
+
+        <div id="output">
+            <h4>Console Output:</h4>
+            <p>Click buttons above to see errors in console (and test BrowserTools detection)</p>
+        </div>
+    </div>
+
+    <script>
+        // Test functions for different error types
+        function generateConsoleError() {
+            console.error("🔴 TEST ERROR: This is a deliberate console error for BrowserTools testing");
+            console.warn("⚠️ TEST WARNING: This is a warning message");
+            document.getElementById('output').innerHTML += '<p>✅ Console error generated - check if Cursor agent can see this!</p>';
+        }
+
+        function generateNetworkError() {
+            fetch('/nonexistent-endpoint')
+                .catch(error => {
+                    console.error('🌐 Network Error:', error);
+                    document.getElementById('output').innerHTML += '<p>✅ Network error generated (404) - BrowserTools should detect this!</p>';
+                });
+        }
+
+        function generateJSError() {
+            try {
+                // This will cause a ReferenceError
+                nonExistentFunction();
+            } catch (error) {
+                console.error('💥 JavaScript Error:', error.message);
+                document.getElementById('output').innerHTML += '<p>✅ JavaScript error generated - Cursor should see this error!</p>';
+            }
+        }
+
+        function showSuccess() {
+            console.log('🎉 SUCCESS: Everything is working correctly!');
+            document.getElementById('output').innerHTML += '<p>✅ Success message logged - BrowserTools should capture this too!</p>';
+        }
+
+        // Auto-generate a test error on page load
+        window.addEventListener('load', function() {
+            console.log('🚀 BrowserTools MCP Test Page loaded successfully');
+            console.info('ℹ️ Page ready for testing with Cursor agent');
+        });
+
+        // Simulate some network activity
+        setTimeout(() => {
+            console.log('📊 Simulated background activity');
+        }, 2000);
+    </script>
+</body>
+</html>
+

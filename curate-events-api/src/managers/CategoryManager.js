@@ -786,11 +786,13 @@ Search thoroughly for scientific conferences, research presentations, lab tours,
   /**
    * Validate query parameters
    * @param {Object} params - Parameters to validate
+   * @param {Object} options - Optional flags (e.g., { allowMissingLocation: true })
    * @returns {Object} Validation result
    */
-  validateQuery(params) {
+  validateQuery(params, options = {}) {
     const errors = [];
     const warnings = [];
+    const allowMissingLocation = Boolean(options.allowMissingLocation);
     
     // Check required parameters
     if (!params.category) {
@@ -798,7 +800,11 @@ Search thoroughly for scientific conferences, research presentations, lab tours,
     }
     
     if (!params.location) {
-      errors.push('Location is required');
+      if (allowMissingLocation) {
+        warnings.push('Location omitted due to custom prompt override');
+      } else {
+        errors.push('Location is required');
+      }
     }
     
     // Check category validity
@@ -809,7 +815,7 @@ Search thoroughly for scientific conferences, research presentations, lab tours,
       }
     }
     
-    // Check location format
+    // Check location format (only when provided)
     if (params.location && params.location.length < 2) {
       errors.push('Location must be at least 2 characters');
     }

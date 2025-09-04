@@ -59,8 +59,20 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
       console.log('📍 Preferences:', preferences);
       console.log('🏥 Health Status:', currentHealth);
       
-      // Use the new all-categories endpoint
-      const url = `${API_BASE_URL}/events/all-categories?location=${encodeURIComponent(location)}&date_range=next 30 days&limit=10`;
+      // Build URL with AI instructions if provided
+      const baseUrl = `${API_BASE_URL}/events/all-categories?location=${encodeURIComponent(location)}&date_range=next 30 days&limit=10`;
+      
+      // Add custom_prompt if AI instructions are provided
+      const aiInstructions = preferences.aiInstructions?.trim();
+      const url = aiInstructions 
+        ? `${baseUrl}&custom_prompt=${encodeURIComponent(aiInstructions)}`
+        : baseUrl;
+      
+      if (aiInstructions) {
+        console.log('🤖 Using AI Instructions for custom search:', aiInstructions);
+      } else {
+        console.log('📂 Using regular category-based search (no AI instructions)');
+      }
       
       console.log(`📡 Fetching all categories from:`, url);
       console.log(`🌍 Frontend running on: ${window.location.origin}`);

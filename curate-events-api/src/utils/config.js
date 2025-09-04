@@ -37,13 +37,15 @@ export const config = {
   predictHQApiKey: process.env.PREDICTHQ_API_KEY,
   exaApiKey: process.env.EXA_API_KEY,
   serperApiKey: process.env.SERPER_API_KEY,
+  ticketmasterConsumerKey: process.env.TICKETMASTER_CONSUMER_KEY,
+  ticketmasterConsumerSecret: process.env.TICKETMASTER_CONSUMER_SECRET,
   
   // Logging
   logLevel: process.env.LOG_LEVEL || (nodeEnv === 'development' ? 'debug' : 'info'),
   
   // CORS configuration
   corsOrigins: nodeEnv === 'development' 
-    ? ['http://localhost:8766', 'http://127.0.0.1:8766', 'http://localhost:8767', 'http://127.0.0.1:8767']  // Frontend ports
+    ? ['http://localhost:8766', 'http://127.0.0.1:8766', 'http://localhost:8767', 'http://127.0.0.1:8767', 'http://localhost:8768', 'http://127.0.0.1:8768']  // Frontend ports
     : (process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : ['*']),
   
   // Rate limiting

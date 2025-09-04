@@ -16,10 +16,10 @@ set -e
 # Configuration
 BACKEND_PORT=8765
 FRONTEND_PORT=8766
-BACKEND_DIR="/Users/macbook2024/Dropbox/AAA Backup/A Working/Curate-My-World/curate-events-api"
-FRONTEND_DIR="/Users/macbook2024/Dropbox/AAA Backup/A Working/Curate-My-World"
-LOG_FILE="/Users/macbook2024/Dropbox/AAA Backup/A Working/Curate-My-World/scripts/health-monitor.log"
-PID_FILE="/Users/macbook2024/Dropbox/AAA Backup/A Working/Curate-My-World/scripts/health-monitor.pid"
+BACKEND_DIR="/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Working/Curate-My-World/curate-events-api"
+FRONTEND_DIR="/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Working/Curate-My-World"
+LOG_FILE="/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Working/Curate-My-World/scripts/health-monitor.log"
+PID_FILE="/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Working/Curate-My-World/scripts/health-monitor.pid"
 
 # Colors
 RED='\033[0;31m'
