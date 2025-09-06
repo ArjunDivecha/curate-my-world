@@ -15,7 +15,8 @@
     "stop": "node scripts/port-manager.js cleanup",
     "port:status": "node scripts/port-manager.js status",
     "port:cleanup": "node scripts/port-manager.js cleanup",
-    "bench:providers": "node scripts/bench-providers.js"
+    "bench:providers": "node scripts/bench-providers.js",
+    "export:events": "node scripts/export-events.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
