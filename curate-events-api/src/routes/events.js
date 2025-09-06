@@ -347,6 +347,10 @@ router.get('/all-categories', async (req, res) => {
   const { location = 'San Francisco, CA', date_range, limit, custom_prompt } = req.query;
   
   logRequest(logger, req, 'allCategoriesEvents', { location, date_range, limit });
+
+  // Optional source toggles
+  const disableApyflux = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase());
+  const disablePredictHQ = ['true', '1', 'yes'].includes(String(req.query.disable_predicthq || '').toLowerCase());
   
   try {
     const customPrompt = (custom_prompt || '').trim();
@@ -408,7 +412,7 @@ router.get('/all-categories', async (req, res) => {
         // Original categories
         'theatre', 'music', 'art', 'food', 'tech', 'education', 'movies',
         // New personalized categories
-        'technology', 'finance', 'automotive', 'data-analysis', 'business', 'science'
+        'technology', 'finance', 'psychology', 'artificial-intelligence', 'business', 'science'
       ].includes(cat.name))
       .map(cat => cat.name);
     
@@ -437,53 +441,59 @@ router.get('/all-categories', async (req, res) => {
           }),
           
           // Apyflux direct
-          apyfluxClient.searchEvents({
-            query: apyfluxClient.buildSearchQuery(category, location),
-            location,
-            category,
-            dateRange: date_range || 'next 30 days',
-            limit: eventLimit
-          }).then(result => {
-            if (result.success && result.events.length > 0) {
-              const transformedEvents = result.events.map(event => 
-                apyfluxClient.transformEvent(event, category)
-              ).filter(event => event !== null);
-              
-              return {
-                success: true,
-                events: transformedEvents,
-                count: transformedEvents.length,
-                processingTime: result.processingTime,
-                source: 'apyflux_api',
-                requestId: result.requestId
-              };
-            }
-            return result;
-          }),
+          (disableApyflux
+            ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by flag', source: 'apyflux_api' })
+            : apyfluxClient.searchEvents({
+                query: apyfluxClient.buildSearchQuery(category, location),
+                location,
+                category,
+                dateRange: date_range || 'next 30 days',
+                limit: eventLimit
+              }).then(result => {
+                if (result.success && result.events.length > 0) {
+                  const transformedEvents = result.events.map(event => 
+                    apyfluxClient.transformEvent(event, category)
+                  ).filter(event => event !== null);
+                  
+                  return {
+                    success: true,
+                    events: transformedEvents,
+                    count: transformedEvents.length,
+                    processingTime: result.processingTime,
+                    source: 'apyflux_api',
+                    requestId: result.requestId
+                  };
+                }
+                return result;
+              })
+          ),
           
           // PredictHQ direct
-          predictHQClient.searchEvents({
-            category,
-            location,
-            dateRange: date_range || 'next 30 days',
-            limit: eventLimit
-          }).then(result => {
-            if (result.success && result.events.length > 0) {
-              const transformedEvents = result.events.map(event => 
-                predictHQClient.transformEvent(event, category)
-              ).filter(event => event !== null);
-              
-              return {
-                success: true,
-                events: transformedEvents,
-                count: transformedEvents.length,
-                processingTime: result.processingTime,
-                source: 'predicthq_api',
-                totalAvailable: result.totalAvailable
-              };
-            }
-            return result;
-          }),
+          (disablePredictHQ
+            ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by flag', source: 'predicthq_api' })
+            : predictHQClient.searchEvents({
+                category,
+                location,
+                dateRange: date_range || 'next 30 days',
+                limit: eventLimit
+              }).then(result => {
+                if (result.success && result.events.length > 0) {
+                  const transformedEvents = result.events.map(event => 
+                    predictHQClient.transformEvent(event, category)
+                  ).filter(event => event !== null);
+                  
+                  return {
+                    success: true,
+                    events: transformedEvents,
+                    count: transformedEvents.length,
+                    processingTime: result.processingTime,
+                    source: 'predicthq_api',
+                    totalAvailable: result.totalAvailable
+                  };
+                }
+                return result;
+              })
+          ),
           
           // Exa direct
           exaClient.searchEvents({
@@ -828,10 +838,9 @@ router.get('/:category', async (req, res) => {
         processingTime: apyfluxResult.value.processingTime
       };
     } else {
-      sourceStats.apyflux = {
-        count: 0,
-        error: apyfluxResult.reason?.message || 'Unknown error'
-      };
+      sourceStats.apyflux = apyfluxResult.status === 'fulfilled'
+        ? { count: 0, error: apyfluxResult.value?.error || 'Unknown error' }
+        : { count: 0, error: apyfluxResult.reason?.message || 'Unknown error' };
     }
     
     if (predictHQResult.status === 'fulfilled' && predictHQResult.value.success) {
@@ -842,10 +851,9 @@ router.get('/:category', async (req, res) => {
         totalAvailable: predictHQResult.value.totalAvailable
       };
     } else {
-      sourceStats.predicthq = {
-        count: 0,
-        error: predictHQResult.reason?.message || 'Unknown error'
-      };
+      sourceStats.predicthq = predictHQResult.status === 'fulfilled'
+        ? { count: 0, error: predictHQResult.value?.error || 'Unknown error' }
+        : { count: 0, error: predictHQResult.reason?.message || 'Unknown error' };
     }
     
     if (exaResult.status === 'fulfilled' && exaResult.value.success) {
@@ -1165,6 +1173,10 @@ router.get('/:category/all-sources', async (req, res) => {
   const { location = 'San Francisco, CA', date_range, limit } = req.query;
   
   logRequest(logger, req, 'allSourcesEvents', { category, location, date_range, limit });
+
+  // Optional source toggles
+  const disableApyflux = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase());
+  const disablePredictHQ = ['true', '1', 'yes'].includes(String(req.query.disable_predicthq || '').toLowerCase());
   
   try {
     const eventLimit = Math.min(parseInt(limit) || 20, config.api.maxLimit);
@@ -1187,7 +1199,6 @@ router.get('/:category/all-sources', async (req, res) => {
         category,
         location,
         dateRange: date_range,
-        customPrompt: custom_prompt,
         options: {
           limit: eventLimit,
           minConfidence: 0.5,
@@ -1197,53 +1208,59 @@ router.get('/:category/all-sources', async (req, res) => {
       }),
       
       // Apyflux direct
-      apyfluxClient.searchEvents({
-        query: apyfluxClient.buildSearchQuery(category, location),
-        location,
-        category,
-        dateRange: date_range || 'next 30 days',
-        limit: eventLimit
-      }).then(result => {
-        if (result.success && result.events.length > 0) {
-          const transformedEvents = result.events.map(event => 
-            apyfluxClient.transformEvent(event, category)
-          ).filter(event => event !== null);
-          
-          return {
-            success: true,
-            events: transformedEvents,
-            count: transformedEvents.length,
-            processingTime: result.processingTime,
-            source: 'apyflux_api',
-            requestId: result.requestId
-          };
-        }
-        return result;
-      }),
+      (disableApyflux
+        ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by flag', source: 'apyflux_api' })
+        : apyfluxClient.searchEvents({
+            query: apyfluxClient.buildSearchQuery(category, location),
+            location,
+            category,
+            dateRange: date_range || 'next 30 days',
+            limit: eventLimit
+          }).then(result => {
+            if (result.success && result.events.length > 0) {
+              const transformedEvents = result.events.map(event => 
+                apyfluxClient.transformEvent(event, category)
+              ).filter(event => event !== null);
+              
+              return {
+                success: true,
+                events: transformedEvents,
+                count: transformedEvents.length,
+                processingTime: result.processingTime,
+                source: 'apyflux_api',
+                requestId: result.requestId
+              };
+            }
+            return result;
+          })
+      ),
       
       // PredictHQ direct
-      predictHQClient.searchEvents({
-        category,
-        location,
-        dateRange: date_range || 'next 30 days',
-        limit: eventLimit
-      }).then(result => {
-        if (result.success && result.events.length > 0) {
-          const transformedEvents = result.events.map(event => 
-            predictHQClient.transformEvent(event, category)
-          ).filter(event => event !== null);
-          
-          return {
-            success: true,
-            events: transformedEvents,
-            count: transformedEvents.length,
-            processingTime: result.processingTime,
-            source: 'predicthq_api',
-            totalAvailable: result.totalAvailable
-          };
-        }
-        return result;
-      })
+      (disablePredictHQ
+        ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by flag', source: 'predicthq_api' })
+        : predictHQClient.searchEvents({
+            category,
+            location,
+            dateRange: date_range || 'next 30 days',
+            limit: eventLimit
+          }).then(result => {
+            if (result.success && result.events.length > 0) {
+              const transformedEvents = result.events.map(event => 
+                predictHQClient.transformEvent(event, category)
+              ).filter(event => event !== null);
+              
+              return {
+                success: true,
+                events: transformedEvents,
+                count: transformedEvents.length,
+                processingTime: result.processingTime,
+                source: 'predicthq_api',
+                totalAvailable: result.totalAvailable
+              };
+            }
+            return result;
+          })
+      )
     ]);
     
     // Prepare event lists for deduplication
