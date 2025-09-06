@@ -140,26 +140,26 @@ export const categoryColors: Record<string, CategoryColor> = {
     hover: 'hover:bg-purple-100'
   },
 
-  // Automotive - Coral (energetic but sophisticated)
-  automotive: {
-    name: 'Automotive',
-    background: 'bg-red-50',
-    border: 'border-red-200',
-    text: 'text-red-900',
-    accent: 'text-red-700',
-    icon: 'text-red-600',
-    hover: 'hover:bg-red-100'
+  // Psychology - Mint/Sage (calming and human-centered)
+  psychology: {
+    name: 'Psychology',
+    background: 'bg-emerald-50',
+    border: 'border-emerald-200',
+    text: 'text-emerald-900',
+    accent: 'text-emerald-700',
+    icon: 'text-emerald-600',
+    hover: 'hover:bg-emerald-100'
   },
 
-  // Data Analysis - Dusty Rose (analytical yet approachable)
-  'data-analysis': {
-    name: 'Data Analysis',
-    background: 'bg-pink-50',
-    border: 'border-pink-200',
-    text: 'text-pink-900',
-    accent: 'text-pink-700',
-    icon: 'text-pink-600',
-    hover: 'hover:bg-pink-100'
+  // Artificial Intelligence - Soft Indigo (innovative and modern)
+  'artificial-intelligence': {
+    name: 'Artificial Intelligence',
+    background: 'bg-indigo-50',
+    border: 'border-indigo-200',
+    text: 'text-indigo-900',
+    accent: 'text-indigo-700',
+    icon: 'text-indigo-600',
+    hover: 'hover:bg-indigo-100'
   },
 
   // Health & Wellness - Soft Lime (natural and refreshing)
@@ -214,11 +214,13 @@ export const getCategoryColor = (category: string | string[]): CategoryColor => 
     'programming': 'technology',
     'coding': 'technology',
     'software': 'technology',
-    'ai': 'technology',
-    'ml': 'technology',
-    'data': 'data-analysis',
-    'analytics': 'data-analysis',
-    'stats': 'data-analysis',
+    'ai': 'artificial-intelligence',
+    'ml': 'artificial-intelligence',
+    'llm': 'artificial-intelligence',
+    'genai': 'artificial-intelligence',
+    'data': 'artificial-intelligence',
+    'analytics': 'artificial-intelligence',
+    'stats': 'artificial-intelligence',
     'money': 'finance',
     'investment': 'finance',
     'trading': 'finance',
@@ -245,7 +247,6 @@ export const getCategoryColor = (category: string | string[]): CategoryColor => 
     'game': 'sports',
     'match': 'sports',
     'tournament': 'sports',
-    'fitness': 'sports',
     'workshop': 'education',
     'seminar': 'education',
     'conference': 'education',
@@ -258,10 +259,15 @@ export const getCategoryColor = (category: string | string[]): CategoryColor => 
     'lab': 'science',
     'experiment': 'science',
     'study': 'science',
-    'car': 'automotive',
-    'auto': 'automotive',
-    'vehicle': 'automotive',
-    'tesla': 'automotive',
+    'car': 'technology',
+    'auto': 'technology',
+    'vehicle': 'technology',
+    'tesla': 'technology',
+    'psych': 'psychology',
+    'neuro': 'psychology',
+    'cognitive': 'psychology',
+    'therapy': 'psychology',
+    'mental': 'psychology',
     'wellness': 'health',
     'fitness': 'health',
     'yoga': 'health',

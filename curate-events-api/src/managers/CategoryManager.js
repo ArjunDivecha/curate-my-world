@@ -88,14 +88,14 @@ export class CategoryManager {
         keywords: ['finance', 'investment', 'trading', 'fintech', 'banking', 'economics', 'stock market', 'cryptocurrency', 'blockchain', 'financial planning'],
         priority: 'high'
       },
-      automotive: {
-        aliases: ['cars', 'vehicles', 'electric vehicles', 'ev', 'tesla', 'auto'],
-        keywords: ['automotive', 'cars', 'vehicles', 'electric vehicles', 'ev', 'tesla', 'auto', 'car show', 'automotive technology', 'self-driving'],
+      psychology: {
+        aliases: ['mental health', 'cognitive science', 'neuroscience', 'psychiatry', 'therapy', 'counseling', 'mindfulness'],
+        keywords: ['psychology', 'mental health', 'cognitive science', 'neuroscience', 'psychiatry', 'therapy', 'counseling', 'mindfulness', 'cbt', 'brain science'],
         priority: 'high'
       },
-      'data-analysis': {
-        aliases: ['data science', 'analytics', 'big data', 'statistics', 'visualization'],
-        keywords: ['data analysis', 'data science', 'analytics', 'big data', 'statistics', 'visualization', 'tableau', 'power bi', 'sql', 'python data'],
+      'artificial-intelligence': {
+        aliases: ['ai', 'machine learning', 'ml', 'deep learning', 'genai', 'llm', 'nlp', 'computer vision', 'mlops', 'data analysis', 'data-analysis', 'analytics'],
+        keywords: ['artificial intelligence', 'ai', 'machine learning', 'ml', 'deep learning', 'neural networks', 'large language models', 'llm', 'genai', 'nlp', 'computer vision', 'mlops'],
         priority: 'high'
       },
       business: {
@@ -601,6 +601,56 @@ Provide results in JSON format:
 
 Search thoroughly for scientific conferences, research presentations, lab tours, and STEM events.`,
       
+      psychology: `Find psychology and mental health related events for {location} for the {dateRange}. Include university department talks, research seminars, clinical workshops, professional society meetings, and community mental health events.
+
+SOURCES TO SEARCH IN THE BAY AREA:
+- University department calendars (Stanford Psychology, UC Berkeley Psychology, UCSF Psychiatry & Behavioral Sciences)
+- Neuroscience institutes and labs (cognitive science centers, brain research institutes)
+- Professional organizations (APA local chapters, SfN chapters)
+- Community mental health organizations and hospitals
+- Event platforms (Eventbrite, Meetup, Facebook Events, Luma)
+
+Return JSON with:
+[
+  {
+    "title": "Talk/Workshop Name",
+    "venue": "Organization/University/Clinic",
+    "location": "City, State",
+    "date": "Date or range",
+    "show_times": ["Time 1", "Time 2"],
+    "website": "https://event-url",
+    "price_range": "Free or price",
+    "topic": "Psychology/Mental Health focus"
+  }
+]
+
+Focus on real, upcoming events with accurate details.`,
+
+      'artificial-intelligence': `Find artificial intelligence events for {location} for the {dateRange}. Include conferences, meetups, hackathons, workshops, research seminars, and industry talks. Prioritize events with registration links (tickets/RSVP).
+
+SOURCES TO SEARCH IN THE BAY AREA:
+- University AI/ML departments and labs (Stanford AI Lab, Berkeley AI Research)
+- Tech meetups and communities (Meetup groups, Luma communities)
+- Industry conferences and workshops (AI/ML, LLMs, GenAI, MLOps, NLP, CV)
+- Event platforms (Eventbrite, Meetup, Facebook Events)
+- Company and incubator/accelerator event pages
+
+Return JSON with:
+[
+  {
+    "title": "Event Name",
+    "venue": "Venue/Organization",
+    "location": "City, State",
+    "date": "Date or range",
+    "show_times": ["Time 1", "Time 2"],
+    "website": "https://event-url",
+    "price_range": "Free or price",
+    "topic": "AI subfield (LLM/NLP/CV/MLops/etc.)"
+  }
+]
+
+Include concrete, verifiable events with URLs and dates.`,
+
       default: `Find all {category} events for {location} for the {dateRange} - give me the results in JSON format with delimiters for title, venue, location, date, show_times, website, and price_range. Provide actual real events with accurate information.`
     };
 
@@ -646,7 +696,11 @@ Search thoroughly for scientific conferences, research presentations, lab tours,
       'cinema': 'movies',
       'movie theaters': 'movies',
       'showtimes': 'movies',
-      'screenings': 'movies'
+      'screenings': 'movies',
+      // Backward compatibility mappings for replaced categories
+      'automotive': 'psychology',
+      'data-analysis': 'artificial-intelligence',
+      'data analysis': 'artificial-intelligence'
     };
     
     if (commonVariations[normalized]) {

@@ -59,7 +59,7 @@ export const ApiTester: React.FC = () => {
 
   const categories = [
     'music', 'theatre', 'art', 'food', 'tech', 'technology', 'education', 
-    'movies', 'finance', 'automotive', 'data-analysis', 'business', 'science'
+    'movies', 'finance', 'psychology', 'artificial-intelligence', 'business', 'science'
   ];
 
   const getDefaultPrompt = (source: string, category: string): string => {

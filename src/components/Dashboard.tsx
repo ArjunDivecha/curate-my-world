@@ -14,7 +14,7 @@ import { FetchEventsButton } from "./FetchEventsButton";
 import SuggestedCategories from './SuggestedCategories';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Brain, Eye, EyeOff } from "lucide-react";
+import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Brain, Eye, EyeOff, Cpu } from "lucide-react";
 import { getCategoryColor } from "@/utils/categoryColors";
 
 interface Preferences {
@@ -37,8 +37,8 @@ const personalizedPreferences: Preferences = {
     categories: {
       'Technology': true,    // 60% confidence from conversation analysis
       'Finance': true,       // 60% confidence - investment/trading interests
-      'Automotive': true,    // 60% confidence - Tesla/EV interests
-      'Data Analysis': true, // 60% confidence - data science interests
+      'Psychology': true,    // 60% confidence - mental health & cognitive science
+      'Artificial Intelligence': true, // 60% confidence - AI/ML interests
       'Education': true,     // 60% confidence - learning focus
       'Business': true,      // Related to finance/startup interests
       'Science': true,       // Related to technical interests
@@ -49,10 +49,10 @@ const personalizedPreferences: Preferences = {
       'Movies': false        // Not primary interest from analysis
     },
     keywords: [
-      'python programming', 'data science', 'machine learning', 'coding workshop',
+      'python programming', 'machine learning', 'deep learning', 'LLM', 'GenAI', 'coding workshop',
       'stock market', 'investment', 'trading', 'fintech', 'startup',
-      'tesla', 'electric vehicle', 'automotive technology',
-      'maker space', 'analytics', 'programming meetup', 'tech conference'
+      'neuroscience', 'cognitive science', 'mental health', 'psychology', 'therapy',
+      'maker space', 'analytics', 'programming meetup', 'AI conference'
     ]
   },
   location: {
@@ -90,8 +90,8 @@ export const Dashboard = () => {
     const categoryMap: Record<string, string> = {
       'Technology': 'technology',
       'Finance': 'finance', 
-      'Automotive': 'automotive',
-      'Data Analysis': 'data-analysis',
+      'Psychology': 'psychology',
+      'Artificial Intelligence': 'artificial-intelligence',
       'Education': 'education',
       'Business': 'business',
       'Science': 'science',
@@ -404,9 +404,9 @@ export const Dashboard = () => {
 
   const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
     'Technology': Zap,
-    'Finance': Calendar,  // Using Calendar as a placeholder for finance
-    'Automotive': Zap,    // Using Zap as a placeholder for automotive
-    'Data Analysis': Grid3X3,
+    'Finance': Calendar,  // Placeholder icon for finance
+    'Psychology': Brain,
+    'Artificial Intelligence': Cpu,
     'Education': GraduationCap,
     'Business': Calendar,
     'Science': GraduationCap,

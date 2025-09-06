@@ -38,7 +38,14 @@ export class ExaClient {
   async searchEvents({ category, location, limit = 10 }) {
     const startTime = Date.now();
     // Enhanced query to specifically target event pages with registration/ticket links
-    const query = `${category} events ${location} 2025 tickets registration eventbrite meetup conference workshop`;
+    // Include category-specific boosters for improved recall
+    const cat = String(category || '').toLowerCase();
+    const boosts = {
+      'artificial-intelligence': 'ai artificial intelligence machine learning ml deep learning llm genai nlp computer vision mlops',
+      'psychology': 'psychology mental health neuroscience cognitive science psychiatry therapy counseling mindfulness cbt'
+    };
+    const boosted = boosts[cat] ? `${category} ${boosts[cat]}` : `${category}`;
+    const query = `${boosted} events ${location} 2025 tickets registration eventbrite meetup conference workshop`;
 
     const payload = {
       query: query,

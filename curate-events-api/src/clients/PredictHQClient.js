@@ -151,7 +151,10 @@ export class PredictHQClient {
       'museums': 'expos',
       'lectures': 'conferences',
       'conferences': 'conferences',
-      'festivals': 'festivals'
+      'festivals': 'festivals',
+      // New categories
+      'psychology': 'conferences',
+      'artificial-intelligence': 'conferences'
     };
     
     return categoryMapping[category.toLowerCase()] || 'performing-arts';

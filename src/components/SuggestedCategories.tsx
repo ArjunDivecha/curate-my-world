@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Brain, TrendingUp, ArrowRight, Info, DollarSign, Car, BarChart3 } from 'lucide-react';
+import { Brain, TrendingUp, ArrowRight, Info, DollarSign, Cpu } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getCategoryColor, getCategoryIconClasses } from '@/utils/categoryColors';
 
@@ -48,22 +48,22 @@ const SuggestedCategories: React.FC<SuggestedCategoriesProps> = ({
       color: 'bg-green-500'
     },
     {
-      name: 'automotive',
-      displayName: 'Automotive',
+      name: 'psychology',
+      displayName: 'Psychology',
       confidence: 60,
-      icon: <Car className="w-4 h-4" />,
-      reasoning: 'Tesla ownership and electric vehicle technology discussions are prominent themes',
+      icon: <Brain className="w-4 h-4" />,
+      reasoning: 'Interests in mental health, neuroscience, and cognitive science appear frequently',
       eventCount: 0,
-      color: 'bg-red-500'
+      color: 'bg-pink-500'
     },
     {
-      name: 'data-analysis',
-      displayName: 'Data Analysis',
+      name: 'artificial-intelligence',
+      displayName: 'Artificial Intelligence',
       confidence: 60,
-      icon: <BarChart3 className="w-4 h-4" />,
-      reasoning: 'Frequent mentions of data visualization, analytics, and business intelligence tools',
+      icon: <Cpu className="w-4 h-4" />,
+      reasoning: 'Strong interest in AI/ML, LLMs, and hands-on technical workshops',
       eventCount: 0,
-      color: 'bg-purple-500'
+      color: 'bg-fuchsia-500'
     }
   ];
 
@@ -72,8 +72,8 @@ const SuggestedCategories: React.FC<SuggestedCategoriesProps> = ({
     const categoryMap: Record<string, string> = {
       'technology': 'technology', // Direct match
       'finance': 'finance',       // Direct match
-      'automotive': 'automotive', // Direct match
-      'data-analysis': 'data-analysis' // Direct match
+      'psychology': 'psychology',
+      'artificial-intelligence': 'artificial-intelligence'
     };
     return categoryMap[frontendName] || frontendName;
   };
