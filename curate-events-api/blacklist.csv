@@ -1,0 +1,8 @@
+pattern,enabled,notes
+encrypted-tbn0.gstatic.com/*,true,Image CDN (thumbnails)
+google.com/*,true,Generic search pages
+www.google.com/*,true,Generic search pages
+youtube.com/*,false,Optional: video pages
+youtu.be/*,false,Optional: video pages
+facebook.com/*,false,Optional: social feeds
+reddit.com/*,false,Optional: forum threads

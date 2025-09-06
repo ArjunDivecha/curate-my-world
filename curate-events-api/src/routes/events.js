@@ -25,6 +25,8 @@ import { PredictHQClient } from '../clients/PredictHQClient.js';
 import { EventDeduplicator } from '../utils/eventDeduplicator.js';
 import { ExaClient } from '../clients/ExaClient.js';
 import SerperClient from '../clients/SerperClient.js';
+import { EnhancedExaClient } from '../clients/EnhancedExaClient.js';
+import { HighVolumeSerperClient } from '../clients/HighVolumeSerperClient.js';
 import TicketmasterClient from '../clients/TicketmasterClient.js';
 import { LocationFilter } from '../utils/locationFilter.js';
 import { createLogger, logRequest, logResponse } from '../utils/logger.js';
@@ -41,9 +43,34 @@ const apyfluxClient = new ApyfluxClient();
 const predictHQClient = new PredictHQClient(config.predictHQApiKey);
 const exaClient = new ExaClient();
 const serperClient = new SerperClient();
+// Enhanced clients for improved performance and filtering
+const enhancedExaClient = new EnhancedExaClient();
+const highVolumeSerperClient = new HighVolumeSerperClient();
 const ticketmasterClient = new TicketmasterClient();
 const deduplicator = new EventDeduplicator();
 const locationFilter = new LocationFilter();
+
+// Helper function to map categories to topic profiles for enhanced clients
+function mapCategoryToTopicProfile(category) {
+  const mapping = {
+    'theatre': 'arts-culture',
+    'theater': 'arts-culture', 
+    'music': 'music',
+    'concerts': 'music',
+    'art': 'arts-culture',
+    'comedy': 'comedy',
+    'food': 'food',
+    'tech': 'technology',
+    'technology': 'technology',
+    'business': 'business',
+    'networking': 'networking',
+    'fitness': 'fitness',
+    'health': 'fitness',
+    'nightlife': 'nightlife'
+  };
+  
+  return mapping[category.toLowerCase()] || 'arts-culture';
+}
 
 /**
  * GET /api/events/:category/combined
@@ -543,10 +570,20 @@ router.get('/all-categories', async (req, res) => {
               { count: predictHQResult.value.events.length, processingTime: predictHQResult.value.processingTime } : 
               { count: 0, error: predictHQResult.reason?.message || 'Unknown error' },
             exa_fast: exaResult.status === 'fulfilled' && exaResult.value.success ? 
-              { count: exaResult.value.events.length, processingTime: exaResult.value.processingTime } : 
+              { 
+                count: exaResult.value.events.length, 
+                processingTime: exaResult.value.processingTime,
+                cost: exaResult.value.cost ? `$${exaResult.value.cost.toFixed(6)}` : null,
+                rawResults: exaResult.value.metadata?.rawResults || null
+              } : 
               { count: 0, error: exaResult.reason?.message || 'Unknown error' },
             serpapi: serpApiResult.status === 'fulfilled' && serpApiResult.value.success ? 
-              { count: serpApiResult.value.events.length, processingTime: serpApiResult.value.processingTime } : 
+              { 
+                count: serpApiResult.value.events.length, 
+                processingTime: serpApiResult.value.processingTime,
+                cost: serpApiResult.value.cost ? `$${serpApiResult.value.cost.toFixed(6)}` : null,
+                rawResults: serpApiResult.value.metadata?.rawResults || null
+              } : 
               { count: 0, error: serpApiResult.reason?.message || 'Unknown error' }
           },
           // Post-dedup provider attribution
@@ -789,18 +826,26 @@ router.get('/:category', async (req, res) => {
         return result;
       }),
       
-      // Exa direct
-      exaClient.searchEvents({
+      // Enhanced Exa with domain filtering and cost tracking
+      enhancedExaClient.searchEvents({
         category,
         location,
-        limit: options.limit
+        limit: Math.min(options.limit, 40), // Exa limits
+        scope: 'bayarea',
+        topicProfile: categoryManager.mapCategoryToTopicProfile(category) || 'arts-culture',
+        precision: 'official',
+        mode: 'auto'
       }),
       
-      // Serper direct
-      serperClient.searchEvents({
+      // High-Volume Serper with geographic filtering
+      highVolumeSerperClient.searchEvents({
         category,
         location,
-        limit: options.limit
+        limit: Math.min(options.limit, 20), // Serper limits for cost efficiency
+        scope: 'bayarea',
+        topicProfile: categoryManager.mapCategoryToTopicProfile(category) || 'arts-culture',
+        precision: 'official',
+        horizonDays: 30
       })
     ]);
 
@@ -850,27 +895,34 @@ router.get('/:category', async (req, res) => {
     
     if (exaResult.status === 'fulfilled' && exaResult.value.success) {
       eventLists.push(exaResult.value);
-      sourceStats.exa_fast = {
+      sourceStats.exa_enhanced = {
         count: exaResult.value.events.length,
-        processingTime: exaResult.value.processingTime
+        processingTime: exaResult.value.processingTime,
+        cost: `$${(exaResult.value.cost || 0).toFixed(6)}`,
+        rawResults: exaResult.value.metadata?.rawResults || 0
       };
     } else {
-      sourceStats.exa_fast = {
+      sourceStats.exa_enhanced = {
         count: 0,
-        error: exaResult.reason?.message || 'Unknown error'
+        error: exaResult.reason?.message || 'Unknown error',
+        cost: '$0.000000'
       };
     }
     
     if (serpApiResult.status === 'fulfilled' && serpApiResult.value.success) {
       eventLists.push(serpApiResult.value);
-      sourceStats.serpapi = {
+      sourceStats.serper_highvolume = {
         count: serpApiResult.value.events.length,
-        processingTime: serpApiResult.value.processingTime
+        processingTime: serpApiResult.value.processingTime,
+        cost: `$${(serpApiResult.value.cost || 0).toFixed(6)}`,
+        rawResults: serpApiResult.value.metadata?.rawResults || 0,
+        filtered: serpApiResult.value.metadata?.filtered || 0
       };
     } else {
-      sourceStats.serpapi = {
+      sourceStats.serper_highvolume = {
         count: 0,
-        error: serpApiResult.reason?.message || 'Unknown error'
+        error: serpApiResult.reason?.message || 'Unknown error',
+        cost: '$0.000000'
       };
     }
 
@@ -896,13 +948,22 @@ router.get('/:category', async (req, res) => {
       removalRate: preFilterCount > 0 ? ((preFilterCount - postFilterCount) / preFilterCount * 100).toFixed(1) + '%' : '0%'
     };
     
+    // Map enhanced stats to API-consistent naming
+    const mappedSourceStats = {
+      perplexity: sourceStats.perplexity,
+      apyflux: sourceStats.apyflux,
+      predicthq: sourceStats.predicthq,
+      exa_fast: sourceStats.exa_enhanced || { count: 0, error: 'Not available' },
+      serpapi: sourceStats.serper_highvolume || { count: 0, error: 'Not available' }
+    };
+
     // Create the result using the location-filtered events
     const result = {
       success: true,
       events: filteredEvents,
       count: filteredEvents.length,
       sources: ['perplexity_api', 'apyflux_api', 'predicthq_api', 'exa_fast', 'serpapi'],
-      sourceStats,
+      sourceStats: mappedSourceStats,
       deduplication: {
         totalProcessed: deduplicationResult.totalProcessed,
         duplicatesRemoved: deduplicationResult.duplicatesRemoved,
@@ -1583,6 +1644,206 @@ router.get('/:category/ticketmaster', async (req, res) => {
       error: 'Failed to fetch Ticketmaster events',
       source: 'ticketmaster',
       processingTime: Date.now() - startTime
+    });
+  }
+});
+
+/**
+ * GET /api/events/:category/dual-source
+ * Get events from Enhanced Exa and High-Volume Serper only (optimized dual-source architecture)
+ */
+router.get('/:category/dual-source', async (req, res) => {
+  const startTime = Date.now();
+  
+  logRequest(logger, req, 'dualSourceEvents');
+  
+  try {
+    const { category } = req.params;
+    const { location, date_range, limit, min_confidence, custom_prompt } = req.query;
+    
+    // Validate required parameters
+    if (!location) {
+      return res.status(400).json({
+        success: false,
+        error: 'Location parameter is required',
+        example: '/api/events/theatre/dual-source?location=San Francisco, CA',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Build options from query parameters
+    const options = {
+      limit: limit ? parseInt(limit) : 20,
+      minConfidence: min_confidence ? parseFloat(min_confidence) : 0.5
+    };
+
+    // Validate limit
+    if (options.limit > 100) {
+      return res.status(400).json({
+        success: false,
+        error: 'Limit cannot exceed 100 events for dual-source endpoint',
+        maxLimit: 100,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    logger.info('Processing dual-source event request', {
+      category,
+      location,
+      dateRange: date_range,
+      options
+    });
+
+    // Collect events from Enhanced Exa and High-Volume Serper in parallel
+    const [exaResult, serperResult] = await Promise.allSettled([
+      // Enhanced Exa with domain filtering and cost tracking
+      enhancedExaClient.searchEvents({
+        category,
+        location,
+        limit: Math.min(options.limit, 40), // Exa limits
+        scope: 'bayarea',
+        topicProfile: mapCategoryToTopicProfile(category) || 'arts-culture',
+        precision: 'official',
+        mode: 'auto'
+      }),
+      
+      // High-Volume Serper with geographic filtering
+      highVolumeSerperClient.searchEvents({
+        category,
+        location,
+        limit: Math.min(options.limit, 20), // Serper limits for cost efficiency
+        scope: 'bayarea',
+        topicProfile: mapCategoryToTopicProfile(category) || 'arts-culture',
+        precision: 'official',
+        horizonDays: 30
+      })
+    ]);
+
+    // Prepare event lists for deduplication
+    const eventLists = [];
+    const sourceStats = {};
+    
+    if (exaResult.status === 'fulfilled' && exaResult.value.success) {
+      eventLists.push(exaResult.value);
+      sourceStats.exa = {
+        count: exaResult.value.events.length,
+        processingTime: exaResult.value.processingTime,
+        cost: `$${(exaResult.value.cost || 0).toFixed(6)}`,
+        rawResults: exaResult.value.metadata?.rawResults || 0,
+        domainsFiltered: exaResult.value.metadata?.domains || 0
+      };
+    } else {
+      sourceStats.exa = {
+        count: 0,
+        error: exaResult.reason?.message || 'Unknown error',
+        cost: '$0.000000'
+      };
+    }
+    
+    if (serperResult.status === 'fulfilled' && serperResult.value.success) {
+      eventLists.push(serperResult.value);
+      sourceStats.serper = {
+        count: serperResult.value.events.length,
+        processingTime: serperResult.value.processingTime,
+        cost: `$${(serperResult.value.cost || 0).toFixed(6)}`,
+        rawResults: serperResult.value.metadata?.rawResults || 0,
+        filtered: serperResult.value.metadata?.filtered || 0
+      };
+    } else {
+      sourceStats.serper = {
+        count: 0,
+        error: serperResult.reason?.message || 'Unknown error',
+        cost: '$0.000000'
+      };
+    }
+
+    // Deduplicate events across sources
+    const deduplicationResult = await deduplicator.deduplicateEvents(eventLists, options);
+    let allEvents = deduplicationResult.uniqueEvents || [];
+
+    // Apply location-based filtering
+    const preFilterCount = allEvents.length;
+    const filteredEvents = locationFilter.filterEventsByLocation(allEvents, location, { radiusKm: 50, allowBayArea: true }); // 50km radius
+    const postFilterCount = filteredEvents.length;
+
+    const locationFilterStats = {
+      preFilterCount,
+      postFilterCount,
+      removedCount: preFilterCount - postFilterCount,
+      removalRate: preFilterCount > 0 ? ((preFilterCount - postFilterCount) / preFilterCount * 100).toFixed(1) + '%' : '0%'
+    };
+
+    // Calculate total costs
+    const totalCost = (exaResult.value?.cost || 0) + (serperResult.value?.cost || 0);
+
+    // Create the result using the location-filtered events
+    const result = {
+      success: true,
+      events: filteredEvents,
+      count: filteredEvents.length,
+      sources: ['exa', 'serper'],
+      sourceStats,
+      deduplication: {
+        totalProcessed: deduplicationResult.totalProcessed,
+        duplicatesRemoved: deduplicationResult.duplicatesRemoved,
+        duplicateGroups: deduplicationResult.duplicateGroups,
+        sources: deduplicationResult.sources
+      },
+      locationFilter: locationFilterStats,
+      costAnalytics: {
+        totalCost: `$${totalCost.toFixed(6)}`,
+        avgCostPerEvent: filteredEvents.length > 0 ? `$${(totalCost / filteredEvents.length).toFixed(6)}` : '$0.000000',
+        exaCost: sourceStats.exa.cost,
+        serperCost: sourceStats.serper.cost
+      },
+      requestId: `dual_source_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      metadata: {
+        category,
+        location,
+        dateRange: date_range || 'next 30 days',
+        limit: options.limit,
+        deduplicationApplied: true,
+        architecture: 'dual-source-enhanced'
+      }
+    };
+
+    // Log the result
+    const duration = Date.now() - startTime;
+    logResponse(logger, req, result, duration);
+
+    logger.info('Dual-source events fetched successfully', {
+      category,
+      location,
+      eventsFound: result.count,
+      requestId: result.requestId,
+      totalCost: result.costAnalytics.totalCost,
+      duration: `${duration}ms`
+    });
+
+    // Return result with appropriate status code
+    res.status(200).json(result);
+
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    logger.error('Dual-source event fetch failed', {
+      category: req.params.category,
+      location: req.query.location,
+      error: error.message,
+      stack: error.stack,
+      duration: `${duration}ms`
+    });
+
+    logResponse(logger, req, {
+      success: false,
+      error: error.message
+    }, duration);
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch events from dual sources',
+      details: error.message,
+      requestId: `dual_source_error_${Date.now()}`,
+      timestamp: new Date().toISOString()
     });
   }
 });
