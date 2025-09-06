@@ -40,9 +40,11 @@ interface WeeklyCalendarProps {
   events: Event[];
   savedEvents?: Event[];
   onEventClick: (eventId: string) => void;
+  onDateClick?: (date: Date) => void;
+  activeCategory?: string | null;
 }
 
-export const WeeklyCalendar = ({ events, savedEvents = [], onEventClick }: WeeklyCalendarProps) => {
+export const WeeklyCalendar = ({ events, savedEvents = [], onEventClick, onDateClick, activeCategory }: WeeklyCalendarProps) => {
   const [currentWeek, setCurrentWeek] = useState(new Date());
 
   // Debug logging
@@ -175,14 +177,39 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventClick }: Weekl
           return (
             <Card key={index} className={`min-h-[300px] ${isToday ? 'ring-2 ring-primary' : ''}`}>
               <CardHeader className="pb-2">
-                <div className="text-center">
-                  <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                    {dayName}
+                {onDateClick ? (
+                  <button
+                    type="button"
+                    className="text-center cursor-pointer hover:bg-muted/50 rounded p-2 transition-colors w-full border-0 bg-transparent"
+                    onClick={(e) => {
+                      console.log('📅 Date clicked:', date.toDateString());
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('📞 Calling onDateClick handler');
+                      onDateClick(date);
+                    }}
+                    title={`View all events for ${date.toLocaleDateString()}${activeCategory ? ` in ${activeCategory}` : ''}`}
+                  >
+                    <div className="text-xs text-muted-foreground uppercase tracking-wide">
+                      {dayName}
+                    </div>
+                    <div className={`text-lg font-semibold ${isToday ? 'text-primary' : 'text-foreground'}`}>
+                      {date.getDate()}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Click to view
+                    </div>
+                  </button>
+                ) : (
+                  <div className="text-center">
+                    <div className="text-xs text-muted-foreground uppercase tracking-wide">
+                      {dayName}
+                    </div>
+                    <div className={`text-lg font-semibold ${isToday ? 'text-primary' : 'text-foreground'}`}>
+                      {date.getDate()}
+                    </div>
                   </div>
-                  <div className={`text-lg font-semibold ${isToday ? 'text-primary' : 'text-foreground'}`}>
-                    {date.getDate()}
-                  </div>
-                </div>
+                )}
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="space-y-2">

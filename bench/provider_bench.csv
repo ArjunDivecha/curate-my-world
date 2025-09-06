@@ -1,0 +1,43 @@
+timestamp,provider,success,duration_ms,events_count,requests_count,cost_usd,usage_json,note_or_error
+2025-09-04T16:05:27.393Z,eventbrite,0,,,,,,skipped: EVENTBRITE_TOKEN missing
+2025-09-04T16:05:27.394Z,ticketmaster,0,,,,,,skipped: TICKETMASTER_API_KEY missing
+2025-09-04T16:05:27.394Z,predicthq,0,,,,,,skipped: PREDICTHQ_API_KEY missing
+2025-09-04T16:05:27.399Z,exa_fastapi,0,5,,,,,request to http://127.0.0.1:8080/events/search failed, reason: connect ECONNREFUSED 127.0.0.1:8080
+2025-09-04T16:05:27.399Z,perplexity,0,,,,,,skipped: PERPLEXITY_API_KEY missing
+2025-09-04T16:05:27.399Z,serper,0,,,,,,skipped: SERPER_API_KEY missing
+2025-09-04T16:07:06.746Z,eventbrite,0,,,,,,skipped: EVENTBRITE_TOKEN missing
+2025-09-04T16:07:06.747Z,ticketmaster,0,,,,,,skipped: TICKETMASTER_API_KEY missing
+2025-09-04T16:07:06.976Z,predicthq,0,229,,,,,HTTP 402
+2025-09-04T16:07:06.979Z,exa_fastapi,0,3,,,,,request to http://127.0.0.1:8080/events/search failed, reason: connect ECONNREFUSED 127.0.0.1:8080
+2025-09-04T16:07:07.179Z,perplexity,0,199,,,,,HTTP 401
+2025-09-04T16:07:07.935Z,serper,1,756,0,,,,
+2025-09-04T16:18:54.594Z,eventbrite,0,,,,,,skipped: EVENTBRITE_TOKEN missing
+2025-09-04T16:18:54.997Z,ticketmaster,1,402,25,,,,
+2025-09-04T16:18:55.201Z,predicthq,0,203,,,,,HTTP 402
+2025-09-04T16:18:55.206Z,exa_fastapi,0,5,,,,,HTTP 500
+2025-09-04T16:18:55.425Z,perplexity,0,218,,,,,HTTP 401
+2025-09-04T16:18:56.003Z,serper,1,578,0,,,,
+2025-09-04T16:20:57.861Z,eventbrite,0,,,,,,skipped: EVENTBRITE_TOKEN missing
+2025-09-04T16:20:58.151Z,ticketmaster,1,289,25,,,,
+2025-09-04T16:20:58.407Z,predicthq,0,254,,,,,HTTP 401
+2025-09-04T16:21:07.441Z,exa_fastapi,1,9034,34,,0.053,,
+2025-09-04T16:21:07.617Z,perplexity,0,176,,,,,HTTP 401
+2025-09-04T16:21:08.535Z,serper,1,918,0,,,,
+2025-09-04T16:21:23.830Z,eventbrite,0,,,,,,skipped: EVENTBRITE_TOKEN missing
+2025-09-04T16:21:24.074Z,ticketmaster,1,242,25,,,,
+2025-09-04T16:21:24.188Z,predicthq,0,114,,,,,HTTP 401
+2025-09-04T16:21:24.190Z,exa_fastapi,0,2,,,,,HTTP 500
+2025-09-04T16:21:24.344Z,perplexity,0,154,,,,,HTTP 401
+2025-09-04T16:21:25.006Z,serper,1,662,10,,,,
+2025-09-04T16:21:42.179Z,eventbrite,0,,,,,,skipped: EVENTBRITE_TOKEN missing
+2025-09-04T16:21:42.448Z,ticketmaster,1,268,25,,,,
+2025-09-04T16:21:42.568Z,predicthq,0,115,,,,,HTTP 401
+2025-09-04T16:21:51.368Z,exa_fastapi,1,8800,35,,0.053,,
+2025-09-04T16:21:51.542Z,perplexity,0,174,,,,,HTTP 401
+2025-09-04T16:21:52.496Z,serper,1,953,10,,,,
+2025-09-04T16:22:19.813Z,eventbrite,0,270,,,,,HTTP 404
+2025-09-04T16:22:20.088Z,ticketmaster,1,275,25,,,,
+2025-09-04T16:22:20.253Z,predicthq,0,161,,,,,HTTP 401
+2025-09-04T16:22:30.924Z,exa_fastapi,1,10670,35,,0.053,,
+2025-09-04T16:22:31.109Z,perplexity,0,184,,,,,HTTP 401
+2025-09-04T16:22:31.783Z,serper,1,674,10,,,,

@@ -82,6 +82,7 @@ export const Dashboard = () => {
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false); // Toggle for "Suggested for You"
   // Control which tab is visible to guarantee UI reflects filtered events
   const [activeTab, setActiveTab] = useState<'calendar' | 'grid'>('grid');
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   // Category mapping: Frontend display names to backend API names
   const mapCategoryToBackend = (frontendCategory: string): string => {
@@ -176,6 +177,7 @@ export const Dashboard = () => {
     console.log('📊 Events per category:', Object.entries(transformedEventsByCategory).map(([key, events]) => `${key}: ${events.length}`));
     
     setActiveCategory(category);
+    setSelectedDate(null); // Clear date filter when category changes
     if (category === null) {
       // Show all TRANSFORMED events from all categories
       const allTransformedEvents = Object.values(transformedEventsByCategory).flat();
@@ -203,22 +205,55 @@ export const Dashboard = () => {
     }
   };
 
+  const handleDateClick = (date: Date) => {
+    console.log('🎯 Date clicked:', date.toDateString(), 'Category:', activeCategory);
+    
+    setSelectedDate(date);
+    setActiveTab('grid'); // Switch to grid view to show the filtered events
+    
+    toast({
+      title: "Date Selected",
+      description: `Showing events for ${date.toLocaleDateString()}${activeCategory ? ` in ${activeCategory}` : ''}`,
+    });
+  };
+
   // Removed auto scroll-to-top on category change per user request
 
   // Compute displayed events from source-of-truth buckets to avoid any state overrides
   const displayedEvents = React.useMemo(() => {
     // Derive strictly from buckets + activeCategory
     if (!Object.keys(transformedEventsByCategory).length) return [] as any[];
+    
+    let events: any[] = [];
+    
     if (activeCategory === null) {
-      return Object.values(transformedEventsByCategory).flat();
-    }
-    if (activeCategory === 'technology') {
+      events = Object.values(transformedEventsByCategory).flat();
+    } else if (activeCategory === 'technology') {
       const techEvents = transformedEventsByCategory['tech'] || [];
       const technologyEvents = transformedEventsByCategory['technology'] || [];
-      return [...techEvents, ...technologyEvents];
+      events = [...techEvents, ...technologyEvents];
+    } else {
+      events = transformedEventsByCategory[activeCategory] || [];
     }
-    return transformedEventsByCategory[activeCategory] || [];
-  }, [activeCategory, transformedEventsByCategory]);
+    
+    // Apply date filter if selected
+    if (selectedDate) {
+      const targetDateString = selectedDate.toDateString();
+      events = events.filter(event => {
+        try {
+          if (!event.startDate) return false;
+          const eventDate = new Date(event.startDate);
+          if (isNaN(eventDate.getTime())) return false;
+          return eventDate.toDateString() === targetDateString;
+        } catch {
+          return false;
+        }
+      });
+      console.log(`🔍 Filtered to ${events.length} events for ${targetDateString} in category '${activeCategory || 'all'}'`);
+    }
+    
+    return events;
+  }, [activeCategory, transformedEventsByCategory, selectedDate]);
 
   useEffect(() => {
     console.log('🧭 Active category:', activeCategory, ' | displayedEvents:', displayedEvents.length, ' | buckets:', Object.keys(transformedEventsByCategory));
@@ -650,6 +685,7 @@ export const Dashboard = () => {
                 <WeeklyCalendar
                   events={savedEvents}
                   savedEvents={savedEvents}
+                  activeCategory={activeCategory}
                   onEventClick={(eventId) => {
                     const event = events.find(e => e.id === eventId);
                     if (event) {
@@ -665,14 +701,46 @@ export const Dashboard = () => {
                       }
                     }
                   }}
+                  onDateClick={handleDateClick}
                 />
               </TabsContent>
 
               <TabsContent key={activeCategory ?? 'all'} value="grid" className="space-y-6">
+                {/* Filter Status Display */}
+                {(activeCategory || selectedDate) && (
+                  <div className="bg-muted/50 rounded-lg p-4 mb-6 border">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-medium">Active Filters:</h3>
+                        {activeCategory && (
+                          <Badge variant="secondary">
+                            Category: {activeCategory}
+                          </Badge>
+                        )}
+                        {selectedDate && (
+                          <Badge variant="secondary">
+                            Date: {selectedDate.toLocaleDateString()}
+                          </Badge>
+                        )}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setActiveCategory(null);
+                          setSelectedDate(null);
+                        }}
+                      >
+                        Clear Filters
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                   {displayedEvents.map(event => (
                     <EventCard
-                      key={`${event.id}-${activeCategory ?? 'all'}`}
+                      key={`${event.id}-${activeCategory ?? 'all'}-${selectedDate?.toISOString() ?? 'no-date'}`}
                       event={event}
                       onSaveToCalendar={handleSaveToCalendar}
                     />

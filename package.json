@@ -14,7 +14,8 @@
     "start:backend": "./scripts/start-backend.sh",
     "stop": "node scripts/port-manager.js cleanup",
     "port:status": "node scripts/port-manager.js status",
-    "port:cleanup": "node scripts/port-manager.js cleanup"
+    "port:cleanup": "node scripts/port-manager.js cleanup",
+    "bench:providers": "node scripts/bench-providers.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

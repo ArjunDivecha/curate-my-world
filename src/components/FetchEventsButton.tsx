@@ -93,10 +93,16 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
         throw new Error(data.error || 'Failed to fetch events from all categories');
       }
       
-      const { eventsByCategory, categoryStats, totalEvents, processingTime } = data;
+      const { eventsByCategory, categoryStats, totalEvents, processingTime, providerStats } = data;
       
       console.log(`🎉 Total events across all categories: ${totalEvents}`);
       console.log('📊 Category breakdown:', categoryStats);
+      if (providerStats) {
+        console.log('🧩 Provider contribution (post-dedup totals):');
+        Object.entries(providerStats).forEach(([provider, stats]: any) => {
+          console.log(`  - ${provider}: survived=${(stats as any).survivedCount} / original=${(stats as any).originalCount} (removed=${(stats as any).duplicatesRemoved})`);
+        });
+      }
       console.log('📋 Events by category:', eventsByCategory);
       
       if (totalEvents === 0) {

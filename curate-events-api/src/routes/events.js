@@ -525,6 +525,7 @@ router.get('/all-categories', async (req, res) => {
         
         // Deduplicate events for this category
         const deduplicationResult = deduplicator.deduplicateEvents(eventLists);
+        const dedupStats = deduplicator.getDeduplicationStats(eventLists, deduplicationResult);
         
         return {
           category,
@@ -547,7 +548,10 @@ router.get('/all-categories', async (req, res) => {
             serpapi: serpApiResult.status === 'fulfilled' && serpApiResult.value.success ? 
               { count: serpApiResult.value.events.length, processingTime: serpApiResult.value.processingTime } : 
               { count: 0, error: serpApiResult.reason?.message || 'Unknown error' }
-          }
+          },
+          // Post-dedup provider attribution
+          providerAttribution: dedupStats?.sourceBreakdown || null,
+          totals: dedupStats ? { totalOriginal: dedupStats.totalOriginal, totalUnique: dedupStats.totalUnique } : null
         };
         
       } catch (error) {
@@ -574,6 +578,7 @@ router.get('/all-categories', async (req, res) => {
     // Organize results by category
     const eventsByCategory = {};
     const categoryStats = {};
+    const aggregatedProviderStats = {};
     let totalEvents = 0;
     
     categoryResults.forEach(result => {
@@ -582,9 +587,28 @@ router.get('/all-categories', async (req, res) => {
         count: result.count || 0,
         success: result.success,
         error: result.error || null,
-        sourceStats: result.sourceStats || null
+        sourceStats: result.sourceStats || null,
+        providerAttribution: result.providerAttribution || null,
+        totals: result.totals || null
       };
       totalEvents += result.count || 0;
+
+      // Aggregate provider attribution across categories (post-dedup survived counts)
+      if (result.providerAttribution) {
+        Object.entries(result.providerAttribution).forEach(([provider, stats]) => {
+          if (!aggregatedProviderStats[provider]) {
+            aggregatedProviderStats[provider] = { originalCount: 0, survivedCount: 0, duplicatesRemoved: 0 };
+          }
+          aggregatedProviderStats[provider].originalCount += stats.originalCount || 0;
+          aggregatedProviderStats[provider].survivedCount += stats.survivedCount || 0;
+        });
+      }
+    });
+
+    // Finalize aggregated duplicatesRemoved
+    Object.keys(aggregatedProviderStats).forEach(provider => {
+      const s = aggregatedProviderStats[provider];
+      s.duplicatesRemoved = Math.max(0, (s.originalCount || 0) - (s.survivedCount || 0));
     });
     
     const response = {
@@ -593,6 +617,7 @@ router.get('/all-categories', async (req, res) => {
       categoryStats,
       totalEvents,
       categories: supportedCategories,
+      providerStats: aggregatedProviderStats,
       processingTime: duration,
       metadata: {
         location,

@@ -8,11 +8,17 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Load environment variables
+// Load environment variables from process CWD .env, then fallback to curate-events-api/.env
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Attempt to also load env from the package's own .env (when server is started from repo root)
+try {
+  const localEnvPath = path.resolve(__dirname, '../../.env');
+  dotenv.config({ path: localEnvPath });
+} catch {}
 
 const nodeEnv = process.env.NODE_ENV || 'development';
 
