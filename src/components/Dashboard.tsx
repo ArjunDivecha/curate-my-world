@@ -680,14 +680,20 @@ export const Dashboard = () => {
         {hasAnyEvents && (
           <div className="mt-12">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'calendar' | 'grid')} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2 bg-card shadow-card border-0">
-                <TabsTrigger value="calendar" className="flex items-center gap-2">
+              <TabsList className="grid w-full grid-cols-2 bg-transparent shadow-none border-0 gap-2">
+                <TabsTrigger
+                  value="calendar"
+                  className="flex items-center gap-2 bg-blue-50 text-blue-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
                   <Calendar className="w-4 h-4" />
-                  Weekly Calendar
+                  Calendar View
                 </TabsTrigger>
-                <TabsTrigger value="grid" className="flex items-center gap-2">
+                <TabsTrigger
+                  value="grid"
+                  className="flex items-center gap-2 bg-purple-50 text-purple-700 data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+                >
                   <Grid3X3 className="w-4 h-4" />
-                  Event Cards
+                  Event View
                 </TabsTrigger>
               </TabsList>
 

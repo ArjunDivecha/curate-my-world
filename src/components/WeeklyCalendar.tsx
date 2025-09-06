@@ -146,7 +146,7 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventClick, onDateC
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Calendar className="w-5 h-5 text-primary" />
-              Weekly Calendar
+              Calendar View
               <span className="text-sm text-muted-foreground font-normal">
                 ({events.length} events total)
               </span>
