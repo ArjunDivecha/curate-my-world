@@ -215,7 +215,7 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventClick, onDateC
                 <div className="space-y-2">
                   {dayEvents.length === 0 ? (
                     <div className="text-xs text-muted-foreground text-center py-8">
-                      No saved events
+                      No events
                     </div>
                   ) : (
                     dayEvents.map((event) => {

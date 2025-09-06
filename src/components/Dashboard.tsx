@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { EventCard } from "./EventCard";
 import { WeeklyCalendar } from "./WeeklyCalendar";
 import { Header } from "./Header";
@@ -258,6 +259,15 @@ export const Dashboard = () => {
   useEffect(() => {
     console.log('🧭 Active category:', activeCategory, ' | displayedEvents:', displayedEvents.length, ' | buckets:', Object.keys(transformedEventsByCategory));
   }, [activeCategory, displayedEvents, transformedEventsByCategory]);
+
+  // Determine if any events are loaded at all (independent of active filters)
+  const hasAnyEvents = React.useMemo(() => {
+    try {
+      return Object.values(transformedEventsByCategory).some((arr: any) => Array.isArray(arr) && arr.length > 0);
+    } catch {
+      return false;
+    }
+  }, [transformedEventsByCategory]);
 
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -666,8 +676,8 @@ export const Dashboard = () => {
 
         </div>
 
-        {/* Main Content - Show events if available */}
-        {displayedEvents.length > 0 && (
+        {/* Main Content - Show calendar/grid once any events are loaded */}
+        {hasAnyEvents && (
           <div className="mt-12">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'calendar' | 'grid')} className="space-y-6">
               <TabsList className="grid w-full grid-cols-2 bg-card shadow-card border-0">
@@ -683,7 +693,9 @@ export const Dashboard = () => {
 
               <TabsContent value="calendar" className="space-y-6">
                 <WeeklyCalendar
-                  events={savedEvents}
+                  // Show the full set of currently displayed events in calendar view
+                  events={displayedEvents}
+                  // Still pass savedEvents so we can highlight saved items
                   savedEvents={savedEvents}
                   activeCategory={activeCategory}
                   onEventClick={(eventId) => {
@@ -705,7 +717,7 @@ export const Dashboard = () => {
                 />
               </TabsContent>
 
-              <TabsContent key={activeCategory ?? 'all'} value="grid" className="space-y-6">
+              <TabsContent key={`${activeCategory ?? 'all'}-${selectedDate?.toISOString() ?? 'no-date'}`} value="grid" className="space-y-6">
                 {/* Filter Status Display */}
                 {(activeCategory || selectedDate) && (
                   <div className="bg-muted/50 rounded-lg p-4 mb-6 border">
@@ -737,22 +749,29 @@ export const Dashboard = () => {
                   </div>
                 )}
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {displayedEvents.map(event => (
-                    <EventCard
-                      key={`${event.id}-${activeCategory ?? 'all'}-${selectedDate?.toISOString() ?? 'no-date'}`}
-                      event={event}
-                      onSaveToCalendar={handleSaveToCalendar}
-                    />
-                  ))}
-                </div>
+                {displayedEvents.length === 0 ? (
+                  <div className="text-center text-muted-foreground py-12 border rounded-lg">
+                    No events match your current filters.
+                    <div className="mt-2 text-xs">Try a different date or clear filters.</div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {displayedEvents.map(event => (
+                      <EventCard
+                        key={`${event.id}-${activeCategory ?? 'all'}-${selectedDate?.toISOString() ?? 'no-date'}`}
+                        event={event}
+                        onSaveToCalendar={handleSaveToCalendar}
+                      />
+                    ))}
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>
         )}
 
-        {/* Empty state */}
-        {displayedEvents.length === 0 && (
+        {/* Empty state when no events loaded yet */}
+        {!hasAnyEvents && (
           <div className="mt-12 text-center p-12">
             <Calendar className="w-16 h-16 mx-auto text-gray-400 mb-4" />
             <h3 className="text-xl font-semibold mb-2 text-gray-700">No Events Yet</h3>
