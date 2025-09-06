@@ -154,12 +154,12 @@ export class EnhancedExaClient {
         ids: resultIds,
         contents: {
           text: {
-            max_characters: 4000, // Reduced for speed
-            include_html_tags: false
+            max_characters: 6000,
+            include_html_tags: true
           },
           highlights: {
             query: highlightsQuery,
-            num_sentences: 3 // Reduced for speed
+            num_sentences: 5
           }
         },
         livecrawl: 'preferred',

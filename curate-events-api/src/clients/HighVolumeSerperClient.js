@@ -19,6 +19,7 @@ import { createLogger } from '../utils/logger.js';
 import { WhitelistManager } from '../utils/WhitelistManager.js';
 import { BlacklistManager } from '../utils/BlacklistManager.js';
 import { CostTracker, SerperCostCalculator } from '../utils/costTracking.js';
+import { minimatch } from 'minimatch';
 
 const logger = createLogger('HighVolumeSerperClient');
 
@@ -54,6 +55,16 @@ export class HighVolumeSerperClient {
       'Union City', 'Pleasanton', 'Livermore', 'San Rafael', 'Petaluma'
     ];
 
+    // Bay Area location grid for Serper events endpoint
+    this.bayAreaLocations = [
+      'San Francisco, CA', 'Oakland, CA', 'Berkeley, CA', 'San Jose, CA',
+      'Palo Alto, CA', 'Mountain View, CA', 'Sunnyvale, CA', 'Santa Clara, CA',
+      'Redwood City, CA', 'Fremont, CA', 'Walnut Creek, CA', 'Richmond, CA',
+      'Alameda, CA', 'Emeryville, CA', 'Daly City, CA', 'San Mateo, CA',
+      'Milpitas, CA', 'Cupertino, CA', 'Menlo Park, CA', 'Los Altos, CA',
+      'Los Gatos, CA', 'Belmont, CA', 'Burlingame, CA'
+    ];
+
     logger.info('High-volume Serper client initialized with geographic filtering and cost tracking');
   }
 
@@ -87,7 +98,144 @@ export class HighVolumeSerperClient {
     }
 
     try {
-      // Build enhanced query for Google Events
+      // Events-mode: comprehensive grid using Serper /events
+      if (mode === 'events') {
+        // Load whitelist patterns for acceptance
+        const includePatterns = await this.whitelistManager.getPatterns(topicProfile, scope, precision);
+        const blacklistFirst = await this.blacklistManager.loadPatterns?.() || []; // fallback if available
+
+        // Build time windows (30 days -> 3 slices with 5-day overlap)
+        const windows = this.buildTimeSlices(horizonDays, 3, 5);
+
+        // Build query variants (base + synonyms + variants) driven by topicProfile
+        const queryVariants = this.buildCategoryQueryVariants(topicProfile, category);
+
+        // Build locations grid
+        const locations = this.bayAreaLocations;
+
+        // Create jobs cartesian product
+        const jobs = [];
+        for (const loc of locations) {
+          for (const [startDate, endDate] of windows) {
+            for (const q of queryVariants) {
+              jobs.push({
+                payload: {
+                  q,
+                  location: loc,
+                  num: 100,
+                  // Provide both snake_case and camelCase to maximize compatibility with Serper /events
+                  start_date: startDate,
+                  end_date: endDate,
+                  startDate: startDate,
+                  endDate: endDate,
+                  hl: 'en',
+                  gl: 'us'
+                },
+                category,
+                search_location: loc
+              });
+            }
+          }
+        }
+
+        // Execute with a simple concurrency pool
+        const maxWorkers = 48;
+        let reqOK = 0, reqFail = 0;
+        let rawCount = 0;
+        let whitelistAccepted = 0;
+        let blacklistBlocked = 0;
+        let whitelistRejected = 0;
+        let dedupDropped = 0;
+        const seen = new Set();
+        const all = [];
+
+        const runPool = async () => {
+          let idx = 0;
+          const results = [];
+          const workers = Array.from({ length: Math.min(maxWorkers, jobs.length) }, async () => {
+            while (idx < jobs.length) {
+              const myIdx = idx++;
+              const job = jobs[myIdx];
+              try {
+                const data = await this.makeRequest('/events', job.payload);
+                reqOK++;
+                const events = Array.isArray(data?.events) ? data.events : [];
+                rawCount += events.length;
+                for (const re of events) {
+                  const ne = this.normalizeSerperEvent(re, topicProfile, job.search_location);
+                  const url = ne?.url || ne?.source_url || re?.link;
+                  if (url && await this.blacklistManager.isBlacklisted(url)) { blacklistBlocked++; continue; }
+                  if (includePatterns && includePatterns.length > 0) {
+                    if (!this.matchAny(url, includePatterns)) { whitelistRejected++; continue; }
+                  }
+                  const k = this.dedupeKey(ne.title, ne.startDate || ne.date, ne.venue);
+                  if (seen.has(k)) { dedupDropped++; continue; }
+                  seen.add(k);
+                  whitelistAccepted++;
+                  all.push(ne);
+                }
+              } catch (err) {
+                reqFail++;
+              }
+            }
+          });
+          await Promise.all(workers);
+          return results;
+        };
+
+        await runPool();
+
+        // Cost logging based on total requests
+        const totalRequests = jobs.length;
+        const cost = await this.costTracker.logSerperCost({
+          query: `events-grid:${category}`,
+          numRequests: totalRequests,
+          operation: 'search'
+        });
+        this.totalCost += cost;
+        this.requestCount++;
+
+        // Trim to limit if specified
+        const finalEvents = limit ? all.slice(0, limit) : all;
+
+        const processingTime = Date.now() - startTime;
+        const response = {
+          success: true,
+          events: finalEvents,
+          count: finalEvents.length,
+          processingTime,
+          source: 'serper_highvolume',
+          cost,
+          metadata: {
+            mode: 'events',
+            jobs: totalRequests,
+            requests_ok: reqOK,
+            requests_failed: reqFail,
+            raw_events: rawCount,
+            whitelist_accepted: whitelistAccepted,
+            blacklist_blocked: blacklistBlocked,
+            whitelist_rejected: whitelistRejected,
+            dedup_dropped: dedupDropped
+          }
+        };
+
+        this.setCache(cacheKey, response);
+
+        logger.info('Serper events-mode completed', {
+          category,
+          totalRequests,
+          rawEvents: rawCount,
+          emitted: finalEvents.length,
+          requests_ok: reqOK,
+          requests_failed: reqFail,
+          cost: `$${cost.toFixed(6)}`,
+          processingTime: `${processingTime}ms`
+        });
+
+        return response;
+      }
+
+      // Build enhanced query for Google (search-mode fallback)
       const enhancedQuery = this.buildEnhancedQuery(category, location, topicProfile);
       
       // Calculate geographic location for Google Events
@@ -595,6 +743,141 @@ export class HighVolumeSerperClient {
   }
 
   /**
+   * Build time slices with overlap for horizon window
+   */
+  buildTimeSlices(daysAhead = 30, slices = 3, overlap = 5) {
+    if (slices <= 1) {
+      const start = new Date();
+      const end = new Date();
+      end.setDate(end.getDate() + daysAhead);
+      return [
+        [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)]
+      ];
+    }
+    const window = Math.ceil(daysAhead / slices);
+    const spans = [];
+    const base = new Date();
+    for (let i = 0; i < slices; i++) {
+      const s = new Date(base);
+      const offset = Math.max(0, i * window - (i > 0 ? overlap : 0));
+      s.setDate(s.getDate() + offset);
+      const e = new Date(s);
+      e.setDate(e.getDate() + window + (i < slices - 1 ? overlap : 0));
+      spans.push([s.toISOString().slice(0, 10), e.toISOString().slice(0, 10)]);
+    }
+    return spans;
+  }
+
+  /**
+   * Build category query variants (synonyms + global variants)
+   */
+  buildCategoryQueryVariants(category) {
+    const cat = (category || '').toLowerCase();
+    const CATEGORY_QUERIES = {
+      music: [
+        'live music concerts', 'jazz concerts', 'rock shows', 'classical music concerts', 'indie concerts'
+      ],
+      theatre: [
+        'plays', 'theater performances', 'musicals'
+      ],
+      movies: [
+        'film screenings', 'movie festivals'
+      ],
+      art: [
+        'art exhibits', 'gallery openings'
+      ],
+      'talks-general': [
+        'academic talks', 'university lectures'
+      ],
+      'talks-ai': [
+        'AI talks', 'machine learning seminars', 'data science talks'
+      ],
+      'talks-childdev': [
+        'child development talks', 'early childhood workshops'
+      ],
+      technology: [
+        'tech conferences', 'tech meetups'
+      ],
+      business: [
+        'business networking', 'startup events'
+      ],
+      food: [
+        'food festivals', 'food and drink events'
+      ]
+    };
+
+    const QUERY_VARIANTS = ['events', 'calendar', 'festival', 'meetup'];
+
+    const base = CATEGORY_QUERIES[cat] || [category];
+    const variants = new Set();
+    // base terms
+    for (const b of base) {
+      variants.add(b);
+      variants.add(`${b} events`);
+      variants.add(`${b} calendar`);
+    }
+    // add global variants for the first base term
+    const seed = base[0] || category;
+    for (const v of QUERY_VARIANTS) variants.add(`${seed} ${v}`);
+    return Array.from(variants);
+  }
+
+  /**
+   * Minimatch patterns against URL
+   */
+  matchAny(url, patterns) {
+    if (!url || !patterns || patterns.length === 0) return false;
+    const clean = url.startsWith('http://') || url.startsWith('https://') ? url.split('://', 2)[1] : url;
+    for (const p of patterns) {
+      if (minimatch(clean, p) || minimatch(url, p)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Normalize Serper /events item to our event schema
+   */
+  normalizeSerperEvent(re, topicProfile, searchLocation) {
+    const date = re?.date || {};
+    const venue = re?.venue || {};
+    const ticket = re?.ticketing || {};
+    const title = (re?.title || '').trim();
+    const category = this.mapCategoryName(topicProfile);
+    const tags = this.generateTags(topicProfile);
+    const startRaw = date?.start_date || date?.date || null;
+    const startISO = startRaw ? this.normalizeDate(startRaw) : null;
+    const eventFields = { title, venue: venue?.name || null, date: startRaw };
+    const id = this.generateEventId(eventFields);
+
+    return {
+      id,
+      title: this.cleanTitle(title),
+      description: re?.description || '',
+      category,
+      tags,
+      venue: venue?.name || null,
+      location: searchLocation,
+      startDate: startISO,
+      endDate: null,
+      url: re?.link || null,
+      imageUrl: re?.thumbnail || null,
+      price: ticket?.price || null,
+      source: 'serper_highvolume',
+      metadata: {
+        originalAddress: venue?.address || null
+      }
+    };
+  }
+
+  /**
+   * Simple dedupe key similar to Python version
+   */
+  dedupeKey(title, date, venue) {
+    const base = `${(title||'').toLowerCase()}|${(date||'')}|${(venue||'').toLowerCase()}`;
+    return Buffer.from(base).toString('base64').substring(0, 16);
+  }
+
+  /**
    * Get cached result
    * @param {string} cacheKey - Cache key
    * @returns {Object|null} Cached result or null
@@ -666,8 +949,10 @@ export class HighVolumeSerperClient {
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
-      // baseUrl already includes /search, so just append endpoint
-      const url = endpoint ? `${this.baseUrl}${endpoint}` : this.baseUrl;
+      // Route /events explicitly to the correct endpoint
+      const url = endpoint === '/events'
+        ? 'https://google.serper.dev/events'
+        : (endpoint ? `${this.baseUrl}${endpoint}` : this.baseUrl);
       const response = await fetch(url, {
         method: 'POST',
         headers: this.headers,
