@@ -1,0 +1,11 @@
+[
+  { "domain": "thegreekberkeley.com", "name": "Greek Theatre", "categories": ["music"] },
+  { "domain": "events.stanford.edu", "name": "Stanford Events", "categories": ["talks","science"] },
+  { "domain": "roxie.com", "name": "Roxie Theater", "categories": ["movies","art"] },
+  { "domain": "www.sfmoma.org", "name": "SFMOMA", "categories": ["art"] },
+  { "domain": "www.sfsymphony.org", "name": "SF Symphony", "categories": ["music"] },
+  { "domain": "www.berkeleyrep.org", "name": "Berkeley Rep", "categories": ["theatre"] },
+  { "domain": "www.commonwealthclub.org", "name": "Commonwealth Club", "categories": ["talks","business"] },
+  { "domain": "www.meetup.com", "name": "Meetup", "categories": ["tech","business","science"] }
+]
+
