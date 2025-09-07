@@ -57,6 +57,7 @@ router.get('/:category/combined', async (req, res) => {
   try {
     const { category } = req.params;
     const { location, date_range, limit } = req.query;
+    const disablePerplexity = ['true', '1', 'yes'].includes(String(req.query.disable_perplexity || '').toLowerCase()) || config.sources?.disablePerplexityByDefault;
     
     // Validate required parameters
     if (!location) {
@@ -82,18 +83,21 @@ router.get('/:category/combined', async (req, res) => {
 
     // Run both APIs in parallel (Apyflux optionally disabled)
     const [perplexityResult, apyfluxResult] = await Promise.allSettled([
-      // Perplexity via EventPipeline
-      eventPipeline.collectEvents({
-        category,
-        location,
-        dateRange: date_range,
-        options: {
-          limit: eventLimit,
-          minConfidence: 0.5,
-          maxTokens: config.perplexity.maxTokens,
-          temperature: config.perplexity.temperature
-        }
-      }).then(result => ({ ...result, source: 'perplexity_api' })),
+      // Perplexity via EventPipeline (can be disabled)
+      (disablePerplexity
+        ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by flag', source: 'perplexity_api' })
+        : eventPipeline.collectEvents({
+            category,
+            location,
+            dateRange: date_range,
+            options: {
+              limit: eventLimit,
+              minConfidence: 0.5,
+              maxTokens: config.perplexity.maxTokens,
+              temperature: config.perplexity.temperature
+            }
+          }).then(result => ({ ...result, source: 'perplexity_api' }))
+      ),
       
       // Apyflux direct
       (disableApyflux
@@ -216,6 +220,8 @@ router.get('/:category/compare', async (req, res) => {
   try {
     const { category } = req.params;
     const { location, date_range, limit } = req.query;
+    const disableApyflux = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase()) || config.sources?.disableApyfluxByDefault;
+    const disablePerplexity = ['true', '1', 'yes'].includes(String(req.query.disable_perplexity || '').toLowerCase()) || config.sources?.disablePerplexityByDefault;
     
     // Validate required parameters
     if (!location) {
@@ -238,44 +244,50 @@ router.get('/:category/compare', async (req, res) => {
 
     // Run both APIs in parallel
     const [perplexityResult, apyfluxResult] = await Promise.allSettled([
-      // Perplexity via EventPipeline
-      eventPipeline.collectEvents({
-        category,
-        location,
-        dateRange: date_range,
-        options: {
-          limit: eventLimit,
-          minConfidence: 0.5,
-          maxTokens: config.perplexity.maxTokens,
-          temperature: config.perplexity.temperature
-        }
-      }),
+      // Perplexity via EventPipeline (can be disabled)
+      (disablePerplexity
+        ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by flag', source: 'perplexity_api' })
+        : eventPipeline.collectEvents({
+            category,
+            location,
+            dateRange: date_range,
+            options: {
+              limit: eventLimit,
+              minConfidence: 0.5,
+              maxTokens: config.perplexity.maxTokens,
+              temperature: config.perplexity.temperature
+            }
+          }).then(result => ({ ...result, source: 'perplexity_api' }))
+      ),
       
       // Apyflux direct
-      apyfluxClient.searchEvents({
-        query: apyfluxClient.buildSearchQuery(category, location),
-        location,
-        category,
-        dateRange: date_range || 'next 30 days',
-        limit: eventLimit
-      }).then(result => {
-        if (result.success && result.events.length > 0) {
-          // Transform events to our standard format
-          const transformedEvents = result.events.map(event => 
-            apyfluxClient.transformEvent(event, category)
-          ).filter(event => event !== null);
-          
-          return {
-            success: true,
-            events: transformedEvents,
-            count: transformedEvents.length,
-            processingTime: result.processingTime,
-            source: 'apyflux_api',
-            requestId: result.requestId
-          };
-        }
-        return result;
-      })
+      (disableApyflux
+        ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by default', source: 'apyflux_api' })
+        : apyfluxClient.searchEvents({
+            query: apyfluxClient.buildSearchQuery(category, location),
+            location,
+            category,
+            dateRange: date_range || 'next 30 days',
+            limit: eventLimit
+          }).then(result => {
+            if (result.success && result.events.length > 0) {
+              // Transform events to our standard format
+              const transformedEvents = result.events.map(event => 
+                apyfluxClient.transformEvent(event, category)
+              ).filter(event => event !== null);
+              
+              return {
+                success: true,
+                events: transformedEvents,
+                count: transformedEvents.length,
+                processingTime: result.processingTime,
+                source: 'apyflux_api',
+                requestId: result.requestId
+              };
+            }
+            return { ...result, source: 'apyflux_api' };
+          })
+      )
     ]);
 
     const duration = Date.now() - startTime;
@@ -358,6 +370,7 @@ router.get('/all-categories', async (req, res) => {
   // Optional source toggles
   const disableApyflux = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase()) || config.sources?.disableApyfluxByDefault;
   const disablePredictHQ = ['true', '1', 'yes'].includes(String(req.query.disable_predicthq || '').toLowerCase()) || config.sources?.disablePredictHQByDefault;
+  const disablePerplexity = ['true', '1', 'yes'].includes(String(req.query.disable_perplexity || '').toLowerCase()) || config.sources?.disablePerplexityByDefault;
   
   try {
     const customPrompt = (custom_prompt || '').trim();
@@ -434,18 +447,21 @@ router.get('/all-categories', async (req, res) => {
       try {
         // Use the all-sources approach for comprehensive coverage
         const [perplexityResult, apyfluxResult, predictHQResult, exaResult, serpApiResult] = await Promise.allSettled([
-          // Perplexity via EventPipeline
-          eventPipeline.collectEvents({
-            category,
-            location,
-            dateRange: date_range,
-            options: {
-              limit: eventLimit,
-              minConfidence: 0.5,
-              maxTokens: config.perplexity.maxTokens,
-              temperature: config.perplexity.temperature
-            }
-          }),
+          // Perplexity via EventPipeline (can be disabled)
+          (disablePerplexity
+            ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by default', source: 'perplexity_api' })
+            : eventPipeline.collectEvents({
+                category,
+                location,
+                dateRange: date_range,
+                options: {
+                  limit: eventLimit,
+                  minConfidence: 0.5,
+                  maxTokens: config.perplexity.maxTokens,
+                  temperature: config.perplexity.temperature
+                }
+              })
+          ),
           
           // Apyflux direct
           (disableApyflux
@@ -689,6 +705,9 @@ router.get('/:category', async (req, res) => {
   try {
     const { category } = req.params;
     const { location, date_range, limit, min_confidence, custom_prompt } = req.query;
+    const disableApyflux = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase()) || config.sources?.disableApyfluxByDefault;
+    const disablePredictHQ = ['true', '1', 'yes'].includes(String(req.query.disable_predicthq || '').toLowerCase()) || config.sources?.disablePredictHQByDefault;
+    const disablePerplexity = ['true', '1', 'yes'].includes(String(req.query.disable_perplexity || '').toLowerCase());
     
     // Validate required parameters
     if (!location) {
@@ -750,62 +769,71 @@ router.get('/:category', async (req, res) => {
 
     // Collect events from all 5 sources in parallel
     const [perplexityResult, apyfluxResult, predictHQResult, exaResult, serpApiResult] = await Promise.allSettled([
-      // Perplexity via EventPipeline
-      eventPipeline.collectEvents({
-        category,
-        location,
-        dateRange: date_range,
-        options
-      }),
+      // Perplexity via EventPipeline (can be disabled)
+      (disablePerplexity
+        ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by flag', source: 'perplexity_api' })
+        : eventPipeline.collectEvents({
+            category,
+            location,
+            dateRange: date_range,
+            options
+          }).then(result => ({ ...result, source: 'perplexity_api' }))
+      ),
       
       // Apyflux direct
-      apyfluxClient.searchEvents({
-        query: apyfluxClient.buildSearchQuery(category, location),
-        location,
-        category,
-        dateRange: date_range || 'next 30 days',
-        limit: options.limit
-      }).then(result => {
-        if (result.success && result.events.length > 0) {
-          const transformedEvents = result.events.map(event => 
-            apyfluxClient.transformEvent(event, category)
-          ).filter(event => event !== null);
-          
-          return {
-            success: true,
-            events: transformedEvents,
-            count: transformedEvents.length,
-            processingTime: result.processingTime,
-            source: 'apyflux_api',
-            requestId: result.requestId
-          };
-        }
-        return result;
-      }),
+      (disableApyflux
+        ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by default', source: 'apyflux_api' })
+        : apyfluxClient.searchEvents({
+            query: apyfluxClient.buildSearchQuery(category, location),
+            location,
+            category,
+            dateRange: date_range || 'next 30 days',
+            limit: options.limit
+          }).then(result => {
+            if (result.success && result.events.length > 0) {
+              const transformedEvents = result.events.map(event => 
+                apyfluxClient.transformEvent(event, category)
+              ).filter(event => event !== null);
+              
+              return {
+                success: true,
+                events: transformedEvents,
+                count: transformedEvents.length,
+                processingTime: result.processingTime,
+                source: 'apyflux_api',
+                requestId: result.requestId
+              };
+            }
+            return { ...result, source: 'apyflux_api' };
+          })
+      ),
       
       // PredictHQ direct
-      predictHQClient.searchEvents({
-        category,
-        location,
-        dateRange: date_range || 'next 30 days',
-        limit: options.limit
-      }).then(result => {
-        if (result.success && result.events.length > 0) {
-          const transformedEvents = result.events.map(event => 
-            predictHQClient.transformEvent(event, category)
-          ).filter(event => event !== null);
-          
-          return {
-            success: true,
-            events: transformedEvents,
-            count: transformedEvents.length,
-            processingTime: result.processingTime,
-            source: 'predicthq_api',
-            totalAvailable: result.totalAvailable
-          };
-        }
-        return result;
-      }),
+      (disablePredictHQ
+        ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by default', source: 'predicthq_api' })
+        : predictHQClient.searchEvents({
+            category,
+            location,
+            dateRange: date_range || 'next 30 days',
+            limit: options.limit
+          }).then(result => {
+            if (result.success && result.events.length > 0) {
+              const transformedEvents = result.events.map(event => 
+                predictHQClient.transformEvent(event, category)
+              ).filter(event => event !== null);
+              
+              return {
+                success: true,
+                events: transformedEvents,
+                count: transformedEvents.length,
+                processingTime: result.processingTime,
+                source: 'predicthq_api',
+                totalAvailable: result.totalAvailable
+              };
+            }
+            return { ...result, source: 'predicthq_api' };
+          })
+      ),
       
       // Exa direct
       exaClient.searchEvents({
@@ -1185,6 +1213,7 @@ router.get('/:category/all-sources', async (req, res) => {
   // Optional source toggles
   const disableApyflux = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase()) || config.sources?.disableApyfluxByDefault;
   const disablePredictHQ = ['true', '1', 'yes'].includes(String(req.query.disable_predicthq || '').toLowerCase()) || config.sources?.disablePredictHQByDefault;
+  const disablePerplexity = ['true', '1', 'yes'].includes(String(req.query.disable_perplexity || '').toLowerCase()) || config.sources?.disablePerplexityByDefault;
   
   try {
     const eventLimit = Math.min(parseInt(limit) || 20, config.api.maxLimit);
@@ -1202,18 +1231,21 @@ router.get('/:category/all-sources', async (req, res) => {
     
     // Run all three APIs in parallel
     const [perplexityResult, apyfluxResult, predictHQResult] = await Promise.allSettled([
-      // Perplexity via EventPipeline
-      eventPipeline.collectEvents({
-        category,
-        location,
-        dateRange: date_range,
-        options: {
-          limit: eventLimit,
-          minConfidence: 0.5,
-          maxTokens: config.perplexity.maxTokens,
-          temperature: config.perplexity.temperature
-        }
-      }),
+      // Perplexity via EventPipeline (can be disabled)
+      (disablePerplexity
+        ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by flag', source: 'perplexity_api' })
+        : eventPipeline.collectEvents({
+            category,
+            location,
+            dateRange: date_range,
+            options: {
+              limit: eventLimit,
+              minConfidence: 0.5,
+              maxTokens: config.perplexity.maxTokens,
+              temperature: config.perplexity.temperature
+            }
+          })
+      ),
       
       // Apyflux direct
       (disableApyflux

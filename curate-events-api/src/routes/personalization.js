@@ -227,10 +227,14 @@ class PersonalizationEngine {
         const categoryLimit = Math.ceil(eventsPerCategory * (rating / 5.0));
         
         // Collect from multiple sources in parallel
-        // Apyflux disabled; using PredictHQ instead for comparison
+        // Sources disabled by default via config; override by editing config.sources
+        const disablePredictHQ = config.sources?.disablePredictHQByDefault === true;
         const [perplexityResult, predicthqResult] = await Promise.allSettled([
           this.collectFromPerplexity(category, location, dateRange, categoryLimit, searchStrategy),
-          this.collectFromPredictHQ(category, location, dateRange, categoryLimit, searchStrategy)
+          (disablePredictHQ
+            ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by default', source: 'predicthq' })
+            : this.collectFromPredictHQ(category, location, dateRange, categoryLimit, searchStrategy)
+          )
         ]);
         
         // Process results

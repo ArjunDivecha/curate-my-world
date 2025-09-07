@@ -27,9 +27,10 @@ export class EventDeduplicator {
   constructor() {
     // Source priority (higher number = higher priority)
     this.sourcePriority = {
-      'apyflux_api': 10,     // Structured API data has highest priority
-      'perplexity_ai': 8,    // AI-parsed data from web search
-      'manual': 5            // Manual entry
+      'apyflux_api': 10,       // Structured API data has highest priority
+      'predicthq_api': 9,      // PredictHQ structured data
+      'perplexity_api': 8,     // AI-parsed data from web search
+      'manual': 5              // Manual entry
     };
     
     // Similarity thresholds
@@ -350,7 +351,8 @@ export class EventDeduplicator {
     const sourceStats = {};
     
     eventLists.forEach((eventList, index) => {
-      const sourceName = eventList.source || `source_${index}`;
+      const derivedSource = (eventList && eventList.events && eventList.events[0] && eventList.events[0].source) || null;
+      const sourceName = eventList.source || derivedSource || `source_${index}`;
       sourceStats[sourceName] = {
         originalCount: eventList.events?.length || 0,
         survivedCount: 0,

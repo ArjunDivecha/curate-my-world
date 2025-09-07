@@ -83,7 +83,9 @@ export const config = {
   sources: {
     // Disable external paid providers by default; can be overridden per-request
     disableApyfluxByDefault: true,
-    disablePredictHQByDefault: true
+    disablePredictHQByDefault: true,
+    // Also disable Perplexity by default when measuring alternatives
+    disablePerplexityByDefault: true
   },
   
   // Perplexity API defaults
