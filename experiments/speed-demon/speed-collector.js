@@ -111,14 +111,17 @@ async function serperSearch(query, num=20){
 function extractFromExa(result, category){
   const content = result.summary || result.text || '';
   const url = result.url;
+  const hv = guessVenueFromHost(url);
+  const vFromTitle = extractVenueFromTitle(result.title || '');
+  const vFromText = extractVenueFromText(content || '');
   return {
     id: `exa_${result.id}`,
     title: result.title || '(untitled)',
     description: content || '',
     category,
-    venue: '',
+    venue: hv.venue || vFromTitle || vFromText || '',
     address: '',
-    city: '',
+    city: hv.city || '',
     startDate: null,
     endDate: null,
     eventUrl: url,
@@ -128,14 +131,17 @@ function extractFromExa(result, category){
 }
 
 function extractFromSerper(item, category){
+  const hv = guessVenueFromHost(item.url || '');
+  const vFromTitle = extractVenueFromTitle(item.title || '');
+  const vFromText = extractVenueFromText(item.snippet || '');
   return {
     id: `serper_${normUrl(item.url)}`,
     title: item.title || '(untitled)',
     description: item.snippet || '',
     category,
-    venue: '',
+    venue: hv.venue || vFromTitle || vFromText || '',
     address: '',
-    city: '',
+    city: hv.city || '',
     startDate: null,
     endDate: null,
     eventUrl: item.url,
@@ -231,6 +237,52 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   runSpeedDemon({}).then(r=>{
     const outDir=path.join(process.cwd(),'outputs');
     if(!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive:true });
+// Heuristics to improve venue extraction so the UI doesn't show "Venue TBD"
+const HOST_VENUES = {
+  'roxie.com': { venue: 'Roxie Theater', city: 'San Francisco' },
+  'www.sfmoma.org': { venue: 'SFMOMA', city: 'San Francisco' },
+  'sfmoma.org': { venue: 'SFMOMA', city: 'San Francisco' },
+  'thegreekberkeley.com': { venue: 'Greek Theatre', city: 'Berkeley' },
+  'www.sfsymphony.org': { venue: 'San Francisco Symphony', city: 'San Francisco' },
+  'www.berkeleyrep.org': { venue: 'Berkeley Repertory Theatre', city: 'Berkeley' },
+  'www.commonwealthclub.org': { venue: 'The Commonwealth Club', city: 'San Francisco' },
+  'sfjazz.org': { venue: 'SFJAZZ Center', city: 'San Francisco' },
+  'san-francisco.playhouse.co': { venue: 'San Francisco Playhouse', city: 'San Francisco' },
+  'bampfa.org': { venue: 'BAMPFA', city: 'Berkeley' },
+  'events.stanford.edu': { venue: 'Stanford University', city: 'Stanford' },
+  'haas.berkeley.edu': { venue: 'Haas School of Business', city: 'Berkeley' },
+  'shotgunplayers.org': { venue: 'Shotgun Players', city: 'Berkeley' },
+  'thenewparkway.com': { venue: 'The New Parkway Theater', city: 'Oakland' },
+  'thefreight.org': { venue: 'Freight & Salvage', city: 'Berkeley' }
+};
+
+function guessVenueFromHost(u){
+  try {
+    const h = new URL(u).hostname.toLowerCase();
+    if (HOST_VENUES[h]) return HOST_VENUES[h];
+  } catch {}
+  return { venue: '', city: '' };
+}
+
+function extractVenueFromTitle(title=''){
+  const t = String(title);
+  // Patterns like "Event - Venue", "Event at Venue"
+  let m = t.match(/\s+-\s+([^\-|•]+)$/);
+  if (m && m[1] && m[1].trim().length > 2) return m[1].trim();
+  m = t.match(/\bat\s+([^\-•|,]+)$/i);
+  if (m && m[1] && m[1].trim().length > 2) return m[1].trim();
+  return '';
+}
+
+function extractVenueFromText(text=''){
+  const s = String(text);
+  // Common labels in content
+  let m = s.match(/(?:Venue|Location)[:\s]+([^\n,|]+?)(?:,|\n|$)/i);
+  if (m && m[1] && m[1].trim().length > 2) return m[1].trim();
+  m = s.match(/\bat\s+([A-Z][A-Za-z0-9&' .-]{3,60})/);
+  if (m && m[1]) return m[1].trim();
+  return '';
+}
     const ts=new Date().toISOString().replace(/[:.]/g,'-');
     const fp=path.join(outDir, `speed_demon_events_${ts}.json`);
     fs.writeFileSync(fp, JSON.stringify(r, null, 2));

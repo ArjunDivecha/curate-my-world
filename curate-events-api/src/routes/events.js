@@ -388,10 +388,20 @@ router.get('/all-categories', async (req, res) => {
           ].includes(cat.name))
           .map(cat => cat.name);
 
-        const u = new URL('/super-hybrid/search', config.superHybrid.url);
+        // First, fetch TURBO results for fast initial response (unless full=1)
+        const isFull = String(req.query.full || '').toLowerCase() === '1';
+        const u = new URL(isFull ? '/super-hybrid/search' : '/super-hybrid/turbo', config.superHybrid.url);
         u.searchParams.set('location', String(location));
         u.searchParams.set('limit', String(eventLimit));
-        u.searchParams.set('categories', supportedCategories.join(','));
+        if (isFull) {
+          const supportedCategories = categoryManager.getSupportedCategories()
+            .filter(cat => [
+              'theatre', 'music', 'art', 'food', 'tech', 'education', 'movies',
+              'technology', 'finance', 'psychology', 'artificial-intelligence', 'business', 'science'
+            ].includes(cat.name))
+            .map(cat => cat.name);
+          u.searchParams.set('categories', supportedCategories.join(','));
+        }
 
         const shRes = await fetch(u.toString());
         if (!shRes.ok) {
@@ -446,6 +456,7 @@ router.get('/all-categories', async (req, res) => {
             categoriesFetched: Object.keys(eventsByCategory).length,
             customMode: false,
             superHybrid: true,
+            stage: isFull ? 'full' : 'turbo',
             requestId: `sh_all_categories_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
           }
         };

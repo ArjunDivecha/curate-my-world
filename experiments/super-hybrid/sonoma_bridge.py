@@ -48,12 +48,43 @@ def main():
         total_time += stats.get('duration', 0)
         total_cost += stats.get('estimated_cost', 0)
         for ev in events:
+            # attempt venue enrichment from URL or title/description
+            venue = (ev.venue or '').strip()
+            try:
+                from urllib.parse import urlparse
+                host = urlparse(ev.source_url or '').hostname or ''
+            except Exception:
+                host = ''
+            host = host.lower()
+            HOST_VENUES = {
+                'roxie.com': ('Roxie Theater','San Francisco'),
+                'www.sfmoma.org': ('SFMOMA','San Francisco'),
+                'sfmoma.org': ('SFMOMA','San Francisco'),
+                'thegreekberkeley.com': ('Greek Theatre','Berkeley'),
+                'www.sfsymphony.org': ('San Francisco Symphony','San Francisco'),
+                'www.berkeleyrep.org': ('Berkeley Repertory Theatre','Berkeley'),
+                'www.commonwealthclub.org': ('The Commonwealth Club','San Francisco'),
+                'sfjazz.org': ('SFJAZZ Center','San Francisco'),
+                'bampfa.org': ('BAMPFA','Berkeley'),
+                'events.stanford.edu': ('Stanford University','Stanford'),
+                'haas.berkeley.edu': ('Haas School of Business','Berkeley'),
+                'shotgunplayers.org': ('Shotgun Players','Berkeley'),
+                'thenewparkway.com': ('The New Parkway Theater','Oakland'),
+                'thefreight.org': ('Freight & Salvage','Berkeley')
+            }
+            if not venue and host in HOST_VENUES:
+                venue, _city = HOST_VENUES[host]
+            if not venue:
+                import re
+                m = re.search(r"\bat\s+([^\-•|,]+)$", ev.title or '', re.I)
+                if m:
+                    venue = m.group(1).strip()
             all_events.append({
                 "id": f"sonoma_{ev.fingerprint()}",
                 "title": ev.title or "",
                 "description": (ev.description or "")[:500],
                 "category": cat,
-                "venue": ev.venue or "",
+                "venue": venue or "",
                 "address": "",
                 "city": ev.search_location or "",
                 "startDate": ev.date or "",
@@ -74,4 +105,3 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
-
