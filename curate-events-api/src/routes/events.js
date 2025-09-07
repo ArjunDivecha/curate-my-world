@@ -77,7 +77,10 @@ router.get('/:category/combined', async (req, res) => {
       limit: eventLimit
     });
 
-    // Run both APIs in parallel
+    // Optional source toggles
+    const disableApyflux = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase()) || config.sources?.disableApyfluxByDefault;
+
+    // Run both APIs in parallel (Apyflux optionally disabled)
     const [perplexityResult, apyfluxResult] = await Promise.allSettled([
       // Perplexity via EventPipeline
       eventPipeline.collectEvents({
@@ -90,40 +93,44 @@ router.get('/:category/combined', async (req, res) => {
           maxTokens: config.perplexity.maxTokens,
           temperature: config.perplexity.temperature
         }
-      }),
+      }).then(result => ({ ...result, source: 'perplexity_api' })),
       
       // Apyflux direct
-      apyfluxClient.searchEvents({
-        query: apyfluxClient.buildSearchQuery(category, location),
-        location,
-        category,
-        dateRange: date_range || 'next 30 days',
-        limit: eventLimit
-      }).then(result => {
-        if (result.success && result.events.length > 0) {
-          // Transform events to our standard format
-          const transformedEvents = result.events.map(event => 
-            apyfluxClient.transformEvent(event, category)
-          ).filter(event => event !== null);
-          
-          return {
-            success: true,
-            events: transformedEvents,
-            count: transformedEvents.length,
-            processingTime: result.processingTime,
-            source: 'apyflux_api',
-            requestId: result.requestId
-          };
-        }
-        return result;
-      })
+      (disableApyflux
+        ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by default', source: 'apyflux_api' })
+        : apyfluxClient.searchEvents({
+            query: apyfluxClient.buildSearchQuery(category, location),
+            location,
+            category,
+            dateRange: date_range || 'next 30 days',
+            limit: eventLimit
+          }).then(result => {
+            if (result.success && result.events.length > 0) {
+              // Transform events to our standard format
+              const transformedEvents = result.events.map(event => 
+                apyfluxClient.transformEvent(event, category)
+              ).filter(event => event !== null);
+              
+              return {
+                success: true,
+                events: transformedEvents,
+                count: transformedEvents.length,
+                processingTime: result.processingTime,
+                source: 'apyflux_api',
+                requestId: result.requestId
+              };
+            }
+            return { ...result, source: 'apyflux_api' };
+          })
+      )
     ]);
 
     // Prepare event lists for deduplication
     const eventLists = [];
     
     if (perplexityResult.status === 'fulfilled' && perplexityResult.value.success) {
-      eventLists.push(perplexityResult.value);
+      const pr = { ...perplexityResult.value, source: 'perplexity_api' };
+      eventLists.push(pr);
     }
     
     if (apyfluxResult.status === 'fulfilled' && apyfluxResult.value.success) {
@@ -349,8 +356,8 @@ router.get('/all-categories', async (req, res) => {
   logRequest(logger, req, 'allCategoriesEvents', { location, date_range, limit });
 
   // Optional source toggles
-  const disableApyflux = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase());
-  const disablePredictHQ = ['true', '1', 'yes'].includes(String(req.query.disable_predicthq || '').toLowerCase());
+  const disableApyflux = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase()) || config.sources?.disableApyfluxByDefault;
+  const disablePredictHQ = ['true', '1', 'yes'].includes(String(req.query.disable_predicthq || '').toLowerCase()) || config.sources?.disablePredictHQByDefault;
   
   try {
     const customPrompt = (custom_prompt || '').trim();
@@ -514,7 +521,8 @@ router.get('/all-categories', async (req, res) => {
         const eventLists = [];
         
         if (perplexityResult.status === 'fulfilled' && perplexityResult.value.success) {
-          eventLists.push(perplexityResult.value);
+          const pr = { ...perplexityResult.value, source: 'perplexity_api' };
+          eventLists.push(pr);
         }
         
         if (apyfluxResult.status === 'fulfilled' && apyfluxResult.value.success) {
@@ -1175,8 +1183,8 @@ router.get('/:category/all-sources', async (req, res) => {
   logRequest(logger, req, 'allSourcesEvents', { category, location, date_range, limit });
 
   // Optional source toggles
-  const disableApyflux = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase());
-  const disablePredictHQ = ['true', '1', 'yes'].includes(String(req.query.disable_predicthq || '').toLowerCase());
+  const disableApyflux = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase()) || config.sources?.disableApyfluxByDefault;
+  const disablePredictHQ = ['true', '1', 'yes'].includes(String(req.query.disable_predicthq || '').toLowerCase()) || config.sources?.disablePredictHQByDefault;
   
   try {
     const eventLimit = Math.min(parseInt(limit) || 20, config.api.maxLimit);
@@ -1268,7 +1276,8 @@ router.get('/:category/all-sources', async (req, res) => {
     const sourceStats = {};
     
     if (perplexityResult.status === 'fulfilled' && perplexityResult.value.success) {
-      eventLists.push(perplexityResult.value);
+      const pr = { ...perplexityResult.value, source: 'perplexity_api' };
+      eventLists.push(pr);
       sourceStats.perplexity = {
         count: perplexityResult.value.events.length,
         processingTime: perplexityResult.value.processingTime

@@ -78,6 +78,13 @@ export const config = {
     includeMetadata: true,
     includeDebugInfo: nodeEnv === 'development'
   },
+
+  // Source toggles (defaults)
+  sources: {
+    // Disable external paid providers by default; can be overridden per-request
+    disableApyfluxByDefault: true,
+    disablePredictHQByDefault: true
+  },
   
   // Perplexity API defaults
   perplexity: {
@@ -101,19 +108,23 @@ export const config = {
  * Validate required configuration
  */
 export function validateConfig() {
-  const required = [
-    'perplexityApiKey',
-    'apyfluxApiKey', 
-    'apyfluxAppId', 
-    'apyfluxClientId',
-    'predictHQApiKey',
-    'exaApiKey',
-    'serperApiKey'
+  // Only the Perplexity key is strictly required for startup
+  const critical = ['perplexityApiKey'];
+  const missingCritical = critical.filter(key => !config[key]);
+
+  if (missingCritical.length > 0) {
+    throw new Error(`Missing required API keys: ${missingCritical.join(', ')}`);
+  }
+
+  // Warn (do not block) when optional provider keys are missing
+  const optional = [
+    'apyfluxApiKey', 'apyfluxAppId', 'apyfluxClientId',
+    'predictHQApiKey', 'exaApiKey', 'serperApiKey',
+    'ticketmasterConsumerKey', 'ticketmasterConsumerSecret'
   ];
-  const missing = required.filter(key => !config[key]);
-  
-  if (missing.length > 0) {
-    throw new Error(`Missing required API keys: ${missing.join(', ')}`);
+  const missingOptional = optional.filter(key => !config[key]);
+  if (missingOptional.length > 0) {
+    console.warn(`Optional provider keys missing (features disabled by default): ${missingOptional.join(', ')}`);
   }
   
   // Validate API key formats

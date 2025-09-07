@@ -227,9 +227,10 @@ class PersonalizationEngine {
         const categoryLimit = Math.ceil(eventsPerCategory * (rating / 5.0));
         
         // Collect from multiple sources in parallel
-        const [perplexityResult, apyfluxResult] = await Promise.allSettled([
+        // Apyflux disabled; using PredictHQ instead for comparison
+        const [perplexityResult, predicthqResult] = await Promise.allSettled([
           this.collectFromPerplexity(category, location, dateRange, categoryLimit, searchStrategy),
-          this.collectFromApyflux(category, location, dateRange, categoryLimit, searchStrategy)
+          this.collectFromPredictHQ(category, location, dateRange, categoryLimit, searchStrategy)
         ]);
         
         // Process results
@@ -238,7 +239,7 @@ class PersonalizationEngine {
           userRating: rating,
           sources: {
             perplexity: this.processSourceResult(perplexityResult, 'perplexity'),
-            apyflux: this.processSourceResult(apyfluxResult, 'apyflux')
+            predicthq: this.processSourceResult(predicthqResult, 'predicthq')
           }
         };
         
@@ -313,6 +314,33 @@ class PersonalizationEngine {
       dateRange,
       limit
     });
+  }
+
+  /**
+   * Collect events from PredictHQ and normalize
+   */
+  async collectFromPredictHQ(category, location, dateRange, limit, searchStrategy) {
+    const result = await predictHQClient.searchEvents({
+      category,
+      location,
+      dateRange,
+      limit
+    });
+
+    // Normalize to our internal event shape if successful
+    if (result.success && Array.isArray(result.events)) {
+      const normalized = result.events
+        .map(e => predictHQClient.transformEvent(e, category))
+        .filter(Boolean);
+      return {
+        ...result,
+        events: normalized,
+        count: normalized.length,
+        source: 'predicthq'
+      };
+    }
+
+    return result;
   }
 
   /**
@@ -525,6 +553,15 @@ class PersonalizationEngine {
             return sourceSum + (source.count || 0);
           }, 0);
         }, 0),
+        source_counts: (() => {
+          const bySource = {};
+          for (const cat of eventCollectionResults) {
+            for (const [name, src] of Object.entries(cat.sources)) {
+              bySource[name] = (bySource[name] || 0) + (src.count || 0);
+            }
+          }
+          return bySource;
+        })(),
         events_after_personalization: personalizedEvents.length,
         quality_threshold_applied: curationParams.quality_threshold
       },
