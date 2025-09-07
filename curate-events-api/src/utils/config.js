@@ -79,6 +79,12 @@ export const config = {
     includeDebugInfo: nodeEnv === 'development'
   },
 
+  // Super-Hybrid experiment integration (no frontend changes)
+  superHybrid: {
+    url: process.env.SUPER_HYBRID_URL || 'http://127.0.0.1:8799',
+    enabledByDefault: ['1','true','yes'].includes(String(process.env.SUPER_HYBRID_DEFAULT || '').toLowerCase())
+  },
+
   // Source toggles (defaults)
   sources: {
     // Disable external paid providers by default; can be overridden per-request

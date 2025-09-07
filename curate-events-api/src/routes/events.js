@@ -371,8 +371,90 @@ router.get('/all-categories', async (req, res) => {
   const disableApyflux = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase()) || config.sources?.disableApyfluxByDefault;
   const disablePredictHQ = ['true', '1', 'yes'].includes(String(req.query.disable_predicthq || '').toLowerCase()) || config.sources?.disablePredictHQByDefault;
   const disablePerplexity = ['true', '1', 'yes'].includes(String(req.query.disable_perplexity || '').toLowerCase()) || config.sources?.disablePerplexityByDefault;
+
+  // Super-Hybrid mode (no frontend changes required):
+  // If mode=super-hybrid or SUPER_HYBRID_DEFAULT=1, proxy to experiment server
+  const useSuperHybrid = String(req.query.mode || '').toLowerCase() === 'super-hybrid' || config.superHybrid?.enabledByDefault;
   
   try {
+    if (useSuperHybrid) {
+      try {
+        const eventLimit = Math.min(parseInt(limit) || 15, config.api.maxLimit);
+        // Determine supported categories same as legacy branch
+        const supportedCategories = categoryManager.getSupportedCategories()
+          .filter(cat => [
+            'theatre', 'music', 'art', 'food', 'tech', 'education', 'movies',
+            'technology', 'finance', 'psychology', 'artificial-intelligence', 'business', 'science'
+          ].includes(cat.name))
+          .map(cat => cat.name);
+
+        const u = new URL('/super-hybrid/search', config.superHybrid.url);
+        u.searchParams.set('location', String(location));
+        u.searchParams.set('limit', String(eventLimit));
+        u.searchParams.set('categories', supportedCategories.join(','));
+
+        const shRes = await fetch(u.toString());
+        if (!shRes.ok) {
+          const txt = await shRes.text();
+          throw new Error(`SuperHybrid HTTP ${shRes.status}: ${txt}`);
+        }
+        const sh = await shRes.json();
+
+        // Group by category to match current schema
+        const eventsByCategory = {};
+        const categoryStats = {};
+        const aggregatedProviderStats = {};
+        let totalEvents = 0;
+
+        (sh.events || []).forEach(ev => {
+          const cat = ev.category || 'general';
+          if (!eventsByCategory[cat]) eventsByCategory[cat] = [];
+          eventsByCategory[cat].push(ev);
+        });
+
+        Object.entries(eventsByCategory).forEach(([cat, list]) => {
+          categoryStats[cat] = { count: list.length, success: true, error: null, sourceStats: null, providerAttribution: null, totals: null };
+          totalEvents += list.length;
+          // Aggregate provider stats by ev.source
+          list.forEach(ev => {
+            const p = ev.source || 'unknown';
+            if (!aggregatedProviderStats[p]) aggregatedProviderStats[p] = { originalCount: 0, survivedCount: 0, duplicatesRemoved: 0 };
+            aggregatedProviderStats[p].originalCount++;
+            aggregatedProviderStats[p].survivedCount++;
+          });
+        });
+
+        // Finalize dup removed as 0 (already deduped on SH side)
+        Object.keys(aggregatedProviderStats).forEach(p => {
+          const s = aggregatedProviderStats[p];
+          s.duplicatesRemoved = Math.max(0, (s.originalCount || 0) - (s.survivedCount || 0));
+        });
+
+        const duration = Date.now() - startTime;
+        const response = {
+          success: true,
+          eventsByCategory,
+          categoryStats,
+          totalEvents,
+          categories: Object.keys(eventsByCategory),
+          providerStats: aggregatedProviderStats,
+          processingTime: duration,
+          metadata: {
+            location,
+            dateRange: date_range || 'next 30 days',
+            limitPerCategory: eventLimit,
+            categoriesFetched: Object.keys(eventsByCategory).length,
+            customMode: false,
+            superHybrid: true,
+            requestId: `sh_all_categories_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          }
+        };
+        return res.json(response);
+      } catch (error) {
+        logger.error('Super-Hybrid proxy error', { error: error.message });
+        // Fall through to legacy behavior if SH fails
+      }
+    }
     const customPrompt = (custom_prompt || '').trim();
     const isCustomMode = customPrompt.length > 0;
     const eventLimit = Math.min(parseInt(limit) || 15, config.api.maxLimit);
