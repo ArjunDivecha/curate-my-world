@@ -106,6 +106,10 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
     });
   };
 
+  // Determine API base for preview endpoint
+  const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL 
+    || (import.meta.env.MODE === 'development' ? 'http://127.0.0.1:8765/api' : '/api');
+
   const handleExternalCalendarSave = (calendarType: 'google' | 'outlook' | 'apple' | 'download') => {
     // Convert event to calendar format
     const calendarEvent = {
@@ -317,11 +321,10 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
                   <p className="text-sm text-gray-600 mt-1 truncate">{event.eventUrl || event.ticketUrl}</p>
                 </div>
                 <div className="h-[70vh] bg-gray-50">
-                  <iframe 
-                    src={event.eventUrl || event.ticketUrl}
+                  <iframe
+                    src={`${API_BASE}/preview?url=${encodeURIComponent(event.eventUrl || event.ticketUrl || '')}`}
                     className="w-full h-full border-0"
                     title={`Preview of ${event.title}`}
-                    sandbox="allow-scripts allow-same-origin allow-forms"
                   />
                 </div>
               </div>
