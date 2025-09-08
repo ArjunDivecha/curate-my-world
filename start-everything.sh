@@ -24,12 +24,53 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}🎭 Curate My World - One-Step Startup${NC}"
 echo "========================================"
 
-# Kill any existing processes
+########################################
+# Clean up any existing processes
+########################################
 echo -e "${YELLOW}🧹 Cleaning up existing processes...${NC}"
+# Kill experiment server on SH port first (less collateral)
+if command -v lsof >/dev/null 2>&1; then
+  lsof -ti:8799 -sTCP:LISTEN | xargs -r kill -9 2>/dev/null || true
+fi
+pkill -f "experiments/super-hybrid/server.js" 2>/dev/null || true
 pkill -f "node.*server.js" 2>/dev/null || true
 pkill -f "vite" 2>/dev/null || true
 pkill -f "npm.*dev" 2>/dev/null || true
-sleep 2
+sleep 1
+
+########################################
+# Super-Hybrid tuning (coverage mode)
+########################################
+# Provider toggles and per-query sizes. Adjust to control coverage/cost.
+export EXA_ENABLED=${EXA_ENABLED:-1}
+export SERPER_ENABLED=${SERPER_ENABLED:-1}
+export VENUE_EXA_ENABLED=${VENUE_EXA_ENABLED:-1}
+export EXA_RESULTS_PER_QUERY=${EXA_RESULTS_PER_QUERY:-100}
+export SERPER_RESULTS_PER_QUERY=${SERPER_RESULTS_PER_QUERY:-100}
+# Keep content fetching off for speed/cost; flip to 1 if needed
+export EXA_INCLUDE_CONTENT=${EXA_INCLUDE_CONTENT:-0}
+
+########################################
+# Start Super-Hybrid experiment server
+########################################
+echo -e "${YELLOW}🧪 Starting Super-Hybrid server (turbo + Sonoma)...${NC}"
+pushd "experiments/super-hybrid" >/dev/null
+nohup node server.js > server.log 2>&1 &
+SH_PID=$!
+popd >/dev/null
+
+# Wait for Super-Hybrid to be ready
+for i in {1..10}; do
+  if curl -s http://127.0.0.1:8799/health > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ Super-Hybrid ready on http://127.0.0.1:8799${NC}"
+    break
+  fi
+  if [ $i -eq 10 ]; then
+    echo -e "${RED}❌ Super-Hybrid server failed to start${NC}"
+    # Do not exit; API can still fall back to turbo-only
+  fi
+  sleep 1
+done
 
 # Start API server
 echo -e "${YELLOW}🚀 Starting API server...${NC}"
@@ -40,6 +81,7 @@ if [ -f ".env" ]; then
   export $(grep -v '^#' .env | xargs)
 fi
 
+mkdir -p logs
 nohup node server.js > logs/combined.log 2>&1 &
 API_PID=$!
 echo $API_PID > curate-events-api.pid
@@ -81,6 +123,7 @@ done
 
 # Save PIDs for cleanup
 cat > .running_processes << EOF
+SH_PID=$SH_PID
 API_PID=$API_PID
 FRONTEND_PID=$FRONTEND_PID
 EOF
@@ -100,6 +143,7 @@ echo -e "${BLUE}📊 Services:${NC}"
 echo "  Frontend: http://localhost:8766"
 echo "  API:      http://127.0.0.1:8765"
 echo "  Health:   http://127.0.0.1:8765/api/health"
+echo "  Super-Hybrid: http://127.0.0.1:8799 (health, /super-hybrid/search)"
 echo ""
 echo -e "${BLUE}🛑 To stop everything:${NC}"
 echo "  ./stop-everything.sh"

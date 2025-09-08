@@ -48,8 +48,9 @@ const LIMIT_PER_CATEGORY = parseInt(process.env.LIMIT_PER_CATEGORY || '100', 10)
 const CONCURRENCY = parseInt(process.env.CONCURRENCY || '16', 10);
 const EXA_COST_PER_CALL = Number(process.env.EXA_COST_PER_CALL_USD || 0.005);
 const SERPER_COST_PER_CALL = Number(process.env.SERPER_COST_PER_CALL_USD || 0.002);
-const EXA_RESULTS_PER_QUERY = parseInt(process.env.EXA_RESULTS_PER_QUERY || '10', 10);
-const SERPER_RESULTS_PER_QUERY = parseInt(process.env.SERPER_RESULTS_PER_QUERY || '20', 10);
+// Defaults tuned for coverage; adjust via env to manage spend
+const EXA_RESULTS_PER_QUERY = parseInt(process.env.EXA_RESULTS_PER_QUERY || '100', 10);
+const SERPER_RESULTS_PER_QUERY = parseInt(process.env.SERPER_RESULTS_PER_QUERY || '100', 10);
 const EXA_INCLUDE_CONTENT = ['1','true','yes'].includes(String(process.env.EXA_INCLUDE_CONTENT||'0').toLowerCase());
 
 const DEFAULT_CATEGORIES = [
@@ -182,11 +183,13 @@ function toCsvRow(fields){
 
 async function exaSearch(query, numResults=20){
   if (!EXA_ENABLED || !EXA_API_KEY) return [];
+  // Guardrail: most plans cap numResults at <= 100
+  const safeNum = Math.max(1, Math.min(Number(numResults)||20, 100));
   const payload = {
     query,
     type: 'fast',
     livecrawl: 'never',
-    numResults
+    numResults: safeNum
   };
   if (EXA_INCLUDE_CONTENT) {
     payload.contents = {

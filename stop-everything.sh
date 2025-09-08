@@ -27,6 +27,12 @@ echo "==============================="
 if [ -f ".running_processes" ]; then
   source .running_processes
   
+  # Stop Super-Hybrid server
+  if [ ! -z "$SH_PID" ] && ps -p $SH_PID > /dev/null 2>&1; then
+    echo -e "${YELLOW}🛑 Stopping Super-Hybrid (PID: $SH_PID)...${NC}"
+    kill -TERM $SH_PID 2>/dev/null || true
+  fi
+  
   # Stop API server
   if [ ! -z "$API_PID" ] && ps -p $API_PID > /dev/null 2>&1; then
     echo -e "${YELLOW}🛑 Stopping API server (PID: $API_PID)...${NC}"
@@ -44,12 +50,16 @@ fi
 
 # Kill any remaining processes
 echo -e "${YELLOW}🧹 Cleaning up remaining processes...${NC}"
+if command -v lsof >/dev/null 2>&1; then
+  lsof -ti:8799 -sTCP:LISTEN | xargs -r kill -9 2>/dev/null || true
+fi
 pkill -f "node.*server.js" 2>/dev/null || true
 pkill -f "vite" 2>/dev/null || true  
 pkill -f "npm.*dev" 2>/dev/null || true
 
 # Remove PID files
 rm -f curate-events-api/curate-events-api.pid
+rm -f experiments/super-hybrid/super-hybrid.pid
 
 echo -e "${GREEN}✅ All services stopped${NC}"
 echo -e "${BLUE}Ready for restart with ./start-everything.sh${NC}"
