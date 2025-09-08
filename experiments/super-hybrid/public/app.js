@@ -10,12 +10,47 @@
     const d = document.createElement('div');
     d.className = 'card';
     const url = e.eventUrl || e.ticketUrl || '';
+    let actions = '';
+    try {
+      const u = new URL(url);
+      const domain = u.hostname;
+      const path = u.pathname || '/';
+      const esc = (s) => s.replace(/"/g,'&quot;');
+      actions = `
+        <div class="row" style="margin-top:8px; gap:6px;">
+          <button class="wl" data-domain="${esc(domain)}">Whitelist Domain</button>
+          <button class="blp" data-domain="${esc(domain)}" data-path="${esc(path)}">Blacklist Path</button>
+          <button class="bld" data-domain="${esc(domain)}">Blacklist Domain</button>
+        </div>
+      `;
+    } catch {}
     d.innerHTML = `
       <div class="title">${escapeHtml(e.title || '(untitled)')}</div>
       <div class="meta">${escapeHtml(e.category || '')} • ${escapeHtml(e.startDate || '')}</div>
       <div class="meta"><span class="src">${escapeHtml(e.source || '')}</span> • ${escapeHtml(urlHost(url))}</div>
       ${url ? `<div class="link"><a href="${url}" target="_blank" rel="noopener">${escapeHtml(url)}</a></div>` : ''}
+      ${actions}
     `;
+    // Attach actions if present
+    d.querySelectorAll('button.wl').forEach(btn => btn.addEventListener('click', async (ev)=>{
+      const domain = btn.getAttribute('data-domain');
+      await fetch('/rules/whitelist', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ domain }) });
+      alert(`Whitelisted ${domain}`);
+    }));
+    d.querySelectorAll('button.blp').forEach(btn => btn.addEventListener('click', async (ev)=>{
+      const domain = btn.getAttribute('data-domain');
+      const path = btn.getAttribute('data-path');
+      const rx = prompt(`Blacklist path regex for ${domain}`, `^${path.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}$`);
+      if (!rx) return;
+      await fetch('/rules/blacklist', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ domain, mode:'path', path: rx }) });
+      alert(`Blacklisted path pattern on ${domain}`);
+    }));
+    d.querySelectorAll('button.bld').forEach(btn => btn.addEventListener('click', async (ev)=>{
+      const domain = btn.getAttribute('data-domain');
+      if (!confirm(`Blacklist ENTIRE domain ${domain}?`)) return;
+      await fetch('/rules/blacklist', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ domain, mode:'domain' }) });
+      alert(`Blacklisted domain ${domain}`);
+    }));
     return d;
   }
 
@@ -92,4 +127,3 @@
   btnJson.addEventListener('click', runJson);
   btnSse.addEventListener('click', runSse);
 })();
-

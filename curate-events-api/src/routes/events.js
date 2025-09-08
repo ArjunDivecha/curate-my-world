@@ -372,15 +372,16 @@ router.get('/all-categories', async (req, res) => {
   const disablePredictHQ = ['true', '1', 'yes'].includes(String(req.query.disable_predicthq || '').toLowerCase()) || config.sources?.disablePredictHQByDefault;
   const disablePerplexity = ['true', '1', 'yes'].includes(String(req.query.disable_perplexity || '').toLowerCase()) || config.sources?.disablePerplexityByDefault;
 
-  // Super-Hybrid mode (no frontend changes required):
-  // If mode=super-hybrid or SUPER_HYBRID_DEFAULT=1, proxy to experiment server
-  const useSuperHybrid = String(req.query.mode || '').toLowerCase() === 'super-hybrid' || config.superHybrid?.enabledByDefault;
+  // Super-Hybrid mode (Phase 1: Production Switch):
+  // Default to super-hybrid unless mode=legacy is specified
+  // Smart fallback to legacy if super-hybrid fails or returns insufficient results
+  const useLegacyMode = String(req.query.mode || '').toLowerCase() === 'legacy';
+  const useSuperHybrid = !useLegacyMode; // Default to super-hybrid
   
   try {
     if (useSuperHybrid) {
       try {
         const eventLimit = Math.min(parseInt(limit) || 15, config.api.maxLimit);
-        // Determine supported categories same as legacy branch
         const supportedCategories = categoryManager.getSupportedCategories()
           .filter(cat => [
             'theatre', 'music', 'art', 'food', 'tech', 'education', 'movies',
@@ -388,83 +389,100 @@ router.get('/all-categories', async (req, res) => {
           ].includes(cat.name))
           .map(cat => cat.name);
 
-        // First, fetch TURBO results for fast initial response (unless full=1)
-        const isFull = String(req.query.full || '').toLowerCase() === '1';
-        const u = new URL(isFull ? '/super-hybrid/search' : '/super-hybrid/turbo', config.superHybrid.url);
-        u.searchParams.set('location', String(location));
-        u.searchParams.set('limit', String(eventLimit));
-        if (isFull) {
-          const supportedCategories = categoryManager.getSupportedCategories()
-            .filter(cat => [
-              'theatre', 'music', 'art', 'food', 'tech', 'education', 'movies',
-              'technology', 'finance', 'psychology', 'artificial-intelligence', 'business', 'science'
-            ].includes(cat.name))
-            .map(cat => cat.name);
-          u.searchParams.set('categories', supportedCategories.join(','));
-        }
-
-        const shRes = await fetch(u.toString());
+        // First try FULL SEARCH mode (includes both speed-demon + Sonoma for 903+ events)
+        const fullUrl = new URL('/super-hybrid/search', config.superHybrid.url);
+        fullUrl.searchParams.set('location', String(location));
+        fullUrl.searchParams.set('limit', String(eventLimit));
+        fullUrl.searchParams.set('categories', supportedCategories.join(','));
+        logger.info('Attempting FULL SEARCH mode (speed-demon + Sonoma)', { 
+          component: 'EventsRoute', 
+          url: fullUrl.toString(),
+          timestamp: new Date().toISOString()
+        });
+        let shRes = await fetch(fullUrl.toString());
         if (!shRes.ok) {
-          const txt = await shRes.text();
-          throw new Error(`SuperHybrid HTTP ${shRes.status}: ${txt}`);
-        }
-        const sh = await shRes.json();
-
-        // Group by category to match current schema
-        const eventsByCategory = {};
-        const categoryStats = {};
-        const aggregatedProviderStats = {};
-        let totalEvents = 0;
-
-        (sh.events || []).forEach(ev => {
-          const cat = ev.category || 'general';
-          if (!eventsByCategory[cat]) eventsByCategory[cat] = [];
-          eventsByCategory[cat].push(ev);
-        });
-
-        Object.entries(eventsByCategory).forEach(([cat, list]) => {
-          categoryStats[cat] = { count: list.length, success: true, error: null, sourceStats: null, providerAttribution: null, totals: null };
-          totalEvents += list.length;
-          // Aggregate provider stats by ev.source
-          list.forEach(ev => {
-            const p = ev.source || 'unknown';
-            if (!aggregatedProviderStats[p]) aggregatedProviderStats[p] = { originalCount: 0, survivedCount: 0, duplicatesRemoved: 0 };
-            aggregatedProviderStats[p].originalCount++;
-            aggregatedProviderStats[p].survivedCount++;
+          logger.info('FULL SEARCH mode failed, falling back to turbo-only', { 
+            component: 'EventsRoute',
+            fullSearchStatus: shRes.status,
+            fullSearchStatusText: shRes.statusText,
+            timestamp: new Date().toISOString()
           });
-        });
-
-        // Finalize dup removed as 0 (already deduped on SH side)
-        Object.keys(aggregatedProviderStats).forEach(p => {
-          const s = aggregatedProviderStats[p];
-          s.duplicatesRemoved = Math.max(0, (s.originalCount || 0) - (s.survivedCount || 0));
-        });
-
-        const duration = Date.now() - startTime;
-        const response = {
-          success: true,
-          eventsByCategory,
-          categoryStats,
-          totalEvents,
-          categories: Object.keys(eventsByCategory),
-          providerStats: aggregatedProviderStats,
-          processingTime: duration,
-          metadata: {
-            location,
-            dateRange: date_range || 'next 30 days',
-            limitPerCategory: eventLimit,
-            categoriesFetched: Object.keys(eventsByCategory).length,
-            customMode: false,
-            superHybrid: true,
-            stage: isFull ? 'full' : 'turbo',
-            requestId: `sh_all_categories_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          // Fallback to turbo-only mode
+          const turboUrl = new URL('/super-hybrid/turbo', config.superHybrid.url);
+          turboUrl.searchParams.set('location', String(location));
+          turboUrl.searchParams.set('limit', String(eventLimit));
+          shRes = await fetch(turboUrl.toString());
+        } else {
+          logger.info('FULL SEARCH mode succeeded', { 
+            component: 'EventsRoute',
+            fullSearchStatus: shRes.status,
+            timestamp: new Date().toISOString()
+          });
+        }
+        if (shRes.ok) {
+          const sh = await shRes.json();
+          const eventsByCategory = {};
+          const categoryStats = {};
+          const aggregatedProviderStats = {};
+          let totalEvents = 0;
+          (sh.events || []).forEach(ev => {
+            const cat = ev.category || 'general';
+            if (!eventsByCategory[cat]) eventsByCategory[cat] = [];
+            eventsByCategory[cat].push(ev);
+          });
+          Object.entries(eventsByCategory).forEach(([cat, list]) => {
+            categoryStats[cat] = { count: list.length, success: true, error: null, sourceStats: null, providerAttribution: null, totals: null };
+            totalEvents += list.length;
+            list.forEach(ev => {
+              const p = ev.source || 'unknown';
+              if (!aggregatedProviderStats[p]) aggregatedProviderStats[p] = { originalCount: 0, survivedCount: 0, duplicatesRemoved: 0 };
+              aggregatedProviderStats[p].originalCount++;
+              aggregatedProviderStats[p].survivedCount++;
+            });
+          });
+          if (totalEvents >= 5) { // Require minimum 5 events for success
+            const duration = Date.now() - startTime;
+            logger.info('Super-hybrid mode success', { 
+              totalEvents, 
+              categories: Object.keys(eventsByCategory).length,
+              duration: `${duration}ms`
+            });
+            return res.json({
+              success: true,
+              eventsByCategory,
+              categoryStats,
+              totalEvents,
+              categories: Object.keys(eventsByCategory),
+              providerStats: aggregatedProviderStats,
+              processingTime: duration,
+              metadata: {
+                location,
+                dateRange: date_range || 'next 30 days',
+                limitPerCategory: eventLimit,
+                categoriesFetched: Object.keys(eventsByCategory).length,
+                customMode: false,
+                superHybrid: true,
+                requestId: `sh_all_categories_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+              }
+            });
+          } else {
+            logger.warn('Super-hybrid returned insufficient events, falling back to legacy', { 
+              totalEvents,
+              threshold: 5 
+            });
           }
-        };
-        return res.json(response);
+          // Fall through to legacy if insufficient events
+        }
       } catch (error) {
-        logger.error('Super-Hybrid proxy error', { error: error.message });
+        logger.error('Super-Hybrid proxy error, falling back to legacy', { 
+          error: error.message,
+          location,
+          eventLimit 
+        });
         // Fall through to legacy behavior if SH fails
       }
+    } else {
+      logger.info('Using legacy mode explicitly requested', { location, eventLimit });
     }
     const customPrompt = (custom_prompt || '').trim();
     const isCustomMode = customPrompt.length > 0;
@@ -738,6 +756,14 @@ router.get('/all-categories', async (req, res) => {
       s.duplicatesRemoved = Math.max(0, (s.originalCount || 0) - (s.survivedCount || 0));
     });
     
+    // Log fallback performance metrics
+    logger.info('Legacy mode fallback completed', {
+      totalEvents,
+      categories: supportedCategories.length,
+      duration: `${duration}ms`,
+      fallbackReason: useLegacyMode ? 'explicitly_requested' : 'super_hybrid_insufficient_or_failed'
+    });
+
     const response = {
       success: true,
       eventsByCategory,
@@ -752,7 +778,9 @@ router.get('/all-categories', async (req, res) => {
         limitPerCategory: eventLimit,
         categoriesFetched: supportedCategories.length,
         customMode: isCustomMode,
-        requestId: `all_categories_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        superHybrid: false, // This is legacy mode
+        fallbackReason: useLegacyMode ? 'explicitly_requested' : 'super_hybrid_insufficient_or_failed',
+        requestId: `legacy_all_categories_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       }
     };
     

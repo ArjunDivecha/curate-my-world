@@ -11,7 +11,7 @@ Args (CLI):
   --categories music,theatre,art
   --quick false|true  (default false for deep)
 """
-import os, sys, json, argparse, importlib.util
+import os, sys, json, argparse, importlib.util, re
 
 DEFAULT_SONOMA = \
   "/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Working/Curate-my-world-exa/Sonoma/hybrid_event_search.py"
@@ -34,6 +34,53 @@ def main():
     if not os.path.exists(sonoma_path):
         print(json.dumps({"success": False, "error": f"Sonoma script not found: {sonoma_path}"}))
         return 1
+
+    # Load rules for path-level filtering
+    rules_path = os.path.join(os.getcwd(), 'experiments', 'speed-demon', 'rules.json')
+    try:
+        with open(rules_path, 'r') as f:
+            rules = json.load(f)
+    except Exception:
+        rules = {"global": {"blockPathTokens": []}, "domains": []}
+
+    def compile_domain(d):
+        return {
+            'domain': d.get('domain','').lower(),
+            'allow': [re.compile(p, re.I) for p in d.get('allowPaths', [])],
+            'block': [re.compile(p, re.I) for p in d.get('blockPaths', [])]
+        }
+    domains = [compile_domain(d) for d in rules.get('domains', [])]
+    global_tokens = [re.compile(t, re.I) for t in rules.get('global', {}).get('blockPathTokens', [])]
+
+    def find_rule(host):
+        for d in domains:
+            if host == d['domain']:
+                return d
+        return None
+
+    def drop_by_rules(url):
+        try:
+            from urllib.parse import urlparse
+            u = urlparse(url)
+            host = (u.hostname or '').lower()
+            path = (u.path or '').lower()
+            dr = find_rule(host)
+            allow_hit = False
+            score = 0
+            for r in global_tokens:
+                if r.search(path):
+                    score -= 0.5
+            if dr:
+                for r in dr['block']:
+                    if r.search(path):
+                        score -= 0.7
+                for r in dr['allow']:
+                    if r.search(path):
+                        score += 0.6
+                        allow_hit = True
+            return (score < -0.5) and (not allow_hit)
+        except Exception:
+            return False
 
     mod = load_module(sonoma_path)
     searcher = mod.HybridEventSearcher(max_workers=20, use_cache=True)
@@ -79,6 +126,8 @@ def main():
                 m = re.search(r"\bat\s+([^\-•|,]+)$", ev.title or '', re.I)
                 if m:
                     venue = m.group(1).strip()
+            if drop_by_rules(ev.source_url or ''):
+                continue
             all_events.append({
                 "id": f"sonoma_{ev.fingerprint()}",
                 "title": ev.title or "",

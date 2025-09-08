@@ -107,7 +107,7 @@ export const ApiTester: React.FC = () => {
           console.log('ℹ️ Custom prompt provided; ignoring location parameter.');
         }
         params.append('date_range', 'next 30 days');
-        params.append('limit', '10');
+        params.append('limit', '500');
       } else if (selectedApi === 'all-sources') {
         url = `${API_BASE_URL}/events/${category}/all-sources`;
         if (!customProvided) {

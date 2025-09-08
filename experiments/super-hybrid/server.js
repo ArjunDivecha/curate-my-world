@@ -6,6 +6,7 @@
 
 import http from 'http';
 import url from 'url';
+import fs from 'fs';
 import { runSpeedDemon } from '../speed-demon/speed-collector.js';
 import { spawn } from 'child_process';
 import path from 'path';
@@ -28,7 +29,7 @@ function buildCategories(param){
 
 function runSonoma({ categories, quick=false }){
   return new Promise((resolve, reject)=>{
-    const py = spawn('python3', [path.join('experiments','super-hybrid','sonoma_bridge.py'), '--categories', categories.join(','), '--quick', String(quick)], {
+    const py = spawn('python3', ['sonoma_bridge.py', '--categories', categories.join(','), '--quick', String(quick)], {
       env: { ...process.env }, stdio: ['ignore','pipe','pipe']
     });
     let out=''; let err='';
@@ -163,6 +164,51 @@ const server = http.createServer(async (req, res) => {
       send('error', { message: String(e.message||e) });
       return res.end();
     }
+  }
+
+  // Rules API
+  if (pathName === '/rules' && req.method === 'GET') {
+    try {
+      const p = path.join(process.cwd(), 'experiments','speed-demon','rules.json');
+      const json = fs.readFileSync(p, 'utf8');
+      res.setHeader('Content-Type','application/json');
+      return res.end(json);
+    } catch (e) { res.statusCode=500; return res.end(JSON.stringify({error:String(e.message||e)})); }
+  }
+  if ((pathName === '/rules/whitelist' || pathName === '/rules/blacklist') && req.method === 'POST') {
+    // read body
+    let body=''; req.on('data', d=> body+=d.toString());
+    req.on('end', ()=>{
+      try {
+        const data = body ? JSON.parse(body) : {};
+        const p = path.join(process.cwd(), 'experiments','speed-demon','rules.json');
+        const raw = fs.existsSync(p) ? JSON.parse(fs.readFileSync(p,'utf8')) : { global:{}, domains:[] };
+        const domain = String((data.domain||'')).toLowerCase();
+        if (!domain) throw new Error('domain required');
+        let entry = raw.domains.find(d=> d.domain.toLowerCase()===domain);
+        if (!entry){ entry = { domain, allowPaths: [], blockPaths: [], penalizeWords: [] }; raw.domains.push(entry); }
+        if (pathName.endsWith('/whitelist')) {
+          // whitelist domain: no-op here (domain is added); you can optionally add allowPaths in UI
+        } else {
+          const mode = String(data.mode||'path');
+          if (mode === 'domain') {
+            // When blacklisting domain, add a catch-all block path. (User asked usually not domain; but option is available.)
+            if (!entry.blockPaths.includes('^/.*$')) entry.blockPaths.push('^/.*$');
+          } else {
+            const pathRegex = data.path ? String(data.path) : null;
+            if (!pathRegex) throw new Error('path required for path blacklist');
+            if (!entry.blockPaths.includes(pathRegex)) entry.blockPaths.push(pathRegex);
+          }
+        }
+        fs.writeFileSync(p, JSON.stringify(raw, null, 2));
+        res.setHeader('Content-Type','application/json');
+        return res.end(JSON.stringify({ success:true }));
+      } catch (e) {
+        res.statusCode = 400; res.setHeader('Content-Type','application/json');
+        return res.end(JSON.stringify({ success:false, error: String(e.message||e) }));
+      }
+    });
+    return;
   }
 
   res.statusCode = 404;

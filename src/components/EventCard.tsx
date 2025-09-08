@@ -106,6 +106,78 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
     });
   };
 
+  // Whitelist/Blacklist helpers
+  const domainAndPath = (url?: string) => {
+    try {
+      if (!url) return { domain: '', path: '' };
+      const u = new URL(url);
+      return { domain: u.hostname, path: u.pathname || '/' };
+    } catch {
+      return { domain: '', path: '' };
+    }
+  };
+
+  const handleWhitelistDomain = async () => {
+    const targetUrl = event.eventUrl || event.ticketUrl;
+    const { domain } = domainAndPath(targetUrl);
+    if (!domain) {
+      toast({ title: 'No URL to whitelist', description: 'This event has no valid URL.' });
+      return;
+    }
+    try {
+      const res = await fetch('/api/rules/whitelist', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain })
+      });
+      const data = await res.json();
+      if (res.ok) toast({ title: 'Whitelisted', description: `${domain} has been whitelisted.` });
+      else toast({ title: 'Whitelist failed', description: data.error || 'Unknown error', variant: 'destructive' });
+    } catch (e: any) {
+      toast({ title: 'Whitelist failed', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const handleBlacklistPath = async () => {
+    const targetUrl = event.eventUrl || event.ticketUrl;
+    const { domain, path } = domainAndPath(targetUrl);
+    if (!domain) {
+      toast({ title: 'No URL to blacklist', description: 'This event has no valid URL.' });
+      return;
+    }
+    const defaultRx = `^${(path || '/').replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}$`;
+    const rx = window.prompt(`Blacklist path regex for ${domain}`, defaultRx);
+    if (!rx) return;
+    try {
+      const res = await fetch('/api/rules/blacklist', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain, mode: 'path', path: rx })
+      });
+      const data = await res.json();
+      if (res.ok) toast({ title: 'Blacklisted path', description: `${domain}${path} is now blacklisted.` });
+      else toast({ title: 'Blacklist failed', description: data.error || 'Unknown error', variant: 'destructive' });
+    } catch (e: any) {
+      toast({ title: 'Blacklist failed', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const handleBlacklistDomain = async () => {
+    const targetUrl = event.eventUrl || event.ticketUrl;
+    const { domain } = domainAndPath(targetUrl);
+    if (!domain) {
+      toast({ title: 'No URL to blacklist', description: 'This event has no valid URL.' });
+      return;
+    }
+    if (!window.confirm(`Blacklist ENTIRE domain ${domain}?`)) return;
+    try {
+      const res = await fetch('/api/rules/blacklist', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain, mode: 'domain' })
+      });
+      const data = await res.json();
+      if (res.ok) toast({ title: 'Blacklisted domain', description: `${domain} is now blacklisted.` });
+      else toast({ title: 'Blacklist failed', description: data.error || 'Unknown error', variant: 'destructive' });
+    } catch (e: any) {
+      toast({ title: 'Blacklist failed', description: e.message, variant: 'destructive' });
+    }
+  };
+
   // Determine API base for preview endpoint
   const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL 
     || (import.meta.env.MODE === 'development' ? 'http://127.0.0.1:8765/api' : '/api');
@@ -177,6 +249,13 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
               <Clock className="w-4 h-4" />
               <span>{formatTime(event.startDate)}</span>
             </div>
+          </div>
+
+          {/* Whitelist / Blacklist controls */}
+          <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+            <Button size="sm" variant="outline" onClick={handleWhitelistDomain}>Whitelist Domain</Button>
+            <Button size="sm" variant="outline" onClick={handleBlacklistPath}>Blacklist Path</Button>
+            <Button size="sm" variant="outline" onClick={handleBlacklistDomain}>Blacklist Domain</Button>
           </div>
         </div>
 

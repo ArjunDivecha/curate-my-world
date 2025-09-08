@@ -60,7 +60,7 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
       console.log('🏥 Health Status:', currentHealth);
       
       // Build URL with AI instructions if provided
-      const baseUrl = `${API_BASE_URL}/events/all-categories?location=${encodeURIComponent(location)}&date_range=next 30 days&limit=10`;
+      const baseUrl = `${API_BASE_URL}/events/all-categories?location=${encodeURIComponent(location)}&date_range=next 30 days&limit=500`;
       
       // Add custom_prompt if AI instructions are provided
       const aiInstructions = preferences.aiInstructions?.trim();

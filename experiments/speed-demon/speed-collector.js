@@ -15,6 +15,7 @@ import fetch from 'node-fetch';
 
 function loadEnvFallback() {
   const candidates = [
+    path.join(process.cwd(), '..', '..', 'curate-events-api', '.env'),
     path.join(process.cwd(), 'curate-events-api', '.env'),
     path.join(process.cwd(), '.env')
   ];
@@ -54,6 +55,109 @@ const categories = CATEGORIES.length ? CATEGORIES : DEFAULT_CATEGORIES;
 
 const whitelistPath = path.join(process.cwd(), 'experiments', 'speed-demon', 'whitelist.json');
 const whitelist = fs.existsSync(whitelistPath) ? JSON.parse(fs.readFileSync(whitelistPath, 'utf8')) : [];
+const rulesPath = path.join(process.cwd(), 'experiments', 'speed-demon', 'rules.json');
+const rulesRaw = fs.existsSync(rulesPath) ? JSON.parse(fs.readFileSync(rulesPath, 'utf8')) : { global: {}, domains: [] };
+
+function compileRules(raw){
+  const globalTokens = (raw.global?.blockPathTokens || []).map(t=> new RegExp(t, 'i'));
+  const domains = (raw.domains || []).map(d=> ({
+    domain: d.domain.toLowerCase(),
+    allow: (d.allowPaths||[]).map(p=> new RegExp(p, 'i')),
+    block: (d.blockPaths||[]).map(p=> new RegExp(p, 'i')),
+    penalizeWords: (d.penalizeWords||[]).map(w=> new RegExp(w, 'i'))
+  }));
+  return { globalTokens, domains };
+}
+
+const compiledRules = compileRules(rulesRaw);
+
+// Heuristics to improve venue extraction so the UI doesn't show "Venue TBD"
+const HOST_VENUES = {
+  'roxie.com': { venue: 'Roxie Theater', city: 'San Francisco' },
+  'www.sfmoma.org': { venue: 'SFMOMA', city: 'San Francisco' },
+  'sfmoma.org': { venue: 'SFMOMA', city: 'San Francisco' },
+  'thegreekberkeley.com': { venue: 'Greek Theatre', city: 'Berkeley' },
+  'www.sfsymphony.org': { venue: 'San Francisco Symphony', city: 'San Francisco' },
+  'www.berkeleyrep.org': { venue: 'Berkeley Repertory Theatre', city: 'Berkeley' },
+  'www.commonwealthclub.org': { venue: 'The Commonwealth Club', city: 'San Francisco' },
+  'sfjazz.org': { venue: 'SFJAZZ Center', city: 'San Francisco' },
+  'san-francisco.playhouse.co': { venue: 'San Francisco Playhouse', city: 'San Francisco' },
+  'bampfa.org': { venue: 'BAMPFA', city: 'Berkeley' },
+  'events.stanford.edu': { venue: 'Stanford University', city: 'Stanford' },
+  'haas.berkeley.edu': { venue: 'Haas School of Business', city: 'Berkeley' },
+  'shotgunplayers.org': { venue: 'Shotgun Players', city: 'Berkeley' },
+  'thenewparkway.com': { venue: 'The New Parkway Theater', city: 'Oakland' },
+  'thefreight.org': { venue: 'Freight & Salvage', city: 'Berkeley' }
+};
+
+function guessVenueFromHost(u){
+  try {
+    const h = new URL(u).hostname.toLowerCase();
+    if (HOST_VENUES[h]) return HOST_VENUES[h];
+  } catch {}
+  return { venue: '', city: '' };
+}
+
+function extractVenueFromTitle(title=''){
+  const t = String(title);
+  // Patterns like "Event - Venue", "Event at Venue"
+  let m = t.match(/\s+-\s+([^\-|•]+)$/);
+  if (m && m[1] && m[1].trim().length > 2) return m[1].trim();
+  m = t.match(/\bat\s+([^\-•|,]+)$/i);
+  if (m && m[1] && m[1].trim().length > 2) return m[1].trim();
+  return '';
+}
+
+function extractVenueFromText(text=''){
+  const s = String(text);
+  // Common labels in content
+  let m = s.match(/(?:Venue|Location)[:\s]+([^\n,|]+?)(?:,|\n|$)/i);
+  if (m && m[1] && m[1].trim().length > 2) return m[1].trim();
+  m = s.match(/\bat\s+([A-Z][A-Za-z0-9&' .-]{3,60})/);
+  if (m && m[1]) return m[1].trim();
+  return '';
+}
+
+function findDomainRule(host){
+  const h = (host||'').toLowerCase();
+  return compiledRules.domains.find(d => h === d.domain);
+}
+
+function scoreAndFilter(url, title, snippet){
+  let score = 0;
+  let reasons = [];
+  let allowHit = false;
+  try {
+    const u = new URL(url);
+    const host = u.hostname.toLowerCase();
+    const pathName = (u.pathname||'').toLowerCase();
+    const dr = findDomainRule(host);
+    // Global token penalty
+    for(const re of compiledRules.globalTokens){
+      if (re.test(pathName)) { score -= 0.5; reasons.push(`global:${re}`); }
+    }
+    if (dr){
+      // Block path rules
+      for(const re of dr.block){ if (re.test(pathName)) { score -= 0.7; reasons.push(`block:${re}`); } }
+      // Allow path rules
+      for(const re of dr.allow){ if (re.test(pathName)) { score += 0.6; allowHit = true; reasons.push(`allow:${re}`);} }
+      // Penalize words in title/snippet
+      for(const re of dr.penalizeWords||[]){ if (re.test(title||'') || re.test(snippet||'')) { score -= 0.3; reasons.push(`penalize:${re}`);} }
+    }
+    // Content hints
+    const txt = `${title||''} ${snippet||''}`.toLowerCase();
+    if (/(tickets|rsvp|register|showtimes)/i.test(txt)) { score += 0.3; reasons.push('tickets'); }
+    const dateMatches = txt.match(/\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b|\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/gi) || [];
+    if (dateMatches.length === 1) { score += 0.3; reasons.push('one-date'); }
+    if (dateMatches.length >= 3) { score -= 0.4; reasons.push('multi-date'); }
+    // Final drop decision
+    // Be much less aggressive to avoid empty result sets; rely on dedup/ranking later
+    const drop = (score < -2.0) && !allowHit;
+    return { drop, score, reasons };
+  } catch {
+    return { drop: false, score: 0, reasons: [] };
+  }
+}
 
 function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
 
@@ -187,15 +291,22 @@ export async function runSpeedDemon({ location=LOCATION, limitPerCategory=LIMIT_
   // Build work items: venue queries + category queries
   const venueQueries=[];
   for(const v of whitelist){
-    const base = `site:${v.domain} (events OR calendar OR tickets) ${location}`;
-    venueQueries.push({ kind:'exa', q: base, num: 15, categoryHint: (v.categories||[])[0]||'general' });
-    venueQueries.push({ kind:'serper', q: base, num: 20, categoryHint: (v.categories||[])[0]||'general' });
+    // Use domain-based search if available, otherwise use venue name
+    let base;
+    if (v.domain) {
+      base = `site:${v.domain} (events OR calendar OR tickets) ${location}`;
+    } else {
+      // Use venue name for search instead of domain
+      base = `"${v.name}" events tickets ${location} 2025`;
+    }
+    venueQueries.push({ kind:'exa', q: base, num: 100, categoryHint: (v.categories||[])[0]||'general' });
+    venueQueries.push({ kind:'serper', q: base, num: 100, categoryHint: (v.categories||[])[0]||'general' });
   }
   const catQueries=[];
   for(const cat of categories){
     const q1 = `${cat} events ${location} 2025 tickets registration eventbrite meetup lu.ma`;
-    catQueries.push({ kind:'exa', q:q1, num: 20, categoryHint: cat });
-    catQueries.push({ kind:'serper', q:q1, num: 20, categoryHint: cat });
+    catQueries.push({ kind:'exa', q:q1, num: 100, categoryHint: cat });
+    catQueries.push({ kind:'serper', q:q1, num: 100, categoryHint: cat });
   }
   const work=[...venueQueries, ...catQueries];
 
@@ -203,17 +314,31 @@ export async function runSpeedDemon({ location=LOCATION, limitPerCategory=LIMIT_
     if(w.kind==='exa'){
       if(!EXA_API_KEY) return [];
       const res = await exaSearch(w.q, w.num); callsExa++;
-      return res.map(r=>extractFromExa(r, w.categoryHint));
+      const extracted = res.map(r=>extractFromExa(r, w.categoryHint));
+      const filtered = extracted.filter(ev => {
+        const s = scoreAndFilter(ev.eventUrl, ev.title, ev.description);
+        return !s.drop;
+      });
+      return filtered;
     }
     if(w.kind==='serper'){
       if(!SERPER_API_KEY) return [];
       const res = await serperSearch(w.q, w.num); callsSerper++;
-      return res.map(r=>extractFromSerper(r, w.categoryHint));
+      const extracted = res.map(r=>extractFromSerper(r, w.categoryHint));
+      const filtered = extracted.filter(ev => {
+        const s = scoreAndFilter(ev.eventUrl, ev.title, ev.description);
+        return !s.drop;
+      });
+      return filtered;
     }
     return [];
   });
 
-  for(const r of results){ if(r.ok && Array.isArray(r.val)) all.push(...r.val); }
+  for(const r of results){ 
+    if(r.ok && Array.isArray(r.val)) {
+      all.push(...r.val);
+    }
+  }
   const unique = deduplicate(all);
 
   const t1=Date.now();
@@ -237,52 +362,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   runSpeedDemon({}).then(r=>{
     const outDir=path.join(process.cwd(),'outputs');
     if(!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive:true });
-// Heuristics to improve venue extraction so the UI doesn't show "Venue TBD"
-const HOST_VENUES = {
-  'roxie.com': { venue: 'Roxie Theater', city: 'San Francisco' },
-  'www.sfmoma.org': { venue: 'SFMOMA', city: 'San Francisco' },
-  'sfmoma.org': { venue: 'SFMOMA', city: 'San Francisco' },
-  'thegreekberkeley.com': { venue: 'Greek Theatre', city: 'Berkeley' },
-  'www.sfsymphony.org': { venue: 'San Francisco Symphony', city: 'San Francisco' },
-  'www.berkeleyrep.org': { venue: 'Berkeley Repertory Theatre', city: 'Berkeley' },
-  'www.commonwealthclub.org': { venue: 'The Commonwealth Club', city: 'San Francisco' },
-  'sfjazz.org': { venue: 'SFJAZZ Center', city: 'San Francisco' },
-  'san-francisco.playhouse.co': { venue: 'San Francisco Playhouse', city: 'San Francisco' },
-  'bampfa.org': { venue: 'BAMPFA', city: 'Berkeley' },
-  'events.stanford.edu': { venue: 'Stanford University', city: 'Stanford' },
-  'haas.berkeley.edu': { venue: 'Haas School of Business', city: 'Berkeley' },
-  'shotgunplayers.org': { venue: 'Shotgun Players', city: 'Berkeley' },
-  'thenewparkway.com': { venue: 'The New Parkway Theater', city: 'Oakland' },
-  'thefreight.org': { venue: 'Freight & Salvage', city: 'Berkeley' }
-};
-
-function guessVenueFromHost(u){
-  try {
-    const h = new URL(u).hostname.toLowerCase();
-    if (HOST_VENUES[h]) return HOST_VENUES[h];
-  } catch {}
-  return { venue: '', city: '' };
-}
-
-function extractVenueFromTitle(title=''){
-  const t = String(title);
-  // Patterns like "Event - Venue", "Event at Venue"
-  let m = t.match(/\s+-\s+([^\-|•]+)$/);
-  if (m && m[1] && m[1].trim().length > 2) return m[1].trim();
-  m = t.match(/\bat\s+([^\-•|,]+)$/i);
-  if (m && m[1] && m[1].trim().length > 2) return m[1].trim();
-  return '';
-}
-
-function extractVenueFromText(text=''){
-  const s = String(text);
-  // Common labels in content
-  let m = s.match(/(?:Venue|Location)[:\s]+([^\n,|]+?)(?:,|\n|$)/i);
-  if (m && m[1] && m[1].trim().length > 2) return m[1].trim();
-  m = s.match(/\bat\s+([A-Z][A-Za-z0-9&' .-]{3,60})/);
-  if (m && m[1]) return m[1].trim();
-  return '';
-}
     const ts=new Date().toISOString().replace(/[:.]/g,'-');
     const fp=path.join(outDir, `speed_demon_events_${ts}.json`);
     fs.writeFileSync(fp, JSON.stringify(r, null, 2));

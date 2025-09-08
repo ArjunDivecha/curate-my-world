@@ -1,0 +1,23 @@
+{
+  "name": "repository-cleanup-tools",
+  "version": "1.0.0",
+  "description": "Tools for cleaning up the repository by removing unused code and files",
+  "type": "module",
+  "scripts": {
+    "analyze": "tsx dependency-analyzer.ts",
+    "classify": "tsx file-classifier.ts",
+    "validate": "tsx safety-validator.ts",
+    "cleanup": "tsx cleanup-executor.ts",
+    "install-tools": "npm install -g vulture ts-unused-exports unimported knip depcheck"
+  },
+  "dependencies": {
+    "glob": "^10.3.10",
+    "typescript": "^5.3.3",
+    "tsx": "^4.7.0",
+    "@types/node": "^20.11.5",
+    "ts-unused-exports": "^10.0.1",
+    "unimported": "^1.31.1",
+    "knip": "^3.8.5",
+    "depcheck": "^1.4.7"
+  }
+}

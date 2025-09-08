@@ -13,6 +13,7 @@ import { createLogger, logRequest, logResponse, logError } from './src/utils/log
 import healthRoutes from './src/routes/health.js';
 import eventsRoutes from './src/routes/events.js';
 import personalizationRoutes from './src/routes/personalization.js';
+import rulesRoutes from './src/routes/rules.js';
 import previewRoutes from './src/routes/preview.js';
 
 // Validate configuration on startup
@@ -86,6 +87,7 @@ if (config.rateLimiting.enabled) {
 app.use('/api/health', healthRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/personalization', personalizationRoutes);
+app.use('/api/rules', rulesRoutes);
 app.use('/api/preview', (req, res, next) => { logger.info('Preview route hit pre-router'); next(); }, previewRoutes);
 
 // Root endpoint
