@@ -40,11 +40,17 @@ function loadEnvFallback() {
 const ENV = loadEnvFallback();
 const EXA_API_KEY = process.env.EXA_API_KEY || process.env.EXA_KEY || ENV.EXA_API_KEY || ENV.EXA_KEY || '';
 const SERPER_API_KEY = process.env.SERPER_API_KEY || ENV.SERPER_API_KEY || '';
+const EXA_ENABLED = !['0','false','no'].includes(String(process.env.EXA_ENABLED||'1').toLowerCase());
+const VENUE_EXA_ENABLED = !['0','false','no'].includes(String(process.env.VENUE_EXA_ENABLED||'0').toLowerCase());
+const SERPER_ENABLED = !['0','false','no'].includes(String(process.env.SERPER_ENABLED||'1').toLowerCase());
 const LOCATION = process.env.LOCATION || 'San Francisco, CA';
 const LIMIT_PER_CATEGORY = parseInt(process.env.LIMIT_PER_CATEGORY || '100', 10);
 const CONCURRENCY = parseInt(process.env.CONCURRENCY || '16', 10);
 const EXA_COST_PER_CALL = Number(process.env.EXA_COST_PER_CALL_USD || 0.005);
 const SERPER_COST_PER_CALL = Number(process.env.SERPER_COST_PER_CALL_USD || 0.002);
+const EXA_RESULTS_PER_QUERY = parseInt(process.env.EXA_RESULTS_PER_QUERY || '10', 10);
+const SERPER_RESULTS_PER_QUERY = parseInt(process.env.SERPER_RESULTS_PER_QUERY || '20', 10);
+const EXA_INCLUDE_CONTENT = ['1','true','yes'].includes(String(process.env.EXA_INCLUDE_CONTENT||'0').toLowerCase());
 
 const DEFAULT_CATEGORIES = [
   'music', 'theatre', 'art', 'food', 'tech', 'technology', 'education',
@@ -175,16 +181,19 @@ function toCsvRow(fields){
 }
 
 async function exaSearch(query, numResults=20){
+  if (!EXA_ENABLED || !EXA_API_KEY) return [];
   const payload = {
     query,
     type: 'fast',
     livecrawl: 'never',
-    numResults,
-    contents: {
-      text: { maxCharacters: 2000, includeHtmlTags: false },
-      summary: { query: 'Extract event name, exact venue/location, full date and time, ticket/registration URL, event description.', maxCharacters: 600 }
-    }
+    numResults
   };
+  if (EXA_INCLUDE_CONTENT) {
+    payload.contents = {
+      text: { maxCharacters: 1500, includeHtmlTags: false },
+      summary: { query: 'Extract event name, venue, date/time, ticket URL, description.', maxCharacters: 400 }
+    };
+  }
   const res = await fetch('https://api.exa.ai/search', {
     method: 'POST', headers: {
       'x-api-key': EXA_API_KEY,
@@ -296,23 +305,22 @@ export async function runSpeedDemon({ location=LOCATION, limitPerCategory=LIMIT_
     if (v.domain) {
       base = `site:${v.domain} (events OR calendar OR tickets) ${location}`;
     } else {
-      // Use venue name for search instead of domain
       base = `"${v.name}" events tickets ${location} 2025`;
     }
-    venueQueries.push({ kind:'exa', q: base, num: 100, categoryHint: (v.categories||[])[0]||'general' });
-    venueQueries.push({ kind:'serper', q: base, num: 100, categoryHint: (v.categories||[])[0]||'general' });
+    if (VENUE_EXA_ENABLED) venueQueries.push({ kind:'exa', q: base, num: EXA_RESULTS_PER_QUERY, categoryHint: (v.categories||[])[0]||'general' });
+    if (SERPER_ENABLED) venueQueries.push({ kind:'serper', q: base, num: SERPER_RESULTS_PER_QUERY, categoryHint: (v.categories||[])[0]||'general' });
   }
   const catQueries=[];
   for(const cat of categories){
     const q1 = `${cat} events ${location} 2025 tickets registration eventbrite meetup lu.ma`;
-    catQueries.push({ kind:'exa', q:q1, num: 100, categoryHint: cat });
-    catQueries.push({ kind:'serper', q:q1, num: 100, categoryHint: cat });
+    if (EXA_ENABLED) catQueries.push({ kind:'exa', q:q1, num: EXA_RESULTS_PER_QUERY, categoryHint: cat });
+    if (SERPER_ENABLED) catQueries.push({ kind:'serper', q:q1, num: SERPER_RESULTS_PER_QUERY, categoryHint: cat });
   }
   const work=[...venueQueries, ...catQueries];
 
   const results = await withConcurrency(work, CONCURRENCY, async (w)=>{
     if(w.kind==='exa'){
-      if(!EXA_API_KEY) return [];
+      if(!EXA_ENABLED || !EXA_API_KEY) return [];
       const res = await exaSearch(w.q, w.num); callsExa++;
       const extracted = res.map(r=>extractFromExa(r, w.categoryHint));
       const filtered = extracted.filter(ev => {
@@ -322,7 +330,7 @@ export async function runSpeedDemon({ location=LOCATION, limitPerCategory=LIMIT_
       return filtered;
     }
     if(w.kind==='serper'){
-      if(!SERPER_API_KEY) return [];
+      if(!SERPER_ENABLED || !SERPER_API_KEY) return [];
       const res = await serperSearch(w.q, w.num); callsSerper++;
       const extracted = res.map(r=>extractFromSerper(r, w.categoryHint));
       const filtered = extracted.filter(ev => {

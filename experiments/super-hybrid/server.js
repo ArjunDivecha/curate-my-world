@@ -108,6 +108,24 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  if (pathName === '/super-hybrid/sonoma' || pathName === '/super-hybrid/deep') {
+    try {
+      const categories = buildCategories(parsed.query.categories);
+      const deep = await runSonoma({ categories, quick:false });
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({
+        success: true,
+        timing_ms: deep.timing_ms,
+        count: deep.count,
+        cost_est_usd: Number((deep.cost_est_usd||0).toFixed(4)),
+        events: deep.events
+      }));
+    } catch(e){
+      res.statusCode = 500; res.setHeader('Content-Type','application/json');
+      return res.end(JSON.stringify({ success:false, error: String(e.message||e) }));
+    }
+  }
+
   if (pathName === '/super-hybrid/turbo') {
     try{
       const location = String(parsed.query.location || 'San Francisco, CA');

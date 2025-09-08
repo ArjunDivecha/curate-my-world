@@ -12,6 +12,8 @@ Args (CLI):
   --quick false|true  (default false for deep)
 """
 import os, sys, json, argparse, importlib.util, re
+import io
+import contextlib
 
 DEFAULT_SONOMA = \
   "/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Working/Curate-my-world-exa/Sonoma/hybrid_event_search.py"
@@ -29,6 +31,39 @@ def main():
     args = ap.parse_args()
     cat_list = [c.strip() for c in args.categories.split(',') if c.strip()]
     quick = args.quick.lower() in ('1','true','yes','y')
+
+    # Ensure provider API keys are available by loading from known .env files if missing
+    def load_env_fallback():
+        candidates = [
+            os.path.join(os.getcwd(), 'curate-events-api', '.env'),
+            os.path.join(os.getcwd(), '.env')
+        ]
+        env_map = {}
+        for fp in candidates:
+            try:
+                if not os.path.exists(fp):
+                    continue
+                with open(fp, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line or line.startswith('#'):
+                            continue
+                        if '=' not in line:
+                            continue
+                        k, v = line.split('=', 1)
+                        k = k.strip()
+                        v = v.strip()
+                        if v.startswith('"') and v.endswith('"'):
+                            v = v[1:-1]
+                        env_map[k] = v
+            except Exception:
+                pass
+        # Apply keys (override to ensure correct account)
+        for k in ('EXA_API_KEY', 'SERPER_API_KEY'):
+            if env_map.get(k):
+                os.environ[k] = env_map[k]
+
+    load_env_fallback()
 
     sonoma_path = os.environ.get('SONOMA_PATH', DEFAULT_SONOMA)
     if not os.path.exists(sonoma_path):
@@ -82,8 +117,14 @@ def main():
         except Exception:
             return False
 
-    mod = load_module(sonoma_path)
-    searcher = mod.HybridEventSearcher(max_workers=20, use_cache=True)
+    # Load Sonoma module and instantiate searcher while silencing any prints to stdout
+    stray_import = io.StringIO()
+    with contextlib.redirect_stdout(stray_import):
+        mod = load_module(sonoma_path)
+        searcher = mod.HybridEventSearcher(max_workers=20, use_cache=True)
+    imp_txt = stray_import.getvalue()
+    if imp_txt.strip():
+        print(imp_txt, file=sys.stderr, end="")
 
     all_events = []
     total_cost = 0.0
@@ -91,7 +132,13 @@ def main():
     for cat in cat_list:
         # keep query simple to let Sonoma's own tuning do its work
         query = f"{cat} events"
-        events, stats = searcher.sync_search(query, category=cat, days_ahead=30, quick_mode=quick)
+        # Capture any stray prints from Sonoma module to avoid polluting stdout JSON
+        stray_buf = io.StringIO()
+        with contextlib.redirect_stdout(stray_buf):
+            events, stats = searcher.sync_search(query, category=cat, days_ahead=30, quick_mode=quick)
+        stray = stray_buf.getvalue()
+        if stray.strip():
+            print(stray, file=sys.stderr, end="")
         total_time += stats.get('duration', 0)
         total_cost += stats.get('estimated_cost', 0)
         for ev in events:
@@ -122,7 +169,6 @@ def main():
             if not venue and host in HOST_VENUES:
                 venue, _city = HOST_VENUES[host]
             if not venue:
-                import re
                 m = re.search(r"\bat\s+([^\-•|,]+)$", ev.title or '', re.I)
                 if m:
                     venue = m.group(1).strip()

@@ -68,7 +68,7 @@ export const config = {
     
     // Default pagination
     defaultLimit: 50,
-    maxLimit: 200,
+    maxLimit: 500,
     
     // Event processing
     maxEventsPerCategory: 100,
