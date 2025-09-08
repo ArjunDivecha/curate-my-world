@@ -1,5 +1,94 @@
 Here’s a concise, implementation-ready brief you can 
 ⸻
+Squirtle Backend Rewrite — Batch‑First Architecture Checklist
+
+Objective: Rewrite the backend to a batch‑first design that builds a local dataset using Serper for enumeration and Exa for whitelist recall/detail rescue, while keeping the frontend unchanged and routing interactive queries to the local dataset only.
+
+Status
+- [x] Create feature branch `feat/backend-rewrite`
+
+Prerequisites
+- [ ] Configure API keys in `curate-events-api/.env` (and update `.env.example`): `SERPER_API_KEY`, `EXA_API_KEY` (others optional)
+- [ ] Add/confirm provider toggles in config/env: `EXA_ENABLED`, `VENUE_EXA_ENABLED`, `SERPER_ENABLED`, `EXA_RESULTS_PER_QUERY`, `SERPER_RESULTS_PER_QUERY`
+- [ ] Create `curate-events-api/data/whitelist.json` (see sample below) and decide seed venues/paths and per‑domain caps
+- [ ] Decide persistence for local dataset (existing DB or lightweight store) and define event schema including `provenance` fields
+
+Phase 1 — Orchestrator Extraction (dualSearch)
+- [ ] Add `curate-events-api/src/lib/dualSearch.js` wrapping Serper and Exa with `Promise.allSettled`, env‑flag gating, and merge rules
+- [ ] Normalize output shape for dedupe/search: `id,title,description,category,venue,location,startDate,endDate,eventUrl,ticketUrl,source,confidence,provenance[]`
+- [ ] Refactor `curate-events-api/src/routes/events.js` to call `dualSearch` (remove direct provider orchestration)
+- [ ] Update `experiments/speed-demon/speed-collector.js` to reuse `dualSearch` logic (avoid drift)
+
+Phase 2 — Batch Pipeline
+- [ ] Add `curate-events-api/src/batch/BatchRunner.js` implementing:
+  - Enumerate with Serper over grid (city × category × time window, plus `site:` queries for whitelist)
+  - Parse locally (single‑event vs listing pages; prefer JSON‑LD Event if present)
+  - Exa whitelist passes: domain/path recall and text=true detail rescue under budget caps
+  - Deduplicate, normalize, and persist to DB with `cluster_id` and `merged_from[]`
+- [ ] Add route `curate-events-api/src/routes/batch.js` exposing `POST /batch/fetch` to trigger BatchRunner
+- [ ] Register the route in `curate-events-api/server.js`
+
+Phase 3 — Parsers & Dedupe
+- [ ] Add `curate-events-api/src/lib/htmlParser.js` (JSON‑LD schema.org/Event first; fallback micro‑parsers for title/date/venue/ticketUrl)
+- [ ] Add/align dedupe: `curate-events-api/src/lib/dedupe.js` (or unify with `src/utils/eventDeduplicator.js`) with URL normalization, canonical key `{title_or_performer}_{local_date}_{venue_norm}`, and near‑dupe clustering
+- [ ] Add `curate-events-api/src/lib/whitelist.js` and `curate-events-api/data/whitelist.json` loader helpers (domain/path filters, per‑domain caps)
+
+Phase 4 — Interactive Search (Local Dataset Only)
+- [ ] Implement dataset searcher `curate-events-api/src/lib/searchDataset.js` (BM25 lexical + simple priors: venue/source/completeness)
+- [ ] Point `curate-events-api/src/routes/events.js` to query local dataset only (no live provider calls)
+- [ ] Keep frontend unchanged; verify UI queries hit the new dataset endpoint
+
+Phase 5 — Telemetry & Budgets
+- [ ] Track in batch results: `serper_calls`, `exa_calls`, `exa_text_calls`, `est_cost_usd`
+- [ ] Enforce global and per‑domain caps; stop when budget reached; log per‑domain usage
+
+Phase 6 — Tests & Docs
+- [ ] Unit tests for `htmlParser` (JSON‑LD extraction + fallback) and `dedupe`
+- [ ] Script a small batch smoke test across 2–3 whitelist venues/paths
+- [ ] Update `curate-events-api/README.md` (two‑mode behavior, env flags, endpoints)
+
+Acceptance Criteria
+- [ ] Cost: ≥95% of new URLs from Serper + local parse; ≤5% require Exa `text=true` (tunable)
+- [ ] Coverage: Whitelist domain/path pass yields unique events beyond Serper (tracked via `provenance`/`sources`)
+- [ ] Latency: Interactive `/events` served from DB in <150ms p95 on dev data
+- [ ] Simplicity: All provider fusion logic centralized in `dualSearch`; routes avoid provider calls except `/batch/fetch`
+- [ ] DoD: Draft PR has small commits per phase; CI green; `/events` reads DB; `/batch/fetch` runs end‑to‑end with budgets
+
+Key Env Flags (suggested)
+- `EXA_ENABLED` (default 1), `VENUE_EXA_ENABLED` (default 0), `SERPER_ENABLED` (default 1)
+- `EXA_RESULTS_PER_QUERY`, `SERPER_RESULTS_PER_QUERY` for tunable breadth
+- `SERPER_API_KEY`, `EXA_API_KEY` required for this plan
+
+Sample `data/whitelist.json`
+{
+  "includeDomains": [
+    { "domain": "sfmoma.org", "paths": ["/events", "/exhibitions", "/calendar"], "max_exa_pages": 8 },
+    { "domain": "berkeleyrep.org", "paths": ["/shows", "/season"], "max_exa_pages": 6 },
+    { "domain": "sfsymphony.org", "paths": ["/concerts", "/calendar"], "max_exa_pages": 10 },
+    { "domain": "thegreekberkeley.com", "paths": ["/events"], "max_exa_pages": 6 }
+  ]
+}
+
+Implementation Notes
+- Prefer `Promise.allSettled` in `dualSearch` and handle toggles defensively
+- Use Exa domain/path filters for whitelist recall; use `text=true` only for detail rescue when local parse misses vital fields
+- Persist provenance: which step/page produced the record (Serper, Exa recall, Exa text)
+- Keep changes scoped to backend; do not touch frontend
+
+Validation (dev)
+- [ ] Run `/batch/fetch` for a small grid; verify dataset populated and telemetry recorded
+- [ ] Query `/api/events` and confirm results are served from DB only
+- [ ] Inspect logs for budget enforcement and per‑domain usage
+
+Cutover Checklist
+- [ ] Feature parity confirmed for interactive queries
+- [ ] Observability in place for costs/coverage/latency
+- [ ] Toggle old live‑provider paths off in routes
+
+Tips for Working in This Repo
+- Start small changes per phase; keep diffs surgical and commit frequently
+- Validate against Google/schema.org Event guidelines for JSON‑LD parsing
+- Do not add new providers; only Serper and Exa for this rewrite
 
 Backend Rewrite Brief (for Codex CLI · GPT-5 High)
 
@@ -174,4 +263,3 @@ Reference links (for Codex to consult while implementing)
 	•	Ranking & fusion: RRF docs; hybrid search with RRF; BM25 explainer (Elastic)  ￼
 	•	Near-duplicate detection: LSH/MinHash over shingles (overview & practical guides)  ￼ ￼
 	•	OpenAI prompting: official guides + Cookbook (GPT-4.1 & general best practices)  ￼ ￼ ￼
-
