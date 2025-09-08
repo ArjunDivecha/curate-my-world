@@ -121,11 +121,13 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventClick, onDateC
 
   const formatTime = (dateString: string) => {
     try {
+      if (!dateString) return 'Time TBD';
       const date = new Date(dateString);
-      return date.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
+      if (isNaN(date.getTime())) return 'Time TBD';
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
         minute: '2-digit',
-        hour12: true 
+        hour12: true,
       });
     } catch {
       return 'Time TBD';

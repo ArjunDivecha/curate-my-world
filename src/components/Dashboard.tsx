@@ -524,11 +524,16 @@ export const Dashboard = () => {
                       
                       // Ensure dates are properly formatted
                       const formatEventDate = (dateStr: string | Date) => {
-                        if (!dateStr) return new Date().toISOString();
-                        if (dateStr instanceof Date) return dateStr.toISOString();
-                        // Try to parse the date string
+                        // Do NOT default to now; missing/invalid dates should be omitted from calendar filtering
+                        if (!dateStr) return '';
+                        if (dateStr instanceof Date) {
+                          const iso = dateStr.toISOString();
+                          return iso;
+                        }
+                        // Try to parse the date string robustly; if invalid, return empty
                         const parsed = new Date(dateStr);
-                        return isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+                        if (isNaN(parsed.getTime())) return '';
+                        return parsed.toISOString();
                       };
                       
                       return {
