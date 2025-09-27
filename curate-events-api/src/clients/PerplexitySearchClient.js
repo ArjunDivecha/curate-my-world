@@ -207,6 +207,10 @@ export class PerplexitySearchClient {
 
       const description = result?.snippet || '';
       const domain = this.extractDomain(url);
+      const combinedText = [title, description, result?.highlight, result?.body]
+        .filter(Boolean)
+        .join(' ');
+      const extractedDate = this.extractDateFromText(combinedText);
 
       return {
         id: `pplx_${Buffer.from(url).toString('base64').slice(0, 12)}`,
@@ -215,8 +219,8 @@ export class PerplexitySearchClient {
         category,
         venue: 'See Event Page',
         location: location || 'San Francisco, CA',
-        startDate: null,
-        endDate: null,
+        startDate: extractedDate?.startDate || null,
+        endDate: extractedDate?.endDate || extractedDate?.startDate || null,
         eventUrl: url,
         ticketUrl: url,
         externalUrl: url,
@@ -238,6 +242,108 @@ export class PerplexitySearchClient {
     } catch {
       return null;
     }
+  }
+
+  extractDateFromText(text) {
+    if (!text) return null;
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const candidates = [];
+
+    const monthNames = [
+      'january', 'february', 'march', 'april', 'may', 'june',
+      'july', 'august', 'september', 'october', 'november', 'december'
+    ];
+
+    const monthRegex = /(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})(?:,?\s*(\d{2,4}))?(?:\s*[-–]\s*(\d{1,2}))?/gi;
+    let match;
+    while ((match = monthRegex.exec(text))) {
+      const monthIndex = monthNames.indexOf(match[1].toLowerCase());
+      if (monthIndex === -1) continue;
+      const day = parseInt(match[2], 10);
+      if (Number.isNaN(day)) continue;
+      let year = match[3] ? parseInt(match[3], 10) : currentYear;
+      if (year < 100) {
+        year += 2000;
+      }
+      let startDate = new Date(Date.UTC(year, monthIndex, day));
+      if (Number.isNaN(startDate.getTime())) continue;
+      if (!match[3] && startDate < now) {
+        startDate = new Date(Date.UTC(year + 1, monthIndex, day));
+      }
+
+      let endDate = startDate;
+      if (match[4]) {
+        const endDay = parseInt(match[4], 10);
+        if (!Number.isNaN(endDay)) {
+          let tmpEnd = new Date(Date.UTC(startDate.getUTCFullYear(), monthIndex, endDay));
+          if (tmpEnd < startDate) {
+            tmpEnd = new Date(Date.UTC(startDate.getUTCFullYear() + 1, monthIndex, endDay));
+          }
+          endDate = tmpEnd;
+        }
+      }
+
+      candidates.push({ startDate, endDate });
+    }
+
+    const numericRegex = /(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/g;
+    while ((match = numericRegex.exec(text))) {
+      const month = parseInt(match[1], 10) - 1;
+      const day = parseInt(match[2], 10);
+      if (month < 0 || month > 11 || Number.isNaN(day)) continue;
+      let year = match[3] ? parseInt(match[3], 10) : currentYear;
+      if (year < 100) {
+        year += 2000;
+      }
+      let startDate = new Date(Date.UTC(year, month, day));
+      if (Number.isNaN(startDate.getTime())) continue;
+      if (!match[3] && startDate < now) {
+        startDate = new Date(Date.UTC(year + 1, month, day));
+      }
+      candidates.push({ startDate, endDate: startDate });
+    }
+
+    const relativeRegex = /(today|tonight|tomorrow|this weekend|this week|next week|next weekend)/i;
+    if (relativeRegex.test(text)) {
+      const matched = text.match(relativeRegex)[0].toLowerCase();
+      let startDate = new Date(now);
+      switch (matched) {
+        case 'tomorrow':
+          startDate.setUTCDate(startDate.getUTCDate() + 1);
+          break;
+        case 'this weekend':
+        case 'next weekend':
+          {
+            const day = startDate.getUTCDay();
+            const daysUntilSaturday = (6 - day + 7) % 7;
+            startDate.setUTCDate(startDate.getUTCDate() + daysUntilSaturday + (matched === 'next weekend' ? 7 : 0));
+          }
+          break;
+        case 'next week':
+          {
+            const day = startDate.getUTCDay();
+            const daysUntilMonday = (8 - day) % 7 || 7;
+            startDate.setUTCDate(startDate.getUTCDate() + daysUntilMonday);
+          }
+          break;
+        default:
+          break;
+      }
+      candidates.push({ startDate, endDate: startDate });
+    }
+
+    if (candidates.length === 0) {
+      return null;
+    }
+
+    candidates.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+    const chosen = candidates.find(candidate => candidate.startDate >= now) || candidates[0];
+    return {
+      startDate: chosen.startDate.toISOString(),
+      endDate: chosen.endDate ? chosen.endDate.toISOString() : null
+    };
   }
 }
 

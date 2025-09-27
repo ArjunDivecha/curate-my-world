@@ -21,6 +21,7 @@ interface Event {
     website?: string;
     mapUrl?: string;
   };
+  category?: string;
   categories: string[];
   personalRelevanceScore: number;
   price: {
@@ -82,27 +83,27 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
   });
 
   const formatDate = (dateString: string) => {
-    console.log('📅 Formatting date:', dateString);
+    if (!dateString) return 'Date TBD';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) {
-      console.error('❌ Invalid date:', dateString);
-      return 'Invalid Date';
+      console.warn('Invalid date in EventCard:', dateString);
+      return 'Date TBD';
     }
-    const formatted = date.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
     });
-    console.log('✅ Formatted date:', formatted);
-    return formatted;
   };
 
   const formatTime = (dateString: string) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
   };
 

@@ -569,7 +569,17 @@ export const Dashboard = () => {
                   // Transform events for each category and store them
                   const newTransformedEventsByCategory = Object.entries(fetchedEventsByCategory).reduce((acc, [category, events]) => {
                     console.log(`🔄 Transforming category '${category}' with ${events.length} events`);
+                    const canonicalCategory = category === 'tech' ? 'technology' : category;
                     acc[category] = (events as any[]).map((event: any, index: number) => {
+                      const originalCategoryValues: string[] = Array.isArray(event?.categories)
+                        ? event.categories
+                        : (event?.category ? [event.category] : []);
+                      const normalizedCategories = Array.from(new Set([
+                        canonicalCategory,
+                        ...originalCategoryValues
+                          .filter(Boolean)
+                          .map((value: string) => value.toLowerCase())
+                      ])).filter(Boolean);
                       // Debug logging for date issues
                       console.log(`🔍 Event ${index} in ${category}:`, {
                         id: event.id,
@@ -605,7 +615,8 @@ export const Dashboard = () => {
                           website: event.venueInfo?.website,
                           mapUrl: event.venueInfo?.googleMapsUrl,
                         },
-                        categories: [event.category || 'General'],
+                        category: canonicalCategory,
+                        categories: normalizedCategories,
                         personalRelevanceScore: event.relevance || 8,
                         price: event.priceRange ? {
                           type: event.priceRange.min === 0 && event.priceRange.max === 0 ? 'free' : 'paid',
