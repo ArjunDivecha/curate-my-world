@@ -36,13 +36,33 @@ export class SerperClient {
     const effectiveLimit = Math.max(1, Math.min(Number(limit) || 10, 200));
 
     const base = `${category} ${location}`.trim();
-    const queryVariants = [
+
+    const staticVariants = [
       `${base} events 2025`,
       `${base} upcoming events`,
       `${base} tickets`,
       `${category} things to do in ${location}`,
-      `${category} ${location} calendar`
+      `${category} ${location} calendar`,
+      `${category} events near ${location}`,
+      `${category} ${location} schedule`,
+      `${category} ${location} festival`,
+      `upcoming ${category} shows in ${location}`,
+      `${category} meetup ${location}`,
+      `${category} conferences in ${location}`
     ];
+
+    const monthNames = [
+      'january', 'february', 'march', 'april', 'may', 'june',
+      'july', 'august', 'september', 'october', 'november', 'december'
+    ];
+    const currentMonthIndex = new Date().getMonth();
+    const monthVariants = [];
+    for (let i = 0; i < 6; i += 1) {
+      const monthName = monthNames[(currentMonthIndex + i) % 12];
+      monthVariants.push(`${category} ${location} ${monthName} events`);
+    }
+
+    const queryVariants = [...staticVariants, ...monthVariants];
 
     const aggregated = [];
     const seenUrls = new Set();
@@ -54,11 +74,13 @@ export class SerperClient {
 
       logger.info('Searching Serper for events', { query });
 
+      const perQueryLimit = Math.min(50, Math.max(20, Math.ceil(effectiveLimit / queryVariants.length) * 2));
+
       const payload = {
         q: query,
         gl: 'us',
         hl: 'en',
-        num: 20,
+        num: perQueryLimit,
         type: 'search'
       };
 
