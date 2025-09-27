@@ -158,6 +158,11 @@ export class LocationFilter {
       if (eventCityLower.includes(targetCityLower) || targetCityLower.includes(eventCityLower)) {
         return true;
       }
+
+      // Handle cases where the leading word is dropped (e.g. "Francisco" vs "San Francisco")
+      if (targetCityLower.includes('san francisco') && eventCityLower.includes('francisco')) {
+        return true;
+      }
     }
 
     // Location string matching
@@ -166,6 +171,10 @@ export class LocationFilter {
       const targetCityLower = targetCity.toLowerCase();
 
       if (eventLocationLower.includes(targetCityLower)) {
+        return true;
+      }
+
+      if (targetCityLower.includes('san francisco') && eventLocationLower.includes('francisco')) {
         return true;
       }
     }

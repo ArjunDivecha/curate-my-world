@@ -37,6 +37,7 @@ export class ExaClient {
    */
   async searchEvents({ category, location, limit = 10 }) {
     const startTime = Date.now();
+    const effectiveLimit = Math.max(1, Math.min(Number(limit) || 10, 50));
     // Enhanced query to specifically target event pages with registration/ticket links
     // Include category-specific boosters for improved recall
     const cat = String(category || '').toLowerCase();
@@ -51,7 +52,7 @@ export class ExaClient {
       query: query,
       type: "fast", // Use the new fast search option for better performance
       livecrawl: "never", // Disable live crawling for faster results
-      numResults: limit,
+      numResults: effectiveLimit,
       // Enhanced content extraction to get better event details and URLs
       contents: {
         text: {
@@ -91,7 +92,8 @@ export class ExaClient {
       }
 
       const data = await response.json();
-      const transformedEvents = data.results.map(result => this.transformEvent(result, category)).filter(Boolean);
+      const resultsArray = Array.isArray(data.results) ? data.results : [];
+      const transformedEvents = resultsArray.map(result => this.transformEvent(result, category)).filter(Boolean);
 
       logger.info(`Exa fast search successful, found ${transformedEvents.length} events.`, { processingTime: `${processingTime}ms` });
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, MapPin, AlertTriangle, Wifi, WifiOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -8,9 +8,26 @@ interface FetchEventsButtonProps {
   location?: string;
   preferences?: any;
   onEventsFetched?: (events: any[]) => void;
-  onAllEventsFetched?: (eventsByCategory: any, categoryStats: any) => void;
+  onAllEventsFetched?: (eventsByCategory: any, categoryStats: any, providerDetails?: ProviderStatSummary[]) => void;
+  onProviderDetails?: (details: ProviderStatSummary[], statsMap: ProviderStatsMap) => void;
+  selectedProviders: Record<string, boolean>;
   className?: string;
 }
+
+export interface ProviderStatSummary {
+  provider: string;
+  label: string;
+  requested: boolean;
+  enabled: boolean;
+  success: boolean;
+  originalCount: number;
+  survivedCount: number;
+  duplicatesRemoved: number;
+  processingTime: number;
+  cost: number;
+}
+
+export type ProviderStatsMap = Record<string, ProviderStatSummary>;
 
 // Configuration for the new Node.js API
 const API_BASE_URL = 'http://localhost:8765/api';
@@ -20,11 +37,21 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
   preferences = {},
   onEventsFetched,
   onAllEventsFetched,
+  onProviderDetails,
+  selectedProviders,
   className
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [healthStatus, setHealthStatus] = useState<ApiHealthStatus | null>(null);
   const { toast } = useToast();
+
+  const activeProviderKeys = useMemo(
+    () => Object.entries(selectedProviders || {})
+      .filter(([, enabled]) => !!enabled)
+      .map(([key]) => key),
+    [selectedProviders]
+  );
+  const noProvidersSelected = activeProviderKeys.length === 0;
 
   // Subscribe to health status updates
   useEffect(() => {
@@ -55,18 +82,33 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
     }
     
     try {
+      if (noProvidersSelected) {
+        toast({
+          title: "Select a data source",
+          description: "Turn on at least one provider before fetching events.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       console.log('🎭 Fetching ALL categories using all-categories endpoint for:', location);
       console.log('📍 Preferences:', preferences);
       console.log('🏥 Health Status:', currentHealth);
+      console.log('🔌 Provider switches selected:', activeProviderKeys);
       
-      // Build URL with AI instructions if provided
-      const baseUrl = `${API_BASE_URL}/events/all-categories?location=${encodeURIComponent(location)}&date_range=next 30 days&limit=500`;
-      
-      // Add custom_prompt if AI instructions are provided
       const aiInstructions = preferences.aiInstructions?.trim();
-      const url = aiInstructions 
-        ? `${baseUrl}&custom_prompt=${encodeURIComponent(aiInstructions)}`
-        : baseUrl;
+
+      const url = new URL(`${API_BASE_URL}/events/all-categories`);
+      url.searchParams.set('location', location);
+      url.searchParams.set('date_range', 'next 30 days');
+      url.searchParams.set('limit', '500');
+      if (aiInstructions) {
+        url.searchParams.set('custom_prompt', aiInstructions);
+      }
+      if (!noProvidersSelected) {
+        url.searchParams.set('providers', activeProviderKeys.join(','));
+      }
       
       if (aiInstructions) {
         console.log('🤖 Using AI Instructions for custom search:', aiInstructions);
@@ -74,11 +116,11 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
         console.log('📂 Using regular category-based search (no AI instructions)');
       }
       
-      console.log(`📡 Fetching all categories from:`, url);
+      console.log(`📡 Fetching all categories from:`, url.toString());
       console.log(`🌍 Frontend running on: ${window.location.origin}`);
       
-      console.log(`🔍 Making request to: ${url}`);
-      const response = await fetch(url);
+      console.log(`🔍 Making request to: ${url.toString()}`);
+      const response = await fetch(url.toString());
       console.log(`📡 Response status: ${response.status} ${response.statusText}`);
       
       if (!response.ok) {
@@ -93,7 +135,7 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
         throw new Error(data.error || 'Failed to fetch events from all categories');
       }
       
-      const { eventsByCategory, categoryStats, totalEvents, processingTime, providerStats } = data;
+      const { eventsByCategory, categoryStats, totalEvents, processingTime, providerStats, providerDetails } = data;
       
       console.log(`🎉 Total events across all categories: ${totalEvents}`);
       console.log('📊 Category breakdown:', categoryStats);
@@ -131,7 +173,11 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
 
       // Pass all events data to parent component for category filtering
       if (onAllEventsFetched) {
-        onAllEventsFetched(eventsByCategory, categoryStats);
+        onAllEventsFetched(eventsByCategory, categoryStats, providerDetails);
+      }
+
+      if (onProviderDetails) {
+        onProviderDetails(providerDetails || [], providerStats || {});
       }
       
       // Also pass all events as a flat array for backward compatibility
@@ -210,6 +256,7 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
 
   const getButtonText = () => {
     if (isLoading) return 'Fetching Events...';
+    if (noProvidersSelected) return 'Select Providers';
     if (!healthStatus) return 'Fetch Events';
     if (healthStatus.isHealthy) return 'Fetch Events';
     if (healthStatus.consecutiveFailures > 3) return 'Backend Offline - Retrying...';
@@ -227,9 +274,9 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
   return (
     <Button
       onClick={fetchRealEvents}
-      disabled={isLoading || (healthStatus && !healthStatus.isHealthy)}
+      disabled={isLoading || (healthStatus && !healthStatus.isHealthy) || noProvidersSelected}
       className={getButtonClassName()}
-      title={healthStatus ? `Backend: ${healthStatus.backend.reachable ? 'Connected' : 'Disconnected'} | API: ${healthStatus.api.functional ? 'Functional' : 'Failed'} | Last Check: ${healthStatus.lastChecked.toLocaleTimeString()}` : 'Checking connection...'}
+      title={healthStatus ? `Backend: ${healthStatus.backend.reachable ? 'Connected' : 'Disconnected'} | API: ${healthStatus.api.functional ? 'Functional' : 'Failed'} | Last Check: ${healthStatus.lastChecked ? healthStatus.lastChecked.toLocaleTimeString() : 'n/a'}` : 'Checking connection...'}
     >
       {getButtonIcon()}
       {getButtonText()}

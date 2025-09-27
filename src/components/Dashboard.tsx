@@ -10,12 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import { EventCard } from "./EventCard";
 import { WeeklyCalendar } from "./WeeklyCalendar";
 import { Header } from "./Header";
-import { FetchEventsButton } from "./FetchEventsButton";
+import { FetchEventsButton, type ProviderStatSummary } from "./FetchEventsButton";
 import SuggestedCategories from './SuggestedCategories';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Brain, Eye, EyeOff, Cpu } from "lucide-react";
 import { getCategoryColor } from "@/utils/categoryColors";
+import { ProviderControlPanel } from "./ProviderControlPanel";
 
 interface Preferences {
   interests: {
@@ -67,6 +68,17 @@ const personalizedPreferences: Preferences = {
 // Use personalized preferences as default
 const defaultPreferences: Preferences = personalizedPreferences;
 
+const defaultProviderSelection: Record<string, boolean> = {
+  sonoma: true,
+  serper: true,
+  exa: true,
+  ticketmaster: true,
+  pplx: true,
+  perplexity: false,
+  apyflux: false,
+  predicthq: false
+};
+
 export const Dashboard = () => {
   // Simple local cache to survive refresh/hot-reload
   const LOCAL_EVENTS_CACHE_KEY = 'cmw_events_cache_v1';
@@ -84,6 +96,8 @@ export const Dashboard = () => {
   // Control which tab is visible to guarantee UI reflects filtered events
   const [activeTab, setActiveTab] = useState<'calendar' | 'grid'>('grid');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedProviders, setSelectedProviders] = useState<Record<string, boolean>>(defaultProviderSelection);
+  const [providerDetails, setProviderDetails] = useState<ProviderStatSummary[]>([]);
 
   // Category mapping: Frontend display names to backend API names
   const mapCategoryToBackend = (frontendCategory: string): string => {
@@ -120,6 +134,40 @@ export const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user, signIn, signUp, signInWithGoogle, signInWithGitHub } = useAuth();
+
+  const handleProviderToggle = (providerKey: string, enabled: boolean) => {
+    setSelectedProviders(prev => {
+      const current = { ...defaultProviderSelection, ...prev };
+      const currentlyEnabled = Object.entries(current).filter(([, value]) => value);
+      if (!enabled && currentlyEnabled.length === 1 && currentlyEnabled[0]?.[0] === providerKey) {
+        toast({
+          title: "Keep at least one source",
+          description: "Select at least one provider before fetching events.",
+          variant: "destructive"
+        });
+        return current;
+      }
+      return {
+        ...current,
+        [providerKey]: enabled
+      };
+    });
+  };
+
+  useEffect(() => {
+    if (!providerDetails?.length) return;
+    setSelectedProviders(prev => {
+      let changed = false;
+      const next = { ...defaultProviderSelection, ...prev };
+      providerDetails.forEach(detail => {
+        if (!(detail.provider in next)) {
+          next[detail.provider] = detail.requested ?? detail.enabled ?? false;
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [providerDetails]);
 
   const handleSaveToCalendar = (eventId: string) => {
     const event = events.find(e => e.id === eventId);
@@ -476,15 +524,21 @@ export const Dashboard = () => {
           </div>
 
           {/* Category Filters */}
-          <div className="mb-10">
-            <h3 className="text-2xl font-bold text-gray-700 mb-6">Filter by Category</h3>
-            
+          <div className="mb-10 space-y-8">
+            <h3 className="text-2xl font-bold text-gray-700">Filter by Category</h3>
+
+            <ProviderControlPanel
+              selectedProviders={selectedProviders}
+              onToggleProvider={handleProviderToggle}
+              providerDetails={providerDetails}
+            />
+
             {/* Top Row - All, Fetch Events, Clear All */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-center gap-4">
               {/* "All" Button */}
               <Button
                 onClick={() => handleCategoryFilter(null)}
-                className={`w-full sm:w-auto flex items-center justify-center space-x-2 font-bold py-4 px-8 rounded-full transition hover:transform hover:-translate-y-0.5 hover:shadow-lg ${
+                className={`w-full lg:w-auto flex items-center justify-center space-x-2 font-bold py-4 px-8 rounded-full transition hover:transform hover:-translate-y-0.5 hover:shadow-lg ${
                   activeCategory === null 
                     ? 'bg-gradient-primary text-white' 
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -493,8 +547,7 @@ export const Dashboard = () => {
                 <Search className="w-5 h-5" />
                 <span>All ({totalEventCount} events)</span>
               </Button>
-              
-              {/* Fetch Events Button */}
+
               <FetchEventsButton
                 location={preferences.location.address}
                 preferences={{
@@ -503,11 +556,15 @@ export const Dashboard = () => {
                   customKeywords: preferences.interests.keywords,
                   aiInstructions: preferences.aiInstructions
                 }}
-                onAllEventsFetched={(fetchedEventsByCategory, fetchedCategoryStats) => {
+                selectedProviders={selectedProviders}
+                onAllEventsFetched={(fetchedEventsByCategory, fetchedCategoryStats, fetchedProviderDetails) => {
                   console.log('✅ Received raw events by category:', fetchedEventsByCategory);
                   console.log('🔑 Raw category keys:', Object.keys(fetchedEventsByCategory));
                   setEventsByCategory(fetchedEventsByCategory);
                   setCategoryStats(fetchedCategoryStats);
+                  if (Array.isArray(fetchedProviderDetails)) {
+                    setProviderDetails(fetchedProviderDetails);
+                  }
 
                   // Transform events for each category and store them
                   const newTransformedEventsByCategory = Object.entries(fetchedEventsByCategory).reduce((acc, [category, events]) => {
@@ -585,7 +642,10 @@ export const Dashboard = () => {
                   setEvents(allTransformedEvents);
                   setActiveCategory(null); // Show 'All' events initially
                 }}
-                className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-2 text-white font-bold py-4 px-8 rounded-full transition hover:transform hover:-translate-y-0.5 hover:shadow-lg"
+                onProviderDetails={(details) => {
+                  setProviderDetails(details);
+                }}
+                className="btn-primary w-full lg:w-auto flex items-center justify-center space-x-2 text-white font-bold py-4 px-8 rounded-full transition hover:transform hover:-translate-y-0.5 hover:shadow-lg"
               />
               
               {/* Toggle Suggestions Button */}

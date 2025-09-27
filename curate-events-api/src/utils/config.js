@@ -91,7 +91,9 @@ export const config = {
     disableApyfluxByDefault: true,
     disablePredictHQByDefault: true,
     // Also disable Perplexity by default when measuring alternatives
-    disablePerplexityByDefault: true
+    disablePerplexityByDefault: true,
+    disableTicketmasterByDefault: false,
+    disablePplxSearchByDefault: false
   },
   
   // Perplexity API defaults

@@ -26,6 +26,7 @@ import { EventDeduplicator } from '../utils/eventDeduplicator.js';
 import { ExaClient } from '../clients/ExaClient.js';
 import SerperClient from '../clients/SerperClient.js';
 import TicketmasterClient from '../clients/TicketmasterClient.js';
+import PerplexitySearchClient from '../clients/PerplexitySearchClient.js';
 import { LocationFilter } from '../utils/locationFilter.js';
 import { createLogger, logRequest, logResponse } from '../utils/logger.js';
 import { config } from '../utils/config.js';
@@ -42,8 +43,259 @@ const predictHQClient = new PredictHQClient(config.predictHQApiKey);
 const exaClient = new ExaClient();
 const serperClient = new SerperClient();
 const ticketmasterClient = new TicketmasterClient();
+const perplexitySearchClient = new PerplexitySearchClient();
 const deduplicator = new EventDeduplicator();
 const locationFilter = new LocationFilter();
+
+// Provider metadata
+const PROVIDER_LABELS = {
+  sonoma: 'Sonoma',
+  serper: 'Serper',
+  exa: 'EXA',
+  perplexity: 'Perplexity (LLM)',
+  apyflux: 'Apyflux',
+  predicthq: 'PredictHQ',
+  ticketmaster: 'Ticketmaster',
+  pplx: 'Perplexity Search',
+  pplx_search: 'Perplexity Search'
+};
+
+const ALL_PROVIDERS = [
+  'sonoma',
+  'serper',
+  'exa',
+  'perplexity',
+  'apyflux',
+  'predicthq',
+  'ticketmaster',
+  'pplx'
+];
+
+const SOURCE_PROVIDER_MAP = {
+  serper: 'serper',
+  serpapi: 'serper',
+  exa: 'exa',
+  exa_fast: 'exa',
+  sonoma: 'sonoma',
+  perplexity_api: 'perplexity',
+  apyflux_api: 'apyflux',
+  predicthq_api: 'predicthq',
+  ticketmaster: 'ticketmaster',
+  pplx_search: 'pplx'
+};
+
+const PROVIDER_DEFAULTS = {
+  sonoma: config.superHybrid?.enabledByDefault !== false,
+  serper: true,
+  exa: true,
+  perplexity: !(config.sources?.disablePerplexityByDefault ?? false),
+  apyflux: !(config.sources?.disableApyfluxByDefault ?? false),
+  predicthq: !(config.sources?.disablePredictHQByDefault ?? false),
+  ticketmaster: !(config.sources?.disableTicketmasterByDefault ?? false),
+  pplx: !(config.sources?.disablePplxSearchByDefault ?? false)
+};
+
+const PROVIDER_ORDER = [
+  'ticketmaster',
+  'serper',
+  'exa',
+  'sonoma',
+  'perplexity',
+  'apyflux',
+  'predicthq',
+  'pplx'
+];
+
+function mapSourceToProvider(source) {
+  return SOURCE_PROVIDER_MAP[source] || source || 'unknown';
+}
+
+function parseProviderSelection(req) {
+  const param = String(req.query.providers || '').toLowerCase();
+  const selected = new Set();
+  if (param) {
+    param
+      .split(',')
+      .map(p => p.trim())
+      .filter(Boolean)
+      .forEach(p => {
+        if (ALL_PROVIDERS.includes(p)) {
+          selected.add(p);
+        }
+      });
+  } else {
+    Object.entries(PROVIDER_DEFAULTS).forEach(([key, enabled]) => {
+      if (enabled) selected.add(key);
+    });
+  }
+  return selected;
+}
+
+function ensureProviderStats(map, providerKey, selected) {
+  if (!map[providerKey]) {
+    map[providerKey] = {
+      provider: providerKey,
+      label: PROVIDER_LABELS[providerKey] || providerKey,
+      requested: selected.has(providerKey),
+      enabled: selected.has(providerKey),
+      success: false,
+      originalCount: 0,
+      survivedCount: 0,
+      duplicatesRemoved: 0,
+      processingTime: 0,
+      cost: 0
+    };
+  }
+  return map[providerKey];
+}
+
+async function fetchTicketmasterByCategory(categories, location, limit) {
+  const perCategory = {};
+  let total = 0;
+  let processingTime = 0;
+
+  for (const category of categories) {
+    const result = await ticketmasterClient.searchEvents({ category, location, limit });
+    processingTime += result.processingTime || 0;
+    const events = Array.isArray(result.events) ? result.events : [];
+    perCategory[category] = events;
+    total += events.length;
+  }
+
+  return {
+    perCategory,
+    total,
+    processingTime,
+    cost: 0
+  };
+}
+
+async function fetchPplxByCategory(categories, location, limit) {
+  const perCategory = {};
+  let total = 0;
+  let processingTime = 0;
+  let cost = 0;
+
+  for (const category of categories) {
+    const result = await perplexitySearchClient.searchEvents({ category, location, limit });
+    processingTime += result.processingTime || 0;
+    cost += result.cost || 0;
+    const events = Array.isArray(result.events) ? result.events : [];
+    perCategory[category] = events;
+    total += events.length;
+  }
+
+  return {
+    perCategory,
+    total,
+    processingTime,
+    cost: Number(cost.toFixed(3))
+  };
+}
+
+async function augmentWithAdditionalProviders({
+  eventsByCategory,
+  categoryStats,
+  categories,
+  location,
+  limit,
+  selectedProviders,
+  includeTicketmaster,
+  includePplx,
+  providerStats,
+  deduplicatorInstance
+}) {
+  const additionalResults = {};
+
+  if (includeTicketmaster) {
+    additionalResults.ticketmaster = await fetchTicketmasterByCategory(categories, location, limit);
+  }
+
+  if (includePplx) {
+    additionalResults.pplx = await fetchPplxByCategory(categories, location, limit);
+  }
+
+  const survivedCounts = {};
+  let totalEvents = 0;
+
+  const mappedCategories = categories.length ? categories : Object.keys(eventsByCategory);
+
+  mappedCategories.forEach(category => {
+    const existing = eventsByCategory[category] || [];
+    const filteredExisting = existing.filter(ev => selectedProviders.has(mapSourceToProvider(ev.source)));
+
+    const eventLists = [
+      { source: 'existing', events: filteredExisting }
+    ];
+
+    if (includeTicketmaster) {
+      eventLists.push({
+        source: 'ticketmaster',
+        events: additionalResults.ticketmaster.perCategory[category] || []
+      });
+    }
+
+    if (includePplx) {
+      eventLists.push({
+        source: 'pplx_search',
+        events: additionalResults.pplx.perCategory[category] || []
+      });
+    }
+
+    const deduped = deduplicatorInstance.deduplicateEvents(eventLists);
+    const uniqueEvents = deduped.uniqueEvents || [];
+    eventsByCategory[category] = uniqueEvents;
+
+    if (!categoryStats[category]) {
+      categoryStats[category] = {
+        count: uniqueEvents.length,
+        success: true,
+        error: null
+      };
+    } else {
+      categoryStats[category].count = uniqueEvents.length;
+    }
+
+    uniqueEvents.forEach(ev => {
+      const providerKey = mapSourceToProvider(ev.source);
+      survivedCounts[providerKey] = (survivedCounts[providerKey] || 0) + 1;
+    });
+
+    totalEvents += uniqueEvents.length;
+  });
+
+  // Update provider stats with additional providers
+  if (includeTicketmaster) {
+    const stats = ensureProviderStats(providerStats, 'ticketmaster', selectedProviders);
+    stats.originalCount += additionalResults.ticketmaster.total;
+    stats.processingTime += additionalResults.ticketmaster.processingTime;
+    stats.cost += additionalResults.ticketmaster.cost;
+  }
+
+  if (includePplx) {
+    const stats = ensureProviderStats(providerStats, 'pplx', selectedProviders);
+    stats.originalCount += additionalResults.pplx.total;
+    stats.processingTime += additionalResults.pplx.processingTime;
+    stats.cost += additionalResults.pplx.cost;
+  }
+
+  // Finalize survivor counts and duplicates removed
+  Object.keys(providerStats).forEach(providerKey => {
+    const stats = providerStats[providerKey];
+    if (!stats) return;
+    stats.survivedCount = survivedCounts[providerKey] || 0;
+    stats.duplicatesRemoved = Math.max(0, (stats.originalCount || 0) - stats.survivedCount);
+    stats.success = stats.survivedCount > 0;
+    stats.enabled = stats.enabled && stats.requested;
+  });
+
+  return {
+    eventsByCategory,
+    categoryStats,
+    totalEvents,
+    providerStats
+  };
+}
 
 /**
  * GET /api/events/:category/combined
@@ -364,24 +616,56 @@ router.get('/:category/compare', async (req, res) => {
 router.get('/all-categories', async (req, res) => {
   const startTime = Date.now();
   const { location = 'San Francisco, CA', date_range, limit, custom_prompt } = req.query;
+  const eventLimit = Math.min(parseInt(limit) || 15, config.api.maxLimit);
   
   logRequest(logger, req, 'allCategoriesEvents', { location, date_range, limit });
 
+  let selectedProviders = parseProviderSelection(req);
+  if (selectedProviders.size === 0) {
+    const rawProviders = Array.isArray(req.query.providers)
+      ? req.query.providers.join(',')
+      : String(req.query.providers || '');
+    logger.warn('No recognized providers parsed; falling back to defaults', {
+      location,
+      rawProviders
+    });
+    selectedProviders = new Set(
+      Object.entries(PROVIDER_DEFAULTS)
+        .filter(([, enabled]) => enabled)
+        .map(([key]) => key)
+    );
+  }
+  let includeTicketmaster = selectedProviders.has('ticketmaster');
+  let includePplx = selectedProviders.has('pplx');
+  let includeSerper = selectedProviders.has('serper');
+  let includeExa = selectedProviders.has('exa');
+  let includeSonoma = selectedProviders.has('sonoma');
+  let includePerplexityProvider = selectedProviders.has('perplexity');
+  let includeApyfluxProvider = selectedProviders.has('apyflux');
+  let includePredictHQProvider = selectedProviders.has('predicthq');
+
   // Optional source toggles
-  const disableApyflux = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase()) || config.sources?.disableApyfluxByDefault;
-  const disablePredictHQ = ['true', '1', 'yes'].includes(String(req.query.disable_predicthq || '').toLowerCase()) || config.sources?.disablePredictHQByDefault;
-  const disablePerplexity = ['true', '1', 'yes'].includes(String(req.query.disable_perplexity || '').toLowerCase()) || config.sources?.disablePerplexityByDefault;
+  const disableApyfluxQuery = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase());
+  const disablePredictHQQuery = ['true', '1', 'yes'].includes(String(req.query.disable_predicthq || '').toLowerCase());
+  const disablePerplexityQuery = ['true', '1', 'yes'].includes(String(req.query.disable_perplexity || '').toLowerCase());
+
+  const disableApyflux = disableApyfluxQuery || !includeApyfluxProvider;
+  const disablePredictHQ = disablePredictHQQuery || !includePredictHQProvider;
+  const disablePerplexity = disablePerplexityQuery || !includePerplexityProvider;
+
+  if (disableApyflux) includeApyfluxProvider = false;
+  if (disablePredictHQ) includePredictHQProvider = false;
+  if (disablePerplexity) includePerplexityProvider = false;
 
   // Super-Hybrid mode (Phase 1: Production Switch):
   // Default to super-hybrid unless mode=legacy is specified
   // Smart fallback to legacy if super-hybrid fails or returns insufficient results
   const useLegacyMode = String(req.query.mode || '').toLowerCase() === 'legacy';
-  const useSuperHybrid = !useLegacyMode; // Default to super-hybrid
+  const useSuperHybrid = !useLegacyMode && includeSonoma; // Only use super-hybrid when Sonoma is requested
   
   try {
     if (useSuperHybrid) {
       try {
-        const eventLimit = Math.min(parseInt(limit) || 15, config.api.maxLimit);
         const supportedCategories = categoryManager.getSupportedCategories()
           .filter(cat => [
             'theatre', 'music', 'art', 'food', 'tech', 'education', 'movies',
@@ -442,24 +726,71 @@ router.get('/all-categories', async (req, res) => {
           });
           if (totalEvents >= 5) { // Require minimum 5 events for success
             const duration = Date.now() - startTime;
-            logger.info('Super-hybrid mode success', { 
-              totalEvents, 
-              categories: Object.keys(eventsByCategory).length,
-              duration: `${duration}ms`
+
+            const providerStats = {};
+            Object.entries(aggregatedProviderStats).forEach(([key, stats]) => {
+              const providerKey = mapSourceToProvider(key);
+              const entry = ensureProviderStats(providerStats, providerKey, selectedProviders);
+              entry.originalCount += stats.originalCount || stats.survivedCount || 0;
+              entry.survivedCount += stats.survivedCount || 0;
+              entry.duplicatesRemoved += stats.duplicatesRemoved || 0;
+              entry.success = entry.survivedCount > 0;
             });
-            return res.json({
-              success: true,
+
+            const augmentation = await augmentWithAdditionalProviders({
               eventsByCategory,
               categoryStats,
-              totalEvents,
-              categories: Object.keys(eventsByCategory),
-              providerStats: aggregatedProviderStats,
+              categories: supportedCategories,
+              location,
+              limit: eventLimit,
+              selectedProviders,
+              includeTicketmaster,
+              includePplx,
+              providerStats,
+              deduplicatorInstance: deduplicator
+            });
+
+            const finalProviderStats = augmentation.providerStats;
+            const finalEventsByCategory = augmentation.eventsByCategory;
+            const finalCategoryStats = augmentation.categoryStats;
+            const finalTotalEvents = Object.values(finalEventsByCategory).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0);
+
+            const providerDetails = PROVIDER_ORDER.map(providerKey => {
+              const stats = ensureProviderStats(finalProviderStats, providerKey, selectedProviders);
+              return {
+                provider: providerKey,
+                label: stats.label,
+                requested: stats.requested,
+                enabled: stats.enabled,
+                success: stats.success,
+                originalCount: stats.originalCount,
+                survivedCount: stats.survivedCount,
+                duplicatesRemoved: stats.duplicatesRemoved,
+                processingTime: stats.processingTime,
+                cost: stats.cost
+              };
+            });
+
+            logger.info('Super-hybrid mode success', {
+              totalEvents: finalTotalEvents,
+              categories: Object.keys(finalEventsByCategory).length,
+              duration: `${duration}ms`
+            });
+
+            return res.json({
+              success: true,
+              eventsByCategory: finalEventsByCategory,
+              categoryStats: finalCategoryStats,
+              totalEvents: finalTotalEvents,
+              categories: Object.keys(finalEventsByCategory),
+              providerStats: finalProviderStats,
+              providerDetails,
               processingTime: duration,
               metadata: {
                 location,
                 dateRange: date_range || 'next 30 days',
                 limitPerCategory: eventLimit,
-                categoriesFetched: Object.keys(eventsByCategory).length,
+                categoriesFetched: Object.keys(finalEventsByCategory).length,
                 customMode: false,
                 superHybrid: true,
                 requestId: `sh_all_categories_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -486,8 +817,6 @@ router.get('/all-categories', async (req, res) => {
     }
     const customPrompt = (custom_prompt || '').trim();
     const isCustomMode = customPrompt.length > 0;
-    const eventLimit = Math.min(parseInt(limit) || 15, config.api.maxLimit);
-    
     
     if (isCustomMode) {
       // Custom AI Instructions mode: Use only the custom prompt, skip category-based search
@@ -557,143 +886,236 @@ router.get('/all-categories', async (req, res) => {
     const categoryPromises = supportedCategories.map(async (category) => {
       try {
         // Use the all-sources approach for comprehensive coverage
-        const [perplexityResult, apyfluxResult, predictHQResult, exaResult, serpApiResult] = await Promise.allSettled([
-          // Perplexity via EventPipeline (can be disabled)
-          (disablePerplexity
-            ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by default', source: 'perplexity_api' })
-            : eventPipeline.collectEvents({
-                category,
-                location,
-                dateRange: date_range,
-                options: {
-                  limit: eventLimit,
-                  minConfidence: 0.5,
-                  maxTokens: config.perplexity.maxTokens,
-                  temperature: config.perplexity.temperature
-                }
-              })
-          ),
-          
-          // Apyflux direct
-          (disableApyflux
-            ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by flag', source: 'apyflux_api' })
-            : apyfluxClient.searchEvents({
-                query: apyfluxClient.buildSearchQuery(category, location),
-                location,
-                category,
-                dateRange: date_range || 'next 30 days',
-                limit: eventLimit
-              }).then(result => {
-                if (result.success && result.events.length > 0) {
-                  const transformedEvents = result.events.map(event => 
-                    apyfluxClient.transformEvent(event, category)
-                  ).filter(event => event !== null);
-                  
-                  return {
-                    success: true,
-                    events: transformedEvents,
-                    count: transformedEvents.length,
-                    processingTime: result.processingTime,
-                    source: 'apyflux_api',
-                    requestId: result.requestId
-                  };
-                }
-                return result;
-              })
-          ),
-          
-          // PredictHQ direct
-          (disablePredictHQ
-            ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by flag', source: 'predicthq_api' })
-            : predictHQClient.searchEvents({
-                category,
-                location,
-                dateRange: date_range || 'next 30 days',
-                limit: eventLimit
-              }).then(result => {
-                if (result.success && result.events.length > 0) {
-                  const transformedEvents = result.events.map(event => 
-                    predictHQClient.transformEvent(event, category)
-                  ).filter(event => event !== null);
-                  
-                  return {
-                    success: true,
-                    events: transformedEvents,
-                    count: transformedEvents.length,
-                    processingTime: result.processingTime,
-                    source: 'predicthq_api',
-                    totalAvailable: result.totalAvailable
-                  };
-                }
-                return result;
-              })
-          ),
-          
-          // Exa direct
-          exaClient.searchEvents({
-            category,
-            location,
-            limit: eventLimit
-          }),
-          
-          // Serper direct
-          serperClient.searchEvents({
-            category,
-            location,
-            limit: eventLimit
-          })
-        ]);
-        
-        // Prepare event lists for deduplication
+        const providerResults = {};
+        const providerPromises = [];
+
+        const enqueueProvider = (key, factory) => {
+          providerPromises.push(
+            factory()
+              .then(value => ({ key, status: 'fulfilled', value }))
+              .catch(error => ({ key, status: 'rejected', reason: error }))
+          );
+        };
+
+        if (!disablePerplexity) {
+          enqueueProvider('perplexity', async () => {
+            const result = await eventPipeline.collectEvents({
+              category,
+              location,
+              dateRange: date_range,
+              options: {
+                limit: eventLimit,
+                minConfidence: 0.5,
+                maxTokens: config.perplexity.maxTokens,
+                temperature: config.perplexity.temperature
+              }
+            });
+            return {
+              success: result.success,
+              events: result.events || [],
+              count: result.events?.length || 0,
+              processingTime: result.processingTime || 0,
+              source: 'perplexity_api'
+            };
+          });
+        } else {
+          providerResults.perplexity = { success: false, events: [], count: 0, source: 'perplexity_api', skipped: true };
+        }
+
+        if (!disableApyflux) {
+          enqueueProvider('apyflux', async () => {
+            const result = await apyfluxClient.searchEvents({
+              query: apyfluxClient.buildSearchQuery(category, location),
+              location,
+              category,
+              dateRange: date_range || 'next 30 days',
+              limit: eventLimit
+            });
+            if (result.success && Array.isArray(result.events) && result.events.length > 0) {
+              const transformedEvents = result.events
+                .map(event => apyfluxClient.transformEvent(event, category))
+                .filter(Boolean);
+              return {
+                success: true,
+                events: transformedEvents,
+                count: transformedEvents.length,
+                processingTime: result.processingTime,
+                source: 'apyflux_api'
+              };
+            }
+            return {
+              success: result.success || false,
+              events: [],
+              count: 0,
+              error: result.error,
+              source: 'apyflux_api'
+            };
+          });
+        } else {
+          providerResults.apyflux = { success: false, events: [], count: 0, source: 'apyflux_api', skipped: true };
+        }
+
+        if (!disablePredictHQ) {
+          enqueueProvider('predicthq', async () => {
+            const result = await predictHQClient.searchEvents({
+              category,
+              location,
+              dateRange: date_range || 'next 30 days',
+              limit: eventLimit
+            });
+            if (result.success && Array.isArray(result.events) && result.events.length > 0) {
+              const transformedEvents = result.events
+                .map(event => predictHQClient.transformEvent(event, category))
+                .filter(Boolean);
+              return {
+                success: true,
+                events: transformedEvents,
+                count: transformedEvents.length,
+                processingTime: result.processingTime,
+                source: 'predicthq_api'
+              };
+            }
+            return {
+              success: result.success || false,
+              events: [],
+              count: 0,
+              error: result.error,
+              source: 'predicthq_api'
+            };
+          });
+        } else {
+          providerResults.predicthq = { success: false, events: [], count: 0, source: 'predicthq_api', skipped: true };
+        }
+
+        if (includeExa) {
+          enqueueProvider('exa', async () => {
+            const result = await exaClient.searchEvents({
+              category,
+              location,
+              limit: eventLimit
+            });
+            return {
+              success: result.success || false,
+              events: result.events || [],
+              count: result.events?.length || 0,
+              processingTime: result.processingTime || 0,
+              source: 'exa_fast',
+              error: result.error
+            };
+          });
+        } else {
+          providerResults.exa = { success: false, events: [], count: 0, source: 'exa_fast', skipped: true };
+        }
+
+        if (includeSerper) {
+          enqueueProvider('serper', async () => {
+            const result = await serperClient.searchEvents({
+              category,
+              location,
+              limit: eventLimit
+            });
+            return {
+              success: result.success || false,
+              events: result.events || [],
+              count: result.events?.length || 0,
+              processingTime: result.processingTime || 0,
+              source: 'serper',
+              error: result.error
+            };
+          });
+        } else {
+          providerResults.serper = { success: false, events: [], count: 0, source: 'serper', skipped: true };
+        }
+
+        if (includeTicketmaster) {
+          enqueueProvider('ticketmaster', async () => {
+            const result = await ticketmasterClient.searchEvents({
+              category,
+              location,
+              limit: eventLimit
+            });
+            return {
+              success: result.success || false,
+              events: result.events || [],
+              count: result.events?.length || 0,
+              processingTime: result.processingTime || 0,
+              source: 'ticketmaster',
+              cost: result.cost || 0,
+              error: result.error
+            };
+          });
+        } else {
+          providerResults.ticketmaster = { success: false, events: [], count: 0, source: 'ticketmaster', skipped: true };
+        }
+
+        if (includePplx) {
+          enqueueProvider('pplx', async () => {
+            const result = await perplexitySearchClient.searchEvents({
+              category,
+              location,
+              limit: eventLimit
+            });
+            return {
+              success: result.success || false,
+              events: result.events || [],
+              count: result.events?.length || 0,
+              processingTime: result.processingTime || 0,
+              source: 'pplx_search',
+              cost: result.cost || 0,
+              error: result.error
+            };
+          });
+        } else {
+          providerResults.pplx = { success: false, events: [], count: 0, source: 'pplx_search', skipped: true };
+        }
+
+        const settled = await Promise.all(providerPromises);
+        settled.forEach(result => {
+          const { key, status } = result;
+          if (status === 'fulfilled') {
+            providerResults[key] = result.value;
+          } else {
+            providerResults[key] = {
+              success: false,
+              events: [],
+              count: 0,
+              source: key,
+              error: result.reason?.message || String(result.reason)
+            };
+          }
+        });
+
         const eventLists = [];
-        
-        if (perplexityResult.status === 'fulfilled' && perplexityResult.value.success) {
-          const pr = { ...perplexityResult.value, source: 'perplexity_api' };
-          eventLists.push(pr);
-        }
-        
-        if (apyfluxResult.status === 'fulfilled' && apyfluxResult.value.success) {
-          eventLists.push(apyfluxResult.value);
-        }
-        
-        if (predictHQResult.status === 'fulfilled' && predictHQResult.value.success) {
-          eventLists.push(predictHQResult.value);
-        }
-        
-        if (exaResult.status === 'fulfilled' && exaResult.value.success) {
-          eventLists.push(exaResult.value);
-        }
-        
-        if (serpApiResult.status === 'fulfilled' && serpApiResult.value.success) {
-          eventLists.push(serpApiResult.value);
-        }
+        Object.entries(providerResults).forEach(([key, value]) => {
+          if (!value || !Array.isArray(value.events)) return;
+          const providerKey = mapSourceToProvider(value.source || key);
+          if (!selectedProviders.has(providerKey)) return;
+          if (value.events.length === 0) return;
+          eventLists.push(value);
+        });
         
         // Deduplicate events for this category
         const deduplicationResult = deduplicator.deduplicateEvents(eventLists);
         const dedupStats = deduplicator.getDeduplicationStats(eventLists, deduplicationResult);
         
+        const sourceStats = {};
+        Object.entries(providerResults).forEach(([key, value]) => {
+          if (!value) return;
+          const mappedKey = value.source || key;
+          sourceStats[mappedKey] = {
+            count: value.count || 0,
+            processingTime: value.processingTime || 0,
+            error: value.error,
+            cost: value.cost || 0
+          };
+        });
+
         return {
           category,
           success: true,
           events: deduplicationResult.uniqueEvents,
           count: deduplicationResult.uniqueEvents.length,
-          sourceStats: {
-            perplexity: perplexityResult.status === 'fulfilled' && perplexityResult.value.success ? 
-              { count: perplexityResult.value.events.length, processingTime: perplexityResult.value.processingTime } : 
-              { count: 0, error: perplexityResult.reason?.message || 'Unknown error' },
-            apyflux: apyfluxResult.status === 'fulfilled' && apyfluxResult.value.success ? 
-              { count: apyfluxResult.value.events.length, processingTime: apyfluxResult.value.processingTime } : 
-              { count: 0, error: apyfluxResult.reason?.message || 'Unknown error' },
-            predicthq: predictHQResult.status === 'fulfilled' && predictHQResult.value.success ? 
-              { count: predictHQResult.value.events.length, processingTime: predictHQResult.value.processingTime } : 
-              { count: 0, error: predictHQResult.reason?.message || 'Unknown error' },
-            exa_fast: exaResult.status === 'fulfilled' && exaResult.value.success ? 
-              { count: exaResult.value.events.length, processingTime: exaResult.value.processingTime } : 
-              { count: 0, error: exaResult.reason?.message || 'Unknown error' },
-            serpapi: serpApiResult.status === 'fulfilled' && serpApiResult.value.success ? 
-              { count: serpApiResult.value.events.length, processingTime: serpApiResult.value.processingTime } : 
-              { count: 0, error: serpApiResult.reason?.message || 'Unknown error' }
-          },
+          sourceStats,
           // Post-dedup provider attribution
           providerAttribution: dedupStats?.sourceBreakdown || null,
           totals: dedupStats ? { totalOriginal: dedupStats.totalOriginal, totalUnique: dedupStats.totalUnique } : null
@@ -723,7 +1145,7 @@ router.get('/all-categories', async (req, res) => {
     // Organize results by category
     const eventsByCategory = {};
     const categoryStats = {};
-    const aggregatedProviderStats = {};
+    const legacyProviderStats = {};
     let totalEvents = 0;
     
     categoryResults.forEach(result => {
@@ -738,22 +1160,39 @@ router.get('/all-categories', async (req, res) => {
       };
       totalEvents += result.count || 0;
 
+      if (result.sourceStats) {
+        Object.entries(result.sourceStats).forEach(([rawProviderKey, stats = {}]) => {
+          const providerKey = mapSourceToProvider(rawProviderKey);
+          const entry = ensureProviderStats(legacyProviderStats, providerKey, selectedProviders);
+          entry.originalCount += stats.count || 0;
+          entry.processingTime += stats.processingTime || 0;
+          entry.cost += stats.cost || 0;
+          if ((stats.count || 0) > 0) {
+            entry.success = true;
+          }
+        });
+      }
+
       // Aggregate provider attribution across categories (post-dedup survived counts)
       if (result.providerAttribution) {
         Object.entries(result.providerAttribution).forEach(([provider, stats]) => {
-          if (!aggregatedProviderStats[provider]) {
-            aggregatedProviderStats[provider] = { originalCount: 0, survivedCount: 0, duplicatesRemoved: 0 };
-          }
-          aggregatedProviderStats[provider].originalCount += stats.originalCount || 0;
-          aggregatedProviderStats[provider].survivedCount += stats.survivedCount || 0;
+          const providerKey = mapSourceToProvider(provider);
+          const entry = ensureProviderStats(legacyProviderStats, providerKey, selectedProviders);
+          entry.survivedCount += stats.survivedCount || 0;
         });
       }
     });
 
-    // Finalize aggregated duplicatesRemoved
-    Object.keys(aggregatedProviderStats).forEach(provider => {
-      const s = aggregatedProviderStats[provider];
-      s.duplicatesRemoved = Math.max(0, (s.originalCount || 0) - (s.survivedCount || 0));
+    // Ensure every known provider has an entry and finalize stats
+    PROVIDER_ORDER.forEach(providerKey => {
+      const entry = ensureProviderStats(legacyProviderStats, providerKey, selectedProviders);
+      entry.survivedCount = entry.survivedCount || 0;
+      entry.originalCount = entry.originalCount || 0;
+      entry.duplicatesRemoved = Math.max(0, entry.originalCount - entry.survivedCount);
+      entry.success = entry.success || entry.survivedCount > 0;
+      entry.enabled = entry.requested && selectedProviders.has(providerKey);
+      entry.processingTime = Math.max(0, Math.round(entry.processingTime || 0));
+      entry.cost = Number((entry.cost || 0).toFixed(3));
     });
     
     // Log fallback performance metrics
@@ -764,13 +1203,30 @@ router.get('/all-categories', async (req, res) => {
       fallbackReason: useLegacyMode ? 'explicitly_requested' : 'super_hybrid_insufficient_or_failed'
     });
 
+    const providerDetails = PROVIDER_ORDER.map(providerKey => {
+      const stats = ensureProviderStats(legacyProviderStats, providerKey, selectedProviders);
+      return {
+        provider: providerKey,
+        label: stats.label,
+        requested: stats.requested,
+        enabled: stats.enabled,
+        success: stats.success,
+        originalCount: stats.originalCount,
+        survivedCount: stats.survivedCount,
+        duplicatesRemoved: stats.duplicatesRemoved,
+        processingTime: stats.processingTime,
+        cost: stats.cost
+      };
+    });
+
     const response = {
       success: true,
       eventsByCategory,
       categoryStats,
       totalEvents,
       categories: supportedCategories,
-      providerStats: aggregatedProviderStats,
+      providerStats: legacyProviderStats,
+      providerDetails,
       processingTime: duration,
       metadata: {
         location,
