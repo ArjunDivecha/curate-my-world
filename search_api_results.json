@@ -1,0 +1,570 @@
+{
+  "timestamp": "2025-09-26T18:24:19.977109",
+  "single_search": {
+    "query": "music events concerts San Francisco Bay Area September 26, 2025 to October 26, 2025 venues dates tickets Eventbrite Ticketmaster",
+    "latency": 0.5096073150634766,
+    "analysis": {
+      "total_results": 20,
+      "sources": [],
+      "domains": [
+        "www.insomniac.com",
+        "www.sftravel.com",
+        "www.bandsintown.com",
+        "www.thewarfieldtheatre.com",
+        "www.san-francisco-theater.com",
+        "musicinsf.com",
+        "www.sfsymphony.org",
+        "www.eventbrite.com",
+        "eventcartel.com",
+        "seatgeek.com",
+        "www.jambase.com",
+        "concertfix.com",
+        "san-francisco.events",
+        "www.shazam.com",
+        "crawlsf.com",
+        "www.shorelineamphitheatre.com",
+        "www.sftourismtips.com"
+      ],
+      "recent_updates": 17,
+      "events_found": [
+        {
+          "title": "San Francisco Events September 2025: Concerts, Shows, Sports",
+          "url": "https://san-francisco.events/september/",
+          "snippet": "**Check out the complete schedule of all events in SF this month.**\n\n\u201cSan Francisco Events\u201d is your guide to San Francisco events: concerts, shows, musicals, family events, opera, ballet, music festiv...",
+          "date": "2024-12-10",
+          "last_updated": "2025-09-25"
+        },
+        {
+          "title": "San Francisco Bay Area Concert Tickets 2025 - 2026 - JamBase",
+          "url": "https://www.jambase.com/concerts/us/california/concerts-in-san-francisco-bay-area",
+          "snippet": "Everything you need to\n\nGo See Live Music\n\nin San Francisco Bay\n\nCreate a Free Account\n\n## Top Concerts\n\nNear San Francisco Bay Area\n\n- Fri Sep 26, 2025\n\n\n\n#### UB40The English BeatThe Warfield\n\n\n\n###...",
+          "date": "2025-09-26",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "San Francisco Concert Tickets 2025 - SeatGeek",
+          "url": "https://seatgeek.com/cities/sf/concerts",
+          "snippet": "## All San Francisco Concerts\n\n## Learn More About San Francisco Concerts\n\nSan Francisco, a city known for its rich history and cultural diversity, offers a concert scene as dynamic as its iconic land...",
+          "date": "2025-09-23",
+          "last_updated": "2025-09-23"
+        },
+        {
+          "title": "San Francisco Concerts in September 2025",
+          "url": "https://san-francisco.events/concerts/september/",
+          "snippet": "**Check out a complete schedule of all concerts in SF this month.**\n\nExplore catering to diverse musical preferences, from pop, jazz, R&B, and rock to hip-hop, classical, and indie. San Francisco\u2019s ic...",
+          "date": "2025-03-27",
+          "last_updated": "2025-06-13"
+        },
+        {
+          "title": "Concerts in September 2025 - San Francisco Theater",
+          "url": "https://www.san-francisco-theater.com/dates/2025/09/category/concert",
+          "snippet": "## Daniil Trifonov\n\nJoin the world-renowned young piano virtuoso Daniil Trifonov as he displays his prodigious talent in this much-anticipated concert engagement. Described in glowing terms by almost ...",
+          "date": "2025-09-01",
+          "last_updated": "2025-09-25"
+        },
+        {
+          "title": "Shoreline Amphitheatre Tickets & Schedule | Mountain View ...",
+          "url": "https://www.shorelineamphitheatre.com",
+          "snippet": "## Headline Acts\n\nMatt Rife: Stay Golden Tour\n\nSun Oct 19, 2025Buy TicketsMatt Rife: Stay Golden Tour\n\nThomas Rhett: Better In Boots Tour 2025\n\nSat Sep 27, 2025Buy TicketsThomas Rhett: Better In Boots...",
+          "date": "2025-01-01",
+          "last_updated": "2025-09-22"
+        },
+        {
+          "title": "San Francisco Music and Concert Calendar - Music in SF",
+          "url": "https://musicinsf.com/san-francisco-music-calendar/",
+          "snippet": "Check out the Music in SF\u2122 San Francisco live music and concert calendar, featuring some of the best San Francisco live music events, San Francisco music festivals, and San Francisco music concerts in...",
+          "date": "2025-01-23",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "San Francisco, CA Events - Insomniac",
+          "url": "https://www.insomniac.com/events/san-francisco-ca/",
+          "snippet": "## 29 Events Found\n\nConcerts 21+\n\n### Da Tweekaz\n\npresented by Basscon\n\nFriday, September 26, 2025\n\nSan Francisco, CA\n\nConcerts 21+\n\n### Doctor P & Flux Pavilion\n\nAlbum Tour \u00b7 presented by Bassrush + ...",
+          "date": "2025-09-15",
+          "last_updated": "2025-09-23"
+        },
+        {
+          "title": "All SF Concert 25-26 - San Francisco Symphony",
+          "url": "https://www.sfsymphony.org/Buy-Tickets/2025-26/ALL-SAN-FRANCISCO-CONCERT",
+          "snippet": "# All San Francisco Concert\n\nSeptember 11, 2025\n\n## OverviewThe All San Francisco Concert is dedicated to and presented for people involved with Bay Area nonprofits, social services groups, and commun...",
+          "date": "2025-09-11",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "Concerts in San Francisco CA 2025/26",
+          "url": "https://www.san-francisco-theater.com/shows/concert",
+          "snippet": "February 27, 2026\n\nChase Center\n\nThe Little Miss Drama Tour!Read moreBook Tickets\n\nFebruary 27, 2026\n\nChase Center\n\nThe Little Miss Drama Tour!Read moreBook Tickets\n\nJune 1, 2026\n\nDavies Symphony Hall...",
+          "date": "2025-09-24",
+          "last_updated": "2025-09-27"
+        },
+        {
+          "title": "The English Beat concert - San Francisco, The Warfield, Sep 26, 2025",
+          "url": "https://www.shazam.com/event/f5557e88-7814-419c-9d05-2a0b9ed7d972",
+          "snippet": "Upcoming Concert\n\n# The English Beat\n\n## The Warfield, San Francisco, Friday, September 26, 2025\n\nAlternative\n\nSan Francisco\n\nThe WarfieldTickets\n\nPowered by\n\nStay Up to Date\n\nUse Shazam to discover a...",
+          "date": "2025-09-01",
+          "last_updated": "2025-09-21"
+        },
+        {
+          "title": "San Francisco Concerts in October 2025: Calendar of Top Shows",
+          "url": "https://www.sftourismtips.com/san-francisco-concerts-in-october.html",
+          "snippet": "SIGN UP FOR MY EMAIL TO RECEIVE YOUR\n\n**FREE** SAN FRANCISCO PLANNING GUIDE.\n\nby Jill Loeffler \u2022\n\nSan Francisco concerts in October 2025 include a number of great shows at the Chase Center, the Fillmo...",
+          "date": "2025-01-01",
+          "last_updated": "2025-02-04"
+        },
+        {
+          "title": "Events | The Warfield",
+          "url": "https://www.thewarfieldtheatre.com/events",
+          "snippet": "# Calendar of EventsTicketed by AXS.com\n\n##### Goldenvoice Presents\n\n##### The Relentless Tour 2025\n\n### UB40\n\n#### with The English Beat\n\nFri, Sep 26, 2025 Show 8:00 PM\n\nSat, Sep 27, 2025 Show 8:00 P...",
+          "date": "2025-09-26",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "San Francisco, CA Concerts 2025 Schedule & Calendar",
+          "url": "https://concertfix.com/concerts/san-francisco-ca",
+          "snippet": "### TOP UPCOMING CONCERTS IN San Francisco, CA\n\n- Benson Boone @ Chase Center on Wed Oct 1, 2025\n\n- A Tribute To Emmylou Harris & 25 Years of Hardly Strictly Bluegrass @ The Masonic - San Francisco on...",
+          "date": "2025-09-26",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "San Francisco Concerts: 2025 Top Shows Each Month",
+          "url": "https://www.sftourismtips.com/san-francisco-concerts.html",
+          "snippet": "SIGN UP FOR MY EMAIL TO RECEIVE YOUR\n\n**FREE** SAN FRANCISCO PLANNING GUIDE.\n\n**By**: Jill Loeffler \u2022 **Updated**: September 1, 2025\n\nMy\n\n**San Francisco concerts calendar** features all of the top up...",
+          "date": "2025-09-01",
+          "last_updated": "2025-09-19"
+        },
+        {
+          "title": "San Francisco Festivals and Events in September",
+          "url": "https://www.sftravel.com/article/san-francisco-festivals-events-september",
+          "snippet": "# San Francisco Festivals and Events in September\n\nSummer might be over elsewhere, but the season's just getting started in San Francisco. Experience our best weather and these great events.\n\nAll date...",
+          "date": "2025-07-23",
+          "last_updated": "2025-07-24"
+        },
+        {
+          "title": "Bay Area Concerts - CrawlSF",
+          "url": "https://crawlsf.com/guides/bay-area-concerts/",
+          "snippet": "27\n\nSeptember\n\n2025\n\n### Thomas Rhett Better in Boots Tour 2025\n\n11\n\nOctober\n\n2025\n\n### Dua Lipa \u2013 Radical Optimism Tour at Chase Center\n\n12\n\nOctober\n\n2025\n\n### Dua Lipa \u2013 Radical Optimism Tour at Cha...",
+          "date": "2025-01-30",
+          "last_updated": "2025-09-11"
+        },
+        {
+          "title": "Concerts & Events in San Francisco, CA",
+          "url": "https://www.bandsintown.com/c/san-francisco-ca",
+          "snippet": "# Concerts & Events in San Francisco\n\n## Popular concerts & live events in San Francisco, CA\n\n## Shows selling fast\n\n## San Francisco venue map\n\n## Experience local stages at independent venues\n\n## Co...",
+          "date": "2025-09-26",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "Discover Concert Tickets in San Francisco CA - EventCartel",
+          "url": "https://eventcartel.com/events/concert/san-francisco/all-dates",
+          "snippet": "## Browse events and buy tickets to concerts, theaters, family events, and more nearby.ConcertTheaterFamily EventPartyFestivalQuizzes/Bar GamesSportConferenceNetworkingFashionMovies\n\nSlava Vakarchuk i...",
+          "date": "2025-09-14",
+          "last_updated": "2025-09-14"
+        },
+        {
+          "title": "R&B ONLY LIVE - San Francisco, CA (10 Year Anniversary)",
+          "url": "https://www.eventbrite.com/e/rb-only-live-san-francisco-ca-10-year-anniversary-tickets-1368177739449",
+          "snippet": "# R&B ONLY LIVE - San Francisco, CA (10 Year Anniversary)\n\n**Sing, dance, and experience R&B music from past to present.**\n\n## Date and timeSeptember 27 \u00b7 8pm - September 28 \u00b7 1am PDT\n\n## Location\n\nTh...",
+          "date": "2025-09-01",
+          "last_updated": "2025-09-25"
+        }
+      ]
+    },
+    "cost": 0.005
+  },
+  "multi_search": {
+    "queries": [
+      "concerts music events San Francisco September 26, 2025 to October 26, 2025 venues tickets",
+      "Oakland Berkeley music shows September 26, 2025 to October 26, 2025 Eventbrite",
+      "San Jose South Bay concerts September 26, 2025 to October 26, 2025 live music",
+      "festivals music Bay Area September 26, 2025 to October 26, 2025 outdoor events",
+      "comedy shows theater San Francisco September 26, 2025 to October 26, 2025 entertainment"
+    ],
+    "latency": 0.844398021697998,
+    "analysis": {
+      "total_results": 15,
+      "sources": [],
+      "domains": [
+        "www.thewarfieldtheatre.com",
+        "musicinsf.com",
+        "www.san-francisco-theater.com",
+        "themidwaysf.com",
+        "www.livenation.com",
+        "seatgeek.com",
+        "www.jambase.com",
+        "san-francisco.events",
+        "www.shazam.com",
+        "gamh.com",
+        "www.augusthallsf.com",
+        "www.sftourismtips.com"
+      ],
+      "recent_updates": 15,
+      "events_found": [
+        {
+          "title": "San Francisco Events September 2025: Concerts, Shows, Sports",
+          "url": "https://san-francisco.events/september/",
+          "snippet": "**Check out the complete schedule of all events in SF this month.**\n\n\u201cSan Francisco Events\u201d is your guide to San Francisco events: concerts, shows, musicals, family events, opera, ballet, music festiv...",
+          "date": "2024-12-10",
+          "last_updated": "2025-09-25"
+        },
+        {
+          "title": "Concerts in September 2025 - San Francisco Theater",
+          "url": "https://www.san-francisco-theater.com/dates/2025/09/category/concert",
+          "snippet": "## Daniil Trifonov\n\nJoin the world-renowned young piano virtuoso Daniil Trifonov as he displays his prodigious talent in this much-anticipated concert engagement. Described in glowing terms by almost ...",
+          "date": "2025-09-01",
+          "last_updated": "2025-09-25"
+        },
+        {
+          "title": "Calendar",
+          "url": "https://www.augusthallsf.com/calendar/",
+          "snippet": "Sep 26 Whiskies of the World Buy Tickets September 26, 2025 Sep 27 Soft Play (Formerly Slaves), Kennyhoopla Buy Tickets September 27, 2025 Sep 30 Dorothy Buy Tickets September 30, 2025 Oct 2 One Pact:...",
+          "date": "2025-03-24",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "Concerts",
+          "url": "https://san-francisco.events/concerts/",
+          "snippet": "**Check out a complete schedule of all current and upcoming concerts in 2025/2026.**\n\n\u201cSan Francisco Events\u201d is your guide to all live music events in SF. Explore catering to diverse musical preferenc...",
+          "date": "2025-03-31",
+          "last_updated": "2025-09-27"
+        },
+        {
+          "title": "San Francisco Music and Concert Calendar - Music in SF",
+          "url": "https://musicinsf.com/san-francisco-music-calendar/",
+          "snippet": "Check out the Music in SF\u2122 San Francisco live music and concert calendar, featuring some of the best San Francisco live music events, San Francisco music festivals, and San Francisco music concerts in...",
+          "date": "2025-01-23",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "San Francisco Concert Tickets 2025 - SeatGeek",
+          "url": "https://seatgeek.com/cities/sf/concerts",
+          "snippet": "## All San Francisco Concerts\n\n## Learn More About San Francisco Concerts\n\nSan Francisco, a city known for its rich history and cultural diversity, offers a concert scene as dynamic as its iconic land...",
+          "date": "2025-09-23",
+          "last_updated": "2025-09-23"
+        },
+        {
+          "title": "San Francisco Bay Area Concert Tickets 2025 - 2026 - JamBase",
+          "url": "https://www.jambase.com/concerts/us/california/concerts-in-san-francisco-bay-area",
+          "snippet": "Everything you need to\n\nGo See Live Music\n\nin San Francisco Bay\n\nCreate a Free Account\n\n## Top Concerts\n\nNear San Francisco Bay Area\n\n- Fri Sep 26, 2025\n\n\n\n#### UB40The English BeatThe Warfield\n\n\n\n###...",
+          "date": "2025-09-26",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "Calendar",
+          "url": "https://gamh.com/calendar/",
+          "snippet": "|Sun|Mon|Tue|Wed|Thu|Fri|Sat|\n|--|--|--|--|--|--|--|\n|01|02 Event Showtime: 8:00PM Event Doortime: 7:00PM|03 Event Showtime: 8:00PM Event Doortime: 7:00PM|04|05|06|\n|07 with The Inciters Event Showtim...",
+          "date": "2021-08-01",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "Great American Music Hall",
+          "url": "https://gamh.com",
+          "snippet": "GREAT AMERICAN MUSIC HALL\n\nPlus Pre-Show Swing Dance Lesson!\n\nLizzy & the Triggermen\n\nwith The Hot Baked Goods, DJ Nathan Dias\n\nThe Hot Baked Goods, DJ Nathan Dias\n\nFri Sep 26\n\nEvent Doortime: 7:00PM ...",
+          "date": "2021-08-01",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "Concerts in October 2025 - San Francisco Theater",
+          "url": "https://www.san-francisco-theater.com/dates/2025/10/category/concert",
+          "snippet": "## Candlelight: The Best of Joe Hisaishi\n\nYou may not recognize his name, but you will know his work! As the celebrated composer for some of Studio Ghibli's most enchanting animated movies, Joe Hisais...",
+          "date": "2025-09-24",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "San Francisco Concerts: 2025 Top Shows Each Month",
+          "url": "https://www.sftourismtips.com/san-francisco-concerts.html",
+          "snippet": "SIGN UP FOR MY EMAIL TO RECEIVE YOUR\n\n**FREE** SAN FRANCISCO PLANNING GUIDE.\n\n**By**: Jill Loeffler \u2022 **Updated**: September 1, 2025\n\nMy\n\n**San Francisco concerts calendar** features all of the top up...",
+          "date": "2025-09-01",
+          "last_updated": "2025-09-19"
+        },
+        {
+          "title": "The English Beat concert - San Francisco, The Warfield, Sep 26, 2025",
+          "url": "https://www.shazam.com/event/f5557e88-7814-419c-9d05-2a0b9ed7d972",
+          "snippet": "Upcoming Concert\n\n# The English Beat\n\n## The Warfield, San Francisco, Friday, September 26, 2025\n\nAlternative\n\nSan Francisco\n\nThe WarfieldTickets\n\nPowered by\n\nStay Up to Date\n\nUse Shazam to discover a...",
+          "date": "2025-09-01",
+          "last_updated": "2025-09-21"
+        },
+        {
+          "title": "The Warfield",
+          "url": "https://www.thewarfieldtheatre.com",
+          "snippet": "## Alert\n\n## Upcoming Events\n\n##### Goldenvoice Presents\n\n##### The Relentless Tour 2025\n\n### UB40\n\n#### with The English Beat\n\nFri, Sep 26, 2025 Show 8:00 PM\n\nSat, Sep 27, 2025 Show 8:00 PM\n\n##### Go...",
+          "date": "2025-07-01",
+          "last_updated": "2025-09-25"
+        },
+        {
+          "title": "Upcoming Events",
+          "url": "https://themidwaysf.com/events/",
+          "snippet": "Top\n\nU\n\nPCOMING EVENTS\n\nUh oh, it seems JavaScript is disabled in your browser.\n\nPlease enable JavaScript to view events or try visiting this page with a different browser.\n\nPARTYING EVERY WEEKEND SIN...",
+          "date": "2024-04-01",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "The Fillmore - 2025 show schedule & venue information - Live Nation",
+          "url": "https://www.livenation.com/venue/KovZpZAE6eeA/the-fillmore-events",
+          "snippet": "Doors generally open one hour before the show's scheduled start time. Bags up to 12\u201d x 6\u201d x 12\u201d are allowed in the venue. All our events will be Mobile Entry, meaning your mobile device will be used t...",
+          "date": "2025-09-26",
+          "last_updated": "2025-09-26"
+        }
+      ]
+    },
+    "cost": 0.005
+  },
+  "raw_responses": {
+    "single": {
+      "results": [
+        {
+          "title": "San Francisco Events September 2025: Concerts, Shows, Sports",
+          "url": "https://san-francisco.events/september/",
+          "snippet": "**Check out the complete schedule of all events in SF this month.**\n\n\u201cSan Francisco Events\u201d is your guide to San Francisco events: concerts, shows, musicals, family events, opera, ballet, music festivals, and sporting events to experience while in town. Find the best events this month. Get event tickets tickets today and save. We\u2019re sure you will find something that sparks your curiosity!",
+          "date": "2024-12-10",
+          "last_updated": "2025-09-25"
+        },
+        {
+          "title": "San Francisco Bay Area Concert Tickets 2025 - 2026 - JamBase",
+          "url": "https://www.jambase.com/concerts/us/california/concerts-in-san-francisco-bay-area",
+          "snippet": "Everything you need to\n\nGo See Live Music\n\nin San Francisco Bay\n\nCreate a Free Account\n\n## Top Concerts\n\nNear San Francisco Bay Area\n\n- Fri Sep 26, 2025\n\n\n\n#### UB40The English BeatThe Warfield\n\n\n\n#### Jessie MurphNino PaidFox Theater\n\n\n\n#### Snow StrippersDJ EssOnly Fire1015 Folsom\n\n\n\n#### KatchafireKa'ikena ScanlanCornerstone\n\n\n\n#### DawesSam WeberThe Guild Theatre\n\n\n\n#### Nokia Angelsmokedope2016LIL FITTED CAPBARTESIANWATERThe New Parish Music Hall\n\n\n\n#### The Lone BellowValley JamesThe Fillmore\n\n\n\n#### dublonKids ReturnYuka YuRickshaw Stop\n\n\n\n#### Mannequin PlanetCircle Of RuinPTYLHotel Utah\n\n\n\n#### EdgarAngoisse MagazineSachi's MirrorNaked RoommateThee Stork Club\n\n\n\n#### DirtySpoonBrian WachhorstSweetwater Music Hall\n\n\n\n#### Hot Baked GoodsNathan DiesGreat American Music Hall\n\n\n\n#### The Groove DoctorsEast Bay GroovelineOrinda Theatre\n\n\n\n#### ScientistUFO BabyThe Chapel\n\n\n\n#### John Rybak + Friends\n\n2 Hours free acoustic roots + blues with John Rybak + Friends in RWC!John RybakFreewheel Brewing Company\n\n\n\n#### Keith GreeningerNina GerberHopMonk Sebastopol\n\n\n\n- Sat Sep 27, 2025\n\n\n\n#### Kali Uchis54 UltraSAP Center\n\n\n\n#### Thomas RhettTucker WetmoreThe CastellowsShoreline Amphitheatre",
+          "date": "2025-09-26",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "San Francisco Concert Tickets 2025 - SeatGeek",
+          "url": "https://seatgeek.com/cities/sf/concerts",
+          "snippet": "## All San Francisco Concerts\n\n## Learn More About San Francisco Concerts\n\nSan Francisco, a city known for its rich history and cultural diversity, offers a concert scene as dynamic as its iconic landmarks. Whether you\u2019re a fan of rock, jazz, hip-hop, or classical music, San Francisco\u2019s vibrant music culture has something to offer everyone. From legendary theaters to modern performance spaces, the city is a hub for live music experiences.\n\nSan Francisco\u2019s musical legacy is deeply rooted in its countercultural movements and artistic innovation. Iconic venues like\n\n__The Fillmore__ have hosted some of the greatest artists of all time, from Jimi Hendrix to Janis Joplin, while newer spots like the __Chase Center__ attract today\u2019s biggest stars. Outdoor venues such as Stern Grove and the __Golden Gate Park__ Polo Fields offer fans the chance to enjoy live music surrounded by natural beauty.\n\nBeyond the big-name venues, San Francisco\u2019s neighborhoods also shine as cultural hotspots for live music. From the jazz clubs of North Beach to the indie rock havens in the Mission District, every corner of the city contributes to its dynamic soundscape. San Francisco\u2019s concert scene is as diverse as its residents, making it a must-visit destination for music lovers.... ## Frequently Asked Questions About Concerts in San Francisco\n\nThe Bay Area is an incredible and eclectic spot to check out live music. If you're looking for concerts in San Francisco, here's everything you need to know:\n\n### What are some must-visit concert venues in San Francisco?\n\nSan Francisco is home to an incredible variety of venues, each offering a unique live music experience. Some of the most popular include:\n\n__The Fillmore__ **:**A historic venue renowned for its intimate atmosphere and iconic performances. __Chase Center__ **:**A modern arena that hosts major tours and large-scale productions. __The Warfield__ **:**A theater with a storied history, offering a mix of genres and top-tier acoustics. **Stern Grove Festival:**An outdoor space hosting free summer concerts in a scenic forest setting.\n\nThese venues cater to fans of every musical style, from rock and pop to classical and jazz.\n\n### How can I purchase tickets for concerts in San Francisco?\n\nYou can buy tickets to San Francisco concerts right here on SeatGeek. Scroll up to find all the upcoming concerts in the Bay Area, and make sure to utilize our Deal Score and pricing filters to find the best ticket options for you.\n\n__SeatGeek__ is a trusted platform that offers easy ticket purchasing, interactive seating charts, and up-to-date event listings to ensure you find the best seats for any concert.... ### Are there free concerts in San Francisco?\n\nYes, San Francisco regularly hosts free concerts, providing opportunities to enjoy live music without breaking the bank. Here are a few examples:\n\n**Stern Grove Festival:**A beloved summer tradition featuring free performances from local and international artists. __Hardly Strictly Bluegrass__ **:**An annual free festival in __Golden Gate Park__that showcases a mix of bluegrass, folk, and other genres. **Union Square Live:**A series of free events and concerts held in the heart of downtown San Francisco.\n\nCheck local event calendars to stay updated on upcoming free concerts.\n\n### What are the best seats at San Francisco concert venues?\n\nFinding the right seat depends on the type of venue and your preferences. Here\u2019s a quick guide:\n\n**Orchestra Section:**Ideal for theaters like __The Warfield__, offering close proximity and excellent acoustics. **Balcony Seating:**Provides a broader view of the stage, great for larger venues like the Chase Center. **General Admission:**Perfect for fans who enjoy high-energy shows and don\u2019t mind standing at venues like __The Fillmore__.\n\nRefer to seating charts for specific venues to choose the best option for your experience.\n\n### What\u2019s the best way to get to San Francisco concert venues?\n\nSan Francisco\u2019s compact layout and public transit options make it easy to reach concert venues. Popular options include:\n\n**BART and Muni:**These systems provide affordable and efficient transit to most major venues in the city. **Ride-Sharing Services:**Uber and Lyft are readily available for door-to-door convenience. **Walking or Biking:**Many venues are located in pedestrian-friendly areas like SOMA and the Mission District.\n\nPlan ahead, especially if parking is limited near the venue.... ### Are San Francisco concert venues accessible?\n\nMost venues in San Francisco are committed to accessibility, offering accommodations for guests with disabilities. These include:\n\n**Accessible Seating:**Reserved areas designed for wheelchair users and their companions. **Hearing and Vision Support:**Assistive listening devices and other services are often available upon request. **Mobility Aids:**Ramps, elevators, and accessible restrooms are standard at most venues.\n\nContact the venue before your event to confirm specific accommodations.\n\n### What are some hidden gem venues in San Francisco?\n\nFor those seeking unique and intimate concert experiences, San Francisco is home to several lesser-known but exceptional venues:\n\n__Bottom of the Hill__ **:**A small, iconic venue in Potrero Hill known for showcasing emerging artists. __Amado\u2019s__ **:**A cozy Mission District space offering an eclectic mix of live performances. __SFJAZZ Center__ **:**A premier destination for jazz enthusiasts, featuring world-class artists in an intimate setting.\n\nExploring these venues is a great way to discover new artists and enjoy the city\u2019s local music scene.\n\n### What safety measures are in place at San Francisco concert venues?\n\nSafety is a priority at all San Francisco concert venues. Common measures include:\n\n**Bag Checks and Metal Detectors:**Standard practices to ensure a secure environment. **Health Protocols:**Venues often follow current public health guidelines, including cleaning and sanitization. **Prohibited Items:**Check the venue\u2019s website for a list of restricted items before attending.\n\nReview the venue\u2019s policies before your event to ensure a smooth experience.\n\nSan Francisco\u2019s concert scene is a testament to the city\u2019s rich cultural heritage and love for live music. Whether you\u2019re catching a major act at the\n\n__Chase Center__ or enjoying a free summer performance at Stern Grove, the city offers endless opportunities to immerse yourself in music.",
+          "date": "2025-09-23",
+          "last_updated": "2025-09-23"
+        },
+        {
+          "title": "San Francisco Concerts in September 2025",
+          "url": "https://san-francisco.events/concerts/september/",
+          "snippet": "**Check out a complete schedule of all concerts in SF this month.**\n\nExplore catering to diverse musical preferences, from pop, jazz, R&B, and rock to hip-hop, classical, and indie. San Francisco\u2019s iconic concert venues deliver unforgettable performances for every music lover. Some popular concert venues in the city include the Bing Concert Hall, Oakland Coliseum, August Hall, and more. Don\u2019t miss the most popular concerts this month. Act now to secure your tickets and VIP packages at competitive prices.",
+          "date": "2025-03-27",
+          "last_updated": "2025-06-13"
+        },
+        {
+          "title": "Concerts in September 2025 - San Francisco Theater",
+          "url": "https://www.san-francisco-theater.com/dates/2025/09/category/concert",
+          "snippet": "## Daniil Trifonov\n\nJoin the world-renowned young piano virtuoso Daniil Trifonov as he displays his prodigious talent in this much-anticipated concert engagement. Described in glowing terms by almost every major publication around the world, the Grammy-winning Russian gave his first solo concert aged just seven and has not looked back ever since. Giving several concerts a year, an opportunity to see Trifonov is one not to be missed!\n\nSep 28\n\nZellerbach Hall\n\nPrices fromMore infoBook Tickets",
+          "date": "2025-09-01",
+          "last_updated": "2025-09-25"
+        },
+        {
+          "title": "Shoreline Amphitheatre Tickets & Schedule | Mountain View ...",
+          "url": "https://www.shorelineamphitheatre.com",
+          "snippet": "## Headline Acts\n\nMatt Rife: Stay Golden Tour\n\nSun Oct 19, 2025Buy TicketsMatt Rife: Stay Golden Tour\n\nThomas Rhett: Better In Boots Tour 2025\n\nSat Sep 27, 2025Buy TicketsThomas Rhett: Better In Boots Tour 2025\n\nConan Gray: The Wishbone Pajama Show w/ special guest hemlocke springs\n\nFri Oct 3, 2025Buy TicketsConan Gray: The Wishbone Pajama Show w/ special guest hemlocke springs\n\nAbove & Beyond - Bigger Than All Of Us North America\n\nSat Oct 4, 2025Buy TicketsAbove & Beyond - Bigger Than All Of Us North America\n\nRebelution: Good Vibes Cali Tour 2025\n\nSat Oct 11, 2025Buy TicketsRebelution: Good Vibes Cali Tour 2025\n\nJudas Priest & Alice Cooper Live\n\nTue Oct 14, 2025Buy TicketsJudas Priest & Alice Cooper Live\n\nTHE B-52s * DEVO: COSMIC DE-EVOLUTION TOUR\n\nThu Oct 16, 2025Buy TicketsTHE B-52s * DEVO: COSMIC DE-EVOLUTION TOUR\n\nJunior H - $AD BOYZ LIVE & BROKEN TOUR... Sat Oct 18, 2025Buy TicketsJunior H - $AD BOYZ LIVE & BROKEN TOUR\n\nMatt Rife: Stay Golden Tour\n\nSun Oct 19, 2025Buy TicketsMatt Rife: Stay Golden Tour\n\nThomas Rhett: Better In Boots Tour 2025\n\nSat Sep 27, 2025Buy TicketsThomas Rhett: Better In Boots Tour 2025\n\nConan Gray: The Wishbone Pajama Show w/ special guest hemlocke springs\n\nFri Oct 3, 2025Buy TicketsConan Gray: The Wishbone Pajama Show w/ special guest hemlocke springs\n\nAbove & Beyond - Bigger Than All Of Us North America\n\nSat Oct 4, 2025Buy TicketsAbove & Beyond - Bigger Than All Of Us North America\n\nRebelution: Good Vibes Cali Tour 2025\n\nSat Oct 11, 2025Buy TicketsRebelution: Good Vibes Cali Tour 2025\n\nJudas Priest & Alice Cooper Live\n\nTue Oct 14, 2025Buy TicketsJudas Priest & Alice Cooper Live\n\nTHE B-52s * DEVO: COSMIC DE-EVOLUTION TOUR\n\nThu Oct 16, 2025Buy TicketsTHE B-52s * DEVO: COSMIC DE-EVOLUTION TOUR\n\nJunior H - $AD BOYZ LIVE & BROKEN TOUR\n\nSat Oct 18, 2025Buy TicketsJunior H - $AD BOYZ LIVE & BROKEN TOUR\n\nMatt Rife: Stay Golden Tour\n\nSun Oct 19, 2025Buy TicketsMatt Rife: Stay Golden Tour... ## Amp Up Your Experience\n\n### CREATE YOUR OWN PACKAGE\n\nPick your shows and reserve a premium box - enjoy premium seats, in-seat wait service, and the best views in the house!PICK YOUR SHOWS\n\n### ENTER THE CLUB\n\nWelcome to The Hideaway and Citi VIP Terrace - Your Exclusive Retreat. Enjoy our secluded lounge areas complete with premium bars, private bathrooms, ample relaxation space, and an exclusive buffet.View Upgrade\n\n### BEAT THE RUSH\n\nFor all you rail-riders, beat the crowds with Fast Lane Access and enter the venue before the general admission lines.Get Access\n\n### TAKE YOUR SEAT\n\nRent a comfortable lawn chair and settle into your spot on the lawn. The show is about to begin!View Upgrade\n\n### GRAB THE BEST SPOT\n\nBook a parking spot near the entrance, and beat the post-show rush on your way out.Reserve My Spot\n\n## One Stage. Unbridled Beats\n\n### Lollapalooza\n\nShoreline Amphitheatre was a stop on the very first Lollapalooza tour in 1991 and hosted the famous festival for a handful of years. The lineups boasted names like Nine Inch Nails, Pearl Jam, Soundgarden, RHCP, The Smashing Pumpkins, and A Tribe Called Quest.\n\n### Grateful Dead\n\nShoreline Amphitheatre made its debut in the summer of 1986, originally scheduled to open with a concert by The Grateful Dead. The show was canceled due to Jerry Garcia's health issues. They returned in 1987 to play our stage, and have returned to Shoreline Amphitheatre 39 times since then.\n\n### Bridge School Benefit Concerts\n\nEstablished by Neil Young and Pegi Young, the Bridge School Benefit Concert is a yearly charitable event that featured all-acoustic performances. Held every October at Shoreline Amphitheatre, this non-profit concert brought together musical legends like Elton John, Willie Nelson, Bruce Springsteen, Jack White, and Tony Bennett, all united in their efforts to raise funds for The Bridge School.",
+          "date": "2025-01-01",
+          "last_updated": "2025-09-22"
+        },
+        {
+          "title": "San Francisco Music and Concert Calendar - Music in SF",
+          "url": "https://musicinsf.com/san-francisco-music-calendar/",
+          "snippet": "Check out the Music in SF\u2122 San Francisco live music and concert calendar, featuring some of the best San Francisco live music events, San Francisco music festivals, and San Francisco music concerts in the Bay Area. Looking for something to do tonight? You\u2019ll find 100s of listings on our San Francisco live music and concert calendar that contains San Francisco live music shows and other San Francisco live music events right here in the Bay Area.\n\nSan Francisco is a city with a vibrant music scene, ripe with live music events, live entertainment, and music gigs. The Spingo San Francisco live music and concert calendar below contains events and concerts in San Francisco from local and national bands alike.",
+          "date": "2025-01-23",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "San Francisco, CA Events - Insomniac",
+          "url": "https://www.insomniac.com/events/san-francisco-ca/",
+          "snippet": "## 29 Events Found\n\nConcerts 21+\n\n### Da Tweekaz\n\npresented by Basscon\n\nFriday, September 26, 2025\n\nSan Francisco, CA\n\nConcerts 21+\n\n### Doctor P & Flux Pavilion\n\nAlbum Tour \u00b7 presented by Bassrush + Vital\n\nSaturday, September 27, 2025\n\nSan Francisco, CA\n\nConcerts 21+\n\n### YDG\n\nYou + Me Forever \u00b7 presented by Bassrush\n\nThursday, October 2, 2025\n\nSan Francisco, CA\n\nConcerts 18+\n\n### Crankdat\n\nGet Cranked 2.0 \u00b7 presented by Bassrush\n\nSaturday, October 11, 2025\n\nSan Francisco, CA\n\nConcerts 21+\n\n### PhaseOne\n\nTerranova Album Tour \u00b7 presented by Bassrush\n\nSaturday, October 11, 2025\n\nSan Francisco, CA\n\nConcerts 18+\n\n### Eli Brown\n\npresented by Factory 93\n\nSaturday, October 18, 2025\n\nSan Francisco, CA\n\nConcerts 18+\n\n### Subtronics\n\npresented by Bassrush\n\nThursday, October 23, 2025\n\nSan Francisco, CA\n\nConcerts 18+\n\n### Subtronics\n\npresented by Bassrush\n\nFriday, October 24, 2025\n\nSan Francisco, CA\n\nConcerts 21+... ### OG Nixin & Benda\n\nPublic Enemies Tour \u00b7 presented by Bassrush + Vital\n\nFriday, October 24, 2025\n\nSan Francisco, CA\n\nConcerts 18+\n\n### Subtronics\n\npresented by Bassrush\n\nSaturday, October 25, 2025\n\nSan Francisco, CA\n\nConcerts 21+\n\n### Deborah De Luca\n\npresented by Factory 93\n\nFriday, November 7, 2025\n\nSan Francisco, CA\n\nConcerts 21+\n\n### Ghengar\n\nSurrounded Tour \u00b7 presented by Bassrush\n\nFriday, November 14, 2025\n\nSan Francisco, CA\n\nConcerts 21+\n\n### AniMe\n\nNo Boundaries Set \u00b7 presented by Basscon + Vital\n\nFriday, November 14, 2025\n\nSan Francisco, CA\n\nConcerts 21+\n\n### Sanzu\n\nAshina Tour \u00b7 presented by Bassrush & Vital\n\nSaturday, November 15, 2025\n\nSan Francisco, CA\n\nConcerts 21+\n\n### NERO\n\n2025 DJ Tour \u00b7 presented by Bassrush\n\nSaturday, November 22, 2025\n\nSan Francisco, CA\n\nConcerts 21+\n\n### Yosuf\n\npresented by Basscon + Vital\n\nSaturday, November 22, 2025\n\nSan Francisco, CA",
+          "date": "2025-09-15",
+          "last_updated": "2025-09-23"
+        },
+        {
+          "title": "All SF Concert 25-26 - San Francisco Symphony",
+          "url": "https://www.sfsymphony.org/Buy-Tickets/2025-26/ALL-SAN-FRANCISCO-CONCERT",
+          "snippet": "# All San Francisco Concert\n\nSeptember 11, 2025\n\n## OverviewThe All San Francisco Concert is dedicated to and presented for people involved with Bay Area nonprofits, social services groups, and community organizations, in recognition of and gratitude for the work they do to serve and enrich the lives of Bay Area citizens.\n\nTo request an invitation for your organization, contact [email protected].\n\n## Concert Extras\n\n**Now on View:**A lobby exhibit in Davies Symphony Hall explores\n\n*Ga\u00efa*\u2014the latest project from cellist Gautier Capu\u00e7on, featuring newly commissioned works by 16 composers.\n\nArtists\n\nConductor\n\nPiano\n\nSan Francisco Symphony\n\nProgram\n\nJohn Adams\n\n*Short Ride in a Fast Machine*\n\nPiotr Ilyich Tchaikovsky\n\nPiano Concerto No. 1\n\nOttorino Respighi\n\n*Pines of Rome*\n\n## Sponsors\n\nPresented in partnership with\n\n\u00a92025 San Francisco Symphony | Privacy Statement & Terms and Conditions",
+          "date": "2025-09-11",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "Concerts in San Francisco CA 2025/26",
+          "url": "https://www.san-francisco-theater.com/shows/concert",
+          "snippet": "February 27, 2026\n\nChase Center\n\nThe Little Miss Drama Tour!Read moreBook Tickets\n\nFebruary 27, 2026\n\nChase Center\n\nThe Little Miss Drama Tour!Read moreBook Tickets\n\nJune 1, 2026\n\nDavies Symphony Hall\n\nMultiple Grammy-winning cellist Yo-Yo Ma is unarguably one of classical music's biggest starRead moreBook Tickets\n\nDecember 23\n\nGolden Gate Theatre\n\nCelebrate A Beatles Christmas with RAIN!Read moreBook Tickets\n\nJune 6 - 10, 2026\n\nOakland Arena\n\nSmall stature, BIG voice - don't miss the pop-star's Eternal Sunshine tour!Read moreBook Tickets\n\nDecember 19\n\nSt Ignatius Church\n\nAll your favorite Christmas carols by candlelight!Read moreBook Tickets\n\nCardi B returns with her long-awaited second album, Am I The Drama?, a 23-track epic featuring powerhouse collaborations with Megan Thee Stallion, Lizzo, Janet Jackson, Selena Gomez, and more. Aptly named after her recent viral court case - which reminded the nation that the bold, bubbly, headline-grabbing American rapper marches to the beat of her own drum - the album cements Cardi's reputation as a larger-than-life force, whose recent singles Outside and Imaginary Playerz already set the internet ablaze!... Feb 27, 2026\n\nChase Center\n\nPrices fromMore infoBook Tickets\n\nNeeding almost no introduction, multiple Grammy-winning cellist Yo-Yo Ma is unarguably one of classical music's biggest star. The virtuoso performs all over the world to sold-out houses and remains one of the best-selling recording artists in the classical field. His versatility, energy, and pure love of creating and performing exquisite music make him a favorite for audiences of all ages.\n\nJun 1, 2026\n\nDavies Symphony Hall\n\nPrices fromMore infoBook Tickets\n\nCome together this holiday season as the legendary Beatles tribute RAIN presents A Beatles Christmas Tribute! Together longer than The Beatles themselves, RAIN has mastered every song, gesture and nuance of the legendary group, delivering a totally live, note-for-note performance that's as infectious as it is transporting. Includes the early hits to later classics that The Beatles never got the chance to play live - including the most complex and challenging songs.\n\nDec 23\n\nGolden Gate Theatre\n\nPrices fromMore infoBook Tickets\n\nAfter seven years away from the road, Ariana Grande is back with the Eternal Sunshine tour, celebrating her chart-topping 2024 album of the same name! Fresh off her role as Glinda in the Wicked movies, Ariana is ready to remind fans why she's one of the most electrifying performers in the world. From powerhouse hits like Dangerous Woman and God Is A Woman, to more emotion-led ones like We Can't Be Friends and Imperfect for You, we're sure the setlist will promise a night of pure magic.... Jun 6 - 10, 2026\n\nOakland Arena\n\nPrices fromMore infoBook Tickets\n\nThe holidays are on the way and what's more Christmassy than the carols? If you're in the mood for a festive sing-a-long, our friends at fever have you covered with this wonderful yuletide concert, featuring all your favorite carols played by a talented string quartet in an evocative candlelit venue. So Come All Ye Faithful and enjoy a not-so-Silent Night of Joy To The World!\n\nDec 19\n\nSt Ignatius Church\n\nPrices fromMore infoBook Tickets\n\nCelebrate the holidays with one of music's most beloved traditions, with Jonathan Cohen conducting the San Francisco Symphony in a performance of Handel's Messiah. A cherished holiday custom since its premiere in 1742, this splendid oratorio features some of the most popular refrains in Western music; from \"Comfort ye, my people\" to the famous \"Hallelujah\" chorus.\n\nDec 5 - 6\n\nDavies Symphony Hall\n\nPrices fromMore infoBook Tickets",
+          "date": "2025-09-24",
+          "last_updated": "2025-09-27"
+        },
+        {
+          "title": "The English Beat concert - San Francisco, The Warfield, Sep 26, 2025",
+          "url": "https://www.shazam.com/event/f5557e88-7814-419c-9d05-2a0b9ed7d972",
+          "snippet": "Upcoming Concert\n\n# The English Beat\n\n## The Warfield, San Francisco, Friday, September 26, 2025\n\nAlternative\n\nSan Francisco\n\nThe WarfieldTickets\n\nPowered by\n\nStay Up to Date\n\nUse Shazam to discover and stay up to date with all your favourite concerts and moreOpen Shazam\n\nDon't have the App?Download Shazam free",
+          "date": "2025-09-01",
+          "last_updated": "2025-09-21"
+        },
+        {
+          "title": "San Francisco Concerts in October 2025: Calendar of Top Shows",
+          "url": "https://www.sftourismtips.com/san-francisco-concerts-in-october.html",
+          "snippet": "SIGN UP FOR MY EMAIL TO RECEIVE YOUR\n\n**FREE** SAN FRANCISCO PLANNING GUIDE.\n\nby Jill Loeffler \u2022\n\nSan Francisco concerts in October 2025 include a number of great shows at the Chase Center, the Fillmore, and the Masonic.\n\nYou will also find top shows at venues such as the Bill Graham Civic Auditorium, The Great American Music Hall, and Bimbo's 365.\n\nAround the Bay Area you will find top concerts in cities such as Oakland, San Jose, and Berkeley. You'll find top performances at the SAP Center, the Shoreline Amphitheatre in Mountain View, and the Greek Theatre in Berkeley.\n\nMore live music options this month include our annual outdoor street fairs and festivals, performances by the SF Symphony and Broadway musicals.\n\nScroll down for a full concert calendar this month in SF and all around the Bay Area.\n\n__Disclaimer__: I receive a small commission from some of the links on this page.\n\nClick the links below to find ticketing details about these top San Francisco concerts in October.\n\n>> Additional events in October in SF\n\n>> More fun things to do this month\n\nClick these links for a list of San Francisco concerts in October for each venue.\n\nHere are a few additional concerts in the Bay Area this October. Click the links below for ticketing information.... In addition to the San Francisco concerts in October, you will also find great live music venues all around the SF Bay Area. Here are just a few of the top locations. Click the links for a schedule of top shows in each city.\n\nYou will find great tickets for San Francisco concerts in October on Ticketmaster. They offer tickets at venues such as the Warfield, the Masonic Auditorium at Nob Hill Masonic Center, and The Fillmore.\n\n>> Find tickets to upcoming concerts on Ticketmaster\n\nIn addition to San Francisco concerts in October at local music venues, you will also find live music at some of our fun festivals. Here are a few places offering live music and concerts this month.\n\nThe Castro Street Fair is an annual event the first Sunday of October. It's a street fair that celebrates the LGBTQ community. The event features live music from local and international artists supporting the LGBTQ community.\n\n>> More details about this year's event\n\nOne of the most popular music festivals in October is Hardly Strictly Bluegrass. The event offers 3 days of live, free music in Golden Gate Park. The event features both local and internationally recognized artists. Previous performers include Cyndi Lauper, Chris Isaak, and Emmylou Harris.\n\n>> More about attending this year's event... **Address**: Mission Bay Blocks 29-32\n\n**Capacity**: ~18,000\n\n**Public Transit**: KT (Mission Rock or UCSF/Mission Bay stops)\n\n**Address**: 99 Grove Street near City Hall\n\n**Capacity**: ~7,000\n\n**Public Transit**: BART to Civic Center, Muni to Van Ness, Buses 6, 7, 9, 21, 47, 49\n\nLearn more about shows at the Bill Graham Civic Auditorium.\n\n**Address**: 1111 California Street\n\n**Capacity**: 3,165\n\n**Public Transit**: California Cable Car, Bus #1\n\nMore details about seeing a show at the Masonic.\n\n**Address**: 982 Market Street\n\n**Capacity**: 2,300\n\n**Public Transit**: BART to Powell Street, Muni to Powell Street, Buses 6, 7, 9, 21\n\nDetails to see a show at the Warfield.\n\n**Address**: 1805 Geary Boulevard\n\n**Capacity**: 1,150\n\n**Public Transit**: Buses 22 & 38\n\nMore about shows at the Fillmore.\n\n**Address**: 628 Divisadero... **Capacity**: ~400, standing room only\n\n**Public Transit**: Buses 5, 21, and 24\n\nEnjoy a performance by the SF Opera. Each October, they perform several shows including classics such as Carmen, Madame Butterfly, and Don Giovanni.\n\n>> This month's calendar of SF Opera performances\n\nThe SF Jazz Center is another spot where you will find San Francisco concerts in October. They offer several performances a week from both local and internationally known artists.\n\n>> Visit their site for this month's calendar\n\nYou can also head over to the SF Symphony for additional San Francisco concerts in October. They perform both classic pieces as well as scores for popular movies.\n\nWatch Broadway musicals at either the Orpheum or the Golden Gate Theater. Both offer a variety of performances each month. In addition, you will find a few smaller theaters with productions that run several times a week.\n\n>> See this month's calendar of musicals\n\nIn addition to these San Francisco concerts in October, you will find many other fun things to do this month in SF and the Bay Area. Here are just a few to get you started with your planning.\n\n**Halloween**: SF is *THE* place to be to celebrate Halloween. Every year, you will find several 21+ parties, 21+ cruises, kids activities, and other events such as theater, opera, and more. Click here for details on this year's events.... **Fleet Week**: One of the biggest events every fall is Fleet Week. This event offers a free airshow featuring the Blue Angels on Saturday and Sunday afternoon, a chance to step aboard naval ships, and more. Click here for details on this year's event.\n\n**Hi, I'm Jill!**Dreaming of a San Francisco vacation? As a proud local, I'm here to share my insider tips and personal experiences to help you make the most of this iconic city!\n\n**Comments? Questions? Suggestions?**\n\nI would love for you to join me in my\n\n**private Facebook group**\n\nIt's a great place to interact with me and others who know the area well.\n\nYou can ask questions, get advice for your upcoming stay, and then share your photos and advice with others when you return home. It's a great community and the fastest way to get answers to those nagging questions about your visit!",
+          "date": "2025-01-01",
+          "last_updated": "2025-02-04"
+        },
+        {
+          "title": "Events | The Warfield",
+          "url": "https://www.thewarfieldtheatre.com/events",
+          "snippet": "# Calendar of EventsTicketed by AXS.com\n\n##### Goldenvoice Presents\n\n##### The Relentless Tour 2025\n\n### UB40\n\n#### with The English Beat\n\nFri, Sep 26, 2025 Show 8:00 PM\n\nSat, Sep 27, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n### The Dead South\n\n#### with Angry Zeta\n\nThu, Oct 9, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n### TV On The Radio\n\nSat, Oct 11, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n##### Back In Bidness Tour\n\n### Shoreline Mafia\n\nSun, Oct 12, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n##### PLACE OF MY OWN TOUR\n\n### Purity Ring\n\n#### with Brett Bolton, yuniVERSE\n\nTue, Oct 14, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n### Buckethead\n\nFri, Oct 17, 2025 Show 8:30 PM\n\n##### Goldenvoice Presents\n\n##### The Get Sweet Tour\n\n### Allen Stone & Ripe\n\n#### with Sir Woman\n\nSat, Oct 18, 2025 Show 6:55 PM\n\n##### Goldenvoice & Live 105 Presents\n\n##### No Hard Feelings Tour... ### The Beaches\n\n#### with Annie DiRusso\n\nSun, Oct 19, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n##### The Dopamine Experience\n\n### Lil Tecca\n\n#### with Hardrock, ffawty\n\nTue, Oct 21, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n##### Welcome to the Garden State Tour\n\n### Jeremy Zucker\n\n#### with Bebe Stockwell\n\nWed, Oct 22, 2025 Show 7:30 PM\n\n##### Goldenvoice & Live 105 Presents\n\n##### FINAL NORTH AMERICAN HEADLINE TOUR\n\n### Garbage\n\n#### with Starcrawler\n\nFri, Oct 24, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n##### Howl 20th Anniversary Tour\n\n### Black Rebel Motorcycle Club\n\n#### with Humanist\n\nSat, Oct 25, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n### THE CULT & DEATH CULT\n\n#### with Patriarchy\n\nMon, Oct 27, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n##### S\u00d8N OF DAD TOUR 2025\n\n### Stephen Wilson Jr.\n\nTue, Oct 28, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents... ### EVIL DEAD IN CONCERT\n\nWed, Oct 29, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n##### THE DARK AURA TOUR\n\n### Joey Bada$$\n\n#### with Ab-Soul, Rapsody\n\nTue, Nov 4, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n##### CALIFORNIA 2025\n\n### BADBADNOTGOOD\n\n#### with Baby Rose\n\nThu, Nov 6, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n##### 3L World Tour\n\n### Earl Sweatshirt\n\n#### Liv.e, ZelooperZ, Cletus Strap\n\nFri, Nov 7, 2025 Show 8:00 PM\n\n##### Concerts West Presents\n\n##### Silver Deliverer Tour 2025\n\n### Aly & AJ\n\n#### with Amanda Shires\n\nSat, Nov 8, 2025 Show 7:30 PM",
+          "date": "2025-09-26",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "San Francisco, CA Concerts 2025 Schedule & Calendar",
+          "url": "https://concertfix.com/concerts/san-francisco-ca",
+          "snippet": "### TOP UPCOMING CONCERTS IN San Francisco, CA\n\n- Benson Boone @ Chase Center on Wed Oct 1, 2025\n\n- A Tribute To Emmylou Harris & 25 Years of Hardly Strictly Bluegrass @ The Masonic - San Francisco on Thu Oct 2, 2025\n\n- Air Play Moon Safari @ The Masonic - San Francisco on Sun Sep 28, 2025\n\n- Laufey & Suki Waterhouse @ Chase Center on Tue Sep 30, 2025\n\n- TwoSet Violin & The San Francisco Symphony @ Davies Symphony Hall on Tue Sep 30, 2025... ###\n\nFri Sep 26, 2025\n\n113 tickets left starting from $18.00\n\n####\n\nAtsuko Okatsuka\n\n**Venue:**\n\nThe Masonic - San Francisco\n\n**Time:**\n\n7:00 PM\n\n**Featuring:**\n\nAtsuko Okatsuka\n\n7 tickets left starting from $154.00\n\n####\n\nPaquito D'Rivera Quintet\n\n**Venue:**\n\nSFJAZZ Center - Miner Auditorium\n\n**Time:**\n\n7:30 PM\n\n**Featuring:**\n\nPaquito D'Rivera Quintet\n\n\n\nPaquito D'Rivera\n\n99 tickets left starting from $84.00\n\n####\n\nSan Francisco Symphony: Donald Runnicles - Mahler Symphony No. 1\n\n**Venue:**\n\nDavies Symphony Hall\n\n**Time:**\n\n7:30 PM\n\n**Featuring:**\n\nMahler Symphony No. 1\n\n\n\nDonald Runnicles\n\n\n\nSan Francisco Symphony\n\n22 tickets left starting from $53.00\n\n####\n\nRyan Hamilton\n\n**Venue:**\n\nPunch Line Comedy Club - San Francisco\n\n**Time:**\n\n7:30 PM\n\n**Featuring:**\n\nRyan Hamilton\n\n0 tickets left starting from $0.00\n\n####\n\nSahib Singh\n\n**Venue:**\n\nCobb's Comedy Club\n\n**Time:**\n\n7:30 PM\n\n**Featuring:**\n\nVarious Artists\n\n4 tickets left starting from $83.00... ###\n\nSat Sep 27, 2025\n\n8 tickets left starting from $27.00\n\n####\n\nSuzzallo\n\n**Venue:**\n\nMake-Out Room\n\n**Time:**\n\n6:30 PM\n\n**Featuring:**\n\nSuzzallo\n\n51 tickets left starting from $66.00\n\n####\n\nChevelle, Asking Alexandria & Dead Poet Society\n\n**Venue:**\n\nThe Masonic - San Francisco\n\n**Time:**\n\n7:00 PM\n\n**Featuring:**\n\nAsking Alexandria\n\n\n\nChevelle\n\n\n\nDead Poet Society - Band\n\n17 tickets left starting from $58.00\n\n####\n\nRobin Trower\n\n**Venue:**\n\nThe Fillmore - San Francisco\n\n**Time:**\n\n7:00 PM\n\n**Featuring:**\n\nRobin Trower\n\n19 tickets left starting from $51.00\n\n####\n\nRyan Hamilton\n\n**Venue:**\n\nPunch Line Comedy Club - San Francisco\n\n**Time:**\n\n7:00 PM\n\n**Featuring:**\n\nRyan Hamilton\n\n10 tickets left starting from $87.00\n\n####\n\nAndy Summers\n\n**Venue:**\n\nPresidio Theatre\n\n**Time:**\n\n7:30 PM\n\n**Featuring:**\n\nAndy Summers\n\n102 tickets left starting from $80.00\n\n####\n\nSan Francisco Symphony: Donald Runnicles - Mahler Symphony No. 1\n\n**Venue:**\n\nDavies Symphony Hall\n\n**Time:**\n\n7:30 PM\n\n**Featuring:**\n\nMahler Symphony No. 1\n\n\n\nDonald Runnicles\n\n\n\nSan Francisco Symphony\n\n3 tickets left starting from $185.00... ####\n\nRebuke\n\n**Venue:**\n\nThe Midway - CA\n\n**Time:**\n\n10:00 PM\n\n**Featuring:**\n\nRebuke - DJ... ###\n\nSun Sep 28, 2025\n\n114 tickets left starting from $80.00\n\n####\n\nSan Francisco Symphony: Donald Runnicles - Mahler Symphony No. 1\n\n**Venue:**\n\nDavies Symphony Hall\n\n**Time:**\n\n2:00 PM\n\n**Featuring:**\n\nMahler Symphony No. 1\n\n\n\nDonald Runnicles\n\n\n\nSan Francisco Symphony\n\n12 tickets left starting from $57.00\n\n####\n\nSammy Obeid\n\n**Venue:**\n\nCobb's Comedy Club\n\n**Time:**\n\n4:00 PM\n\n**Featuring:**\n\nSammy Obeid\n\n3 tickets left starting from $76.00\n\n####\n\nOKAN\n\n**Venue:**\n\nSFJazz Center - Joe Henderson Lab\n\n**Time:**\n\n6:00 PM\n\n**Featuring:**\n\nOKAN\n\n24 tickets left starting from $67.00\n\n####\n\nArturo O'Farrill and The Afro Latin Jazz Ensemble\n\n**Venue:**\n\nSFJAZZ Center - Miner Auditorium\n\n**Time:**\n\n7:00 PM\n\n**Featuring:**\n\nArturo O'Farrill and The Afro Latin Jazz Ensemble\n\n22 tickets left starting from $48.00\n\n####\n\nSammy Obeid\n\n**Venue:**\n\nCobb's Comedy Club\n\n**Time:**\n\n7:00 PM\n\n**Featuring:**\n\nSammy Obeid\n\n16 tickets left starting from $38.00... ###\n\nMon Sep 29, 2025\n\n69 tickets left starting from $45.00\n\n####\n\nTwoSet Violin & The San Francisco Symphony\n\n**Venue:**\n\nDavies Symphony Hall\n\n**Time:**\n\n7:30 PM\n\n**Featuring:**\n\nTwoset\n\n\n\nSan Francisco Symphony\n\n20 tickets left starting from $38.00\n\n####\n\nDivorce\n\n**Venue:**\n\nBrick & Mortar Music Hall\n\n**Time:**\n\n8:00 PM\n\n**Featuring:**\n\nDivorce\n\n16 tickets left starting from $54.00\n\n####\n\nSpacey Jane\n\n**Venue:**\n\nThe Fillmore - San Francisco\n\n**Time:**\n\n8:00 PM\n\n**Featuring:**\n\nSpacey Jane\n\n35 tickets left starting from $62.00\n\n####\n\nJoey Valence & Brae\n\n**Venue:**\n\nThe Regency Ballroom\n\n**Time:**\n\n8:00 PM\n\n**Featuring:**\n\nJoey Valence\n\n\n\nBrae - Artist\n\n9 tickets left starting from $58.00\n\n####\n\nSwervedriver\n\n**Venue:**\n\nThe Great American Music Hall\n\n**Time:**\n\n8:00 PM\n\n**Featuring:**\n\nSwervedriver\n\n19 tickets left starting from $122.00\n\n####\n\nDUCKWRTH\n\n**Venue:**\n\nThe Independent\n\n**Time:**\n\n8:00 PM\n\n**Featuring:**\n\nDuckwrth... ###\n\nTue Sep 30, 2025\n\n178 tickets left starting from $45.00\n\n####\n\nTwoSet Violin & The San Francisco Symphony\n\n**Venue:**\n\nDavies Symphony Hall\n\n**Time:**\n\n7:30 PM\n\n**Featuring:**\n\nTwoset\n\n\n\nSan Francisco Symphony\n\n53 tickets left starting from $38.00\n\n####\n\nComedy Allstars\n\n**Venue:**\n\nPunch Line Comedy Club - San Francisco\n\n**Time:**\n\n7:30 PM\n\n**Featuring:**\n\nComedy Allstars\n\n484 tickets left starting from $56.00\n\n####\n\nLaufey & Suki Waterhouse\n\n**Venue:**\n\nChase Center\n\n**Time:**\n\n7:30 PM\n\n**Featuring:**\n\nLaufey\n\n17 tickets left starting from $41.00\n\n####\n\nYung Kai\n\n**Venue:**\n\nCafe Du Nord\n\n**Time:**\n\n8:00 PM\n\n**Featuring:**\n\nYung Kai\n\n19 tickets left starting from $46.00\n\n####\n\nDorothy & Eddie and The Getaway\n\n**Venue:**\n\nAugust Hall\n\n**Time:**\n\n8:00 PM\n\n**Featuring:**\n\nDorothy\n\n18 tickets left starting from $57.00\n\n####\n\nQuadeca\n\n**Venue:**\n\nThe Great American Music Hall\n\n**Time:**\n\n8:00 PM\n\n**Featuring:**\n\nQuadeca\n\n18 tickets left starting from $59.00\n\n####\n\n10 Years\n\n**Venue:**\n\nThe Independent\n\n**Time:**\n\n8:00 PM\n\n**Featuring:**\n\n10 Years\n\n3 tickets left starting from $169.00\n\n####\n\nAmble\n\n**Venue:**\n\nThe Chapel\n\n**Time:**\n\n8:00 PM\n\n**Featuring:**\n\nAmble\n\n16 tickets left starting from $73.00\n\n####\n\nJames\n\n**Venue:**\n\nThe Fillmore - San Francisco\n\n**Time:**\n\n8:00 PM\n\n**Featuring:**\n\nJames... ### San Francisco Concert and Event Information\n\n- Schedule for the concerts in San Francisco is revised up to the minute.\n\n- San Francisco remains one of the most popular locations for concert tours in the US.\n\n- Tickets for all San Francisco concerts are protected with a 100% money back guarantee.\n\n- The Upcoming Concerts are going to be some of the most anticipated San Francisco concerts by far.\n\n- Nourse Theatre and Davies Symphony Hall both have tons of concert events approaching.\n\nSan Francisco currently has a busy list of concert tours visiting the city in the near future. Some of music's top tours are about to have concerts in San Francisco. Do not miss some of the concert buzz that San Francisco has to offer at some of the most magnificant venues in the country. Simply check out the dates above for all the upcoming San Francisco concerts. Our San Francisco concert schedule is updated constantly in case their are any revisions.",
+          "date": "2025-09-26",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "San Francisco Concerts: 2025 Top Shows Each Month",
+          "url": "https://www.sftourismtips.com/san-francisco-concerts.html",
+          "snippet": "SIGN UP FOR MY EMAIL TO RECEIVE YOUR\n\n**FREE** SAN FRANCISCO PLANNING GUIDE.\n\n**By**: Jill Loeffler \u2022 **Updated**: September 1, 2025\n\nMy\n\n**San Francisco concerts calendar** features all of the top upcoming **shows by month**. I love live music, and SF is full of amazing venues with artists on stage every night of the week.\n\nI've included shows at venues such as the Chase Center, Bill Graham Civic Auditorium, and The Masonic. You will also find some great shows at the Warfield, the Fillmore, and the Palace of Fine Arts.\n\nIn San Francisco, we love our live music and festivals, so I've also included\n\n**some of the biggest festivals** each year, featuring a great schedule of music, including Outside Lands Music & Arts Festival, Hardly Strictly Bluegrass, and Stern Grove.\n\nJust outside of SF, there are several great venues with big-name artists each month. To give you a\n\n**full picture of what the Bay Area offers**, I've included some of these places as well, including the Greek Theatre in Berkeley, the Shoreline Amphitheatre in Mountain View, and the SAP Center in San Jose.\n\nI've tried to make this an\n\n**all-in-one calendar for those who love music**, so you know where to find a great show in San Francisco and the Bay Area!... **Find Concerts by Month**: January | February | March | April | May | June | July | August | September | October | November | December\n\n*SFTourismTips is made possible by readers like you! If you book through my links, I may earn a small commission at no extra cost to you. Thanks for your support! Learn more.*\n\n>> More fun events in San Francisco in September\n\n>> Additional things to do in San Francisco in September\n\n>> More fun events in October in San Francisco\n\n>> Additional things to do this October in San Francisco\n\n>> More great events in San Francisco this November\n\n>> Additional things to do in November in San Francisco\n\n>> More fun events this December in San Francisco\n\n>> Additional fun things to do in San Francisco in December\n\n>> More fun events in San Francisco in January\n\n>> Additional things to do this January in San Francisco\n\n>> More fun events this February in San Francisco\n\n>> Additional things to do in February in San Francisco\n\n>> More fun events in SF this month\n\n>> More top events in April in SF\n\n>> Fun things to do this month in SF\n\n>> More great events in San Francisco this May\n\n>> Fun things to do this May in San Francisco\n\n>> More events this June in San Francisco... >> Fun things to do in June in San Francisco\n\nTBD\n\n>> More fun events in July in San Francisco\n\n>> Best things to do in July in San Francisco\n\nTBD\n\n>> Best events in August in San Francisco\n\n>> More things to do in August in San Francisco\n\n**Hi, I\u2019m Jill!**\n\nI\u2019ve been sharing San Francisco travel advice since 2009 and have helped millions of people explore the city like a local. Whether you\u2019re dreaming of sea lions, cable cars, or a great sourdough bread bowl, I\u2019m here to help you plan an unforgettable trip with real tips from someone who actually lives here.\n\n**Comments? Questions? Suggestions?**\n\nI would love for you to join me in my\n\n**private Facebook group**\n\nIt's a great place to interact with me and others who are familiar with the area.\n\nYou can ask questions, get advice for your upcoming stay, and then share your photos and advice with others when you return home. It's a great community and the fastest way to get answers to those nagging questions about your visit!",
+          "date": "2025-09-01",
+          "last_updated": "2025-09-19"
+        },
+        {
+          "title": "San Francisco Festivals and Events in September",
+          "url": "https://www.sftravel.com/article/san-francisco-festivals-events-september",
+          "snippet": "# San Francisco Festivals and Events in September\n\nSummer might be over elsewhere, but the season's just getting started in San Francisco. Experience our best weather and these great events.\n\nAll dates and locations are subject to change and should be confirmed with organizers before making travel plans.\n\n## SOMA Nights\n\n*Folsom Street*\n\nSOMA Nights is a lively monthly festival transforming Folsom Street (between 6th and 12th streets) into a vibrant hub of art, food, and culture. From 7th to 8th Street, explore alleys and storefronts, live music, performances, delicious food, and unique pop-ups. As the night unfolds, 9th to 12th Streets comes alive with energetic clubs, keeping the party going after hours.\n\n## SUPER FLEX\n\n800 Grant Avenue\n\nEdge on the Square presents SUPER FLEX, their 4th Annual Contemporary Art Festival, on September 13, 2025. This year\u2019s theme explores alter egos and shadow selves, addressing the erasure faced by marginalized communities. SUPER FLEX showcases Asian-American and BIPOC artists with multimedia installations and performances, emphasizing the power of art in fostering solidarity and resistance. The festival will include workshops, performances, and interactive experiences, inviting participants to explore identity, and community empowerment through art.... ## Portola Music Festival\n\nPier 80\n\nPortola Music Festival is a 2-day music festival that takes place on San Francisco's Pier 80. If you're a lover of the most current EDM, alternative and hip-hop, this festival is for you.\n\n## The Giant Race\n\nOracle Park\n\nThe Giant Race features a half marathon, 10K, and 5K races through San Francisco\u2019s historic streets with a dramatic finish on the field at Oracle Park, home of the three-time World Series Champion San Francisco Giants. Families can participate in the Kids Race and Family Relay.\n\n## Haight Ashbury Street Fair\n\nHaight Street\n\nMusic, arts, crafts and food are the mainstay of the Haight Ashbury Street Fair celebrating the cultural history and diversity of one of San Francisco's most internationally celebrated neighborhoods, Haight-Ashbury.\n\n## Lowrider Parade and \"King of the Streets\"\n\nMission District\n\nCar culture in the Mission is next-level, and you can see it on full display at the first-ever Lowrider Parade, starting at 1:00 p.m. on Saturday, September 20. The \"King of the Streets\" hopping competition that follows at 3:00 p.m. will showcase the incredible hydraulic technology that gives lowriders their signature bounce.... ## Downtown First Thursdays\n\nSecond Street (between Market and Howard streets)\n\nDFT is a free monthly street party hosted in Downtown San Francisco, taking place every first Thursday of the month from 5 p.m. to 10 p.m. Get ready for disco in the streets, DJs, live music, drag, martial arts, fashion, street performances, and many other surprises! The fun takes place on Second Street (between Market and Howard streets) and along neighboring alleyways ready for you to explore. The event will also feature two 21+ outdoor bars on Minna and Natoma.\n\n## Bites & Brew Walking Tour\n\nMeet at 345 Spear Street\n\nGet it percolating in the East Cut, one of the busiest corners of San Francisco's SoMa neighborhood on the Bites & Brew Walking Tour, sponsored by The East Cut CBD. On this lovely morning adventure, you'll visit five local businesses known for their outstanding coffee and get to sample their selections.\n\n## SF Botanical Garden's Flower Piano\n\nSan Francisco Botanical Garden\n\nFlower Piano returns to the San Francisco Botanical Garden from September 12 to 21, 2025. This year's event, now spanning 10 days, transforms the garden into an alfresco concert hall where everyone is invited to play and listen. The Flower Piano Lounge will offer expedited entry, special concerts, access to a full-service bar and food from local makers, comfortable seating, and in-and-out privileges to the rest of the festival.... ## BAY AREA ROCKS! Benefit Concert\n\nAugust Hall\n\nOn September 7th, the Guardsman will be hosting their benefit concert in Union Square at August Hall.\n\n## San Francisco Symphony\u2019s Opening Night Gala\n\nDavies Symphony Hall\n\nThe San Francisco Symphony starts its regular season with an Opening Gala Concert with a festive pre-show cocktail reception.\n\n## San Francisco Opera Opening Night Concert\n\nWar Memorial Opera House\n\nThe opera season begins with the annual opening night gala.\n\n## Annual Peak2Peak Walk\n\nGet a unique view of San Francisco's skyline and discover hidden stairways and paths on this 12-mile urban trek connecting neighborhoods, parks, and vistas as you walk the spine of the city, cresting 10 peaks along the way. Get moving September 13, 2025.\n\n## Muni Heritage Weekend\n\nVarious Locations\n\nFeaturing vintage streetcars, special cable cars and possibly the introduction of one newly restored vehicle, the event celebrates San Francisco\u2019s diverse and fascinating public transit history.\n\n## San Francisco Opera in the Park\n\nGolden Gate Park\n\nEnjoy an outdoor venue and free admission to an opera performance featuring the stars of the San Francisco Opera and the Opera Orchestra.\n\n## Autumn Moon Festival\n\nGrant Ave. between California and Pacific streets\n\nThis Chinatown event features multicultural entertainment, traditional lion and dragon dances, arts and crafts, lantern village, moon cakes and children's activities.... ## Comedy Day\n\nRobin Williams Meadow, Golden Gate Park\n\nLaugh out loud at this free comedy \u201cconcert,\u201d featuring 40 of the U.S.\u2019s and Bay Area\u2019s best comedians.\n\n## Folsom Street Fair\n\nFolsom Street between Eighth and 13th streets\n\nThe \u201cdaddy of all leather celebrations,\u201d the Folsom Street Fair is the largest leather, alternative and fetish street fair in the world, drawing some 400,000 attendees annually, dressed in leather, rubber, uniforms, drag\u2014or very little at all. Folsom Street Fair will take place on September 28, 2025.\n\n## Oktoberfest on Front\n\nBreak out your lederhosen and dirndl! Celebrate Oktoberfest with San Francisco\u2019s oldest Bavarian Beer Hall at Oktoberfest on Front. Front Street will come alive with mouthwatering bratwurst, ice-cold Hofbr\u00e4u beers, live music, and traditional Oktoberfest games. This year\u2019s event is even bigger, expanding on Schroeder\u2019s beloved annual block party to deliver the ultimate Oktoberfest experience in downtown SF!\n\n## Free Programs in Union Square Plaza\n\nEvery week, you can enjoy a variety of free activities in the middle of Union Square. From chess lessons and live music to crafting activities and juggling demonstrations, these programs are perfect for visitors of all ages. Be sure to stop by every second Saturday for special cultural activities, showcasing the diversity of San Francisco.... ## Ride the Future with Waymo\n\nWith Waymo's on-demand, eco-friendly fleet of autonomous vehicles, you can get to and from any of these exciting San Francisco events with ease.Download the App",
+          "date": "2025-07-23",
+          "last_updated": "2025-07-24"
+        },
+        {
+          "title": "Bay Area Concerts - CrawlSF",
+          "url": "https://crawlsf.com/guides/bay-area-concerts/",
+          "snippet": "27\n\nSeptember\n\n2025\n\n### Thomas Rhett Better in Boots Tour 2025\n\n11\n\nOctober\n\n2025\n\n### Dua Lipa \u2013 Radical Optimism Tour at Chase Center\n\n12\n\nOctober\n\n2025\n\n### Dua Lipa \u2013 Radical Optimism Tour at Chase Center Night Two\n\n19\n\nOctober\n\n2025\n\n### Matt Rife Stay Golden Tour\n\n23\n\nOctober\n\n2025\n\n### Viagra Boys The Infinite Anxiety Tour of 2025\n\n01\n\nNovember\n\n2025\n\n### Sarah Millican: Late Bloomer at The Masonic\n\n02\n\nNovember\n\n2025\n\n### Sarah Millican: Late Bloomer at The Masonic Night Two\n\n23\n\nNovember\n\n2025\n\n### Domino David at The Masonic\n\n**Concerts in San Francisco**\n\nIf you love live music, then San Francisco is a great place to be. Whether you are into rock, rap, reggae, Hip-Hop, EDM, Country or any other musical genre, you can find great music in San Francisco all year long. From intimate shows at the Independent to big shows at Shoreline Amphitheater, the Bay Area gets an amazing variety of different artists taking the stage at San Francisco Music Venues.\n\nIf you prefer a smaller venue so you can get up close and personal with the band, San Francisco has some amazing small music venues that offer an intimate settings for events without sacrificing the sound quality and production value. The Independent SF, Great American Music Hall, Rickshaw Stop and The Chapel are all great choices to see some great bands and DJs without having to deal with a big crowd.\n\nIf you want to see some bigger artists, but don\u2019t want to head to the biggest venues in the Bay Area, historic venues like The Warfield, The Fillmore, Fox Theater and August Hall. And then there\u2019s the mega venues that bring huge acts along with state of the art lighting and sound and big crowds of excited live music fans. Venues like Shoreline Amphitheater, Chase Center, Oakland Arena, Bill Graham Civic Auditorium and SAP Center San Jose bring the biggest and best to the San Francisco Bay Area.\n\nSan Francisco Events\n\nHoliday Insights",
+          "date": "2025-01-30",
+          "last_updated": "2025-09-11"
+        },
+        {
+          "title": "Concerts & Events in San Francisco, CA",
+          "url": "https://www.bandsintown.com/c/san-francisco-ca",
+          "snippet": "# Concerts & Events in San Francisco\n\n## Popular concerts & live events in San Francisco, CA\n\n## Shows selling fast\n\n## San Francisco venue map\n\n## Experience local stages at independent venues\n\n## Concerts near San Francisco, CA\n\n## Concerts in San Francisco, CA\n\n## Find tickets to concerts, tour dates and live music near San Francisco, CASan Francisco, CALive StreamsFree\n\n## Frequently Asked Questions About San Francisco, CA\n\n### What are the most popular concert and event venues in San Francisco, CA?\n\nSan Francisco, CA is home to many different event venues and has something for everyone, no matter what you\u2019re in the mood for. Here are some of the top venues to see live music in San Francisco, CA:\n\n### Which artists have tour dates in San Francisco, CA this year?\n\nYou\u2019ll find a variety of artists with San Francisco, CA tour dates. Some of the top artists currently touring and set to perform in San Francisco, CA include AFI, Disclosure, and Chevelle. Discover new music or enjoy your favorite artists live - stay tuned with Bandsintown for the latest tour updates, artist information, and concert announcements.\n\n### How many upcoming concerts are there happening in San Francisco, CA?\n\nSan Francisco, CA has over 55 upcoming concerts, festivals, and comedy events scheduled in venues like The Warfield and Fox Theater. Whether you're into rock, pop, jazz, or hip-hop, there\u2019s something for everyone. Browse the full list of tour dates and secure your tickets on Bandsintown.\n\n### What are the most popular music festivals in San Francisco, CA?\n\nSan Francisco, CA features a variety of festivals that draw crowds from near and far. Some of the most anticipated festivals in San Francisco, CA include SFJAZZ 2025, Bridging The Music Presents: San Francisco miniFest 2026, and The Mustache Bash - San Francisco 2025.",
+          "date": "2025-09-26",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "Discover Concert Tickets in San Francisco CA - EventCartel",
+          "url": "https://eventcartel.com/events/concert/san-francisco/all-dates",
+          "snippet": "## Browse events and buy tickets to concerts, theaters, family events, and more nearby.ConcertTheaterFamily EventPartyFestivalQuizzes/Bar GamesSportConferenceNetworkingFashionMovies\n\nSlava Vakarchuk in San Francisco\n\nSept. 14, 2025 8 p.m.\n\nPalace of Fine Arts\n\nAlexey Ivashchenko in the program CALIFORNIA EXPERIMENT! in Mountain View\n\nSept. 26, 2025 7 p.m.\n\nSamovar Hall\n\nARTEM PIVOVAROV LIVE in San Francisco\n\nSept. 27, 2025 8 p.m.\n\nUC Theatre\n\n\u0410\u041d\u041d\u0410 \u0412\u0418\u041b\u0415\u041d\u0421\u041a\u0410\u042f \u0438 \u0441\u0442\u0440\u0443\u043d\u043d\u044b\u0439 \u043a\u0432\u0430\u0440\u0442\u0435\u0442 - \u043b\u0435\u043a\u0446\u0438\u044f \"Pink Floyd: \u043c\u0435\u0436\u0434\u0443 \u0440\u043e\u043a\u043e\u043c \u0438 \u0430\u043a\u0430\u0434\u0435\u043c\u0438\u0447\u0435\u0441\u043a\u043e\u0439 \u043c\u0443\u0437\u044b\u043a\u043e\u0439\" in San Francisco\n\nSept. 28, 2025 5 p.m.\n\nCollege Of San Mateo Theatre\n\nPAVEL FAHRTDINOV in Samovar in Mountain View\n\nOct. 1, 2025 7 p.m.\n\nSamovar Hall\n\nPan Flute Concert Jewish music Soul in Palo Alto\n\nOct. 11, 2025 4 p.m.\n\nOshman Family JCC\n\nValery Meladze Live in San Francisco\n\nOct. 12, 2025 7 p.m.... Fox Theatre\n\nGalina And Alexey Khomchik in Samovar! in Mountain View\n\nOct. 23, 2025 7 p.m.\n\nSamovar Hall\n\nDive into the vibrant local scene in your city with EventCartel! Explore a wide range of events and things to do nearby tailored to offer you the best in entertainment and fun things to do near you. Whether you\u2019re interested in the latest concerts, theater shows, or other local events, everything you need is just a few clicks away. You can easily select your city from the dropdown at the top of the page to discover all the exciting happenings close to you. Find your next great experience today and enjoy the convenience of purchasing tickets right from our platform.\n\nStay on top of upcoming concerts, live music, and more with EventCartel's detailed event calendar. Whether you're looking for concerts coming up or searching for events near me today, tomorrow, this weekend, next week, and beyond, our platform makes it simple to find exactly what you're looking for. Use our time period filter to quickly pinpoint events that match your schedule, ensuring you never miss out on the best shows and music near you. Our calendar is your gateway to the hottest event tickets in town.\n\nDiscover what\u2019s happening near you with EventCartel\u2019s diverse range of event offerings. From electrifying nightlife to family fun nearby, our platform connects you to a plethora of activities including concerts, theaters, family events, parties, festivals, and more. Use the event type filter to quickly navigate to the types of events that excite you the most. It's your one-stop-shop for all upcoming events, ensuring you always have something to look forward to.... Explore the rich cultural tapestry that Russian and Ukrainian events bring to your city. From traditional concerts to family theater shows, these events offer a unique insight into Slavic cultures. Use the cultural event filter on our platform to effortlessly find Russian and Ukrainian concerts, family events, and more. It's a wonderful opportunity to engage with and celebrate the diversity that these communities offer.\n\nEventCartel ensures a seamless ticket buying experience, allowing you to buy tickets with confidence from the comfort of your mobile browser, app, or desktop. We are committed to offering the best prices and a 100% buyer satisfaction guarantee. Whether you are planning ahead or looking for last-minute event tickets, our platform provides a reliable, secure, and user-friendly service that lets you focus on enjoying your event, stress-free.",
+          "date": "2025-09-14",
+          "last_updated": "2025-09-14"
+        },
+        {
+          "title": "R&B ONLY LIVE - San Francisco, CA (10 Year Anniversary)",
+          "url": "https://www.eventbrite.com/e/rb-only-live-san-francisco-ca-10-year-anniversary-tickets-1368177739449",
+          "snippet": "# R&B ONLY LIVE - San Francisco, CA (10 Year Anniversary)\n\n**Sing, dance, and experience R&B music from past to present.**\n\n## Date and timeSeptember 27 \u00b7 8pm - September 28 \u00b7 1am PDT\n\n## Location\n\nThe Warfield982 Market Street San Francisco, CA 94102\n\n## Good to know\n\nHighlights\n\n- 5 hours\n\n- Ages 18+\n\n- In person\n\nRefund Policy... ## About this eventMusic \u2022 R&B\n\n**COLORS Worldwide Presents: R&B ONLY LIVE (Columbus, OH) 10 Year Anniversary**\n\nSing, dance, and experience R&B music from past to present.\n\n**Pricing:**\n\nGeneral Admission: $55-$110\n\n*Access to standing-room areas only.*\n\nVIP: $75 - $150\n\n*Access to balcony level with first come first serve seating.*\n\n**8:00 PM Doors open: **\n\n**18+ Age restriction: **\n\nMust have a valid ID to enter the venue.\n\n**: Follow R&B ONLY on socials**\n\n**Q: What is R&B ONLY LIVE?**\n\nA: R&B ONLY LIVE is a live music experience produced by COLORS Worldwide, dedicated to celebrating R&B music from past to present. It\u2019s a DJ-driven event where audiences can sing, dance, and enjoy a nostalgic journey through R&B music\u2019s greatest hits and modern favorites.\n\n**Q: What can I expect at an R&B ONLY LIVE show?**\n\nA: R&B ONLY LIVE is a high-energy event designed for fans to connect with R&B music. Our DJ-led show takes audiences on a musical journey through classic and contemporary R&B hits in an atmosphere full of singing, dancing, and R&B nostalgia.... **Q: What\u2019s the dress code?**\n\nA: There is no specific dress code, but we encourage fans to come ready for a night of dancing and fun! Whether you prefer casual or dressed-up, come as you are and enjoy the experience.\n\n**Q: What\u2019s the ticketing policy?**\n\nA: All tickets for R&B ONLY LIVE events are non-refundable. If you have questions about your ticket or need it resent, please contact us at info@colorsworldwide.com.\n\n**Q: What should I know before attending the show?**\n\nA: A valid ID is required for entry at age-restricted shows. We also encourage attendees to check the venue\u2019s bag policy and parking information in advance, as these are determined by the venue and may vary.\n\n**Q: How can I stay updated on future shows?**\n\nA: Follow us on social media\u2014Instagram, TikTok, YouTube, X, and Facebook\u2014for the latest updates, event announcements, and exclusive content. You can also join our mailing list on our website to be among the first to know about new shows and ticket releases.\n\n**LEGAL:** **Must be 18+ to attend. As a condition of your attendance at \"R&B ONLY LIVE\", you agree and irrevocably consent to your image and/or likeness being captured on film and or video, the benefit of which shall vest in COLORS WORLDWIDE INC., it's licensees, successors and assigns, and may be distributed throughout the world in perpetuity, without limitation. All sales are final. With RSVP and/or ticket purchase you agree to receive communications from COLORS WORLDWIDE INC. **... ## Frequently asked questions\n\n### Tags\n\n## Organized byCOLORS Worldwide\n\nFollowers\n\n--\n\nEvents\n\n--\n\nHosting\n\n--From $51.81Sep 27 \u00b7 8:00 PM PDT",
+          "date": "2025-09-01",
+          "last_updated": "2025-09-25"
+        }
+      ],
+      "id": "1b4bfce2-a643-4b9a-bfc7-ca04b72f6726",
+      "server_time": null
+    },
+    "multi": {
+      "results": [
+        {
+          "title": "San Francisco Events September 2025: Concerts, Shows, Sports",
+          "url": "https://san-francisco.events/september/",
+          "snippet": "**Check out the complete schedule of all events in SF this month.**\n\n\u201cSan Francisco Events\u201d is your guide to San Francisco events: concerts, shows, musicals, family events, opera, ballet, music festivals, and sporting events to experience while in town. Find the best events this month. Get event tickets tickets today and save. We\u2019re sure you will find something that sparks your curiosity!",
+          "date": "2024-12-10",
+          "last_updated": "2025-09-25"
+        },
+        {
+          "title": "Concerts in September 2025 - San Francisco Theater",
+          "url": "https://www.san-francisco-theater.com/dates/2025/09/category/concert",
+          "snippet": "## Daniil Trifonov\n\nJoin the world-renowned young piano virtuoso Daniil Trifonov as he displays his prodigious talent in this much-anticipated concert engagement. Described in glowing terms by almost every major publication around the world, the Grammy-winning Russian gave his first solo concert aged just seven and has not looked back ever since. Giving several concerts a year, an opportunity to see Trifonov is one not to be missed!\n\nSep 28\n\nZellerbach Hall\n\nPrices fromMore infoBook Tickets",
+          "date": "2025-09-01",
+          "last_updated": "2025-09-25"
+        },
+        {
+          "title": "Calendar",
+          "url": "https://www.augusthallsf.com/calendar/",
+          "snippet": "Sep 26 Whiskies of the World Buy Tickets September 26, 2025 Sep 27 Soft Play (Formerly Slaves), Kennyhoopla Buy Tickets September 27, 2025 Sep 30 Dorothy Buy Tickets September 30, 2025 Oct 2 One Pact: NA Tour Buy Tickets October 02, 2025 Oct 3 Madison McFerrin Buy Tickets October 03, 2025 Oct 4 MIRADOR Buy Tickets October 04, 2025 Oct 5 Story Pirates Buy Tickets October 05, 2025 Oct 6 Mates of State Somewhere Tour Buy Tickets October 06, 2025 Oct 8 Touche Amore Buy Tickets October 08, 2025 Oct 9 Cartel, Hunny, MacSeal Buy Tickets October 09, 2025 Oct 10 Between the Buried and Me, Hail the Sun Buy Tickets October 10, 2025 Oct 11 Penny & Sparrow, Erin Rae Buy Tickets October 11, 2025 Oct 15 Fly By Midnight \u2013 The Fastest Time Of Our Lives Buy Tickets October 15, 2025 Oct 16 Clara La San Buy Tickets October 16, 2025 Oct 17 B\u00f8rns Buy Tickets October 17, 2025 Oct 18 Current Joys Buy Tickets October 18, 2025 Oct 23 Letlive, Beauty School Dropout, Sludge Mother Buy Tickets October 23, 2025 Oct 28 Sophie Ellis-Bextor Buy Tickets October 28, 2025 Oct 29 6arelyhuman Buy Tickets October 29, 2025 Oct 31 Taylor Rave \u2013 A Taylor Swift Rave (Halloween Party) Buy Tickets October 31, 2025 Nov 1 Cumbiatron \u2013 The Cumbia Rave Buy Tickets November 01, 2025 1 2 3 Next \u00bb",
+          "date": "2025-03-24",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "Concerts",
+          "url": "https://san-francisco.events/concerts/",
+          "snippet": "**Check out a complete schedule of all current and upcoming concerts in 2025/2026.**\n\n\u201cSan Francisco Events\u201d is your guide to all live music events in SF. Explore catering to diverse musical preferences, from pop, jazz, R&B, and rock to hip-hop, classical, and indie. San Francisco\u2019s iconic concert venues deliver unforgettable performances for every music lover. Some popular concert venues in the city include Davies Symphony Hall, Brick & Mortar Music Hall, American Conservatory Theater, August Hall, Cafe Du Nord, Cornerstone, Chase Center, Margaret Lesher Theatre at Lesher Center for the Arts, and more. Don\u2019t miss the most popular concerts in the town and SF area. Act now to secure your tickets and VIP packages at competitive prices.",
+          "date": "2025-03-31",
+          "last_updated": "2025-09-27"
+        },
+        {
+          "title": "San Francisco Music and Concert Calendar - Music in SF",
+          "url": "https://musicinsf.com/san-francisco-music-calendar/",
+          "snippet": "Check out the Music in SF\u2122 San Francisco live music and concert calendar, featuring some of the best San Francisco live music events, San Francisco music festivals, and San Francisco music concerts in the Bay Area. Looking for something to do tonight? You\u2019ll find 100s of listings on our San Francisco live music and concert calendar that contains San Francisco live music shows and other San Francisco live music events right here in the Bay Area.\n\nSan Francisco is a city with a vibrant music scene, ripe with live music events, live entertainment, and music gigs. The Spingo San Francisco live music and concert calendar below contains events and concerts in San Francisco from local and national bands alike.",
+          "date": "2025-01-23",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "San Francisco Concert Tickets 2025 - SeatGeek",
+          "url": "https://seatgeek.com/cities/sf/concerts",
+          "snippet": "## All San Francisco Concerts\n\n## Learn More About San Francisco Concerts\n\nSan Francisco, a city known for its rich history and cultural diversity, offers a concert scene as dynamic as its iconic landmarks. Whether you\u2019re a fan of rock, jazz, hip-hop, or classical music, San Francisco\u2019s vibrant music culture has something to offer everyone. From legendary theaters to modern performance spaces, the city is a hub for live music experiences.\n\nSan Francisco\u2019s musical legacy is deeply rooted in its countercultural movements and artistic innovation. Iconic venues like\n\n__The Fillmore__ have hosted some of the greatest artists of all time, from Jimi Hendrix to Janis Joplin, while newer spots like the __Chase Center__ attract today\u2019s biggest stars. Outdoor venues such as Stern Grove and the __Golden Gate Park__ Polo Fields offer fans the chance to enjoy live music surrounded by natural beauty.\n\nBeyond the big-name venues, San Francisco\u2019s neighborhoods also shine as cultural hotspots for live music. From the jazz clubs of North Beach to the indie rock havens in the Mission District, every corner of the city contributes to its dynamic soundscape. San Francisco\u2019s concert scene is as diverse as its residents, making it a must-visit destination for music lovers.... ## Frequently Asked Questions About Concerts in San Francisco\n\nThe Bay Area is an incredible and eclectic spot to check out live music. If you're looking for concerts in San Francisco, here's everything you need to know:\n\n### What are some must-visit concert venues in San Francisco?\n\nSan Francisco is home to an incredible variety of venues, each offering a unique live music experience. Some of the most popular include:\n\n__The Fillmore__ **:**A historic venue renowned for its intimate atmosphere and iconic performances. __Chase Center__ **:**A modern arena that hosts major tours and large-scale productions. __The Warfield__ **:**A theater with a storied history, offering a mix of genres and top-tier acoustics. **Stern Grove Festival:**An outdoor space hosting free summer concerts in a scenic forest setting.\n\nThese venues cater to fans of every musical style, from rock and pop to classical and jazz.\n\n### How can I purchase tickets for concerts in San Francisco?\n\nYou can buy tickets to San Francisco concerts right here on SeatGeek. Scroll up to find all the upcoming concerts in the Bay Area, and make sure to utilize our Deal Score and pricing filters to find the best ticket options for you.\n\n__SeatGeek__ is a trusted platform that offers easy ticket purchasing, interactive seating charts, and up-to-date event listings to ensure you find the best seats for any concert.... ### Are there free concerts in San Francisco?\n\nYes, San Francisco regularly hosts free concerts, providing opportunities to enjoy live music without breaking the bank. Here are a few examples:\n\n**Stern Grove Festival:**A beloved summer tradition featuring free performances from local and international artists. __Hardly Strictly Bluegrass__ **:**An annual free festival in __Golden Gate Park__that showcases a mix of bluegrass, folk, and other genres. **Union Square Live:**A series of free events and concerts held in the heart of downtown San Francisco.\n\nCheck local event calendars to stay updated on upcoming free concerts.\n\n### What are the best seats at San Francisco concert venues?\n\nFinding the right seat depends on the type of venue and your preferences. Here\u2019s a quick guide:\n\n**Orchestra Section:**Ideal for theaters like __The Warfield__, offering close proximity and excellent acoustics. **Balcony Seating:**Provides a broader view of the stage, great for larger venues like the Chase Center. **General Admission:**Perfect for fans who enjoy high-energy shows and don\u2019t mind standing at venues like __The Fillmore__.\n\nRefer to seating charts for specific venues to choose the best option for your experience.\n\n### What\u2019s the best way to get to San Francisco concert venues?\n\nSan Francisco\u2019s compact layout and public transit options make it easy to reach concert venues. Popular options include:\n\n**BART and Muni:**These systems provide affordable and efficient transit to most major venues in the city. **Ride-Sharing Services:**Uber and Lyft are readily available for door-to-door convenience. **Walking or Biking:**Many venues are located in pedestrian-friendly areas like SOMA and the Mission District.\n\nPlan ahead, especially if parking is limited near the venue.... ### Are San Francisco concert venues accessible?\n\nMost venues in San Francisco are committed to accessibility, offering accommodations for guests with disabilities. These include:\n\n**Accessible Seating:**Reserved areas designed for wheelchair users and their companions. **Hearing and Vision Support:**Assistive listening devices and other services are often available upon request. **Mobility Aids:**Ramps, elevators, and accessible restrooms are standard at most venues.\n\nContact the venue before your event to confirm specific accommodations.\n\n### What are some hidden gem venues in San Francisco?\n\nFor those seeking unique and intimate concert experiences, San Francisco is home to several lesser-known but exceptional venues:\n\n__Bottom of the Hill__ **:**A small, iconic venue in Potrero Hill known for showcasing emerging artists. __Amado\u2019s__ **:**A cozy Mission District space offering an eclectic mix of live performances. __SFJAZZ Center__ **:**A premier destination for jazz enthusiasts, featuring world-class artists in an intimate setting.\n\nExploring these venues is a great way to discover new artists and enjoy the city\u2019s local music scene.\n\n### What safety measures are in place at San Francisco concert venues?\n\nSafety is a priority at all San Francisco concert venues. Common measures include:\n\n**Bag Checks and Metal Detectors:**Standard practices to ensure a secure environment. **Health Protocols:**Venues often follow current public health guidelines, including cleaning and sanitization. **Prohibited Items:**Check the venue\u2019s website for a list of restricted items before attending.\n\nReview the venue\u2019s policies before your event to ensure a smooth experience.\n\nSan Francisco\u2019s concert scene is a testament to the city\u2019s rich cultural heritage and love for live music. Whether you\u2019re catching a major act at the\n\n__Chase Center__ or enjoying a free summer performance at Stern Grove, the city offers endless opportunities to immerse yourself in music.",
+          "date": "2025-09-23",
+          "last_updated": "2025-09-23"
+        },
+        {
+          "title": "San Francisco Bay Area Concert Tickets 2025 - 2026 - JamBase",
+          "url": "https://www.jambase.com/concerts/us/california/concerts-in-san-francisco-bay-area",
+          "snippet": "Everything you need to\n\nGo See Live Music\n\nin San Francisco Bay\n\nCreate a Free Account\n\n## Top Concerts\n\nNear San Francisco Bay Area\n\n- Fri Sep 26, 2025\n\n\n\n#### UB40The English BeatThe Warfield\n\n\n\n#### Jessie MurphNino PaidFox Theater\n\n\n\n#### Snow StrippersDJ EssOnly Fire1015 Folsom\n\n\n\n#### KatchafireKa'ikena ScanlanCornerstone\n\n\n\n#### DawesSam WeberThe Guild Theatre\n\n\n\n#### Nokia Angelsmokedope2016LIL FITTED CAPBARTESIANWATERThe New Parish Music Hall\n\n\n\n#### The Lone BellowValley JamesThe Fillmore\n\n\n\n#### dublonKids ReturnYuka YuRickshaw Stop\n\n\n\n#### Mannequin PlanetCircle Of RuinPTYLHotel Utah\n\n\n\n#### EdgarAngoisse MagazineSachi's MirrorNaked RoommateThee Stork Club\n\n\n\n#### DirtySpoonBrian WachhorstSweetwater Music Hall\n\n\n\n#### Hot Baked GoodsNathan DiesGreat American Music Hall\n\n\n\n#### The Groove DoctorsEast Bay GroovelineOrinda Theatre\n\n\n\n#### ScientistUFO BabyThe Chapel\n\n\n\n#### John Rybak + Friends\n\n2 Hours free acoustic roots + blues with John Rybak + Friends in RWC!John RybakFreewheel Brewing Company\n\n\n\n#### Keith GreeningerNina GerberHopMonk Sebastopol\n\n\n\n- Sat Sep 27, 2025\n\n\n\n#### Kali Uchis54 UltraSAP Center\n\n\n\n#### Thomas RhettTucker WetmoreThe CastellowsShoreline Amphitheatre",
+          "date": "2025-09-26",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "Calendar",
+          "url": "https://gamh.com/calendar/",
+          "snippet": "|Sun|Mon|Tue|Wed|Thu|Fri|Sat|\n|--|--|--|--|--|--|--|\n|01|02 Event Showtime: 8:00PM Event Doortime: 7:00PM|03 Event Showtime: 8:00PM Event Doortime: 7:00PM|04|05|06|\n|07 with The Inciters Event Showtime: 8:00PM Event Doortime: 7:00PM|08|09|10|11|12|13|\n|14|15|16|17|18|19 Event Showtime: 8:00PM Event Doortime: 7:00PM Event Showtime: 8:00PM Event Doortime: 7:00PM|20 with Elliott Peck Band Event Showtime: 8:00PM Event Doortime: 7:00PM|\n|21 with AJ Lee & Jan Purat Event Showtime: 1:00PM Event Doortime: 12:00PM|22|23|24|25|26|27|\n|28|29|30|31|\nJanuary 2026\n\n|Sun|Mon|Tue|Wed|Thu|Fri|Sat|\n|--|--|--|--|--|--|--|\n|01|02|03|\n|04|05|06|07|08|09 Event Showtime: 9:30PM Event Doortime: 8:00PM|10|\n|11|12|13|14|15|16|17|\n|18|19|20|21|22|23|24|\n|25|26|27|28|29|30|31|\nFebruary 2026... |Sun|Mon|Tue|Wed|Thu|Fri|Sat|\n|--|--|--|--|--|--|--|\n|01 with Dropout Kings, sace6 Event Showtime: 8:00PM Event Doortime: 7:00PM|02|03|04|05|06 Event Showtime: 7:00PM Event Doortime: 6:00PM|07|\n|08|09|10 Event Showtime: 8:00PM Event Doortime: 7:00PM|11|12|13 Event Showtime: 8:30PM Event Doortime: 7:30PM Event Showtime: 8:30PM Event Doortime: 7:30PM|14 Event Showtime: 8:30PM Event Doortime: 7:30PM|\n|15|16|17 Event Showtime: 8:00PM Event Doortime: 7:00PM|18|19|20|21|\n|22|23|24|25|26 with Boyscott, Wabie Event Showtime: 7:30PM Event Doortime: 7:00PM|27|28|\nMarch 2026\n\n|Sun|Mon|Tue|Wed|Thu|Fri|Sat|\n|--|--|--|--|--|--|--|\n|01|02|03|04|05|06|07|\n|08|09|10|11|12|13|14|\n|15|16|17|18|19|20 Event Showtime: 8:00PM Event Doortime: 7:00PM|21|\n|22|23|24|25|26|27|28|\n|29|30|31|\nApril 2026... |Sun|Mon|Tue|Wed|Thu|Fri|Sat|\n|--|--|--|--|--|--|--|\n|01|02|03|04|\n|05|06|07|08|09|10|11|\n|12|13|14|15|16|17|18|\n|19|20|21|22|23|24|25 Event Showtime: 7:00PM Event Doortime: 8:00PM|\n|26|27|28|29|30|\nMay 2026\n\n|Sun|Mon|Tue|Wed|Thu|Fri|Sat|\n|--|--|--|--|--|--|--|\n|01|02|\n|03|04|05|06|07|08|09|\n|10|11|12|13|14|15|16|\n|17|18|19|20|21|22|23|\n|24|25|26|27|28|29|30|\n|31|\nJune 2026\n\n|Sun|Mon|Tue|Wed|Thu|Fri|Sat|\n|--|--|--|--|--|--|--|\n|01|02|03|04|05|06|\n|07|08|09|10|11|12|13|\n|14|15|16|17|18|19|20|\n|21|22|23|24|25|26|27|\n|28|29|30|\nJuly 2026... |Sun|Mon|Tue|Wed|Thu|Fri|Sat|\n|--|--|--|--|--|--|--|\n|01|02|03|04|\n|05|06|07|08|09|10|11|\n|12|13|14|15|16|17|18|\n|19|20|21|22|23|24|25|\n|26|27|28|29|30|31|\nAugust 2026\n\n|Sun|Mon|Tue|Wed|Thu|Fri|Sat|\n|--|--|--|--|--|--|--|\n|01|\n|02|03|04|05|06|07|08|\n|09|10|11|12|13|14|15|\n|16|17|18|19|20|21|22|\n|23|24|25|26|27|28|29|\n|30|31|\nSeptember 2026\n\n|Sun|Mon|Tue|Wed|Thu|Fri|Sat|\n|--|--|--|--|--|--|--|\n|01|02|03|04|05|\n|06|07|08|09|10|11|12|\n|13|14|15|16 Event Showtime: 8:00PM Event Doortime: 7:00PM|17|18|19|\n|20|21|22|23|24|25|26|\n|27|28|29|30|\nOctober 2026",
+          "date": "2021-08-01",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "Great American Music Hall",
+          "url": "https://gamh.com",
+          "snippet": "GREAT AMERICAN MUSIC HALL\n\nPlus Pre-Show Swing Dance Lesson!\n\nLizzy & the Triggermen\n\nwith The Hot Baked Goods, DJ Nathan Dias\n\nThe Hot Baked Goods, DJ Nathan Dias\n\nFri Sep 26\n\nEvent Doortime: 7:00PM / Event Showtime: 8:00PM\n\nat Great American Music Hall\n\n$25.00-$50.00\n\nJazz\n\nMinty Boi Presents...\n\nsmokedope2016\n\nwith Nokia Angel\n\nNokia Angel\n\nSat Sep 27\n\nEvent Doortime: 7:30PM / Event Showtime: 8:30PM\n\nat Great American Music Hall\n\nHip Hop/Rap\n\nSlide Away & GAMH present\u2026\n\nSwervedriver\n\nwith Frankie Rose, Night School\n\nFrankie Rose, Night School, Visuals by Zachary Rodell\n\nMon Sep 29\n\nEvent Doortime: 7:00PM / Event Showtime: 8:00PM\n\nat Great American Music Hall\n\n$30.00-$35.00\n\nAlternative\n\nGoldenvoice Presents\n\nQuadeca\n\nwith FearDorian\n\nFearDorian\n\nTue Sep 30\n\nEvent Doortime: 7:00PM / Event Showtime: 8:00PM... at Great American Music Hall\n\n$30.00-$175.00\n\nHip Hop/Rap\n\nGoldenvoice Presents\n\nQuadeca\n\nwith FearDorian\n\nFearDorian\n\nWed Oct 1\n\nEvent Doortime: 7:00PM / Event Showtime: 8:00PM\n\nat Great American Music Hall\n\n$30.00-$175.00\n\nHip Hop/Rap\n\nLambrini Girls\n\nwith Edging\n\nEdging\n\nThu Oct 2\n\nEvent Doortime: 7:00PM / Event Showtime: 8:00PM\n\nat Great American Music Hall\n\n$30.00-$35.00\n\nPunk\n\nHardly Strictly Bluegrass & GAMH present Out of the Park...\n\nNick Lowe, Patty Griffin\n\nFri Oct 3\n\nEvent Doortime: 7:00PM / Event Showtime: 8:00PM\n\nat Great American Music Hall\n\n$39.50-$84.50\n\nRock\n\nSat Oct 4\n\nEvent Doortime: 7:00PM / Event Showtime: 8:00PM\n\nat Great American Music Hall\n\nOther Content\n\nMy Years With UFO\n\nMichael Schenker\n\nwith Armored Saint\n\nArmored Saint\n\nSun Oct 5... Event Doortime: 7:00PM / Event Showtime: 8:00PM\n\nat Great American Music Hall\n\n$39.50-$79.50\n\nRock\n\nGoldenvoice Presents\n\nSidewalks and Skeletons\n\nwith CASHFORGOLD, enjoii\n\nCASHFORGOLD, enjoii\n\nTue Oct 7\n\nEvent Doortime: 7:00PM / Event Showtime: 8:00PM\n\nat Great American Music Hall\n\n$14.24-$30.00\n\nGoth\n\nPhases Tour\n\nHIRIE\n\nwith Artikal Sound System\n\nArtikal Sound System\n\nFri Oct 10\n\nEvent Doortime: 7:00PM / Event Showtime: 8:00PM\n\nat Great American Music Hall\n\n$30.00-$35.00\n\nReggae\n\nSat Oct 11\n\nEvent Doortime: 7:00PM / Event Showtime: 8:00PM\n\nat Great American Music Hall\n\nOther Content",
+          "date": "2021-08-01",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "Concerts in October 2025 - San Francisco Theater",
+          "url": "https://www.san-francisco-theater.com/dates/2025/10/category/concert",
+          "snippet": "## Candlelight: The Best of Joe Hisaishi\n\nYou may not recognize his name, but you will know his work! As the celebrated composer for some of Studio Ghibli's most enchanting animated movies, Joe Hisaishi is a master of the soundtrack using a fusion of European classical, Japanese traditional, ambient electronic and minimalist music to conjure up the wonderful worlds of My Neighbor Totoro, Spirited Away and more, creating a nostalgic and whimsical sound. Presented by fever, this candlelit concert features a raft of Hisaishi's best works for Ghibli, played by an accomplished string quartet.\n\nShowing until Oct 24\n\nThe Chan National Queer Arts Center\n\nPrices fromMore infoBook Tickets",
+          "date": "2025-09-24",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "San Francisco Concerts: 2025 Top Shows Each Month",
+          "url": "https://www.sftourismtips.com/san-francisco-concerts.html",
+          "snippet": "SIGN UP FOR MY EMAIL TO RECEIVE YOUR\n\n**FREE** SAN FRANCISCO PLANNING GUIDE.\n\n**By**: Jill Loeffler \u2022 **Updated**: September 1, 2025\n\nMy\n\n**San Francisco concerts calendar** features all of the top upcoming **shows by month**. I love live music, and SF is full of amazing venues with artists on stage every night of the week.\n\nI've included shows at venues such as the Chase Center, Bill Graham Civic Auditorium, and The Masonic. You will also find some great shows at the Warfield, the Fillmore, and the Palace of Fine Arts.\n\nIn San Francisco, we love our live music and festivals, so I've also included\n\n**some of the biggest festivals** each year, featuring a great schedule of music, including Outside Lands Music & Arts Festival, Hardly Strictly Bluegrass, and Stern Grove.\n\nJust outside of SF, there are several great venues with big-name artists each month. To give you a\n\n**full picture of what the Bay Area offers**, I've included some of these places as well, including the Greek Theatre in Berkeley, the Shoreline Amphitheatre in Mountain View, and the SAP Center in San Jose.\n\nI've tried to make this an\n\n**all-in-one calendar for those who love music**, so you know where to find a great show in San Francisco and the Bay Area!... **Find Concerts by Month**: January | February | March | April | May | June | July | August | September | October | November | December\n\n*SFTourismTips is made possible by readers like you! If you book through my links, I may earn a small commission at no extra cost to you. Thanks for your support! Learn more.*\n\n>> More fun events in San Francisco in September\n\n>> Additional things to do in San Francisco in September\n\n>> More fun events in October in San Francisco\n\n>> Additional things to do this October in San Francisco\n\n>> More great events in San Francisco this November\n\n>> Additional things to do in November in San Francisco\n\n>> More fun events this December in San Francisco\n\n>> Additional fun things to do in San Francisco in December\n\n>> More fun events in San Francisco in January\n\n>> Additional things to do this January in San Francisco\n\n>> More fun events this February in San Francisco\n\n>> Additional things to do in February in San Francisco\n\n>> More fun events in SF this month\n\n>> More top events in April in SF\n\n>> Fun things to do this month in SF\n\n>> More great events in San Francisco this May\n\n>> Fun things to do this May in San Francisco\n\n>> More events this June in San Francisco... >> Fun things to do in June in San Francisco\n\nTBD\n\n>> More fun events in July in San Francisco\n\n>> Best things to do in July in San Francisco\n\nTBD\n\n>> Best events in August in San Francisco\n\n>> More things to do in August in San Francisco\n\n**Hi, I\u2019m Jill!**\n\nI\u2019ve been sharing San Francisco travel advice since 2009 and have helped millions of people explore the city like a local. Whether you\u2019re dreaming of sea lions, cable cars, or a great sourdough bread bowl, I\u2019m here to help you plan an unforgettable trip with real tips from someone who actually lives here.\n\n**Comments? Questions? Suggestions?**\n\nI would love for you to join me in my\n\n**private Facebook group**\n\nIt's a great place to interact with me and others who are familiar with the area.\n\nYou can ask questions, get advice for your upcoming stay, and then share your photos and advice with others when you return home. It's a great community and the fastest way to get answers to those nagging questions about your visit!",
+          "date": "2025-09-01",
+          "last_updated": "2025-09-19"
+        },
+        {
+          "title": "The English Beat concert - San Francisco, The Warfield, Sep 26, 2025",
+          "url": "https://www.shazam.com/event/f5557e88-7814-419c-9d05-2a0b9ed7d972",
+          "snippet": "Upcoming Concert\n\n# The English Beat\n\n## The Warfield, San Francisco, Friday, September 26, 2025\n\nAlternative\n\nSan Francisco\n\nThe WarfieldTickets\n\nPowered by\n\nStay Up to Date\n\nUse Shazam to discover and stay up to date with all your favourite concerts and moreOpen Shazam\n\nDon't have the App?Download Shazam free",
+          "date": "2025-09-01",
+          "last_updated": "2025-09-21"
+        },
+        {
+          "title": "The Warfield",
+          "url": "https://www.thewarfieldtheatre.com",
+          "snippet": "## Alert\n\n## Upcoming Events\n\n##### Goldenvoice Presents\n\n##### The Relentless Tour 2025\n\n### UB40\n\n#### with The English Beat\n\nFri, Sep 26, 2025 Show 8:00 PM\n\nSat, Sep 27, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n### The Dead South\n\n#### with Angry Zeta\n\nThu, Oct 9, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n### TV On The Radio\n\nSat, Oct 11, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n##### Back In Bidness Tour\n\n### Shoreline Mafia\n\nSun, Oct 12, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n##### PLACE OF MY OWN TOUR\n\n### Purity Ring\n\n#### with Brett Bolton, yuniVERSE\n\nTue, Oct 14, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n### Buckethead\n\nFri, Oct 17, 2025 Show 8:30 PM\n\n##### Goldenvoice Presents\n\n##### The Get Sweet Tour\n\n### Allen Stone & Ripe\n\n#### with Sir Woman\n\nSat, Oct 18, 2025 Show 6:55 PM\n\n##### Goldenvoice & Live 105 Presents\n\n##### No Hard Feelings Tour\n\n### The Beaches\n\n#### with Annie DiRusso\n\nSun, Oct 19, 2025 Show 8:00 PM\n\n##### Goldenvoice Presents\n\n##### The Dopamine Experience\n\n### Lil Tecca\n\n#### with Hardrock, ffawty\n\nTue, Oct 21, 2025 Show 8:00 PM\n\n## Rescheduled Events\n\n## Newsletter\n\n## Newsletter\n\nStay informed about exclusive presales and upcoming shows at The Warfield.\n\n## VIP AND SPECIAL EVENTS AT THE WARFIELD!\n\n## VIP AND SPECIAL EVENTS AT THE WARFIELD!\n\nGet the VIP Treatment and host your Special Events at The Warfield.",
+          "date": "2025-07-01",
+          "last_updated": "2025-09-25"
+        },
+        {
+          "title": "Upcoming Events",
+          "url": "https://themidwaysf.com/events/",
+          "snippet": "Top\n\nU\n\nPCOMING EVENTS\n\nUh oh, it seems JavaScript is disabled in your browser.\n\nPlease enable JavaScript to view events or try visiting this page with a different browser.\n\nPARTYING EVERY WEEKEND SINCE 2015\n\nplease refresh the page\n\nRiDE\n\nTERRACE\n\nGODS &\n\nMONSTERS\n\nBLOCK PARTIES\n\nJOIN THE MIDWAY COMMUNITY\n\nSubscribe\n\nI consent to receive marketing texts via SMS",
+          "date": "2024-04-01",
+          "last_updated": "2025-09-26"
+        },
+        {
+          "title": "The Fillmore - 2025 show schedule & venue information - Live Nation",
+          "url": "https://www.livenation.com/venue/KovZpZAE6eeA/the-fillmore-events",
+          "snippet": "Doors generally open one hour before the show's scheduled start time. Bags up to 12\u201d x 6\u201d x 12\u201d are allowed in the venue. All our events will be Mobile Entry, meaning your mobile device will be used to gain access to the event. Cashless payments will be available at most points of sale and are recommended.\n\nFor more information, check out the FAQ below.\n\nThe Fillmore is a ballroom with very limited seating located on the SW corner of Geary Blvd and Fillmore Street. The main performance room is located on the second floor. Our address is 1805 Geary Blvd. San Francisco, CA 94115.\n\nThe 38 Geary Eastbound and 22 Fillmore Southbound both stop in front of the venue. Westbound 38 Geary and Northbound 22 Fillmore stop across the street. Both lines offer Owl service. The 38 Geary connects to BART.\n\nThe box office is located near the entrance. All tickets can be purchased via www.livenation.com.\n\nDay of Show Box Office Hours are: 30 minutes prior to published door time until 9pm.\n\nIn addition, the box office is open on Sundays from 10am to 2pm (excluding major holidays).\n\nThis legendary venue was the focal point for the psychedelic music scene during the 1960s and 1970s, helping to launch the careers of the biggest names of the era such as The Grateful Dead, Jimi Hendrix, Janis Joplin, and The Doors. This history helps create the perfect location to host your corporate event, private concert, wedding, reception or business meeting. The Fillmore can accommodate from 25 to 1,000 guests. Our talented staff handles every detail, so you don\u2019t have to!\n\nTake the memories with you with a Fillmore shirt, hoodie, hat & more!\n\nAdvertisement\n\nRock\n\nRock\n\nRock\n\nRock\n\nRock\n\nRock\n\nRock\n\nRock\n\nRock\n\nRock\n\nRock\n\nJazz\n\nBlues\n\nRock\n\nRock\n\nRock\n\nR&B\n\nReggae\n\nRock\n\nRock\n\nR&B\n\nR&B\n\nRock\n\nR&B\n\nFolk\n\nFolk\n\nFolk\n\nRock\n\nRock\n\nRock\n\nRock\n\nFolk\n\nMetal\n\nRock\n\nRock\n\nBlues\n\nFolk\n\nJazz\n\nHip-Hop/Rap\n\nPop\n\nFolk\n\nLatin\n\nRock\n\nLatin\n\nRock\n\nRock\n\nRock\n\nCountry",
+          "date": "2025-09-26",
+          "last_updated": "2025-09-26"
+        }
+      ],
+      "id": "38fec04d-c448-4d0d-b222-6688cd1407d0",
+      "server_time": null
+    }
+  }
+}

@@ -38,6 +38,7 @@ export class PerplexitySearchClient {
    */
   async searchEvents({ category, location, limit = 20 }) {
     const startTime = Date.now();
+    const effectiveLimit = Math.max(1, Math.min(Number(limit) || 20, 120));
 
     if (!this.apiKey) {
       const processingTime = Date.now() - startTime;
@@ -54,70 +55,102 @@ export class PerplexitySearchClient {
     }
 
     const queries = this.buildQueries(category, location);
-    const payload = this.buildPayload(queries, limit);
+    const aggregated = [];
+    const seen = new Set();
+    const errors = [];
+    let queriesExecuted = 0;
 
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    for (const query of queries) {
+      if (aggregated.length >= effectiveLimit) break;
 
-      const response = await fetch(this.baseUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-          'User-Agent': 'CurateMyWorld/1.0'
-        },
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
+      const remaining = effectiveLimit - aggregated.length;
+      const payload = this.buildPayload([query], remaining);
+      const queryStart = Date.now();
+      queriesExecuted += 1;
 
-      clearTimeout(timeoutId);
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-      const processingTime = Date.now() - startTime;
+        const response = await fetch(this.baseUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+            'User-Agent': 'CurateMyWorld/1.0'
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
 
-      if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorBody}`);
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorBody = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorBody}`);
+        }
+
+        const data = await response.json();
+        const rawResults = Array.isArray(data?.results) ? data.results : [];
+        const transformed = rawResults
+          .map(result => this.transformResult(result, category, location))
+          .filter(Boolean);
+
+        transformed.forEach(event => {
+          if (aggregated.length >= effectiveLimit) return;
+          const dedupeKey = event.eventUrl || event.id;
+          if (dedupeKey && seen.has(dedupeKey)) return;
+          if (dedupeKey) seen.add(dedupeKey);
+          aggregated.push(event);
+        });
+
+        const duration = Date.now() - queryStart;
+        logger.info('Perplexity query success', {
+          query,
+          rawResults: rawResults.length,
+          kept: transformed.length,
+          runningTotal: aggregated.length,
+          duration: `${duration}ms`
+        });
+
+      } catch (error) {
+        const duration = Date.now() - queryStart;
+        errors.push(error.message);
+        logger.warn('Perplexity query failed', {
+          query,
+          error: error.message,
+          duration: `${duration}ms`
+        });
       }
+    }
 
-      const data = await response.json();
-      const rawResults = Array.isArray(data?.results) ? data.results : [];
-      const transformed = rawResults
-        .map(result => this.transformResult(result, category, location))
-        .filter(Boolean);
+    const processingTime = Date.now() - startTime;
 
-      logger.info('Perplexity search successful', {
-        queries: queries.length,
-        totalResults: rawResults.length,
-        transformed: transformed.length,
-        processingTime: `${processingTime}ms`
-      });
-
-      const estimatedCost = queries.length * 0.005; // $0.005 per request per API docs
-
-      return {
-        success: true,
-        events: transformed,
-        count: transformed.length,
-        processingTime,
-        source: 'pplx_search',
-        cost: Number(estimatedCost.toFixed(3)),
-        queriesExecuted: queries.length
-      };
-
-    } catch (error) {
-      const processingTime = Date.now() - startTime;
-      logger.error('Perplexity search error', { error: error.message, category, location });
+    if (aggregated.length === 0) {
       return {
         success: false,
-        error: error.message,
+        error: errors[0] || 'Perplexity returned no events',
         events: [],
         count: 0,
         processingTime,
         source: 'pplx_search',
-        cost: 0
+        cost: 0,
+        queriesExecuted
       };
     }
+
+    const estimatedCost = queriesExecuted * 0.005;
+
+    return {
+      success: true,
+      events: aggregated.slice(0, effectiveLimit),
+      count: Math.min(aggregated.length, effectiveLimit),
+      processingTime,
+      source: 'pplx_search',
+      cost: Number(estimatedCost.toFixed(3)),
+      queriesExecuted,
+      queryErrors: errors
+    };
   }
 
   /**
@@ -141,7 +174,8 @@ export class PerplexitySearchClient {
    * Build request payload for Perplexity Search API
    */
   buildPayload(queries, limit) {
-    const maxResults = Math.max(1, Math.min(20, Math.ceil(limit / queries.length)));
+    const perQuery = Math.ceil(limit / Math.max(1, queries.length));
+    const maxResults = Math.max(1, Math.min(20, perQuery));
 
     if (queries.length === 1) {
       return {

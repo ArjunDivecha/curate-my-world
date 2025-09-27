@@ -33,87 +33,111 @@ export class SerperClient {
    */
   async searchEvents({ category, location, limit = 10 }) {
     const startTime = Date.now();
-    const query = `${category} events in ${location} 2025`;
+    const effectiveLimit = Math.max(1, Math.min(Number(limit) || 10, 200));
 
-    const payload = {
-      q: query,
-      gl: 'us',
-      hl: 'en',
-      num: Math.min(limit * 2, 20), // Get more results to filter for events
-      type: 'search'
-    };
+    const base = `${category} ${location}`.trim();
+    const queryVariants = [
+      `${base} events 2025`,
+      `${base} upcoming events`,
+      `${base} tickets`,
+      `${category} things to do in ${location}`,
+      `${category} ${location} calendar`
+    ];
 
-    logger.info('Searching Serper for events', { query });
+    const aggregated = [];
+    const seenUrls = new Set();
+    const querySummaries = [];
+    let lastError = null;
 
-    try {
-      // Create AbortController for timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-      
-      const response = await fetch(this.baseUrl, {
-        method: 'POST',
-        headers: {
-          'X-API-KEY': this.apiKey,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      const processingTime = Date.now() - startTime;
+    for (const query of queryVariants) {
+      if (aggregated.length >= effectiveLimit) break;
 
-      if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorBody}`);
-      }
+      logger.info('Searching Serper for events', { query });
 
-      const data = await response.json();
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      // Extract events from organic results and people also ask
-      const organicResults = data.organic || [];
-      const peopleAlsoAsk = data.peopleAlsoAsk || [];
-      const relatedSearches = data.relatedSearches || [];
-
-      // Filter and transform results that look like events
-      const eventResults = this.filterEventResults([...organicResults, ...peopleAlsoAsk]);
-      const transformedEvents = eventResults
-        .slice(0, limit)
-        .map(result => this.transformEvent(result, category))
-        .filter(Boolean);
-
-      logger.info(`Serper search successful, found ${transformedEvents.length} events.`, { 
-        processingTime: `${processingTime}ms`,
-        totalResults: organicResults.length 
-      });
-
-      return {
-        success: true,
-        events: transformedEvents,
-        count: transformedEvents.length,
-        processingTime,
-        source: 'serper',
-        metadata: {
-          totalOrganic: organicResults.length,
-          relatedSearches: relatedSearches.map(r => r.query || r).slice(0, 5)
-        }
+      const payload = {
+        q: query,
+        gl: 'us',
+        hl: 'en',
+        num: 20,
+        type: 'search'
       };
-    } catch (error) {
-      const processingTime = Date.now() - startTime;
-      logger.error('Serper error', { error: error.message, query, processingTime: `${processingTime}ms` });
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+        const response = await fetch(this.baseUrl, {
+          method: 'POST',
+          headers: {
+            'X-API-KEY': this.apiKey,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorBody = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorBody}`);
+        }
+
+        const data = await response.json();
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        const organicResults = Array.isArray(data.organic) ? data.organic : [];
+        const peopleAlsoAsk = Array.isArray(data.peopleAlsoAsk) ? data.peopleAlsoAsk : [];
+        const eventResults = this.filterEventResults([...organicResults, ...peopleAlsoAsk]);
+
+        for (const result of eventResults) {
+          if (aggregated.length >= effectiveLimit) break;
+          const transformed = this.transformEvent(result, category);
+          if (!transformed || !transformed.eventUrl) continue;
+          if (seenUrls.has(transformed.eventUrl)) continue;
+          seenUrls.add(transformed.eventUrl);
+          aggregated.push(transformed);
+        }
+
+        querySummaries.push({
+          query,
+          rawResults: organicResults.length,
+          eventCandidates: eventResults.length,
+          kept: aggregated.length
+        });
+
+      } catch (error) {
+        lastError = error;
+        logger.error('Serper error', { error: error.message, query });
+      }
+    }
+
+    const processingTime = Date.now() - startTime;
+
+    if (aggregated.length === 0 && lastError) {
       return {
         success: false,
-        error: error.message,
+        error: lastError.message,
         events: [],
         count: 0,
         processingTime,
         source: 'serper'
       };
     }
+
+    return {
+      success: true,
+      events: aggregated.slice(0, effectiveLimit),
+      count: Math.min(aggregated.length, effectiveLimit),
+      processingTime,
+      source: 'serper',
+      metadata: {
+        queriesTried: querySummaries,
+        totalFetched: aggregated.length
+      }
+    };
   }
 
   /**
@@ -208,7 +232,7 @@ export class SerperClient {
         endDate: dateInfo.endDate,
         eventUrl: serperResult.link,
         ticketUrl: this.extractTicketUrl(serperResult.link, snippet),
-        source: 'serper_api',
+        source: 'serper',
         confidence: this.calculateConfidence(serperResult, category),
         thumbnail: null // Serper doesn't provide thumbnails in basic search
       };
