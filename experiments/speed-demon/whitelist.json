@@ -1,11 +1,441 @@
 [
-  { "domain": "thegreekberkeley.com", "name": "Greek Theatre", "categories": ["music"] },
-  { "domain": "events.stanford.edu", "name": "Stanford Events", "categories": ["talks","science"] },
-  { "domain": "roxie.com", "name": "Roxie Theater", "categories": ["movies","art"] },
-  { "domain": "www.sfmoma.org", "name": "SFMOMA", "categories": ["art"] },
-  { "domain": "www.sfsymphony.org", "name": "SF Symphony", "categories": ["music"] },
-  { "domain": "www.berkeleyrep.org", "name": "Berkeley Rep", "categories": ["theatre"] },
-  { "domain": "www.commonwealthclub.org", "name": "Commonwealth Club", "categories": ["talks","business"] },
-  { "domain": "www.meetup.com", "name": "Meetup", "categories": ["tech","business","science"] }
+  {
+    "domain": "thegreekberkeley.com",
+    "name": "Greek Theatre",
+    "categories": [
+      "music"
+    ]
+  },
+  {
+    "domain": "events.stanford.edu",
+    "name": "Stanford Events",
+    "categories": [
+      "talks",
+      "science"
+    ]
+  },
+  {
+    "domain": "roxie.com",
+    "name": "Roxie Theater",
+    "categories": [
+      "movies",
+      "art"
+    ]
+  },
+  {
+    "domain": "www.sfmoma.org",
+    "name": "SFMOMA",
+    "categories": [
+      "art"
+    ]
+  },
+  {
+    "domain": "www.sfsymphony.org",
+    "name": "SF Symphony",
+    "categories": [
+      "music"
+    ]
+  },
+  {
+    "domain": "www.berkeleyrep.org",
+    "name": "Berkeley Rep",
+    "categories": [
+      "theatre"
+    ]
+  },
+  {
+    "domain": "www.commonwealthclub.org",
+    "name": "Commonwealth Club",
+    "categories": [
+      "talks",
+      "business"
+    ]
+  },
+  {
+    "domain": "www.meetup.com",
+    "name": "Meetup",
+    "categories": [
+      "tech",
+      "business",
+      "science"
+    ]
+  },
+  {
+    "domain": "dothebay.com"
+  },
+  {
+    "domain": "sanjosetheaters.org"
+  },
+  {
+    "domain": "eventbrite.com"
+  },
+  {
+    "domain": "commonwealthclub.org"
+  },
+  {
+    "domain": "sba.gov"
+  },
+  {
+    "domain": "weareteachers.com"
+  },
+  {
+    "domain": "bampfa.org"
+  },
+  {
+    "domain": "psychology.berkeley.edu"
+  },
+  {
+    "domain": "techcrunch.com"
+  },
+  {
+    "domain": "kristihines.com"
+  },
+  {
+    "domain": "sep.ucsf.edu"
+  },
+  {
+    "domain": "calendar.asianart.org"
+  },
+  {
+    "domain": "calacademy.org"
+  },
+  {
+    "domain": "haas.berkeley.edu"
+  },
+  {
+    "domain": "calendar.ucsf.edu"
+  },
+  {
+    "domain": "workssanjose.org"
+  },
+  {
+    "domain": "4-star-movies.com"
+  },
+  {
+    "domain": "broadwaysf.com"
+  },
+  {
+    "domain": "nucamp.co"
+  },
+  {
+    "domain": "eventzilla.net"
+  },
+  {
+    "domain": "conferencealerts.co.in"
+  },
+  {
+    "domain": "visitoakland.com"
+  },
+  {
+    "domain": "offthegrid.com"
+  },
+  {
+    "domain": "ces.tech"
+  },
+  {
+    "domain": "songkick.com"
+  },
+  {
+    "domain": "todaytix.com"
+  },
+  {
+    "domain": "lawrencehallofscience.org"
+  },
+  {
+    "domain": "mba.haas.berkeley.edu"
+  },
+  {
+    "domain": "cinemark.com"
+  },
+  {
+    "domain": "rialtocinemas.com"
+  },
+  {
+    "domain": "exploratorium.edu"
+  },
+  {
+    "domain": "allevents.in"
+  },
+  {
+    "domain": "yelp.com"
+  },
+  {
+    "domain": "cltc.org"
+  },
+  {
+    "domain": "techsposanjose.com"
+  },
+  {
+    "domain": "reddit.com"
+  },
+  {
+    "domain": "business.sfchamber.com"
+  },
+  {
+    "domain": "amctheatres.com"
+  },
+  {
+    "domain": "meetup.com"
+  },
+  {
+    "domain": "graduate.northeastern.edu"
+  },
+  {
+    "domain": "allinternationalconference.com"
+  },
+  {
+    "domain": "scienceatcal.berkeley.edu"
+  },
+  {
+    "domain": "amps-research.com"
+  },
+  {
+    "domain": "sjdowntown.com"
+  },
+  {
+    "domain": "san-francisco-theater.com"
+  },
+  {
+    "domain": "dev.events"
+  },
+  {
+    "domain": "conferencenext.com"
+  },
+  {
+    "domain": "artsy.net"
+  },
+  {
+    "domain": "events.alliant.edu"
+  },
+  {
+    "domain": "10times.com"
+  },
+  {
+    "domain": "money2020.com"
+  },
+  {
+    "domain": "financialexecutives.org"
+  },
+  {
+    "domain": "kala.org"
+  },
+  {
+    "domain": "sfjazz.org"
+  },
+  {
+    "domain": "science.ucsc.edu"
+  },
+  {
+    "domain": "drafthouse.com"
+  },
+  {
+    "domain": "theuctheatre.org"
+  },
+  {
+    "domain": "3belowtheaters.com"
+  },
+  {
+    "domain": "oaklandartmurmur.org"
+  },
+  {
+    "domain": "sfsymphony.org"
+  },
+  {
+    "domain": "techsposanfrancisco.com"
+  },
+  {
+    "domain": "act-sf.org"
+  },
+  {
+    "domain": "cityboxoffice.com"
+  },
+  {
+    "domain": "pcma.org"
+  },
+  {
+    "domain": "sanjosemade.com"
+  },
+  {
+    "domain": "exhibitions.asianart.org"
+  },
+  {
+    "domain": "foodielandnm.com"
+  },
+  {
+    "domain": "dts.ucla.edu"
+  },
+  {
+    "domain": "livenation.com"
+  },
+  {
+    "domain": "travelperk.com"
+  },
+  {
+    "domain": "sjmusart.org"
+  },
+  {
+    "domain": "sapcenter.com"
+  },
+  {
+    "domain": "bizzabo.com"
+  },
+  {
+    "domain": "sciencenews.org"
+  },
+  {
+    "domain": "ai-expo.net"
+  },
+  {
+    "domain": "regmovies.com"
+  },
+  {
+    "domain": "usfca.edu"
+  },
+  {
+    "domain": "sf.funcheap.com"
+  },
+  {
+    "domain": "ticketmaster.com"
+  },
+  {
+    "domain": "artarkgallery.com"
+  },
+  {
+    "domain": "music.stanford.edu"
+  },
+  {
+    "domain": "datebook.sfchronicle.com"
+  },
+  {
+    "domain": "cstms.berkeley.edu"
+  },
+  {
+    "domain": "tdps.berkeley.edu"
+  },
+  {
+    "domain": "events.berkeley.edu"
+  },
+  {
+    "domain": "feverup.com"
+  },
+  {
+    "domain": "my.financialexecutives.org"
+  },
+  {
+    "domain": "www.4-star-movies.com"
+  },
+  {
+    "domain": "www.act-sf.org"
+  },
+  {
+    "domain": "www.ai-expo.net"
+  },
+  {
+    "domain": "www.allinternationalconference.com"
+  },
+  {
+    "domain": "www.amctheatres.com"
+  },
+  {
+    "domain": "www.artarkgallery.com"
+  },
+  {
+    "domain": "www.artsy.net"
+  },
+  {
+    "domain": "www.bizzabo.com"
+  },
+  {
+    "domain": "www.broadwaysf.com"
+  },
+  {
+    "domain": "www.calacademy.org"
+  },
+  {
+    "domain": "www.cca.edu"
+  },
+  {
+    "domain": "www.ces.tech"
+  },
+  {
+    "domain": "www.cinemark.com"
+  },
+  {
+    "domain": "www.cityboxoffice.com"
+  },
+  {
+    "domain": "www.eventbrite.com"
+  },
+  {
+    "domain": "www.eventzilla.net"
+  },
+  {
+    "domain": "www.exploratorium.edu"
+  },
+  {
+    "domain": "www.kala.org"
+  },
+  {
+    "domain": "www.livenation.com"
+  },
+  {
+    "domain": "www.money2020.com"
+  },
+  {
+    "domain": "www.nucamp.co"
+  },
+  {
+    "domain": "www.pcma.org"
+  },
+  {
+    "domain": "www.reddit.com"
+  },
+  {
+    "domain": "www.regmovies.com"
+  },
+  {
+    "domain": "www.san-francisco-theater.com"
+  },
+  {
+    "domain": "www.sanjosemade.com"
+  },
+  {
+    "domain": "www.sapcenter.com"
+  },
+  {
+    "domain": "www.sba.gov"
+  },
+  {
+    "domain": "www.sciencenews.org"
+  },
+  {
+    "domain": "www.sfjazz.org"
+  },
+  {
+    "domain": "www.songkick.com"
+  },
+  {
+    "domain": "www.thenewparkway.com"
+  },
+  {
+    "domain": "www.ticketmaster.com"
+  },
+  {
+    "domain": "www.todaytix.com"
+  },
+  {
+    "domain": "www.travelperk.com"
+  },
+  {
+    "domain": "www.usfca.edu"
+  },
+  {
+    "domain": "www.visitoakland.com"
+  },
+  {
+    "domain": "www.weareteachers.com"
+  },
+  {
+    "domain": "www.yelp.com"
+  }
 ]
-

@@ -1,48 +1,96 @@
 /**
- * Test Ticketmaster function environment variables
+ * Standalone Ticketmaster Discovery API smoke test.
+ * Loads credentials from curate-events-api/.env and
+ * makes a direct REST call without Supabase Edge functions.
  */
 
-import { createClient } from '@supabase/supabase-js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const SUPABASE_URL = "https://llspbinxevyitinvagvx.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxsc3BiaW54ZXZ5aXRpbnZhZ3Z4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM2Nzk3NTUsImV4cCI6MjA2OTI1NTc1NX0.1biD6WrrLT5dNwmpIkjyeR53E6Gxa_cRdO-DLsdu6c4";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-async function testTicketmasterEnv() {
-  console.log('🔍 Testing Ticketmaster environment variables...');
-  
-  try {
-    const result = await supabase.functions.invoke('ticketmaster-collector', {
-      body: {
-        location: 'San Francisco, CA',
-        coordinates: { lat: 37.7749, lng: -122.4194 },
-        categories: ['music'],
-        limit: 5
-      }
-    });
-
-    if (result.error) {
-      console.error('❌ Function call failed:');
-      console.error('Status:', result.error.context?.status);
-      console.error('Response:', result.error.message);
-      
-      // Try to get the response body
-      if (result.error.context?.body) {
-        try {
-          const body = await result.error.context.body.text();
-          console.error('Response body:', body);
-        } catch (e) {
-          console.error('Could not read response body');
-        }
-      }
-    } else {
-      console.log('✅ Function call successful:', result.data);
+function loadEnv() {
+  const envPath = path.resolve(__dirname, 'curate-events-api/.env');
+  if (!fs.existsSync(envPath)) return;
+  const content = fs.readFileSync(envPath, 'utf8');
+  for (const line of content.split(/\r?\n/)) {
+    if (!line || line.trim().startsWith('#')) continue;
+    const idx = line.indexOf('=');
+    if (idx === -1) continue;
+    const key = line.slice(0, idx).trim();
+    const value = line.slice(idx + 1).trim();
+    if (!(key in process.env)) {
+      process.env[key] = value;
     }
-
-  } catch (error) {
-    console.error('❌ Test failed with error:', error);
   }
 }
 
-testTicketmasterEnv();
+loadEnv();
+
+const API_KEY = process.env.TICKETMASTER_CONSUMER_KEY;
+const API_SECRET = process.env.TICKETMASTER_CONSUMER_SECRET; // Not used for Discovery but confirmed for completeness.
+
+if (!API_KEY) {
+  console.error('❌ Missing TICKETMASTER_CONSUMER_KEY in environment.');
+  process.exit(1);
+}
+
+console.log('🔍 Ticketmaster API smoke test');
+console.log('   Using consumer key:', `${API_KEY.slice(0, 6)}…`);
+if (API_SECRET) {
+  console.log('   Consumer secret present.');
+}
+
+const now = new Date();
+const startDateTime = new Date(now.getTime() + 24 * 60 * 60 * 1000) // 24h ahead for upcoming events
+  .toISOString()
+  .replace(/\.\d{3}Z$/, 'Z');
+
+const params = new URLSearchParams({
+  apikey: API_KEY,
+  city: 'San Francisco',
+  countryCode: 'US',
+  classificationName: 'music',
+  startDateTime,
+  size: '25',
+  sort: 'date,asc'
+});
+
+const url = `https://app.ticketmaster.com/discovery/v2/events.json?${params.toString()}`;
+
+async function run() {
+  try {
+    console.log('🌐 Requesting:', url);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`HTTP ${response.status}: ${body}`);
+    }
+
+    const data = await response.json();
+    const events = data?._embedded?.events ?? [];
+
+    console.log(`✅ Received ${events.length} events`);
+    if (events.length > 0) {
+      const sample = events.slice(0, 5).map(evt => ({
+        name: evt.name,
+        id: evt.id,
+        url: evt.url,
+        startDate: evt.dates?.start?.dateTime,
+        venue: evt._embedded?.venues?.[0]?.name
+      }));
+      console.log('📋 Sample events:', JSON.stringify(sample, null, 2));
+    }
+  } catch (error) {
+    console.error('❌ Ticketmaster request failed:', error.message);
+  }
+}
+
+run();
