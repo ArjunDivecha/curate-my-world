@@ -18,6 +18,7 @@ interface ProviderControlPanelProps {
   onToggleProvider: (providerKey: string, enabled: boolean) => void;
   providerDetails?: ProviderStatSummary[];
   isLoading?: boolean;
+  totalProcessingTime?: number;
 }
 
 const PROVIDER_LIBRARY: ProviderMeta[] = [
@@ -84,7 +85,8 @@ const ProviderControlPanel: React.FC<ProviderControlPanelProps> = ({
   selectedProviders,
   onToggleProvider,
   providerDetails,
-  isLoading
+  isLoading,
+  totalProcessingTime
 }) => {
   const detailMap = useMemo(() => {
     const map: Record<string, ProviderStatSummary> = {};
@@ -97,7 +99,8 @@ const ProviderControlPanel: React.FC<ProviderControlPanelProps> = ({
   const totals = useMemo(() => {
     const original = (providerDetails || []).reduce((sum, detail) => sum + (detail.originalCount || 0), 0);
     const unique = (providerDetails || []).reduce((sum, detail) => sum + (detail.survivedCount || 0), 0);
-    const timeMs = (providerDetails || []).reduce((sum, detail) => sum + (detail.processingTime || 0), 0);
+    // Use backend total processing time instead of summing individual provider times
+    const timeMs = totalProcessingTime || 0;
     const cost = (providerDetails || []).reduce((sum, detail) => sum + (detail.cost || 0), 0);
     return {
       original,
@@ -105,7 +108,7 @@ const ProviderControlPanel: React.FC<ProviderControlPanelProps> = ({
       timeMs,
       cost
     };
-  }, [providerDetails]);
+  }, [providerDetails, totalProcessingTime]);
 
   return (
     <Card className="w-full shadow-sm border-border/70">

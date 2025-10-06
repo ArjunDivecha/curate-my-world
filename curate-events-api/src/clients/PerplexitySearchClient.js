@@ -21,6 +21,7 @@
 
 import config from '../utils/config.js';
 import { createLogger } from '../utils/logger.js';
+import { expandAggregatorUrl, isAggregatorDomain } from '../utils/aggregators/index.js';
 
 const logger = createLogger('PerplexitySearchClient');
 
@@ -141,10 +142,32 @@ export class PerplexitySearchClient {
 
     const estimatedCost = queriesExecuted * 0.005;
 
+    const expandedEvents = [];
+    const visitedAggregators = new Set();
+
+    for (const event of aggregated) {
+      const domain = event?.eventUrl ? this.extractDomain(event.eventUrl) : null;
+      if (domain && isAggregatorDomain(domain) && !visitedAggregators.has(domain)) {
+        visitedAggregators.add(domain);
+        const expansion = await expandAggregatorUrl({
+          url: event.eventUrl || event.externalUrl,
+          category,
+          provider: 'pplx_search'
+        });
+        if (expansion.length > 0) {
+          expandedEvents.push(...expansion);
+          continue; // Skip original hub card when expansion succeeds
+        }
+      }
+      expandedEvents.push(event);
+    }
+
+    const finalEvents = expandedEvents.slice(0, effectiveLimit);
+
     return {
       success: true,
-      events: aggregated.slice(0, effectiveLimit),
-      count: Math.min(aggregated.length, effectiveLimit),
+      events: finalEvents,
+      count: Math.min(expandedEvents.length, effectiveLimit),
       processingTime,
       source: 'pplx_search',
       cost: Number(estimatedCost.toFixed(3)),

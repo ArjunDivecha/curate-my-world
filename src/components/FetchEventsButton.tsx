@@ -10,6 +10,7 @@ interface FetchEventsButtonProps {
   onEventsFetched?: (events: any[]) => void;
   onAllEventsFetched?: (eventsByCategory: any, categoryStats: any, providerDetails?: ProviderStatSummary[]) => void;
   onProviderDetails?: (details: ProviderStatSummary[], statsMap: ProviderStatsMap) => void;
+  onProcessingTime?: (timeMs: number) => void;
   selectedProviders: Record<string, boolean>;
   className?: string;
 }
@@ -38,6 +39,7 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
   onEventsFetched,
   onAllEventsFetched,
   onProviderDetails,
+  onProcessingTime,
   selectedProviders,
   className
 }) => {
@@ -178,6 +180,10 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
 
       if (onProviderDetails) {
         onProviderDetails(providerDetails || [], providerStats || {});
+      }
+
+      if (onProcessingTime) {
+        onProcessingTime(processingTime);
       }
       
       // Also pass all events as a flat array for backward compatibility

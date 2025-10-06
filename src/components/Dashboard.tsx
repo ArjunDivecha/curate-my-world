@@ -98,6 +98,7 @@ export const Dashboard = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedProviders, setSelectedProviders] = useState<Record<string, boolean>>(defaultProviderSelection);
   const [providerDetails, setProviderDetails] = useState<ProviderStatSummary[]>([]);
+  const [totalProcessingTime, setTotalProcessingTime] = useState<number>(0);
 
   // Category mapping: Frontend display names to backend API names
   const mapCategoryToBackend = (frontendCategory: string): string => {
@@ -531,6 +532,7 @@ export const Dashboard = () => {
               selectedProviders={selectedProviders}
               onToggleProvider={handleProviderToggle}
               providerDetails={providerDetails}
+              totalProcessingTime={totalProcessingTime}
             />
 
             {/* Top Row - All, Fetch Events, Clear All */}
@@ -655,6 +657,9 @@ export const Dashboard = () => {
                 }}
                 onProviderDetails={(details) => {
                   setProviderDetails(details);
+                }}
+                onProcessingTime={(timeMs) => {
+                  setTotalProcessingTime(timeMs);
                 }}
                 className="btn-primary w-full lg:w-auto flex items-center justify-center space-x-2 text-white font-bold py-4 px-8 rounded-full transition hover:transform hover:-translate-y-0.5 hover:shadow-lg"
               />

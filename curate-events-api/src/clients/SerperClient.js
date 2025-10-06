@@ -16,6 +16,7 @@
 
 import config from '../utils/config.js';
 import { createLogger } from '../utils/logger.js';
+import { expandAggregatorUrl, isAggregatorDomain } from '../utils/aggregators/index.js';
 
 const logger = createLogger('SerperClient');
 
@@ -34,6 +35,22 @@ export class SerperClient {
   async searchEvents({ category, location, limit = 10 }) {
     const startTime = Date.now();
     const effectiveLimit = Math.max(1, Math.min(Number(limit) || 10, 200));
+
+    const eventsEndpointResult = await this.searchEventsEndpoint({ category, location, limit: effectiveLimit });
+    if (eventsEndpointResult.success && eventsEndpointResult.events.length >= Math.min(effectiveLimit, 20)) {
+      const enriched = await this.expandAggregators(eventsEndpointResult.events, category);
+      return {
+        success: true,
+        events: enriched.slice(0, effectiveLimit),
+        count: Math.min(enriched.length, effectiveLimit),
+        processingTime: Date.now() - startTime,
+        source: 'serper',
+        metadata: {
+          mode: 'events_endpoint',
+          totalFetched: enriched.length
+        }
+      };
+    }
 
     const base = `${category} ${location}`.trim();
 
@@ -149,17 +166,115 @@ export class SerperClient {
       };
     }
 
+    const enriched = await this.expandAggregators(aggregated, category);
+
     return {
       success: true,
-      events: aggregated.slice(0, effectiveLimit),
-      count: Math.min(aggregated.length, effectiveLimit),
+      events: enriched.slice(0, effectiveLimit),
+      count: Math.min(enriched.length, effectiveLimit),
       processingTime,
       source: 'serper',
       metadata: {
         queriesTried: querySummaries,
-        totalFetched: aggregated.length
+        totalFetched: enriched.length,
+        mode: 'search_fallback'
       }
     };
+  }
+
+  async searchEventsEndpoint({ category, location, limit }) {
+    const query = `${category} ${location}`.trim();
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+      const response = await fetch('https://google.serper.dev/events', {
+        method: 'POST',
+        headers: {
+          'X-API-KEY': this.apiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          q: query,
+          gl: 'us',
+          hl: 'en',
+          num: Math.min(limit, 50)
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(`HTTP ${response.status}: ${body}`);
+      }
+      const data = await response.json();
+      const events = Array.isArray(data?.events) ? data.events : [];
+      const normalized = events
+        .map((event, index) => this.normalizeEventsEndpointResult(event, category, location, index))
+        .filter(Boolean);
+      return {
+        success: normalized.length > 0,
+        events: normalized,
+        rawCount: events.length
+      };
+    } catch (error) {
+      logger.debug('Serper events endpoint failed', { error: error.message, category, location });
+      return { success: false, events: [] };
+    }
+  }
+
+  normalizeEventsEndpointResult(event, category, location, index) {
+    if (!event) return null;
+    const url = event.link || event.url;
+    const title = event.title || event.name;
+    if (!url || !title) return null;
+
+    const startDate = event.date?.startDate || event.startDate || event.start_time || event.date;
+    const endDate = event.date?.endDate || event.endDate || event.end_time || startDate;
+
+    const venueName = event.venue || event.location?.name || event.location;
+    const address = event.address || event.location?.address || location;
+
+    return {
+      id: `serper_events_${Buffer.from(`${url}-${index}`).toString('base64').slice(0, 12)}`,
+      title,
+      description: event.description || event.snippet || 'See event page for details.',
+      category,
+      categories: [category].filter(Boolean),
+      venue: venueName || 'See Event Page',
+      location: address || location,
+      startDate: this.normalizeDate(startDate),
+      endDate: this.normalizeDate(endDate) || this.normalizeDate(startDate),
+      eventUrl: url,
+      ticketUrl: event.ticket || url,
+      externalUrl: url,
+      source: 'serper',
+      confidence: 0.7,
+      aiReasoning: event.snippet || 'Provided by Serper events endpoint.'
+    };
+  }
+
+  async expandAggregators(events, category) {
+    const expanded = [];
+    const visitedAggregators = new Set();
+
+    for (const event of events) {
+      const domain = event?.eventUrl ? this.extractDomain(event.eventUrl) : null;
+      if (domain && isAggregatorDomain(domain) && !visitedAggregators.has(domain)) {
+        visitedAggregators.add(domain);
+        const addition = await expandAggregatorUrl({
+          url: event.eventUrl || event.externalUrl,
+          category,
+          provider: 'serper'
+        });
+        if (addition.length > 0) {
+          expanded.push(...addition);
+          continue;
+        }
+      }
+      expanded.push(event);
+    }
+
+    return expanded;
   }
 
   /**
@@ -451,6 +566,26 @@ export class SerperClient {
         latency: null, 
         message: error.message 
       };
+    }
+  }
+
+  extractDomain(url) {
+    try {
+      const parsed = new URL(url);
+      return parsed.hostname.replace(/^www\./, '');
+    } catch {
+      return null;
+    }
+  }
+
+  normalizeDate(value) {
+    if (!value) return null;
+    try {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return null;
+      return date.toISOString();
+    } catch {
+      return null;
     }
   }
 }
