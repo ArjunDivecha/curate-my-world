@@ -28,6 +28,7 @@ import SerperClient from '../clients/SerperClient.js';
 import TicketmasterClient from '../clients/TicketmasterClient.js';
 import PerplexitySearchClient from '../clients/PerplexitySearchClient.js';
 import { LocationFilter } from '../utils/locationFilter.js';
+import { DateFilter } from '../utils/dateFilter.js';
 import { createLogger, logRequest, logResponse } from '../utils/logger.js';
 import { config } from '../utils/config.js';
 import { eventCache } from '../utils/cache.js';
@@ -46,6 +47,7 @@ const ticketmasterClient = new TicketmasterClient();
 const perplexitySearchClient = new PerplexitySearchClient();
 const deduplicator = new EventDeduplicator();
 const locationFilter = new LocationFilter();
+const dateFilter = new DateFilter();
 
 // Provider metadata
 const PROVIDER_LABELS = {
@@ -1098,6 +1100,12 @@ router.get('/all-categories', async (req, res) => {
         const deduplicationResult = deduplicator.deduplicateEvents(eventLists);
         const dedupStats = deduplicator.getDeduplicationStats(eventLists, deduplicationResult);
         
+        // Apply date filtering to ensure events are within the specified date range
+        const dateFilterResult = dateFilter.filterEventsByDateRange(
+          deduplicationResult.uniqueEvents,
+          date_range || 'next 30 days'
+        );
+        
         const sourceStats = {};
         Object.entries(providerResults).forEach(([key, value]) => {
           if (!value) return;
@@ -1113,12 +1121,17 @@ router.get('/all-categories', async (req, res) => {
         return {
           category,
           success: true,
-          events: deduplicationResult.uniqueEvents,
-          count: deduplicationResult.uniqueEvents.length,
+          events: dateFilterResult.filteredEvents,
+          count: dateFilterResult.filteredCount,
           sourceStats,
           // Post-dedup provider attribution
           providerAttribution: dedupStats?.sourceBreakdown || null,
-          totals: dedupStats ? { totalOriginal: dedupStats.totalOriginal, totalUnique: dedupStats.totalUnique } : null
+          totals: dedupStats ? { totalOriginal: dedupStats.totalOriginal, totalUnique: dedupStats.totalUnique } : null,
+          dateFilterStats: {
+            originalCount: dateFilterResult.originalCount,
+            filteredCount: dateFilterResult.filteredCount,
+            removedCount: dateFilterResult.removedCount
+          }
         };
         
       } catch (error) {
@@ -1165,7 +1178,8 @@ router.get('/all-categories', async (req, res) => {
           const providerKey = mapSourceToProvider(rawProviderKey);
           const entry = ensureProviderStats(legacyProviderStats, providerKey, selectedProviders);
           entry.originalCount += stats.count || 0;
-          entry.processingTime += stats.processingTime || 0;
+          // Use max processing time instead of accumulating (providers run in parallel per category)
+          entry.processingTime = Math.max(entry.processingTime || 0, stats.processingTime || 0);
           entry.cost += stats.cost || 0;
           if ((stats.count || 0) > 0) {
             entry.success = true;
@@ -1499,8 +1513,8 @@ router.get('/:category', async (req, res) => {
     const deduplicationResult = deduplicator.deduplicateEvents(eventLists);
     
     // Apply location filtering to remove events from incorrect locations
-    const preFilterCount = deduplicationResult.uniqueEvents.length;
-    const filteredEvents = locationFilter.filterEventsByLocation(
+    const preLocationFilterCount = deduplicationResult.uniqueEvents.length;
+    const locationFilteredEvents = locationFilter.filterEventsByLocation(
       deduplicationResult.uniqueEvents, 
       location, 
       {
@@ -1509,19 +1523,35 @@ router.get('/:category', async (req, res) => {
         strictMode: false // Keep events if location is unclear
       }
     );
-    const postFilterCount = filteredEvents.length;
+    const postLocationFilterCount = locationFilteredEvents.length;
     const locationFilterStats = {
-      preFilterCount,
-      postFilterCount,
-      removedCount: preFilterCount - postFilterCount,
-      removalRate: preFilterCount > 0 ? ((preFilterCount - postFilterCount) / preFilterCount * 100).toFixed(1) + '%' : '0%'
+      preFilterCount: preLocationFilterCount,
+      postFilterCount: postLocationFilterCount,
+      removedCount: preLocationFilterCount - postLocationFilterCount,
+      removalRate: preLocationFilterCount > 0 ? ((preLocationFilterCount - postLocationFilterCount) / preLocationFilterCount * 100).toFixed(1) + '%' : '0%'
     };
     
-    // Create the result using the location-filtered events
+    // Apply date filtering to ensure events are within the specified date range
+    const dateFilterResult = dateFilter.filterEventsByDateRange(
+      locationFilteredEvents,
+      date_range || 'next 30 days'
+    );
+    const finalFilteredEvents = dateFilterResult.filteredEvents;
+    const dateFilterStats = {
+      preFilterCount: dateFilterResult.originalCount,
+      postFilterCount: dateFilterResult.filteredCount,
+      removedCount: dateFilterResult.removedCount,
+      removalRate: dateFilterResult.originalCount > 0 
+        ? ((dateFilterResult.removedCount / dateFilterResult.originalCount * 100).toFixed(1) + '%') 
+        : '0%',
+      dateRange: dateFilterResult.dateRange
+    };
+    
+    // Create the result using the fully filtered events
     const result = {
       success: true,
-      events: filteredEvents,
-      count: filteredEvents.length,
+      events: finalFilteredEvents,
+      count: finalFilteredEvents.length,
       sources: ['perplexity_api', 'apyflux_api', 'predicthq_api', 'exa_fast', 'serpapi'],
       sourceStats,
       deduplication: {
@@ -1531,13 +1561,15 @@ router.get('/:category', async (req, res) => {
         sources: deduplicationResult.sources
       },
       locationFilter: locationFilterStats,
+      dateFilter: dateFilterStats,
       requestId: `multi_source_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       metadata: {
         category,
         location,
         dateRange: date_range || 'next 30 days',
         limit: options.limit,
-        deduplicationApplied: true
+        deduplicationApplied: true,
+        dateFilteringApplied: true
       }
     };
 
