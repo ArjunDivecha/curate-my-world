@@ -32,6 +32,7 @@ import { DateFilter } from '../utils/dateFilter.js';
 import { createLogger, logRequest, logResponse } from '../utils/logger.js';
 import { config } from '../utils/config.js';
 import { eventCache } from '../utils/cache.js';
+import { buildCustomEventPrompt, buildProviderSearchQuery } from '../utils/promptUtils.js';
 
 const router = express.Router();
 const logger = createLogger('EventsRoute');
@@ -817,13 +818,22 @@ router.get('/all-categories', async (req, res) => {
     } else {
       logger.info('Using legacy mode explicitly requested', { location, eventLimit });
     }
-    const customPrompt = (custom_prompt || '').trim();
-    const isCustomMode = customPrompt.length > 0;
+    const rawCustomPrompt = (custom_prompt || '').trim();
+    const isCustomMode = rawCustomPrompt.length > 0;
+    const appliedCustomPrompt = isCustomMode
+      ? buildCustomEventPrompt({
+          userPrompt: rawCustomPrompt,
+          location,
+          dateRange: date_range || 'next 30 days',
+          limit: eventLimit * 5
+        })
+      : '';
     
     if (isCustomMode) {
       // Custom AI Instructions mode: Use only the custom prompt, skip category-based search
       logger.info('Using custom AI instructions mode', {
-        customPrompt: customPrompt.substring(0, 100) + '...',
+        rawPrompt: rawCustomPrompt.substring(0, 100) + '...',
+        appliedPrompt: appliedCustomPrompt.substring(0, 120) + '...',
         location,
         eventLimit: eventLimit * 5 // Higher limit for custom search
       });
@@ -833,7 +843,7 @@ router.get('/all-categories', async (req, res) => {
         category: 'general', // Placeholder category
         location,
         dateRange: date_range,
-        customPrompt: customPrompt,
+        customPrompt: appliedCustomPrompt,
         options: {
           limit: eventLimit * 5, // Higher limit for custom search
           minConfidence: 0.5,
@@ -857,7 +867,8 @@ router.get('/all-categories', async (req, res) => {
           totalEvents: customResult.events.length,
           processingTime: duration,
           searchMode: 'custom_ai_instructions',
-          customPrompt: customPrompt.substring(0, 200) + '...',
+          customPrompt: rawCustomPrompt.substring(0, 200) + '...',
+          appliedPrompt: appliedCustomPrompt.substring(0, 200) + '...',
           timestamp: new Date().toISOString()
         };
         
@@ -1296,6 +1307,7 @@ router.get('/:category', async (req, res) => {
   try {
     const { category } = req.params;
     const { location, date_range, limit, min_confidence, custom_prompt } = req.query;
+    const rawCustomPrompt = (custom_prompt || '').trim();
     const disableApyflux = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase()) || config.sources?.disableApyfluxByDefault;
     const disablePredictHQ = ['true', '1', 'yes'].includes(String(req.query.disable_predicthq || '').toLowerCase()) || config.sources?.disablePredictHQByDefault;
     const disablePerplexity = ['true', '1', 'yes'].includes(String(req.query.disable_perplexity || '').toLowerCase());
@@ -1329,7 +1341,7 @@ router.get('/:category', async (req, res) => {
     }
 
     // Check cache first
-    const cacheKey = eventCache.generateKey(category, location, date_range, options, custom_prompt);
+    const cacheKey = eventCache.generateKey(category, location, date_range, options, rawCustomPrompt);
     const cachedResult = eventCache.get(cacheKey);
     
     if (cachedResult) {
@@ -1355,7 +1367,8 @@ router.get('/:category', async (req, res) => {
       location,
       dateRange: date_range,
       options,
-      cacheKey
+      cacheKey,
+      customPrompt: rawCustomPrompt || undefined
     });
 
     // Collect events from all 5 sources in parallel
@@ -2020,11 +2033,21 @@ router.get('/:category/perplexity', async (req, res) => {
   logRequest(logger, req, 'perplexityEvents');
   
   try {
+    const rawCustomPrompt = (custom_prompt || '').trim();
+    const formattedCustomPrompt = rawCustomPrompt
+      ? buildCustomEventPrompt({
+          userPrompt: rawCustomPrompt,
+          location,
+          dateRange: date_range || 'next 30 days',
+          limit: parseInt(limit) || 10
+        })
+      : '';
+
     const result = await eventPipeline.collectEvents({
       category,
       location,
       dateRange: date_range,
-      customPrompt: custom_prompt,
+      customPrompt: formattedCustomPrompt,
       options: {
         limit: parseInt(limit) || 10,
         minConfidence: 0.5,
@@ -2043,7 +2066,9 @@ router.get('/:category/perplexity', async (req, res) => {
       processingTime: responseTime,
       timestamp: new Date().toISOString(),
       category,
-      location
+      location,
+      appliedPrompt: formattedCustomPrompt ? formattedCustomPrompt.substring(0, 200) + '...' : undefined,
+      customPrompt: rawCustomPrompt ? rawCustomPrompt.substring(0, 200) + '...' : undefined
     });
 
   } catch (error) {
@@ -2069,8 +2094,17 @@ router.get('/:category/apyflux', async (req, res) => {
   logRequest(logger, req, 'apyfluxEvents');
   
   try {
+    const rawCustomPrompt = (custom_prompt || '').trim();
+    const providerQuery = rawCustomPrompt
+      ? buildProviderSearchQuery({
+          userPrompt: rawCustomPrompt,
+          category,
+          location
+        })
+      : '';
+
     const result = await apyfluxClient.searchEvents({
-      query: custom_prompt || apyfluxClient.buildSearchQuery(category, location),
+      query: providerQuery || apyfluxClient.buildSearchQuery(category, location),
       location,
       category,
       dateRange: date_range || 'next 30 days',
@@ -2092,7 +2126,9 @@ router.get('/:category/apyflux', async (req, res) => {
         processingTime: responseTime,
         timestamp: new Date().toISOString(),
         category,
-        location
+        location,
+        appliedQuery: providerQuery || undefined,
+        customPrompt: rawCustomPrompt || undefined
       });
     } else {
       res.json({
@@ -2128,8 +2164,17 @@ router.get('/:category/exa', async (req, res) => {
   logRequest(logger, req, 'exaEvents');
   
   try {
+    const rawCustomPrompt = (custom_prompt || '').trim();
+    const providerQuery = rawCustomPrompt
+      ? buildProviderSearchQuery({
+          userPrompt: rawCustomPrompt,
+          category,
+          location
+        })
+      : '';
+
     const result = await exaClient.searchEvents({
-      query: custom_prompt || `${category} events in ${location}`,
+      query: providerQuery || `${category} events in ${location}`,
       location,
       category,
       dateRange: date_range || 'next 30 days',
@@ -2147,6 +2192,8 @@ router.get('/:category/exa', async (req, res) => {
       timestamp: new Date().toISOString(),
       category,
       location,
+      appliedQuery: providerQuery || undefined,
+      customPrompt: rawCustomPrompt || undefined,
       error: result.error || null
     });
 
@@ -2173,8 +2220,17 @@ router.get('/:category/serper', async (req, res) => {
   logRequest(logger, req, 'serperEvents');
   
   try {
+    const rawCustomPrompt = (custom_prompt || '').trim();
+    const providerQuery = rawCustomPrompt
+      ? buildProviderSearchQuery({
+          userPrompt: rawCustomPrompt,
+          category,
+          location
+        })
+      : '';
+
     const result = await serperClient.searchEvents({
-      query: custom_prompt || `${category} events in ${location}`,
+      query: providerQuery || `${category} events in ${location}`,
       location,
       category,
       dateRange: date_range || 'next 30 days',
@@ -2192,6 +2248,8 @@ router.get('/:category/serper', async (req, res) => {
       timestamp: new Date().toISOString(),
       category,
       location,
+      appliedQuery: providerQuery || undefined,
+      customPrompt: rawCustomPrompt || undefined,
       error: result.error || null
     });
 
