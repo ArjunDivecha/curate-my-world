@@ -20,8 +20,6 @@
 import express from 'express';
 import { EventPipeline } from '../pipeline/EventPipeline.js';
 import { CategoryManager } from '../managers/CategoryManager.js';
-import { ApyfluxClient } from '../clients/ApyfluxClient.js';
-import { PredictHQClient } from '../clients/PredictHQClient.js';
 import { EventDeduplicator } from '../utils/eventDeduplicator.js';
 import { ExaClient } from '../clients/ExaClient.js';
 import SerperClient from '../clients/SerperClient.js';
@@ -40,8 +38,6 @@ const logger = createLogger('EventsRoute');
 // Initialize pipeline with API key from config
 const eventPipeline = new EventPipeline(config.perplexityApiKey);
 const categoryManager = new CategoryManager();
-const apyfluxClient = new ApyfluxClient();
-const predictHQClient = new PredictHQClient(config.predictHQApiKey);
 const exaClient = new ExaClient();
 const serperClient = new SerperClient();
 const ticketmasterClient = new TicketmasterClient();
@@ -56,8 +52,7 @@ const PROVIDER_LABELS = {
   serper: 'Serper',
   exa: 'EXA',
   perplexity: 'Perplexity (LLM)',
-  apyflux: 'Apyflux',
-  predicthq: 'PredictHQ',
+  // Removed: Apyflux, PredictHQ
   ticketmaster: 'Ticketmaster',
   pplx: 'Perplexity Search',
   pplx_search: 'Perplexity Search'
@@ -68,8 +63,6 @@ const ALL_PROVIDERS = [
   'serper',
   'exa',
   'perplexity',
-  'apyflux',
-  'predicthq',
   'ticketmaster',
   'pplx'
 ];
@@ -81,8 +74,7 @@ const SOURCE_PROVIDER_MAP = {
   exa_fast: 'exa',
   sonoma: 'sonoma',
   perplexity_api: 'perplexity',
-  apyflux_api: 'apyflux',
-  predicthq_api: 'predicthq',
+  // Removed legacy mappings: apyflux_api, predicthq_api
   ticketmaster: 'ticketmaster',
   pplx_search: 'pplx'
 };
@@ -92,8 +84,6 @@ const PROVIDER_DEFAULTS = {
   serper: true,
   exa: true,
   perplexity: !(config.sources?.disablePerplexityByDefault ?? false),
-  apyflux: !(config.sources?.disableApyfluxByDefault ?? false),
-  predicthq: !(config.sources?.disablePredictHQByDefault ?? false),
   ticketmaster: !(config.sources?.disableTicketmasterByDefault ?? false),
   pplx: !(config.sources?.disablePplxSearchByDefault ?? false)
 };
@@ -104,8 +94,6 @@ const PROVIDER_ORDER = [
   'exa',
   'sonoma',
   'perplexity',
-  'apyflux',
-  'predicthq',
   'pplx'
 ];
 
@@ -333,12 +321,8 @@ router.get('/:category/combined', async (req, res) => {
       limit: eventLimit
     });
 
-    // Optional source toggles
-    const disableApyflux = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase()) || config.sources?.disableApyfluxByDefault;
-
-    // Run both APIs in parallel (Apyflux optionally disabled)
-    const [perplexityResult, apyfluxResult] = await Promise.allSettled([
-      // Perplexity via EventPipeline (can be disabled)
+    // Perplexity via EventPipeline (Apyflux removed)
+    const [perplexityResult] = await Promise.allSettled([
       (disablePerplexity
         ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by flag', source: 'perplexity_api' })
         : eventPipeline.collectEvents({
@@ -352,35 +336,6 @@ router.get('/:category/combined', async (req, res) => {
               temperature: config.perplexity.temperature
             }
           }).then(result => ({ ...result, source: 'perplexity_api' }))
-      ),
-      
-      // Apyflux direct
-      (disableApyflux
-        ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by default', source: 'apyflux_api' })
-        : apyfluxClient.searchEvents({
-            query: apyfluxClient.buildSearchQuery(category, location),
-            location,
-            category,
-            dateRange: date_range || 'next 30 days',
-            limit: eventLimit
-          }).then(result => {
-            if (result.success && result.events.length > 0) {
-              // Transform events to our standard format
-              const transformedEvents = result.events.map(event => 
-                apyfluxClient.transformEvent(event, category)
-              ).filter(event => event !== null);
-              
-              return {
-                success: true,
-                events: transformedEvents,
-                count: transformedEvents.length,
-                processingTime: result.processingTime,
-                source: 'apyflux_api',
-                requestId: result.requestId
-              };
-            }
-            return { ...result, source: 'apyflux_api' };
-          })
       )
     ]);
 
@@ -392,9 +347,7 @@ router.get('/:category/combined', async (req, res) => {
       eventLists.push(pr);
     }
     
-    if (apyfluxResult.status === 'fulfilled' && apyfluxResult.value.success) {
-      eventLists.push(apyfluxResult.value);
-    }
+    // Apyflux removed
 
     // Deduplicate events
     const deduplicationResult = deduplicator.deduplicateEvents(eventLists);
@@ -417,11 +370,6 @@ router.get('/:category/combined', async (req, res) => {
           status: perplexityResult.status,
           count: perplexityResult.status === 'fulfilled' ? perplexityResult.value.count || 0 : 0,
           success: perplexityResult.status === 'fulfilled' ? perplexityResult.value.success : false
-        },
-        apyflux: {
-          status: apyfluxResult.status,
-          count: apyfluxResult.status === 'fulfilled' ? apyfluxResult.value.count || 0 : 0,
-          success: apyfluxResult.status === 'fulfilled' ? apyfluxResult.value.success : false
         }
       },
       processingTime: `${duration}ms`,
@@ -475,7 +423,6 @@ router.get('/:category/compare', async (req, res) => {
   try {
     const { category } = req.params;
     const { location, date_range, limit } = req.query;
-    const disableApyflux = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase()) || config.sources?.disableApyfluxByDefault;
     const disablePerplexity = ['true', '1', 'yes'].includes(String(req.query.disable_perplexity || '').toLowerCase()) || config.sources?.disablePerplexityByDefault;
     
     // Validate required parameters
@@ -497,9 +444,8 @@ router.get('/:category/compare', async (req, res) => {
       limit: eventLimit
     });
 
-    // Run both APIs in parallel
-    const [perplexityResult, apyfluxResult] = await Promise.allSettled([
-      // Perplexity via EventPipeline (can be disabled)
+    // Perplexity only
+    const [perplexityResult] = await Promise.allSettled([
       (disablePerplexity
         ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by flag', source: 'perplexity_api' })
         : eventPipeline.collectEvents({
@@ -513,35 +459,6 @@ router.get('/:category/compare', async (req, res) => {
               temperature: config.perplexity.temperature
             }
           }).then(result => ({ ...result, source: 'perplexity_api' }))
-      ),
-      
-      // Apyflux direct
-      (disableApyflux
-        ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by default', source: 'apyflux_api' })
-        : apyfluxClient.searchEvents({
-            query: apyfluxClient.buildSearchQuery(category, location),
-            location,
-            category,
-            dateRange: date_range || 'next 30 days',
-            limit: eventLimit
-          }).then(result => {
-            if (result.success && result.events.length > 0) {
-              // Transform events to our standard format
-              const transformedEvents = result.events.map(event => 
-                apyfluxClient.transformEvent(event, category)
-              ).filter(event => event !== null);
-              
-              return {
-                success: true,
-                events: transformedEvents,
-                count: transformedEvents.length,
-                processingTime: result.processingTime,
-                source: 'apyflux_api',
-                requestId: result.requestId
-              };
-            }
-            return { ...result, source: 'apyflux_api' };
-          })
       )
     ]);
 
@@ -559,20 +476,10 @@ router.get('/:category/compare', async (req, res) => {
             events: [],
             count: 0
           })
-        },
-        apyflux: {
-          status: apyfluxResult.status,
-          ...(apyfluxResult.status === 'fulfilled' ? apyfluxResult.value : {
-            success: false,
-            error: apyfluxResult.reason?.message || 'Unknown error',
-            events: [],
-            count: 0
-          })
         }
       },
       summary: {
         perplexityCount: perplexityResult.status === 'fulfilled' ? perplexityResult.value.count || 0 : 0,
-        apyfluxCount: apyfluxResult.status === 'fulfilled' ? apyfluxResult.value.count || 0 : 0,
         totalProcessingTime: `${duration}ms`,
         category,
         location,
@@ -585,7 +492,6 @@ router.get('/:category/compare', async (req, res) => {
       category,
       location,
       perplexityEvents: comparison.summary.perplexityCount,
-      apyfluxEvents: comparison.summary.apyfluxCount,
       duration: `${duration}ms`
     });
 
@@ -644,20 +550,12 @@ router.get('/all-categories', async (req, res) => {
   let includeExa = selectedProviders.has('exa');
   let includeSonoma = selectedProviders.has('sonoma');
   let includePerplexityProvider = selectedProviders.has('perplexity');
-  let includeApyfluxProvider = selectedProviders.has('apyflux');
-  let includePredictHQProvider = selectedProviders.has('predicthq');
 
   // Optional source toggles
-  const disableApyfluxQuery = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase());
-  const disablePredictHQQuery = ['true', '1', 'yes'].includes(String(req.query.disable_predicthq || '').toLowerCase());
   const disablePerplexityQuery = ['true', '1', 'yes'].includes(String(req.query.disable_perplexity || '').toLowerCase());
 
-  const disableApyflux = disableApyfluxQuery || !includeApyfluxProvider;
-  const disablePredictHQ = disablePredictHQQuery || !includePredictHQProvider;
   const disablePerplexity = disablePerplexityQuery || !includePerplexityProvider;
 
-  if (disableApyflux) includeApyfluxProvider = false;
-  if (disablePredictHQ) includePredictHQProvider = false;
   if (disablePerplexity) includePerplexityProvider = false;
 
   // Super-Hybrid mode (Phase 1: Production Switch):
@@ -933,71 +831,6 @@ router.get('/all-categories', async (req, res) => {
           });
         } else {
           providerResults.perplexity = { success: false, events: [], count: 0, source: 'perplexity_api', skipped: true };
-        }
-
-        if (!disableApyflux) {
-          enqueueProvider('apyflux', async () => {
-            const result = await apyfluxClient.searchEvents({
-              query: apyfluxClient.buildSearchQuery(category, location),
-              location,
-              category,
-              dateRange: date_range || 'next 30 days',
-              limit: eventLimit
-            });
-            if (result.success && Array.isArray(result.events) && result.events.length > 0) {
-              const transformedEvents = result.events
-                .map(event => apyfluxClient.transformEvent(event, category))
-                .filter(Boolean);
-              return {
-                success: true,
-                events: transformedEvents,
-                count: transformedEvents.length,
-                processingTime: result.processingTime,
-                source: 'apyflux_api'
-              };
-            }
-            return {
-              success: result.success || false,
-              events: [],
-              count: 0,
-              error: result.error,
-              source: 'apyflux_api'
-            };
-          });
-        } else {
-          providerResults.apyflux = { success: false, events: [], count: 0, source: 'apyflux_api', skipped: true };
-        }
-
-        if (!disablePredictHQ) {
-          enqueueProvider('predicthq', async () => {
-            const result = await predictHQClient.searchEvents({
-              category,
-              location,
-              dateRange: date_range || 'next 30 days',
-              limit: eventLimit
-            });
-            if (result.success && Array.isArray(result.events) && result.events.length > 0) {
-              const transformedEvents = result.events
-                .map(event => predictHQClient.transformEvent(event, category))
-                .filter(Boolean);
-              return {
-                success: true,
-                events: transformedEvents,
-                count: transformedEvents.length,
-                processingTime: result.processingTime,
-                source: 'predicthq_api'
-              };
-            }
-            return {
-              success: result.success || false,
-              events: [],
-              count: 0,
-              error: result.error,
-              source: 'predicthq_api'
-            };
-          });
-        } else {
-          providerResults.predicthq = { success: false, events: [], count: 0, source: 'predicthq_api', skipped: true };
         }
 
         if (includeExa) {
@@ -1308,8 +1141,6 @@ router.get('/:category', async (req, res) => {
     const { category } = req.params;
     const { location, date_range, limit, min_confidence, custom_prompt } = req.query;
     const rawCustomPrompt = (custom_prompt || '').trim();
-    const disableApyflux = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase()) || config.sources?.disableApyfluxByDefault;
-    const disablePredictHQ = ['true', '1', 'yes'].includes(String(req.query.disable_predicthq || '').toLowerCase()) || config.sources?.disablePredictHQByDefault;
     const disablePerplexity = ['true', '1', 'yes'].includes(String(req.query.disable_perplexity || '').toLowerCase());
     
     // Validate required parameters
@@ -1372,7 +1203,7 @@ router.get('/:category', async (req, res) => {
     });
 
     // Collect events from all 5 sources in parallel
-    const [perplexityResult, apyfluxResult, predictHQResult, exaResult, serpApiResult] = await Promise.allSettled([
+    const [perplexityResult, exaResult, serpApiResult] = await Promise.allSettled([
       // Perplexity via EventPipeline (can be disabled)
       (disablePerplexity
         ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by flag', source: 'perplexity_api' })
@@ -1382,61 +1213,6 @@ router.get('/:category', async (req, res) => {
             dateRange: date_range,
             options
           }).then(result => ({ ...result, source: 'perplexity_api' }))
-      ),
-      
-      // Apyflux direct
-      (disableApyflux
-        ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by default', source: 'apyflux_api' })
-        : apyfluxClient.searchEvents({
-            query: apyfluxClient.buildSearchQuery(category, location),
-            location,
-            category,
-            dateRange: date_range || 'next 30 days',
-            limit: options.limit
-          }).then(result => {
-            if (result.success && result.events.length > 0) {
-              const transformedEvents = result.events.map(event => 
-                apyfluxClient.transformEvent(event, category)
-              ).filter(event => event !== null);
-              
-              return {
-                success: true,
-                events: transformedEvents,
-                count: transformedEvents.length,
-                processingTime: result.processingTime,
-                source: 'apyflux_api',
-                requestId: result.requestId
-              };
-            }
-            return { ...result, source: 'apyflux_api' };
-          })
-      ),
-      
-      // PredictHQ direct
-      (disablePredictHQ
-        ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by default', source: 'predicthq_api' })
-        : predictHQClient.searchEvents({
-            category,
-            location,
-            dateRange: date_range || 'next 30 days',
-            limit: options.limit
-          }).then(result => {
-            if (result.success && result.events.length > 0) {
-              const transformedEvents = result.events.map(event => 
-                predictHQClient.transformEvent(event, category)
-              ).filter(event => event !== null);
-              
-              return {
-                success: true,
-                events: transformedEvents,
-                count: transformedEvents.length,
-                processingTime: result.processingTime,
-                source: 'predicthq_api',
-                totalAvailable: result.totalAvailable
-              };
-            }
-            return { ...result, source: 'predicthq_api' };
-          })
       ),
       
       // Exa direct
@@ -1471,30 +1247,7 @@ router.get('/:category', async (req, res) => {
       };
     }
     
-    if (apyfluxResult.status === 'fulfilled' && apyfluxResult.value.success) {
-      eventLists.push(apyfluxResult.value);
-      sourceStats.apyflux = {
-        count: apyfluxResult.value.events.length,
-        processingTime: apyfluxResult.value.processingTime
-      };
-    } else {
-      sourceStats.apyflux = apyfluxResult.status === 'fulfilled'
-        ? { count: 0, error: apyfluxResult.value?.error || 'Unknown error' }
-        : { count: 0, error: apyfluxResult.reason?.message || 'Unknown error' };
-    }
-    
-    if (predictHQResult.status === 'fulfilled' && predictHQResult.value.success) {
-      eventLists.push(predictHQResult.value);
-      sourceStats.predicthq = {
-        count: predictHQResult.value.events.length,
-        processingTime: predictHQResult.value.processingTime,
-        totalAvailable: predictHQResult.value.totalAvailable
-      };
-    } else {
-      sourceStats.predicthq = predictHQResult.status === 'fulfilled'
-        ? { count: 0, error: predictHQResult.value?.error || 'Unknown error' }
-        : { count: 0, error: predictHQResult.reason?.message || 'Unknown error' };
-    }
+    // Removed Apyflux and PredictHQ source accumulation
     
     if (exaResult.status === 'fulfilled' && exaResult.value.success) {
       eventLists.push(exaResult.value);
@@ -1565,7 +1318,7 @@ router.get('/:category', async (req, res) => {
       success: true,
       events: finalFilteredEvents,
       count: finalFilteredEvents.length,
-      sources: ['perplexity_api', 'apyflux_api', 'predicthq_api', 'exa_fast', 'serpapi'],
+      sources: ['perplexity_api', 'exa_fast', 'serpapi'],
       sourceStats,
       deduplication: {
         totalProcessed: deduplicationResult.totalProcessed,
@@ -1728,98 +1481,7 @@ if (config.isDevelopment) {
   });
 }
 
-/**
- * GET /api/events/:category/predicthq
- * Get events from PredictHQ API only
- */
-router.get('/:category/predicthq', async (req, res) => {
-  const startTime = Date.now();
-  const { category } = req.params;
-  const { location = 'San Francisco, CA', date_range, limit } = req.query;
-  
-  logRequest(logger, req, 'predictHQEvents', { category, location, date_range, limit });
-  
-  try {
-    const eventLimit = Math.min(parseInt(limit) || 20, config.api.maxLimit);
-    
-    // Validate category
-    const validation = categoryManager.validateQuery({ category, location });
-    if (!validation.valid) {
-      return res.status(400).json({
-        success: false,
-        error: validation.errors.join(', '),
-        validCategories: categoryManager.getSupportedCategories().map(c => c.name),
-        source: 'predicthq_api'
-      });
-    }
-    
-    // Search PredictHQ events
-    const result = await predictHQClient.searchEvents({
-      category,
-      location,
-      dateRange: date_range || 'next 30 days',
-      limit: eventLimit
-    });
-    
-    if (!result.success) {
-      return res.status(500).json({
-        success: false,
-        error: result.error,
-        events: [],
-        count: 0,
-        source: 'predicthq_api',
-        processingTime: result.processingTime
-      });
-    }
-    
-    // Transform events to our standard format
-    const transformedEvents = result.events.map(event => 
-      predictHQClient.transformEvent(event, category)
-    ).filter(event => event !== null);
-    
-    const duration = Date.now() - startTime;
-    
-    const response = {
-      success: true,
-      events: transformedEvents,
-      count: transformedEvents.length,
-      totalAvailable: result.totalAvailable,
-      source: 'predicthq_api',
-      processingTime: duration,
-      metadata: {
-        category,
-        location,
-        dateRange: date_range || 'next 30 days',
-        limit: eventLimit,
-        requestId: `predicthq_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      }
-    };
-    
-    res.json(response);
-    logResponse(logger, res, 'predictHQEvents', duration, { eventsFound: transformedEvents.length });
-    
-  } catch (error) {
-    const duration = Date.now() - startTime;
-    
-    logger.error('PredictHQ events error', {
-      error: error.message,
-      category,
-      location,
-      processingTime: `${duration}ms`
-    });
-    
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      events: [],
-      count: 0,
-      source: 'predicthq_api',
-      processingTime: duration
-    });
-    
-    logResponse(logger, res, 'predictHQEvents', duration, { error: error.message });
-  }
-});
+// Removed: PredictHQ-only endpoint
 
 /**
  * GET /api/events/:category/all-sources
@@ -1833,8 +1495,6 @@ router.get('/:category/all-sources', async (req, res) => {
   logRequest(logger, req, 'allSourcesEvents', { category, location, date_range, limit });
 
   // Optional source toggles
-  const disableApyflux = ['true', '1', 'yes'].includes(String(req.query.disable_apyflux || '').toLowerCase()) || config.sources?.disableApyfluxByDefault;
-  const disablePredictHQ = ['true', '1', 'yes'].includes(String(req.query.disable_predicthq || '').toLowerCase()) || config.sources?.disablePredictHQByDefault;
   const disablePerplexity = ['true', '1', 'yes'].includes(String(req.query.disable_perplexity || '').toLowerCase()) || config.sources?.disablePerplexityByDefault;
   
   try {
@@ -1847,12 +1507,12 @@ router.get('/:category/all-sources', async (req, res) => {
         success: false,
         error: validation.errors.join(', '),
         validCategories: categoryManager.getSupportedCategories().map(c => c.name),
-        sources: ['perplexity_api', 'apyflux_api', 'predicthq_api']
+        sources: ['perplexity_api']
       });
     }
     
-    // Run all three APIs in parallel
-    const [perplexityResult, apyfluxResult, predictHQResult] = await Promise.allSettled([
+    // Perplexity only (Apyflux/PredictHQ removed)
+    const [perplexityResult] = await Promise.allSettled([
       // Perplexity via EventPipeline (can be disabled)
       (disablePerplexity
         ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by flag', source: 'perplexity_api' })
@@ -1866,61 +1526,6 @@ router.get('/:category/all-sources', async (req, res) => {
               maxTokens: config.perplexity.maxTokens,
               temperature: config.perplexity.temperature
             }
-          })
-      ),
-      
-      // Apyflux direct
-      (disableApyflux
-        ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by flag', source: 'apyflux_api' })
-        : apyfluxClient.searchEvents({
-            query: apyfluxClient.buildSearchQuery(category, location),
-            location,
-            category,
-            dateRange: date_range || 'next 30 days',
-            limit: eventLimit
-          }).then(result => {
-            if (result.success && result.events.length > 0) {
-              const transformedEvents = result.events.map(event => 
-                apyfluxClient.transformEvent(event, category)
-              ).filter(event => event !== null);
-              
-              return {
-                success: true,
-                events: transformedEvents,
-                count: transformedEvents.length,
-                processingTime: result.processingTime,
-                source: 'apyflux_api',
-                requestId: result.requestId
-              };
-            }
-            return result;
-          })
-      ),
-      
-      // PredictHQ direct
-      (disablePredictHQ
-        ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by flag', source: 'predicthq_api' })
-        : predictHQClient.searchEvents({
-            category,
-            location,
-            dateRange: date_range || 'next 30 days',
-            limit: eventLimit
-          }).then(result => {
-            if (result.success && result.events.length > 0) {
-              const transformedEvents = result.events.map(event => 
-                predictHQClient.transformEvent(event, category)
-              ).filter(event => event !== null);
-              
-              return {
-                success: true,
-                events: transformedEvents,
-                count: transformedEvents.length,
-                processingTime: result.processingTime,
-                source: 'predicthq_api',
-                totalAvailable: result.totalAvailable
-              };
-            }
-            return result;
           })
       )
     ]);
@@ -1943,32 +1548,7 @@ router.get('/:category/all-sources', async (req, res) => {
       };
     }
     
-    if (apyfluxResult.status === 'fulfilled' && apyfluxResult.value.success) {
-      eventLists.push(apyfluxResult.value);
-      sourceStats.apyflux = {
-        count: apyfluxResult.value.events.length,
-        processingTime: apyfluxResult.value.processingTime
-      };
-    } else {
-      sourceStats.apyflux = {
-        count: 0,
-        error: apyfluxResult.reason?.message || 'Unknown error'
-      };
-    }
-    
-    if (predictHQResult.status === 'fulfilled' && predictHQResult.value.success) {
-      eventLists.push(predictHQResult.value);
-      sourceStats.predicthq = {
-        count: predictHQResult.value.events.length,
-        processingTime: predictHQResult.value.processingTime,
-        totalAvailable: predictHQResult.value.totalAvailable
-      };
-    } else {
-      sourceStats.predicthq = {
-        count: 0,
-        error: predictHQResult.reason?.message || 'Unknown error'
-      };
-    }
+    // Removed apyflux/predicthq handling
     
     // Deduplicate events across all sources
     const deduplicatedEvents = deduplicator.deduplicateEvents(eventLists);
@@ -1979,7 +1559,7 @@ router.get('/:category/all-sources', async (req, res) => {
       success: true,
       events: deduplicatedEvents,
       count: deduplicatedEvents.length,
-      sources: ['perplexity_api', 'apyflux_api', 'predicthq_api'],
+      sources: ['perplexity_api'],
       sourceStats,
       processingTime: duration,
       metadata: {
@@ -2013,7 +1593,7 @@ router.get('/:category/all-sources', async (req, res) => {
       error: error.message,
       events: [],
       count: 0,
-      sources: ['perplexity_api', 'apyflux_api', 'predicthq_api'],
+      sources: ['perplexity_api'],
       processingTime: duration
     });
     
@@ -2082,75 +1662,7 @@ router.get('/:category/perplexity', async (req, res) => {
   }
 });
 
-/**
- * GET /api/events/:category/apyflux
- * Get events from Apyflux API only
- */
-router.get('/:category/apyflux', async (req, res) => {
-  const startTime = Date.now();
-  const { category } = req.params;
-  const { location = 'San Francisco, CA', date_range, limit, custom_prompt } = req.query;
-  
-  logRequest(logger, req, 'apyfluxEvents');
-  
-  try {
-    const rawCustomPrompt = (custom_prompt || '').trim();
-    const providerQuery = rawCustomPrompt
-      ? buildProviderSearchQuery({
-          userPrompt: rawCustomPrompt,
-          category,
-          location
-        })
-      : '';
-
-    const result = await apyfluxClient.searchEvents({
-      query: providerQuery || apyfluxClient.buildSearchQuery(category, location),
-      location,
-      category,
-      dateRange: date_range || 'next 30 days',
-      limit: parseInt(limit) || 10
-    });
-
-    const responseTime = Date.now() - startTime;
-    
-    if (result.success && result.events.length > 0) {
-      const transformedEvents = result.events.map(event => 
-        apyfluxClient.transformEvent(event, category)
-      ).filter(event => event !== null);
-      
-      res.json({
-        success: true,
-        events: transformedEvents,
-        count: transformedEvents.length,
-        source: 'apyflux',
-        processingTime: responseTime,
-        timestamp: new Date().toISOString(),
-        category,
-        location,
-        appliedQuery: providerQuery || undefined,
-        customPrompt: rawCustomPrompt || undefined
-      });
-    } else {
-      res.json({
-        success: false,
-        events: [],
-        count: 0,
-        source: 'apyflux',
-        error: result.error || 'No events found',
-        processingTime: responseTime
-      });
-    }
-
-  } catch (error) {
-    logger.error('Apyflux API error', { error: error.message, category, location });
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch Apyflux events',
-      source: 'apyflux',
-      processingTime: Date.now() - startTime
-    });
-  }
-});
+// Removed: Apyflux-only endpoint
 
 /**
  * GET /api/events/:category/exa

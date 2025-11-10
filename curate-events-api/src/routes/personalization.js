@@ -30,8 +30,6 @@ import fs from 'fs/promises';
 import path from 'path';
 import { EventPipeline } from '../pipeline/EventPipeline.js';
 import { CategoryManager } from '../managers/CategoryManager.js';
-import { ApyfluxClient } from '../clients/ApyfluxClient.js';
-import { PredictHQClient } from '../clients/PredictHQClient.js';
 import { EventDeduplicator } from '../utils/eventDeduplicator.js';
 import { createLogger, logRequest, logResponse } from '../utils/logger.js';
 import { config } from '../utils/config.js';
@@ -42,8 +40,7 @@ const logger = createLogger('PersonalizationRoute');
 // Initialize clients
 const eventPipeline = new EventPipeline(config.perplexityApiKey);
 const categoryManager = new CategoryManager();
-const apyfluxClient = new ApyfluxClient();
-const predictHQClient = new PredictHQClient(config.predictHQApiKey);
+// Removed: Apyflux and PredictHQ clients
 const deduplicator = new EventDeduplicator();
 
 /**
@@ -228,13 +225,8 @@ class PersonalizationEngine {
         
         // Collect from multiple sources in parallel
         // Sources disabled by default via config; override by editing config.sources
-        const disablePredictHQ = config.sources?.disablePredictHQByDefault === true;
-        const [perplexityResult, predicthqResult] = await Promise.allSettled([
-          this.collectFromPerplexity(category, location, dateRange, categoryLimit, searchStrategy),
-          (disablePredictHQ
-            ? Promise.resolve({ success: false, events: [], count: 0, error: 'disabled by default', source: 'predicthq' })
-            : this.collectFromPredictHQ(category, location, dateRange, categoryLimit, searchStrategy)
-          )
+        const [perplexityResult] = await Promise.allSettled([
+          this.collectFromPerplexity(category, location, dateRange, categoryLimit, searchStrategy)
         ]);
         
         // Process results
@@ -242,8 +234,7 @@ class PersonalizationEngine {
           category,
           userRating: rating,
           sources: {
-            perplexity: this.processSourceResult(perplexityResult, 'perplexity'),
-            predicthq: this.processSourceResult(predicthqResult, 'predicthq')
+            perplexity: this.processSourceResult(perplexityResult, 'perplexity')
           }
         };
         
@@ -303,48 +294,6 @@ class PersonalizationEngine {
     }
     
     return contextParts.join('. ');
-  }
-
-  /**
-   * Collect events from Apyflux
-   */
-  async collectFromApyflux(category, location, dateRange, limit, searchStrategy) {
-    const query = apyfluxClient.buildSearchQuery(category, location);
-    
-    return await apyfluxClient.searchEvents({
-      query,
-      location,
-      category,
-      dateRange,
-      limit
-    });
-  }
-
-  /**
-   * Collect events from PredictHQ and normalize
-   */
-  async collectFromPredictHQ(category, location, dateRange, limit, searchStrategy) {
-    const result = await predictHQClient.searchEvents({
-      category,
-      location,
-      dateRange,
-      limit
-    });
-
-    // Normalize to our internal event shape if successful
-    if (result.success && Array.isArray(result.events)) {
-      const normalized = result.events
-        .map(e => predictHQClient.transformEvent(e, category))
-        .filter(Boolean);
-      return {
-        ...result,
-        events: normalized,
-        count: normalized.length,
-        source: 'predicthq'
-      };
-    }
-
-    return result;
   }
 
   /**

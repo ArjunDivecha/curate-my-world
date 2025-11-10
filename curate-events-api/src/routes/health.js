@@ -49,12 +49,6 @@ router.get('/', async (req, res) => {
         maxTokens: config.perplexity.maxTokens,
         temperature: config.perplexity.temperature,
         hasApiKey: !!config.perplexityApiKey
-      },
-      predicthq: {
-        hasApiKey: !!config.predictHQApiKey
-      },
-      apyflux: {
-        available: true // No API key required
       }
     };
 
@@ -64,7 +58,7 @@ router.get('/', async (req, res) => {
       logger.info('Testing all API connectivity');
       
       // Test all APIs in parallel
-      const [perplexityResult, apyfluxResult, predictHQResult] = await Promise.allSettled([
+      const [perplexityResult] = await Promise.allSettled([
         // Perplexity test
         (async () => {
           try {
@@ -85,64 +79,13 @@ router.get('/', async (req, res) => {
               error: error.message
             };
           }
-        })(),
-        
-        // Apyflux test
-        (async () => {
-          try {
-            const { ApyfluxClient } = await import('../clients/ApyfluxClient.js');
-            const client = new ApyfluxClient();
-            const healthStatus = await client.getHealthStatus();
-            
-            return {
-              available: healthStatus.status === 'healthy',
-              responseTime: healthStatus.latency,
-              message: healthStatus.message,
-              error: healthStatus.status !== 'healthy' ? healthStatus.message : null
-            };
-          } catch (error) {
-            return {
-              available: false,
-              error: error.message
-            };
-          }
-        })(),
-        
-        // PredictHQ test
-        (async () => {
-          try {
-            const { PredictHQClient } = await import('../clients/PredictHQClient.js');
-            const client = new PredictHQClient(config.predictHQApiKey);
-            const healthStatus = await client.getHealthStatus();
-            
-            return {
-              available: healthStatus.status === 'healthy',
-              responseTime: healthStatus.latency,
-              message: healthStatus.message,
-              totalAvailable: healthStatus.totalAvailable,
-              error: healthStatus.status !== 'healthy' ? healthStatus.message : null
-            };
-          } catch (error) {
-            return {
-              available: false,
-              error: error.message
-            };
-          }
-        })()
+        })
       ]);
       
       apiStatus = {
         perplexity: perplexityResult.status === 'fulfilled' ? perplexityResult.value : {
           available: false,
           error: perplexityResult.reason?.message || 'Unknown error'
-        },
-        apyflux: apyfluxResult.status === 'fulfilled' ? apyfluxResult.value : {
-          available: false,
-          error: apyfluxResult.reason?.message || 'Unknown error'
-        },
-        predicthq: predictHQResult.status === 'fulfilled' ? predictHQResult.value : {
-          available: false,
-          error: predictHQResult.reason?.message || 'Unknown error'
         }
       };
       

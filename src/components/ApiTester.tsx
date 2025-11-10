@@ -44,16 +44,12 @@ export const ApiTester: React.FC = () => {
   const { toast } = useToast();
 
   const apiSources = [
-    { value: '', label: 'All 5 Sources (Default)', description: 'Perplexity, Apyflux, PredictHQ, Exa, and Serper combined' },
+    { value: '', label: 'All Sources (Default)', description: 'Perplexity LLM, Exa, Serper, Ticketmaster, and PPLX' },
     { value: 'perplexity', label: 'Perplexity Only', description: 'AI-powered event discovery' },
-    { value: 'apyflux', label: 'Apyflux Only', description: 'Venue and event data' },
-    { value: 'predicthq', label: 'PredictHQ Only', description: 'Event predictions and analytics' },
     { value: 'exa', label: 'Exa Only', description: 'Web search for events' },
     { value: 'serper', label: 'Serper Only', description: 'Google search results' },
     { value: 'ticketmaster', label: 'Ticketmaster Only', description: 'Official event tickets and venues' },
-    { value: 'combined', label: 'Perplexity + Apyflux', description: 'Combined Perplexity and Apyflux sources only' },
     { value: 'compare', label: 'Compare Sources', description: 'Side-by-side comparison of sources' },
-    { value: 'all-sources', label: 'All 3 Main Sources', description: 'Perplexity, Apyflux, and PredictHQ' },
     { value: 'all-categories', label: 'All Categories', description: 'Fetch all event categories' }
   ];
 
@@ -65,8 +61,6 @@ export const ApiTester: React.FC = () => {
   const getDefaultPrompt = (source: string, category: string): string => {
     const prompts: Record<string, string> = {
       'perplexity': `Find ${category} events in San Francisco, CA for 2025. Include event name, date, time, location, and description.`,
-      'apyflux': `Search for ${category} events and venues in San Francisco, CA. Return structured event data.`,
-      'predicthq': `Get ${category} event predictions for San Francisco, CA with analytics data.`,
       'exa': `Web search for ${category} events in San Francisco, CA 2025. Find event websites and details.`,
       'serper': `Google search: "${category} events San Francisco CA 2025" - find event listings and information.`
     };
@@ -77,8 +71,6 @@ export const ApiTester: React.FC = () => {
     // These are the actual prompts used by the backend
     const existingPrompts: Record<string, string> = {
       'perplexity': `You are an expert event curator for the San Francisco Bay Area. Find ${category} events happening in San Francisco, CA and surrounding Bay Area cities within the next 3 months. Focus on high-quality, engaging events that would appeal to tech professionals and creative individuals. Include specific details like venue names, exact dates/times, ticket prices, and event URLs when available. Prioritize events that are unique, educational, or networking-focused.`,
-      'apyflux': `Search for ${category} events and venues in San Francisco Bay Area. Focus on events within the next 90 days. Include venue details, capacity, and event logistics.`,
-      'predicthq': `Analyze ${category} event patterns and predictions for San Francisco, CA metropolitan area. Include attendance forecasts and impact analysis.`,
       'exa': `Search the web for ${category} events in San Francisco Bay Area happening in the next 3 months. Find official event pages, registration links, and detailed event information from reliable sources like Eventbrite, Meetup, Facebook Events, and venue websites.`,
       'serper': `Find ${category} events in San Francisco Bay Area for the next 3 months. Search for: "${category} events San Francisco Bay Area 2025" including Eventbrite, Meetup, Facebook Events, and official venue listings.`
     };
@@ -108,13 +100,6 @@ export const ApiTester: React.FC = () => {
         }
         params.append('date_range', 'next 30 days');
         params.append('limit', '500');
-      } else if (selectedApi === 'all-sources') {
-        url = `${API_BASE_URL}/events/${category}/all-sources`;
-        if (!customProvided) {
-          params.append('location', location);
-        } else {
-          console.log('ℹ️ Custom prompt provided; ignoring location parameter.');
-        }
       } else if (selectedApi === '') {
         // Default endpoint - all 5 sources
         url = `${API_BASE_URL}/events/${category}`;

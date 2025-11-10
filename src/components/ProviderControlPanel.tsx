@@ -56,18 +56,7 @@ const PROVIDER_LIBRARY: ProviderMeta[] = [
     label: "Perplexity LLM",
     description: "Full LLM planner with rich summarisation (Sonoma prompt)"
   },
-  {
-    key: "apyflux",
-    label: "Apyflux",
-    description: "Apyflux events API (paid)",
-    costHint: "Paid"
-  },
-  {
-    key: "predicthq",
-    label: "PredictHQ",
-    description: "PredictHQ premium event feed",
-    costHint: "Paid"
-  }
+  // Removed: Apyflux and PredictHQ
 ];
 
 const formatSeconds = (ms: number | undefined) => {

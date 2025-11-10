@@ -40,7 +40,7 @@ export const config = {
   apyfluxApiKey: process.env.APYFLUX_API_KEY,
   apyfluxAppId: process.env.APYFLUX_APP_ID,
   apyfluxClientId: process.env.APYFLUX_CLIENT_ID,
-  predictHQApiKey: process.env.PREDICTHQ_API_KEY,
+  // Removed PredictHQ
   exaApiKey: process.env.EXA_API_KEY,
   serperApiKey: process.env.SERPER_API_KEY,
   ticketmasterConsumerKey: process.env.TICKETMASTER_CONSUMER_KEY,
@@ -88,8 +88,6 @@ export const config = {
   // Source toggles (defaults)
   sources: {
     // Disable external paid providers by default; can be overridden per-request
-    disableApyfluxByDefault: true,
-    disablePredictHQByDefault: true,
     // Also disable Perplexity by default when measuring alternatives
     disablePerplexityByDefault: true,
     disableTicketmasterByDefault: false,
@@ -128,8 +126,7 @@ export function validateConfig() {
 
   // Warn (do not block) when optional provider keys are missing
   const optional = [
-    'apyfluxApiKey', 'apyfluxAppId', 'apyfluxClientId',
-    'predictHQApiKey', 'exaApiKey', 'serperApiKey',
+    'exaApiKey', 'serperApiKey',
     'ticketmasterConsumerKey', 'ticketmasterConsumerSecret'
   ];
   const missingOptional = optional.filter(key => !config[key]);
