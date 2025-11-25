@@ -30,8 +30,8 @@ export interface ProviderStatSummary {
 
 export type ProviderStatsMap = Record<string, ProviderStatSummary>;
 
-// Configuration for the new Node.js API
-const API_BASE_URL = 'http://localhost:8765/api';
+// Import centralized API configuration
+import { API_BASE_URL } from '@/utils/apiConfig';
 
 export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
   location = "San Francisco, CA",

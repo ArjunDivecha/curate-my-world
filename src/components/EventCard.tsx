@@ -180,8 +180,8 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
   };
 
   // Determine API base for preview endpoint
-  const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL 
-    || (import.meta.env.MODE === 'development' ? 'http://127.0.0.1:8765/api' : '/api');
+  // Use relative /api path - works in both dev (Vite proxy) and prod (same server)
+  const API_BASE = '/api';
 
   const handleExternalCalendarSave = (calendarType: 'google' | 'outlook' | 'apple' | 'download') => {
     // Convert event to calendar format

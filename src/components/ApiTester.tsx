@@ -20,7 +20,8 @@ import {
   Settings
 } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:8765/api';
+import { API_BASE_URL } from '@/utils/apiConfig';
+
 
 interface ApiResponse {
   data: any;

@@ -2,13 +2,13 @@
   "san francisco, ca": {
     "davies symphony hall": {
       "categories": {},
-      "totalObservations": 2,
-      "confidence": 1
+      "totalObservations": 3,
+      "confidence": 0.3333333333333333
     },
     "san francisco playhouse": {
       "categories": {},
-      "totalObservations": 10,
-      "confidence": 1
+      "totalObservations": 11,
+      "confidence": 0.09090909090909091
     },
     "toni rembe theater": {
       "categories": {},
@@ -22,13 +22,13 @@
     },
     "san francisco museum of modern art sfmoma": {
       "categories": {},
-      "totalObservations": 4,
-      "confidence": 1
+      "totalObservations": 15,
+      "confidence": 0.7333333333333333
     },
     "de young museum": {
       "categories": {},
-      "totalObservations": 5,
-      "confidence": 1
+      "totalObservations": 20,
+      "confidence": 0.65
     },
     "catharine clark gallery": {
       "categories": {},
@@ -42,13 +42,13 @@
     },
     "presidio theatre": {
       "categories": {},
-      "totalObservations": 2,
-      "confidence": 1
+      "totalObservations": 3,
+      "confidence": 0.3333333333333333
     },
     "roxie theater": {
       "categories": {},
-      "totalObservations": 5,
-      "confidence": 1
+      "totalObservations": 20,
+      "confidence": 0.2
     },
     "4 star theater": {
       "categories": {},
@@ -112,13 +112,13 @@
     },
     "golden gate theatre": {
       "categories": {},
-      "totalObservations": 13,
-      "confidence": 1
+      "totalObservations": 14,
+      "confidence": 0.07142857142857142
     },
     "palace of fine arts theatre": {
       "categories": {},
-      "totalObservations": 6,
-      "confidence": 1
+      "totalObservations": 10,
+      "confidence": 0.4
     },
     "multiple bay area theatres": {
       "categories": {},
@@ -152,8 +152,8 @@
     },
     "amc metreon 16": {
       "categories": {},
-      "totalObservations": 10,
-      "confidence": 1
+      "totalObservations": 11,
+      "confidence": 0.09090909090909091
     },
     "alamo drafthouse cinema": {
       "categories": {},
@@ -237,8 +237,8 @@
     },
     "shotgun players ashby stage": {
       "categories": {},
-      "totalObservations": 2,
-      "confidence": 1
+      "totalObservations": 3,
+      "confidence": 0.3333333333333333
     },
     "shotgun players": {
       "categories": {},
@@ -402,8 +402,8 @@
     },
     "balboa theater": {
       "categories": {},
-      "totalObservations": 4,
-      "confidence": 1
+      "totalObservations": 6,
+      "confidence": 0.16666666666666666
     },
     "war memorial opera house": {
       "categories": {},
@@ -457,8 +457,8 @@
     },
     "vogue theater": {
       "categories": {},
-      "totalObservations": 2,
-      "confidence": 1
+      "totalObservations": 3,
+      "confidence": 0.3333333333333333
     },
     "theatre rhinoceros": {
       "categories": {},
@@ -501,6 +501,36 @@
       "confidence": 1
     },
     "university of san francisco usf campus": {
+      "categories": {},
+      "totalObservations": 1,
+      "confidence": 1
+    },
+    "mission bay conference center": {
+      "categories": {},
+      "totalObservations": 1,
+      "confidence": 1
+    },
+    "randall museum": {
+      "categories": {},
+      "totalObservations": 1,
+      "confidence": 1
+    },
+    "berkeley rep peets theatre": {
+      "categories": {},
+      "totalObservations": 1,
+      "confidence": 1
+    },
+    "theatreworks silicon valley lucie stern theatre": {
+      "categories": {},
+      "totalObservations": 1,
+      "confidence": 1
+    },
+    "lark theater": {
+      "categories": {},
+      "totalObservations": 3,
+      "confidence": 1
+    },
+    "palace of fine arts theater": {
       "categories": {},
       "totalObservations": 1,
       "confidence": 1

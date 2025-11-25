@@ -32,8 +32,9 @@ export const config = {
   isProduction: nodeEnv === 'production',
   
   // Server configuration
+  // Railway requires 0.0.0.0 to bind to all interfaces
   port: parseInt(process.env.PORT) || 8765,
-  host: process.env.HOST || '127.0.0.1',
+  host: process.env.HOST || (nodeEnv === 'production' ? '0.0.0.0' : '127.0.0.1'),
   
   // API keys - ALL from environment variables
   perplexityApiKey: process.env.PERPLEXITY_API_KEY || process.env.PPLX_API_KEY,

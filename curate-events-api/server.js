@@ -8,6 +8,8 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { config, validateConfig } from './src/utils/config.js';
 import { createLogger, logRequest, logResponse, logError } from './src/utils/logger.js';
 import healthRoutes from './src/routes/health.js';
@@ -15,6 +17,10 @@ import eventsRoutes from './src/routes/events.js';
 import personalizationRoutes from './src/routes/personalization.js';
 import rulesRoutes from './src/routes/rules.js';
 import previewRoutes from './src/routes/preview.js';
+
+// Get directory paths for serving static files
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Validate configuration on startup
 try {
@@ -90,8 +96,17 @@ app.use('/api/personalization', personalizationRoutes);
 app.use('/api/rules', rulesRoutes);
 app.use('/api/preview', (req, res, next) => { logger.info('Preview route hit pre-router'); next(); }, previewRoutes);
 
-// Root endpoint
-app.get('/', (req, res) => {
+// ============================================
+// STATIC FILE SERVING (React Frontend)
+// ============================================
+// In production (Railway), serve the built React app
+const frontendDistPath = path.join(__dirname, '../dist');
+
+// Serve static files from the React build
+app.use(express.static(frontendDistPath));
+
+// API info endpoint (only responds to exact /api path)
+app.get('/api', (req, res) => {
   res.json({
     name: 'Curate Events API',
     version: '1.0.0',
@@ -104,25 +119,50 @@ app.get('/', (req, res) => {
       personalization: '/api/personalization/curate',
       feedback: '/api/personalization/feedback'
     },
-    documentation: 'https://github.com/your-repo/curate-events-api'
+    documentation: 'https://github.com/ArjunDivecha/curate-my-world'
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  logger.warn('Route not found', {
+// SPA fallback: serve index.html for any non-API routes
+// This enables React Router to handle client-side routing
+app.get('*', (req, res, next) => {
+  // Skip if this is an API route (let 404 handler catch it)
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  
+  // Serve React app for all other routes
+  res.sendFile(path.join(frontendDistPath, 'index.html'), (err) => {
+    if (err) {
+      // If index.html doesn't exist, show API info (development mode)
+      res.json({
+        name: 'Curate Events API',
+        version: '1.0.0',
+        note: 'Frontend not built. Run "npm run build" in the root directory.',
+        endpoints: {
+          health: '/api/health',
+          healthDeep: '/api/health/deep'
+        }
+      });
+    }
+  });
+});
+
+// 404 handler for API routes only
+app.use('/api/*', (req, res) => {
+  logger.warn('API route not found', {
     method: req.method,
     url: req.originalUrl,
     ip: req.ip
   });
   
   res.status(404).json({
-    error: 'Route not found',
-    message: `${req.method} ${req.originalUrl} is not a valid endpoint`,
+    error: 'API route not found',
+    message: `${req.method} ${req.originalUrl} is not a valid API endpoint`,
     availableEndpoints: [
-      'GET /',
       'GET /api/health',
-      'GET /api/health/deep'
+      'GET /api/health/deep',
+      'GET /api/events/:category'
     ]
   });
 });

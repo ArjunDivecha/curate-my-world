@@ -36,9 +36,8 @@ class ApiHealthChecker {
   private listeners: ((status: ApiHealthStatus) => void)[] = [];
   
   private constructor() {
-    this.baseUrl = process.env.NODE_ENV === 'production' 
-      ? 'http://localhost:8765/api' 
-      : 'http://localhost:8765/api';
+    // Use relative /api path - works in both dev (Vite proxy) and prod (same server)
+    this.baseUrl = '/api';
       
     this.status = {
       isHealthy: false,
