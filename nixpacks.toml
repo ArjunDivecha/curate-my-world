@@ -1,0 +1,10 @@
+# Force Railway to use Node.js, ignore the Python requirements.txt
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = ["npm install", "npm run build", "cd curate-events-api && npm install"]
+
+[start]
+cmd = "cd curate-events-api && npm start"
+
