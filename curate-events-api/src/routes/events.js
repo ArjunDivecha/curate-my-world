@@ -31,6 +31,7 @@ import { createLogger, logRequest, logResponse } from '../utils/logger.js';
 import { config } from '../utils/config.js';
 import { eventCache } from '../utils/cache.js';
 import { buildCustomEventPrompt, buildProviderSearchQuery } from '../utils/promptUtils.js';
+import { filterEvents as applyRulesFilter } from '../utils/rulesFilter.js';
 
 const router = express.Router();
 const logger = createLogger('EventsRoute');
@@ -234,7 +235,9 @@ async function augmentWithAdditionalProviders({
     }
 
     const deduped = deduplicatorInstance.deduplicateEvents(eventLists);
-    const uniqueEvents = deduped.uniqueEvents || [];
+    const dedupedEvents = deduped.uniqueEvents || [];
+    // Apply whitelist/blacklist rules filter
+    const uniqueEvents = applyRulesFilter(dedupedEvents);
     eventsByCategory[category] = uniqueEvents;
 
     if (!categoryStats[category]) {
@@ -352,13 +355,16 @@ router.get('/:category/combined', async (req, res) => {
     // Deduplicate events
     const deduplicationResult = deduplicator.deduplicateEvents(eventLists);
     
+    // Apply whitelist/blacklist rules filter
+    const rulesFilteredEvents = applyRulesFilter(deduplicationResult.uniqueEvents);
+    
     const duration = Date.now() - startTime;
 
     // Build response
     const response = {
       success: true,
-      events: deduplicationResult.uniqueEvents,
-      count: deduplicationResult.uniqueEvents.length,
+      events: rulesFilteredEvents,
+      count: rulesFilteredEvents.length,
       deduplication: {
         totalProcessed: deduplicationResult.totalProcessed,
         duplicatesRemoved: deduplicationResult.duplicatesRemoved,
@@ -944,9 +950,12 @@ router.get('/all-categories', async (req, res) => {
         const deduplicationResult = deduplicator.deduplicateEvents(eventLists);
         const dedupStats = deduplicator.getDeduplicationStats(eventLists, deduplicationResult);
         
+        // Apply whitelist/blacklist rules filter
+        const rulesFilteredEvents = applyRulesFilter(deduplicationResult.uniqueEvents);
+        
         // Apply date filtering to ensure events are within the specified date range
         const dateFilterResult = dateFilter.filterEventsByDateRange(
-          deduplicationResult.uniqueEvents,
+          rulesFilteredEvents,
           date_range || 'next 30 days'
         );
         
@@ -1278,10 +1287,13 @@ router.get('/:category', async (req, res) => {
     // Deduplicate events across all sources
     const deduplicationResult = deduplicator.deduplicateEvents(eventLists);
     
+    // Apply whitelist/blacklist rules filter
+    const rulesFilteredEvents = applyRulesFilter(deduplicationResult.uniqueEvents);
+    
     // Apply location filtering to remove events from incorrect locations
-    const preLocationFilterCount = deduplicationResult.uniqueEvents.length;
+    const preLocationFilterCount = rulesFilteredEvents.length;
     const locationFilteredEvents = locationFilter.filterEventsByLocation(
-      deduplicationResult.uniqueEvents, 
+      rulesFilteredEvents, 
       location, 
       {
         radiusKm: 50, // 50km radius for Bay Area
@@ -1551,14 +1563,17 @@ router.get('/:category/all-sources', async (req, res) => {
     // Removed apyflux/predicthq handling
     
     // Deduplicate events across all sources
-    const deduplicatedEvents = deduplicator.deduplicateEvents(eventLists);
+    const deduplicationResult = deduplicator.deduplicateEvents(eventLists);
+    
+    // Apply whitelist/blacklist rules filter
+    const rulesFilteredEvents = applyRulesFilter(deduplicationResult.uniqueEvents || deduplicationResult);
     
     const duration = Date.now() - startTime;
     
     const response = {
       success: true,
-      events: deduplicatedEvents,
-      count: deduplicatedEvents.length,
+      events: rulesFilteredEvents,
+      count: rulesFilteredEvents.length,
       sources: ['perplexity_api'],
       sourceStats,
       processingTime: duration,

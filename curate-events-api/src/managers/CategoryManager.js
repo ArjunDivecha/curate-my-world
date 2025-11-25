@@ -48,7 +48,7 @@ export class CategoryManager {
         priority: 'medium'
       },
       art: {
-        aliases: ['galleries', 'exhibitions', 'museums', 'visual'],
+        aliases: ['galleries', 'exhibitions', 'museums', 'visual', 'arts', 'performing-arts', 'fine-arts'],
         keywords: ['art', 'gallery', 'exhibition', 'museum', 'visual', 'painting', 'sculpture'],
         priority: 'medium'
       },
@@ -692,6 +692,9 @@ Include concrete, verifiable events with URLs and dates.`,
       'galleries': 'art',
       'exhibitions': 'art',
       'visual': 'art',
+      'arts': 'art',
+      'performing-arts': 'art',
+      'fine-arts': 'art',
       'films': 'movies',
       'cinema': 'movies',
       'movie theaters': 'movies',

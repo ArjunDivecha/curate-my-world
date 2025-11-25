@@ -17,6 +17,8 @@
 import config from '../utils/config.js';
 import { createLogger } from '../utils/logger.js';
 import { expandAggregatorUrl, isAggregatorDomain } from '../utils/aggregators/index.js';
+import { calculateAggregatorScore } from '../utils/eventPageDetector.js';
+import { buildVenueQueries } from '../utils/venueWhitelist.js';
 
 const logger = createLogger('SerperClient');
 
@@ -29,6 +31,8 @@ export class SerperClient {
 
   /**
    * Search for events using Serper Google Search API.
+   * PRIORITIZES the /events endpoint which returns actual Google Events data.
+   * Falls back to targeted web searches only if needed.
    * @param {Object} options - Search options.
    * @returns {Promise<Object>} API response with events.
    */
@@ -36,50 +40,47 @@ export class SerperClient {
     const startTime = Date.now();
     const effectiveLimit = Math.max(1, Math.min(Number(limit) || 10, 200));
 
+    // PRIORITY 1: Use Google Events endpoint - returns actual events, not web pages
     const eventsEndpointResult = await this.searchEventsEndpoint({ category, location, limit: effectiveLimit });
-    if (eventsEndpointResult.success && eventsEndpointResult.events.length >= Math.min(effectiveLimit, 20)) {
-      const enriched = await this.expandAggregators(eventsEndpointResult.events, category);
+    
+    // Accept events endpoint results even with fewer results - they're higher quality
+    if (eventsEndpointResult.success && eventsEndpointResult.events.length >= 3) {
+      logger.info('Using Serper /events endpoint results', { 
+        count: eventsEndpointResult.events.length,
+        category 
+      });
       return {
         success: true,
-        events: enriched.slice(0, effectiveLimit),
-        count: Math.min(enriched.length, effectiveLimit),
+        events: eventsEndpointResult.events.slice(0, effectiveLimit),
+        count: Math.min(eventsEndpointResult.events.length, effectiveLimit),
         processingTime: Date.now() - startTime,
         source: 'serper',
         metadata: {
           mode: 'events_endpoint',
-          totalFetched: enriched.length
+          totalFetched: eventsEndpointResult.events.length
         }
       };
     }
 
-    const base = `${category} ${location}`.trim();
-
-    const staticVariants = [
-      `${base} events 2025`,
-      `${base} upcoming events`,
-      `${base} tickets`,
-      `${category} things to do in ${location}`,
-      `${category} ${location} calendar`,
-      `${category} events near ${location}`,
-      `${category} ${location} schedule`,
-      `${category} ${location} festival`,
-      `upcoming ${category} shows in ${location}`,
-      `${category} meetup ${location}`,
-      `${category} conferences in ${location}`
+    // FALLBACK: Use targeted web searches that find event detail pages
+    
+    // Get venue-specific queries from whitelist.xlsx
+    const venueQueries = buildVenueQueries(category, location, 4);
+    
+    // Platform-specific queries
+    const platformQueries = [
+      `site:eventbrite.com/e/ ${category} ${location}`,
+      `site:meetup.com ${category} ${location} RSVP`,
+      `site:lu.ma ${category} ${location}`,
     ];
-
-    const monthNames = [
-      'january', 'february', 'march', 'april', 'may', 'june',
-      'july', 'august', 'september', 'october', 'november', 'december'
+    
+    // Generic but targeted queries
+    const genericQueries = [
+      `"${category}" "${location}" tickets "2025"`,
+      `${category} ${location} event tickets register`,
     ];
-    const currentMonthIndex = new Date().getMonth();
-    const monthVariants = [];
-    for (let i = 0; i < 6; i += 1) {
-      const monthName = monthNames[(currentMonthIndex + i) % 12];
-      monthVariants.push(`${category} ${location} ${monthName} events`);
-    }
-
-    const queryVariants = [...staticVariants, ...monthVariants];
+    
+    const queryVariants = [...venueQueries, ...platformQueries, ...genericQueries];
 
     const aggregated = [];
     const seenUrls = new Set();
@@ -89,9 +90,9 @@ export class SerperClient {
     for (const query of queryVariants) {
       if (aggregated.length >= effectiveLimit) break;
 
-      logger.info('Searching Serper for events', { query });
+      logger.debug('Serper targeted query', { query });
 
-      const perQueryLimit = Math.min(50, Math.max(20, Math.ceil(effectiveLimit / queryVariants.length) * 2));
+      const perQueryLimit = Math.min(20, Math.max(10, Math.ceil(effectiveLimit / queryVariants.length) * 2));
 
       const payload = {
         q: query,
@@ -228,6 +229,12 @@ export class SerperClient {
     const title = event.title || event.name;
     if (!url || !title) return null;
 
+    // Filter out aggregator/category pages using multi-factor detection
+    const description = event.description || event.snippet || '';
+    if (this.isAggregatorPage(title, url, description)) {
+      return null;
+    }
+
     const startDate = event.date?.startDate || event.startDate || event.start_time || event.date;
     const endDate = event.date?.endDate || event.endDate || event.end_time || startDate;
 
@@ -297,12 +304,39 @@ export class SerperClient {
       const link = (result.link || '').toLowerCase();
       const question = (result.question || '').toLowerCase();
       
+      // First, filter OUT aggregator/category pages using multi-factor detection
+      if (this.isAggregatorPage(result.title || result.question, result.link, result.snippet)) {
+        return false;
+      }
+      
       const searchText = `${title} ${snippet} ${link} ${question}`;
       
       return eventKeywords.some(keyword => searchText.includes(keyword)) ||
              this.containsDatePattern(searchText) ||
              this.containsVenuePattern(searchText);
     });
+  }
+
+  /**
+   * Check if a result is an aggregator/category page rather than an individual event
+   * Uses sophisticated multi-factor scoring from eventPageDetector
+   * @param {string} title - The page title
+   * @param {string} url - The page URL
+   * @param {string} description - The page description
+   * @returns {boolean} True if this is an aggregator page to filter out
+   */
+  isAggregatorPage(title, url, description = '') {
+    const result = calculateAggregatorScore(url, title, description);
+    
+    if (result.isAggregator) {
+      logger.debug('Detected aggregator page', {
+        title: (title || '').substring(0, 50),
+        score: result.score,
+        reasons: result.reasons.slice(0, 3)
+      });
+    }
+    
+    return result.isAggregator;
   }
 
   /**
@@ -348,8 +382,13 @@ export class SerperClient {
       const title = serperResult.title || serperResult.question;
       if (!title) return null;
 
-      // Extract date information from snippet or title
+      // Extract snippet first for aggregator detection
       const snippet = serperResult.snippet || '';
+
+      // Filter out aggregator/category pages using multi-factor detection
+      if (this.isAggregatorPage(title, serperResult.link, snippet)) {
+        return null;
+      }
       const dateInfo = this.extractDateInfo(title + ' ' + snippet);
       
       // Extract venue information

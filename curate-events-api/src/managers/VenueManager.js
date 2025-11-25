@@ -43,9 +43,17 @@ export class VenueManager {
       const data = await fs.readFile(this.venueDataFile, 'utf8');
       const parsedData = JSON.parse(data);
       
-      // Convert back to Map structure
+      // Convert back to Map structure, including nested categories
       for (const [location, venues] of Object.entries(parsedData)) {
-        this.venueDatabase.set(location, new Map(Object.entries(venues)));
+        const venueMap = new Map();
+        for (const [venueName, venueData] of Object.entries(venues)) {
+          // Convert categories object back to Map
+          venueMap.set(venueName, {
+            ...venueData,
+            categories: new Map(Object.entries(venueData.categories || {}))
+          });
+        }
+        this.venueDatabase.set(location, venueMap);
       }
       
       logger.info('Loaded venue database', { 
@@ -217,15 +225,20 @@ export class VenueManager {
   }
 
   /**
-   * Get primary category from category map
-   * @param {Map} categories - Category count map
+   * Get primary category from category map or object
+   * @param {Map|Object} categories - Category count map or plain object
    * @returns {string} Primary category
    */
   getPrimaryCategory(categories) {
     let maxCount = 0;
     let primaryCategory = null;
     
-    for (const [category, count] of categories.entries()) {
+    // Handle both Map and plain object (from JSON deserialization)
+    const entries = categories instanceof Map 
+      ? categories.entries() 
+      : Object.entries(categories);
+    
+    for (const [category, count] of entries) {
       if (count > maxCount) {
         maxCount = count;
         primaryCategory = category;

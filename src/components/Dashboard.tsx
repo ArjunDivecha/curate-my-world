@@ -679,8 +679,15 @@ export const Dashboard = () => {
               {/* Clear All Button */}
               <Button
                 onClick={() => {
+                  // Clear all event-related state
                   setEvents([]);
                   setSavedEvents([]);
+                  setEventsByCategory({});
+                  setTransformedEventsByCategory({});
+                  setCategoryStats({});
+                  setActiveCategory(null);
+                  setProviderDetails([]);
+                  setTotalProcessingTime(0);
                   try { localStorage.removeItem(LOCAL_EVENTS_CACHE_KEY); } catch {}
                   toast({
                     title: "Events Cleared",
