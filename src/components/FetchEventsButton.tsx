@@ -101,16 +101,19 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
       
       const aiInstructions = preferences.aiInstructions?.trim();
 
-      const url = new URL(`${API_BASE_URL}/events/all-categories`, window.location.origin);
-      url.searchParams.set('location', location);
-      url.searchParams.set('date_range', 'next 30 days');
-      url.searchParams.set('limit', '500');
+      // Build URL params manually to avoid URL constructor issues in some browsers
+      const params = new URLSearchParams();
+      params.set('location', location);
+      params.set('date_range', 'next 30 days');
+      params.set('limit', '500');
       if (aiInstructions) {
-        url.searchParams.set('custom_prompt', aiInstructions);
+        params.set('custom_prompt', aiInstructions);
       }
       if (!noProvidersSelected) {
-        url.searchParams.set('providers', activeProviderKeys.join(','));
+        params.set('providers', activeProviderKeys.join(','));
       }
+      
+      const fetchUrl = `${API_BASE_URL}/events/all-categories?${params.toString()}`;
       
       if (aiInstructions) {
         console.log('🤖 Using AI Instructions for custom search:', aiInstructions);
@@ -118,11 +121,11 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
         console.log('📂 Using regular category-based search (no AI instructions)');
       }
       
-      console.log(`📡 Fetching all categories from:`, url.toString());
+      console.log(`📡 Fetching all categories from:`, fetchUrl);
       console.log(`🌍 Frontend running on: ${window.location.origin}`);
       
-      console.log(`🔍 Making request to: ${url.toString()}`);
-      const response = await fetch(url.toString());
+      console.log(`🔍 Making request to: ${fetchUrl}`);
+      const response = await fetch(fetchUrl);
       console.log(`📡 Response status: ${response.status} ${response.statusText}`);
       
       if (!response.ok) {
