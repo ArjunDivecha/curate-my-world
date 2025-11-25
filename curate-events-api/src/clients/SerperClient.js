@@ -19,6 +19,7 @@ import { createLogger } from '../utils/logger.js';
 import { expandAggregatorUrl, isAggregatorDomain } from '../utils/aggregators/index.js';
 import { calculateAggregatorScore } from '../utils/eventPageDetector.js';
 import { buildVenueQueries } from '../utils/venueWhitelist.js';
+import { getSearchQueries, getPreferredDomains, getCategoryKeywords } from '../utils/categoryMapping.js';
 
 const logger = createLogger('SerperClient');
 
@@ -198,7 +199,7 @@ export class SerperClient {
           q: query,
           gl: 'us',
           hl: 'en',
-          num: Math.min(limit, 50)
+          num: Math.min(limit, 100)
         }),
         signal: controller.signal
       });

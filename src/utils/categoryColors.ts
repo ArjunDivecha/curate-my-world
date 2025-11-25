@@ -19,7 +19,18 @@ export interface CategoryColor {
 // Research-backed trending pastel colors for 2024-2025 UI design
 // Optimized for readability with solid backgrounds and subtle color distinction
 export const categoryColors: Record<string, CategoryColor> = {
-  // Technology - Powder Blue (trending 2024)
+  // Tech - Powder Blue (trending 2024)
+  tech: {
+    name: 'Tech',
+    background: 'bg-sky-50',
+    border: 'border-sky-200',
+    text: 'text-sky-900',
+    accent: 'text-sky-700',
+    icon: 'text-sky-600',
+    hover: 'hover:bg-sky-100'
+  },
+
+  // Technology (alias for tech)
   technology: {
     name: 'Technology',
     background: 'bg-sky-50',
@@ -30,15 +41,48 @@ export const categoryColors: Record<string, CategoryColor> = {
     hover: 'hover:bg-sky-100'
   },
 
-  // Finance - Sage Green (trending neutral)
-  finance: {
-    name: 'Finance',
+  // Comedy - Warm Amber (fun and inviting)
+  comedy: {
+    name: 'Comedy',
+    background: 'bg-amber-50',
+    border: 'border-amber-200',
+    text: 'text-amber-900',
+    accent: 'text-amber-700',
+    icon: 'text-amber-600',
+    hover: 'hover:bg-amber-100'
+  },
+
+  // Lectures - Sage Green (intellectual and calm)
+  lectures: {
+    name: 'Lectures',
     background: 'bg-emerald-50',
     border: 'border-emerald-200',
     text: 'text-emerald-900',
     accent: 'text-emerald-700',
     icon: 'text-emerald-600',
     hover: 'hover:bg-emerald-100'
+  },
+
+  // Kids/Family - Playful Pink (fun and family-friendly)
+  kids: {
+    name: 'Kids & Family',
+    background: 'bg-pink-50',
+    border: 'border-pink-200',
+    text: 'text-pink-900',
+    accent: 'text-pink-700',
+    icon: 'text-pink-600',
+    hover: 'hover:bg-pink-100'
+  },
+
+  // Finance - Teal (professional)
+  finance: {
+    name: 'Finance',
+    background: 'bg-teal-50',
+    border: 'border-teal-200',
+    text: 'text-teal-900',
+    accent: 'text-teal-700',
+    icon: 'text-teal-600',
+    hover: 'hover:bg-teal-100'
   },
 
   // Music - Lavender (most popular pastel purple)
@@ -232,7 +276,18 @@ export const getCategoryColor = (category: string | string[]): CategoryColor => 
     'show': 'theatre',
     'play': 'theatre',
     'drama': 'theatre',
-    'comedy': 'theatre',
+    'standup': 'comedy',
+    'improv': 'comedy',
+    'comedian': 'comedy',
+    'lecture': 'lectures',
+    'talk': 'lectures',
+    'speaker': 'lectures',
+    'author': 'lectures',
+    'presentation': 'lectures',
+    'kids': 'kids',
+    'children': 'kids',
+    'family': 'kids',
+    'youth': 'kids',
     'gallery': 'art',
     'museum': 'art',
     'painting': 'art',

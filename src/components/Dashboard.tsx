@@ -14,7 +14,7 @@ import { FetchEventsButton, type ProviderStatSummary } from "./FetchEventsButton
 import SuggestedCategories from './SuggestedCategories';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Brain, Eye, EyeOff, Cpu } from "lucide-react";
+import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Brain, Eye, EyeOff, Cpu, Mic2, BookOpen, Baby } from "lucide-react";
 import { getCategoryColor } from "@/utils/categoryColors";
 import { ProviderControlPanel } from "./ProviderControlPanel";
 
@@ -32,35 +32,38 @@ interface Preferences {
   aiInstructions: string;
 }
 
-// Personalized preferences based on conversation analysis of 1,563 conversations
+// Default preferences - all categories enabled
+// Current categories: music, theatre, comedy, movies, art, food, tech, lectures, kids
 const personalizedPreferences: Preferences = {
   interests: {
     categories: {
-      'Technology': true,    // 60% confidence from conversation analysis
-      'Finance': true,       // 60% confidence - investment/trading interests
-      'Psychology': true,    // 60% confidence - mental health & cognitive science
-      'Artificial Intelligence': true, // 60% confidence - AI/ML interests
-      'Education': true,     // 60% confidence - learning focus
-      'Business': true,      // Related to finance/startup interests
-      'Science': true,       // Related to technical interests
-      'Music': false,        // Not primary interest from analysis
-      'Theatre': false,      // Not primary interest from analysis
-      'Art': false,          // Not primary interest from analysis
-      'Food': false,         // Not primary interest from analysis
-      'Movies': false        // Not primary interest from analysis
+      'Music': true,
+      'Theatre': true,
+      'Comedy': true,
+      'Movies': true,
+      'Art': true,
+      'Food': true,
+      'Tech': true,
+      'Lectures': true,
+      'Kids': true
     },
     keywords: [
-      'python programming', 'machine learning', 'deep learning', 'LLM', 'GenAI', 'coding workshop',
-      'stock market', 'investment', 'trading', 'fintech', 'startup',
-      'neuroscience', 'cognitive science', 'mental health', 'psychology', 'therapy',
-      'maker space', 'analytics', 'programming meetup', 'AI conference'
+      'concerts', 'live music', 'jazz', 'classical',
+      'plays', 'musicals', 'broadway', 'opera',
+      'stand-up', 'improv', 'comedy show',
+      'film', 'screening', 'cinema',
+      'museum', 'gallery', 'exhibition',
+      'food festival', 'cooking class', 'wine tasting',
+      'tech meetup', 'hackathon', 'startup',
+      'author talk', 'lecture', 'book signing',
+      'family', 'kids activities', 'children'
     ]
   },
   location: {
-    address: 'San Francisco, CA'  // 25-mile radius from conversation analysis
+    address: 'San Francisco, CA'  // Bay Area default
   },
   filters: {
-    timePreferences: ['Evening (5-9pm)', 'Weekend Events']  // Preferred from analysis
+    timePreferences: ['Evening (5-9pm)', 'Weekend Events']
   },
   aiInstructions: ''
 };
@@ -100,20 +103,18 @@ export const Dashboard = () => {
   const [totalProcessingTime, setTotalProcessingTime] = useState<number>(0);
 
   // Category mapping: Frontend display names to backend API names
+  // Current supported categories: music, theatre, comedy, movies, art, food, tech, lectures, kids
   const mapCategoryToBackend = (frontendCategory: string): string => {
     const categoryMap: Record<string, string> = {
-      'Technology': 'technology',
-      'Finance': 'finance', 
-      'Psychology': 'psychology',
-      'Artificial Intelligence': 'artificial-intelligence',
-      'Education': 'education',
-      'Business': 'business',
-      'Science': 'science',
       'Music': 'music',
       'Theatre': 'theatre',
+      'Comedy': 'comedy',
+      'Movies': 'movies',
       'Art': 'art',
       'Food': 'food',
-      'Movies': 'movies'
+      'Tech': 'tech',
+      'Lectures': 'lectures',
+      'Kids': 'kids'
     };
     return categoryMap[frontendCategory] || frontendCategory.toLowerCase();
   };
@@ -450,19 +451,17 @@ export const Dashboard = () => {
     );
   }
 
+  // Category icons for the new category set
   const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-    'Technology': Zap,
-    'Finance': Calendar,  // Placeholder icon for finance
-    'Psychology': Brain,
-    'Artificial Intelligence': Cpu,
-    'Education': GraduationCap,
-    'Business': Calendar,
-    'Science': GraduationCap,
     'Music': Music,
     'Theatre': Drama,
+    'Comedy': Mic2,
+    'Movies': Film,
     'Art': Palette,
     'Food': Coffee,
-    'Movies': Film
+    'Tech': Zap,
+    'Lectures': BookOpen,
+    'Kids': Baby
   };
 
 

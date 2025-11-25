@@ -57,6 +57,11 @@ export class CategoryManager {
         keywords: ['sports', 'game', 'match', 'athletics', 'team', 'competition', 'tournament'],
         priority: 'low'
       },
+      kids: {
+        aliases: ['family', 'children', 'family-friendly', 'all-ages', 'toddler'],
+        keywords: ['kids', 'family', 'children', 'family-friendly', 'all ages', 'parent', 'toddler', 'youth'],
+        priority: 'medium'
+      },
       lectures: {
         aliases: ['talks', 'presentations', 'seminars', 'workshops', 'discussions', 'education'],
         keywords: ['lecture', 'talk', 'presentation', 'seminar', 'workshop', 'discussion', 'speaker', 'author', 'educational'],
@@ -76,70 +81,19 @@ export class CategoryManager {
         aliases: ['films', 'cinema', 'movie theaters', 'showtimes', 'screenings'],
         keywords: ['movie', 'film', 'cinema', 'theater', 'screening', 'showtime', 'premiere'],
         priority: 'high'
-      },
-      // New personalized categories based on conversation analysis
-      technology: {
-        aliases: ['tech', 'programming', 'coding', 'software', 'development', 'ai', 'ml'],
-        keywords: ['technology', 'programming', 'coding', 'software', 'development', 'ai', 'machine learning', 'data science', 'python', 'javascript', 'web development'],
-        priority: 'high'
-      },
-      finance: {
-        aliases: ['investment', 'trading', 'fintech', 'banking', 'economics'],
-        keywords: ['finance', 'investment', 'trading', 'fintech', 'banking', 'economics', 'stock market', 'cryptocurrency', 'blockchain', 'financial planning'],
-        priority: 'high'
-      },
-      psychology: {
-        aliases: ['mental health', 'cognitive science', 'neuroscience', 'psychiatry', 'therapy', 'counseling', 'mindfulness'],
-        keywords: ['psychology', 'mental health', 'cognitive science', 'neuroscience', 'psychiatry', 'therapy', 'counseling', 'mindfulness', 'cbt', 'brain science'],
-        priority: 'high'
-      },
-      'artificial-intelligence': {
-        aliases: ['ai', 'machine learning', 'ml', 'deep learning', 'genai', 'llm', 'nlp', 'computer vision', 'mlops', 'data analysis', 'data-analysis', 'analytics'],
-        keywords: ['artificial intelligence', 'ai', 'machine learning', 'ml', 'deep learning', 'neural networks', 'large language models', 'llm', 'genai', 'nlp', 'computer vision', 'mlops'],
-        priority: 'high'
-      },
-      business: {
-        aliases: ['entrepreneurship', 'startup', 'networking', 'corporate', 'professional'],
-        keywords: ['business', 'entrepreneurship', 'startup', 'networking', 'corporate', 'professional', 'leadership', 'management', 'strategy'],
-        priority: 'medium'
-      },
-      science: {
-        aliases: ['research', 'scientific', 'laboratory', 'innovation', 'discovery'],
-        keywords: ['science', 'research', 'scientific', 'laboratory', 'innovation', 'discovery', 'biology', 'chemistry', 'physics', 'engineering'],
-        priority: 'medium'
       }
+      // NOTE: Old categories removed (technology, finance, psychology, AI, business, science)
+      // These are now consolidated: technology/AI → tech; business → tech; 
+      // finance/psychology/science → too niche, removed
     };
 
     // JSON-formatted query templates for structured data
+    // NOTE: Venue-specific information comes from the whitelist file (data/venue-whitelist.xlsx)
+    // These templates are kept generic - ExaClient and SerperClient inject venue domains dynamically
     this.queryTemplates = {
-      theatre: `Find ALL theatre events for {location} for the {dateRange}. Search these specific venues and any other theatre venues in the Bay Area:
+      theatre: `Find ALL theatre events for {location} for the {dateRange}. Include plays, musicals, Broadway shows, opera, ballet, and all live theatrical performances.
 
-MAJOR VENUES TO SEARCH:
-- Golden Gate Theatre (San Francisco) - https://www.broadwaysf.com
-- War Memorial Opera House (San Francisco) - https://www.sfopera.com  
-- San Francisco Playhouse (San Francisco) - https://www.sfplayhouse.org
-- Brava Theater Center (San Francisco) - https://www.brava.org
-- Blue Shield of California Theater at YBCA (San Francisco) - https://ybca.org
-- Herbst Theatre (San Francisco) - https://www.cityboxoffice.com
-- A.C.T. Strand Theater (San Francisco) - https://www.act-sf.org
-- New Conservatory Theatre Center (San Francisco) - https://www.nctcsf.org
-- Fox Theater Oakland - https://thefoxoakland.com
-- The Greek Theatre UC Berkeley - https://calperformances.org
-- San Jose Center for the Performing Arts - https://broadwaysanjose.com
-- Paramount Theatre Oakland - https://www.paramountoakland.org
-- Cal Performances Zellerbach Hall Berkeley - https://calperformances.org
-- Berkeley Playhouse - https://berkeleyplayhouse.org
-- Oakland Theater Project - https://oaklandtheaterproject.org
-- Live Oak Theater TheatreFirst Berkeley - https://www.theatrefirst.com
-- Berkeley Roda Theatre Berkeley Rep - https://www.berkeleyrep.org
-- Marin Center Showcase Theater San Rafael - https://www.marincenter.org
-- Stanford Theatre Palo Alto - https://stanfordtheatre.org
-- Mountain View Center for the Performing Arts - https://mvcpa.com
-- Marin Theatre Company Mill Valley - https://www.marintheatre.org
-- TheatreWorks Silicon Valley Lucie Stern Theatre Palo Alto - https://www.theatreworks.org
-
-Give me a COMPREHENSIVE list in JSON format with events from these venues:
-
+Provide results in JSON format:
 [
   {
     "title": "Show Title",
@@ -153,37 +107,11 @@ Give me a COMPREHENSIVE list in JSON format with events from these venues:
   }
 ]
 
-Search each venue thoroughly for current shows, upcoming productions, and events. Provide actual real events with accurate information.`,
+Provide actual real events with accurate information.`,
 
-      music: `Find all music events and concerts for {location} for the {dateRange} - give me the results in JSON format with the following structure. Include major concerts, local shows, club performances, festivals, classical music, jazz, rock, pop, indie, and all musical events.
+      music: `Find all music events and concerts for {location} for the {dateRange}. Include major concerts, local shows, club performances, festivals, classical music, jazz, rock, pop, indie, and all musical events.
 
-Search these specific music venues and any other music venues in the Bay Area:
-
-MAJOR MUSIC VENUES TO SEARCH:
-- Bill Graham Civic Auditorium (San Francisco) - https://billgrahamcivicauditorium.com
-- The Fillmore (San Francisco) - https://thefillmore.com
-- Great American Music Hall (San Francisco) - https://gamh.com
-- Chase Center (San Francisco) - https://chasecenter.com
-- SFJAZZ Center (San Francisco) - https://sfjazz.org
-- The Warfield (San Francisco) - https://thewarfieldtheatre.com
-- The Regency Ballroom (San Francisco) - https://theregencyballroom.com
-- The Independent (San Francisco) - https://theindependentsf.com
-- The Masonic (San Francisco) - https://masonicsf.com
-- Stern Grove Festival Sigmund Stern Grove (San Francisco) - https://sterngrove.org
-- Oracle Park (San Francisco) - https://mlb.com/giants/ballpark
-- Golden Gate Park Bandshell (San Francisco) - https://illuminatesf.org/bandshell
-- Shoreline Amphitheatre (Mountain View) - https://livenation.com/venue/KovZpZAEkeJA/shoreline-amphitheatre-tickets
-- Greek Theatre UC Berkeley - https://calperformances.org
-- Fox Theater Oakland - https://thefoxoakland.com
-- Paramount Theatre Oakland - https://paramountoakland.org
-- Oakland Arena - https://oaklandarena.com
-- The New Parish Oakland - https://thenewparish.com
-- SAP Center San Jose - https://sapcenter.com
-- San Jose Civic - https://sanjosecivic.com
-- Levi's Stadium Santa Clara - https://levisstadium.com
-- Mountain Winery Saratoga - https://mountainwinery.com
-- The Guild Theatre Menlo Park - https://theguildtheatre.com
-
+Provide results in JSON format:
 [
   {
     "title": "Artist/Band Name or Event Title",
@@ -197,26 +125,11 @@ MAJOR MUSIC VENUES TO SEARCH:
   }
 ]
 
-Search each venue thoroughly for concerts, shows, and musical events. Provide actual real events with accurate information.`,
+Provide actual real events with accurate information.`,
 
-      comedy: `Find all comedy events for {location} for the {dateRange} - give me the results in JSON format with the following structure. Include comedy clubs, theaters, bars with comedy nights, improv shows, and all comedy events.
+      comedy: `Find all comedy events for {location} for the {dateRange}. Include comedy clubs, stand-up shows, improv performances, comedy nights, and all comedy events.
 
-Search these specific comedy venues and any other comedy venues in the Bay Area:
-
-MAJOR COMEDY VENUES TO SEARCH:
-- Cobb's Comedy Club (San Francisco) - https://cobbscomedyclub.com
-- The Punchline (San Francisco) - https://punchlinecomedyclub.com
-- American Conservatory Theater (San Francisco) - https://www.act-sf.org
-- Punch Line Sacramento (Sacramento) - https://punchlinecomedyclub.com
-- Tommy T's Comedy Club (Pleasanton) - https://tommyts.com
-- Rooster T. Feathers Comedy Club (Sunnyvale) - https://roostertfeathers.com
-- Comedy Oakland (Oakland) - https://comedyoakland.com
-- San Jose Improv (San Jose) - https://sanjose.improv.com
-- Helium Comedy Club (San Jose) - https://heliumcomedy.com
-- The Comedy Spot (Sacramento) - https://thecomedyspot.net
-- Sacramento Comedy Spot (Sacramento) - https://saccomedyspot.com
-- Laugh Track Comedy Club (San Jose) - https://laughtrackcomedy.com
-
+Provide results in JSON format:
 [
   {
     "title": "Comedian Name or Show Title",
@@ -230,7 +143,7 @@ MAJOR COMEDY VENUES TO SEARCH:
   }
 ]
 
-Search each venue thoroughly for comedy shows, stand-up performances, and improv events. Provide actual real events with accurate information.`,
+Provide actual real events with accurate information.`,
 
       food: `Find all food events for {location} for the {dateRange} - give me the results in JSON format with the following structure. Include food festivals, wine tastings, cooking classes, pop-up restaurants, and all culinary events:
 
@@ -283,27 +196,9 @@ Provide actual real events with accurate information.`,
 
 Provide actual real events with accurate information.`,
 
-      lectures: `Find all public lectures, talks, and presentations for {location} for the {dateRange} - give me the results in JSON format with the following structure. Include author talks, academic lectures, public discussions, seminars, and all speaking events.
+      lectures: `Find all public lectures, talks, and presentations for {location} for the {dateRange}. Include author talks, academic lectures, public discussions, seminars, book readings, and all speaking events.
 
-Search these specific lecture venues and any other venues hosting lectures in the Bay Area:
-
-MAJOR LECTURE VENUES TO SEARCH:
-- City Arts & Lectures (San Francisco) - https://www.cityarts.net
-- Commonwealth Club of California (San Francisco) - https://www.commonwealthclub.org
-- KQED Live (San Francisco) - https://www.kqed.org/live
-- Profs and Pints Bay Area (San Francisco, Alameda, and Napa) - https://www.profsandpints.com/sfbayarea
-- The Long Now Foundation / The Interval (San Francisco) - https://longnow.org
-- Manny's SF (San Francisco) - https://www.welcometomannys.com
-- San Francisco Public Library (San Francisco) - https://sfpl.org
-- SLAC Public Lectures (Menlo Park) - https://www6.slac.stanford.edu/news-and-events/events/public-lectures
-- SFJAZZ Center (San Francisco) - https://www.sfjazz.org
-- Randall Museum Theater (San Francisco) - https://randallmuseum.org
-- Omnivore Books on Food (San Francisco) - https://www.omnivorebooks.com
-- CIIS Public Programs (San Francisco) - https://www.ciis.edu/public-programs
-- Stanford Live / University Public Lectures (Stanford) - https://live.stanford.edu
-- Cal Performances (Berkeley) - https://calperformances.org
-- Wonderfest (San Francisco Bay Area) - https://wonderfest.org
-
+Provide results in JSON format:
 [
   {
     "title": "Speaker Name or Talk Title",
@@ -317,22 +212,28 @@ MAJOR LECTURE VENUES TO SEARCH:
   }
 ]
 
-Search each venue thoroughly for lectures, talks, author events, and presentations. Provide actual real events with accurate information.`,
+Provide actual real events with accurate information.`,
+
+      kids: `Find all family-friendly and kids events for {location} for the {dateRange}. Include children's activities, family shows, kids workshops, family festivals, museum programs, and all-ages events.
+
+Provide results in JSON format:
+[
+  {
+    "title": "Event Title",
+    "venue": "Venue Name",
+    "location": "City, State",
+    "date": "Date range or specific dates",
+    "show_times": ["Time 1", "Time 2"],
+    "website": "https://venue-website.com",
+    "price_range": "Price information or Free",
+    "age_range": "Recommended ages",
+    "description": "Brief description"
+  }
+]
+
+Provide actual real events with accurate information.`,
 
       tech: `Find all technology and innovation events for {location} for the {dateRange}. Include tech conferences, startup events, hackathons, AI/ML meetups, software launches, and innovation showcases.
-
-Search these tech venues and any other innovation spaces:
-
-MAJOR TECH VENUES TO SEARCH:
-- Moscone Center (San Francisco) - https://moscone.com
-- Salesforce Tower (San Francisco)
-- Google Campus (Mountain View)
-- Meta Campus (Menlo Park)
-- Apple Park (Cupertino)
-- Stanford University (Palo Alto)
-- UC Berkeley (Berkeley)
-- TechCrunch Disrupt venues
-- Various co-working spaces and startup hubs
 
 Provide results in JSON format:
 [
@@ -353,17 +254,6 @@ Search thoroughly for tech conferences, meetups, product launches, and innovatio
 
       education: `Find all educational and learning events for {location} for the {dateRange}. Include university lectures, workshops, courses, seminars, academic conferences, and learning opportunities.
 
-Search these educational venues and institutions:
-
-MAJOR EDUCATIONAL VENUES TO SEARCH:
-- Stanford University (Palo Alto) - https://stanford.edu
-- UC Berkeley (Berkeley) - https://berkeley.edu
-- UC San Francisco (San Francisco) - https://ucsf.edu
-- San Francisco State University - https://sfsu.edu
-- City College of San Francisco - https://ccsf.edu
-- Various libraries and community centers
-- Educational conferences and workshops
-
 Provide results in JSON format:
 [
 {
@@ -382,28 +272,6 @@ Provide results in JSON format:
 Search thoroughly for lectures, courses, workshops, and educational events.`,
 
       movies: `Find all movies currently playing and coming soon for {location} for the {dateRange}. Include major theater chains, independent cinemas, drive-ins, and special screenings.
-
-Search these specific movie theaters and any other cinemas in the Bay Area:
-
-MAJOR MOVIE THEATERS TO SEARCH:
-- AMC Metreon 16 (San Francisco) - https://www.amctheatres.com
-- Century Theaters San Francisco Centre 9 - https://www.centurytheaters.com
-- Landmark Theatres (San Francisco) - https://www.landmarktheatres.com
-- The Castro Theatre (San Francisco) - https://thecastrotheatre.com
-- Roxie Theater (San Francisco) - https://www.roxie.com
-- Clay Theater (San Francisco) - https://www.landmarktheatres.com
-- Balboa Theatre (San Francisco) - https://www.landmarktheatres.com
-- Embarcadero Center Cinema - https://www.landmarktheatres.com
-- Opera Plaza Cinema (San Francisco) - https://www.landmarktheatres.com
-- Century 20 Daly City - https://www.centurytheaters.com
-- Century at Pacific Commons (Fremont) - https://www.centurytheaters.com
-- AMC NewPark 12 (Newark) - https://www.amctheatres.com
-- Century 16 Mountain View - https://www.centurytheaters.com
-- AMC Saratoga 14 - https://www.amctheatres.com
-- Century 20 Oakridge (San Jose) - https://www.centurytheaters.com
-- Cinemark Century Theaters 16 (Union City) - https://www.cinemark.com
-- Century 25 Union Landing (Union City) - https://www.centurytheaters.com
-- Century Theaters 20 Great Mall (Milpitas) - https://www.centurytheaters.com
 
 Provide results in JSON format:
 [
@@ -424,20 +292,8 @@ Provide results in JSON format:
 
 Search each theater thoroughly for current movies, showtimes, and special screenings. Include both mainstream releases and indie films. Provide actual real movies with accurate showtimes.`,
 
-      // New personalized category templates
+      // Legacy personalized category templates (kept for backward compatibility)
       technology: `Find all technology and programming events for {location} for the {dateRange}. Focus on Python programming, data science, machine learning, software development, and coding workshops.
-
-Search these tech venues and programming communities:
-
-MAJOR TECH VENUES TO SEARCH:
-- General Assembly (San Francisco) - https://generalassemb.ly
-- Galvanize (San Francisco) - https://www.galvanize.com
-- Hack Reactor (San Francisco) - https://www.hackreactor.com
-- The Hacker Dojo (Mountain View) - https://www.hackerdojo.org
-- Noisebridge (San Francisco) - https://www.noisebridge.net
-- SF Python Meetup venues
-- PyBay Conference venues
-- Various co-working spaces and startup hubs
 
 Provide results in JSON format:
 [
@@ -458,16 +314,6 @@ Search thoroughly for programming workshops, coding bootcamps, tech meetups, and
 
       finance: `Find all finance and investment events for {location} for the {dateRange}. Focus on stock market analysis, trading strategies, fintech, investment seminars, and financial planning workshops.
 
-Search these financial venues and organizations:
-
-MAJOR FINANCE VENUES TO SEARCH:
-- San Francisco Finance Center
-- CFA Institute San Francisco
-- Financial Planning Association venues
-- Various investment clubs and trading groups
-- Fintech meetup venues
-- Bank and financial institution event spaces
-
 Provide results in JSON format:
 [
 {
@@ -486,16 +332,6 @@ Provide results in JSON format:
 Search thoroughly for investment seminars, trading workshops, fintech events, and financial education sessions.`,
 
       automotive: `Find all automotive and electric vehicle events for {location} for the {dateRange}. Focus on Tesla meetups, EV technology, car shows, automotive innovation, and electric vehicle conferences.
-
-Search these automotive venues and organizations:
-
-MAJOR AUTOMOTIVE VENUES TO SEARCH:
-- Tesla Fremont Factory (tours and events)
-- Tesla Service Centers (community events)
-- Various Tesla Owners Club meetup locations
-- Auto shows and car exhibition venues
-- EV charging station events
-- Automotive technology conference venues
 
 Provide results in JSON format:
 [
@@ -516,16 +352,6 @@ Search thoroughly for Tesla events, EV meetups, car shows, and automotive techno
 
       'data-analysis': `Find all data science and analytics events for {location} for the {dateRange}. Focus on data visualization, statistical analysis, business intelligence, Python data science, and analytics workshops.
 
-Search these data science venues and organizations:
-
-MAJOR DATA SCIENCE VENUES TO SEARCH:
-- Data Science meetup venues
-- Tableau User Group locations
-- Python data science workshop venues
-- Business intelligence conference locations
-- University data science departments
-- Analytics and visualization workshop spaces
-
 Provide results in JSON format:
 [
 {
@@ -544,16 +370,6 @@ Provide results in JSON format:
 Search thoroughly for data science workshops, analytics seminars, visualization training, and statistical analysis events.`,
 
       business: `Find all business and entrepreneurship events for {location} for the {dateRange}. Focus on startup networking, business strategy, leadership development, and professional networking events.
-
-Search these business venues and organizations:
-
-MAJOR BUSINESS VENUES TO SEARCH:
-- Startup networking event venues
-- Business incubators and accelerators
-- Professional association meeting spaces
-- Corporate training venues
-- Entrepreneurship workshop locations
-- Business conference centers
 
 Provide results in JSON format:
 [
@@ -574,16 +390,6 @@ Search thoroughly for networking events, business seminars, startup meetups, and
 
       science: `Find all science and research events for {location} for the {dateRange}. Focus on scientific conferences, research presentations, laboratory tours, and innovation showcases.
 
-Search these science venues and organizations:
-
-MAJOR SCIENCE VENUES TO SEARCH:
-- University research departments
-- Science museums and centers
-- Research laboratory open houses
-- Scientific conference venues
-- Innovation and discovery showcases
-- STEM education event locations
-
 Provide results in JSON format:
 [
 {
@@ -603,13 +409,6 @@ Search thoroughly for scientific conferences, research presentations, lab tours,
       
       psychology: `Find psychology and mental health related events for {location} for the {dateRange}. Include university department talks, research seminars, clinical workshops, professional society meetings, and community mental health events.
 
-SOURCES TO SEARCH IN THE BAY AREA:
-- University department calendars (Stanford Psychology, UC Berkeley Psychology, UCSF Psychiatry & Behavioral Sciences)
-- Neuroscience institutes and labs (cognitive science centers, brain research institutes)
-- Professional organizations (APA local chapters, SfN chapters)
-- Community mental health organizations and hospitals
-- Event platforms (Eventbrite, Meetup, Facebook Events, Luma)
-
 Return JSON with:
 [
   {
@@ -627,13 +426,6 @@ Return JSON with:
 Focus on real, upcoming events with accurate details.`,
 
       'artificial-intelligence': `Find artificial intelligence events for {location} for the {dateRange}. Include conferences, meetups, hackathons, workshops, research seminars, and industry talks. Prioritize events with registration links (tickets/RSVP).
-
-SOURCES TO SEARCH IN THE BAY AREA:
-- University AI/ML departments and labs (Stanford AI Lab, Berkeley AI Research)
-- Tech meetups and communities (Meetup groups, Luma communities)
-- Industry conferences and workshops (AI/ML, LLMs, GenAI, MLOps, NLP, CV)
-- Event platforms (Eventbrite, Meetup, Facebook Events)
-- Company and incubator/accelerator event pages
 
 Return JSON with:
 [

@@ -575,8 +575,10 @@ router.get('/all-categories', async (req, res) => {
       try {
         const supportedCategories = categoryManager.getSupportedCategories()
           .filter(cat => [
-            'theatre', 'music', 'art', 'food', 'tech', 'education', 'movies',
-            'technology', 'finance', 'psychology', 'artificial-intelligence', 'business', 'science'
+            // Tier 1: High volume (Ticketmaster + all sources)
+            'music', 'theatre', 'comedy', 'movies', 'art',
+            // Tier 2: Good coverage (web + some providers)
+            'food', 'tech', 'lectures', 'kids'
           ].includes(cat.name))
           .map(cat => cat.name);
 
@@ -786,10 +788,10 @@ router.get('/all-categories', async (req, res) => {
     // Regular category-based search mode
     const supportedCategories = categoryManager.getSupportedCategories()
       .filter(cat => [
-        // Original categories
-        'theatre', 'music', 'art', 'food', 'tech', 'education', 'movies',
-        // New personalized categories
-        'technology', 'finance', 'psychology', 'artificial-intelligence', 'business', 'science'
+        // Tier 1: High volume (Ticketmaster + all sources)
+        'music', 'theatre', 'comedy', 'movies', 'art',
+        // Tier 2: Good coverage (web + some providers)
+        'food', 'tech', 'lectures', 'kids'
       ].includes(cat.name))
       .map(cat => cat.name);
     

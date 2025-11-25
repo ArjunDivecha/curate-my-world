@@ -53,9 +53,9 @@ export const ApiTester: React.FC = () => {
     { value: 'all-categories', label: 'All Categories', description: 'Fetch all event categories' }
   ];
 
+  // Current supported categories
   const categories = [
-    'music', 'theatre', 'art', 'food', 'tech', 'technology', 'education', 
-    'movies', 'finance', 'psychology', 'artificial-intelligence', 'business', 'science'
+    'music', 'theatre', 'comedy', 'movies', 'art', 'food', 'tech', 'lectures', 'kids'
   ];
 
   const getDefaultPrompt = (source: string, category: string): string => {

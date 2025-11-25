@@ -140,21 +140,29 @@ export class PredictHQClient {
    */
   mapCategoryToPredictHQ(category) {
     const categoryMapping = {
-      'theatre': 'performing-arts',
-      'theater': 'performing-arts',
+      // Tier 1: High volume
       'music': 'concerts',
       'concerts': 'concerts',
+      'theatre': 'performing-arts',
+      'theater': 'performing-arts',
       'comedy': 'performing-arts',
-      'sports': 'sports',
-      'food': 'festivals',
+      'movies': 'festivals',        // Film festivals/screenings
+      'film': 'festivals',
       'art': 'expos',
       'museums': 'expos',
+      
+      // Tier 2: Good coverage
+      'food': 'festivals',
+      'tech': 'conferences',
+      'technology': 'conferences',
       'lectures': 'conferences',
       'conferences': 'conferences',
-      'festivals': 'festivals',
-      // New categories
-      'psychology': 'conferences',
-      'artificial-intelligence': 'conferences'
+      'kids': 'community',          // Family/community events
+      'family': 'community',
+      
+      // Other
+      'sports': 'sports',
+      'festivals': 'festivals'
     };
     
     return categoryMapping[category.toLowerCase()] || 'performing-arts';

@@ -4,14 +4,14 @@
  * =============================================================================
  * 
  * DESCRIPTION:
- * Loads venue domains from whitelist.xlsx for targeted event searches.
- * Edit whitelist.xlsx to add/remove venues - no code changes needed.
+ * Loads venue domains from venue-whitelist.xlsx for targeted event searches.
+ * Edit data/venue-whitelist.xlsx to add/remove venues - no code changes needed.
  * 
  * INPUT FILE:
- * - curate-events-api/whitelist.xlsx
- *   Columns: category, scope, domain, name, enabled
+ * - curate-events-api/data/venue-whitelist.xlsx
+ *   Columns: category, name, city, domain, url
  * 
- * VERSION: 1.0
+ * VERSION: 1.1
  * LAST UPDATED: 2025-11-25
  * =============================================================================
  */
@@ -26,17 +26,43 @@ const logger = createLogger('VenueWhitelist');
 // CONFIGURATION
 // =============================================================================
 
-const WHITELIST_PATH = path.join(process.cwd(), 'whitelist.xlsx');
+const WHITELIST_PATH = path.join(process.cwd(), 'data', 'venue-whitelist.xlsx');
 const RELOAD_INTERVAL_MS = 60 * 1000; // Reload every 60 seconds
+
+// City to scope mapping for geographic filtering
+const CITY_TO_SCOPE = {
+  'san francisco': 'sf',
+  'oakland': 'eastbay',
+  'berkeley': 'eastbay',
+  'san jose': 'southbay',
+  'mountain view': 'southbay',
+  'palo alto': 'southbay',
+  'sunnyvale': 'southbay',
+  'santa clara': 'southbay',
+  'saratoga': 'southbay',
+  'menlo park': 'peninsula',
+  'redwood city': 'peninsula',
+  'san mateo': 'peninsula',
+  'sausalito': 'sf',
+  'mill valley': 'sf',
+  'san rafael': 'sf',
+  'walnut creek': 'eastbay',
+  'pleasanton': 'eastbay',
+  'fremont': 'eastbay',
+  'sacramento': 'other',
+  'napa': 'other',
+  'stanford': 'peninsula',
+  'various': 'any',
+  'bay area': 'bayarea',
+};
 
 // Geographic scope hierarchy
 const SCOPE_HIERARCHY = {
-  bayarea: ['bayarea', 'eastbay', 'berkeley', 'oakland', 'sf', 'southbay', 'peninsula', 'any'],
-  eastbay: ['eastbay', 'berkeley', 'oakland', 'any'],
-  berkeley: ['berkeley', 'any'],
+  bayarea: ['bayarea', 'eastbay', 'sf', 'southbay', 'peninsula', 'any'],
+  eastbay: ['eastbay', 'any'],
   sf: ['sf', 'any'],
-  southbay: ['southbay', 'sanjose', 'paloalto', 'mountainview', 'sunnyvale', 'any'],
-  peninsula: ['peninsula', 'paloalto', 'redwoodcity', 'sanmateo', 'any'],
+  southbay: ['southbay', 'peninsula', 'any'],
+  peninsula: ['peninsula', 'any'],
   any: ['any'],
 };
 
@@ -51,6 +77,11 @@ let lastLoadTime = 0;
 // XLSX LOADING
 // =============================================================================
 
+function cityToScope(city) {
+  const normalizedCity = (city || '').toLowerCase().trim();
+  return CITY_TO_SCOPE[normalizedCity] || 'bayarea';
+}
+
 function loadWhitelist() {
   try {
     const workbook = XLSX.readFile(WHITELIST_PATH);
@@ -58,22 +89,19 @@ function loadWhitelist() {
     const data = XLSX.utils.sheet_to_json(sheet);
     
     venues = data
-      .filter(row => {
-        const enabled = String(row.enabled || 'yes').toLowerCase();
-        return enabled !== 'no' && enabled !== '0' && enabled !== 'false';
-      })
       .map(row => ({
         category: String(row.category || 'all').toLowerCase().trim(),
-        scope: String(row.scope || 'any').toLowerCase().trim(),
+        scope: cityToScope(row.city),
         domain: String(row.domain || '').trim(),
         name: String(row.name || '').trim(),
+        url: String(row.url || '').trim(),
       }))
       .filter(v => v.domain); // Must have a domain
     
     lastLoadTime = Date.now();
-    logger.info(`Loaded ${venues.length} venues from whitelist.xlsx`);
+    logger.info(`Loaded ${venues.length} venues from venue-whitelist.xlsx`);
   } catch (error) {
-    logger.error('Failed to load whitelist.xlsx', { error: error.message, path: WHITELIST_PATH });
+    logger.error('Failed to load venue-whitelist.xlsx', { error: error.message, path: WHITELIST_PATH });
     // Keep existing venues if reload fails
     if (venues.length === 0) {
       logger.warn('No venues loaded - searches will use platform-only queries');

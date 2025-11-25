@@ -21,6 +21,7 @@
 
 import config from '../utils/config.js';
 import { createLogger } from '../utils/logger.js';
+import { getTicketmasterClassification, isTicketmasterSupported } from '../utils/categoryMapping.js';
 
 const logger = createLogger('TicketmasterClient');
 
@@ -71,9 +72,27 @@ export class TicketmasterClient {
 
       // Add category filters if specified
       if (category && category !== 'all') {
-        const segmentId = this.getCategorySegmentId(category);
-        if (segmentId) {
-          params.set('segmentId', segmentId);
+        // Use unified category mapping
+        const classification = getTicketmasterClassification(category);
+        if (classification) {
+          if (classification.segmentId) {
+            params.set('segmentId', classification.segmentId);
+          }
+          if (classification.genreId) {
+            params.set('genreId', classification.genreId);
+          }
+        } else {
+          // Ticketmaster doesn't support this category - return empty to avoid showing same events for all unmapped categories
+          const processingTime = Date.now() - startTime;
+          logger.info(`Ticketmaster has no classification for category: ${category}, returning empty`, { category, processingTime });
+          return {
+            success: true,
+            events: [],
+            count: 0,
+            processingTime,
+            source: 'ticketmaster',
+            unsupportedCategory: true
+          };
         }
       }
 
@@ -217,17 +236,60 @@ export class TicketmasterClient {
    * @param {string} category - Event category.
    * @returns {string|null} Segment ID or null.
    */
-  getCategorySegmentId(category) {
+  /**
+   * Get Ticketmaster classification (segment + optional genre) for a category.
+   * Some categories map to segments (Music, Film), others need genre filtering (Comedy).
+   * @param {string} category - Our category name
+   * @returns {Object|null} { segmentId, genreId } or null if unsupported
+   */
+  getCategoryClassification(category) {
+    // Ticketmaster Segments:
+    // - Music: KZFzniwnSyZfZ7v7nJ
+    // - Arts & Theatre: KZFzniwnSyZfZ7v7na (includes Comedy, Theatre genres)
+    // - Sports: KZFzniwnSyZfZ7v7nE
+    // - Film: KZFzniwnSyZfZ7v7nn
+    // - Miscellaneous: KZFzniwnSyZfZ7v7n1 (includes Family, Food & Drink)
+    
+    // Genre IDs (under Arts & Theatre segment):
+    // - Comedy: KnvZfZ7vAe1
+    // - Theatre: KnvZfZ7v7l1
+    
+    // Genre IDs (under Miscellaneous segment):
+    // - Family: KnvZfZ7vA1E
+    // - Lecture/Seminar: KnvZfZ7vAeA
+    
     const categoryMapping = {
-      'music': 'KZFzniwnSyZfZ7v7nJ',
-      'arts': 'KZFzniwnSyZfZ7v7na',
-      'theatre': 'KZFzniwnSyZfZ7v7na',
-      'sports': 'KZFzniwnSyZfZ7v7nE',
-      'film': 'KZFzniwnSyZfZ7v7nn',
-      'family': 'KZFzniwnSyZfZ7v7n1'
+      // Segment-level categories
+      'music': { segmentId: 'KZFzniwnSyZfZ7v7nJ' },
+      'sports': { segmentId: 'KZFzniwnSyZfZ7v7nE' },
+      'film': { segmentId: 'KZFzniwnSyZfZ7v7nn' },
+      'movies': { segmentId: 'KZFzniwnSyZfZ7v7nn' },
+      
+      // Arts & Theatre segment with optional genre filtering
+      'arts': { segmentId: 'KZFzniwnSyZfZ7v7na' },
+      'art': { segmentId: 'KZFzniwnSyZfZ7v7na' },
+      'theatre': { segmentId: 'KZFzniwnSyZfZ7v7na', genreId: 'KnvZfZ7v7l1' },
+      'theater': { segmentId: 'KZFzniwnSyZfZ7v7na', genreId: 'KnvZfZ7v7l1' },
+      
+      // Comedy is a genre under Arts & Theatre
+      'comedy': { segmentId: 'KZFzniwnSyZfZ7v7na', genreId: 'KnvZfZ7vAe1' },
+      'standup': { segmentId: 'KZFzniwnSyZfZ7v7na', genreId: 'KnvZfZ7vAe1' },
+      
+      // Family/Kids is under Miscellaneous segment
+      'family': { segmentId: 'KZFzniwnSyZfZ7v7n1', genreId: 'KnvZfZ7vA1E' },
+      'kids': { segmentId: 'KZFzniwnSyZfZ7v7n1', genreId: 'KnvZfZ7vA1E' },
+      
+      // Lectures are under Miscellaneous segment
+      'lectures': { segmentId: 'KZFzniwnSyZfZ7v7n1', genreId: 'KnvZfZ7vAeA' }
     };
 
     return categoryMapping[category.toLowerCase()] || null;
+  }
+
+  // Legacy method for backward compatibility
+  getCategorySegmentId(category) {
+    const classification = this.getCategoryClassification(category);
+    return classification?.segmentId || null;
   }
 
   /**

@@ -17,6 +17,7 @@ import config from '../utils/config.js';
 import { createLogger } from '../utils/logger.js';
 import { calculateAggregatorScore } from '../utils/eventPageDetector.js';
 import { getVenueDomains, buildVenueQueries } from '../utils/venueWhitelist.js';
+import { getSearchQueries, getPreferredDomains, getCategoryKeywords } from '../utils/categoryMapping.js';
 
 const logger = createLogger('ExaClient');
 
@@ -40,7 +41,7 @@ export class ExaClient {
    */
   async searchEvents({ category, location, limit = 10 }) {
     const startTime = Date.now();
-    const effectiveLimit = Math.max(1, Math.min(Number(limit) || 10, 50));
+    const effectiveLimit = Math.max(1, Math.min(Number(limit) || 10, 200));
     
     // Build multiple targeted queries that specifically find event DETAIL pages
     // Key insight: Generic searches return aggregators; we need to target specific event URLs
@@ -98,13 +99,19 @@ export class ExaClient {
   }
 
   /**
-   * Get curated venue domains for a specific category from whitelist.xlsx
+   * Get curated venue domains for a specific category from whitelist.xlsx AND unified mapping
    * @param {string} category - Event category
    * @param {string} location - Location string
-   * @returns {string[]} List of domains
+   * @returns {string[]} List of domains (deduplicated)
    */
   getCuratedDomains(category, location = 'Bay Area') {
-    return getVenueDomains(category, location);
+    // Get domains from whitelist.xlsx
+    const whitelistDomains = getVenueDomains(category, location);
+    // Get domains from unified category mapping
+    const mappingDomains = getPreferredDomains(category);
+    // Combine and deduplicate
+    const allDomains = [...new Set([...whitelistDomains, ...mappingDomains])];
+    return allDomains;
   }
 
   /**
