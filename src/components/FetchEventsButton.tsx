@@ -101,7 +101,7 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
       
       const aiInstructions = preferences.aiInstructions?.trim();
 
-      const url = new URL(`${API_BASE_URL}/events/all-categories`);
+      const url = new URL(`${API_BASE_URL}/events/all-categories`, window.location.origin);
       url.searchParams.set('location', location);
       url.searchParams.set('date_range', 'next 30 days');
       url.searchParams.set('limit', '500');
