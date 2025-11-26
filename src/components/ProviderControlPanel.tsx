@@ -23,11 +23,6 @@ interface ProviderControlPanelProps {
 
 const PROVIDER_LIBRARY: ProviderMeta[] = [
   {
-    key: "sonoma",
-    label: "Sonoma (Hybrid)",
-    description: "Super-hybrid orchestrator that blends Sonoma heuristics with Speed-Demon results"
-  },
-  {
     key: "serper",
     label: "Serper",
     description: "Google SERP scraping tuned for speed and breadth",
@@ -50,11 +45,6 @@ const PROVIDER_LIBRARY: ProviderMeta[] = [
     label: "Ticketmaster",
     description: "Official Ticketmaster Discovery API events",
     costHint: "Free"
-  },
-  {
-    key: "perplexity",
-    label: "Perplexity LLM",
-    description: "Full LLM planner with rich summarisation (Sonoma prompt)"
   },
   // Removed: Apyflux and PredictHQ
 ];

@@ -72,13 +72,10 @@ const personalizedPreferences: Preferences = {
 const defaultPreferences: Preferences = personalizedPreferences;
 
 const defaultProviderSelection: Record<string, boolean> = {
-  sonoma: false,
   serper: true,
   exa: true,
   ticketmaster: true,
   pplx: true,
-  perplexity: false,
-  
 };
 
 export const Dashboard = () => {
