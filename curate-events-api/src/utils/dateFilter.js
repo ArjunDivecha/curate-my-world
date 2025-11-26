@@ -168,6 +168,79 @@ export class DateFilter {
   }
 
   /**
+   * Check if an event date is in the past (before today)
+   * @param {string|Date} eventDate - Event start date
+   * @returns {boolean} True if event is in the past
+   */
+  isPastEvent(eventDate) {
+    if (!eventDate) {
+      return true; // No date = assume past/invalid
+    }
+
+    try {
+      const date = new Date(eventDate);
+      
+      if (isNaN(date.getTime())) {
+        return true; // Invalid date = treat as past
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Start of today
+      
+      return date < today;
+    } catch (error) {
+      return true; // Error = treat as past
+    }
+  }
+
+  /**
+   * Filter out past events from an array
+   * @param {Array} events - Array of events
+   * @returns {Object} Filtered events with statistics
+   */
+  filterPastEvents(events) {
+    if (!Array.isArray(events) || events.length === 0) {
+      return {
+        filteredEvents: [],
+        originalCount: 0,
+        removedCount: 0,
+        pastEvents: []
+      };
+    }
+
+    const filteredEvents = [];
+    const pastEvents = [];
+
+    events.forEach(event => {
+      if (this.isPastEvent(event.startDate)) {
+        pastEvents.push({
+          title: event.title,
+          startDate: event.startDate,
+          source: event.source
+        });
+      } else {
+        filteredEvents.push(event);
+      }
+    });
+
+    if (pastEvents.length > 0) {
+      this.logger.info('Filtered out past events', {
+        originalCount: events.length,
+        filteredCount: filteredEvents.length,
+        removedCount: pastEvents.length,
+        samplePastEvents: pastEvents.slice(0, 5)
+      });
+    }
+
+    return {
+      filteredEvents,
+      originalCount: events.length,
+      removedCount: pastEvents.length,
+      pastEvents: pastEvents.slice(0, 10) // Keep sample for debugging
+    };
+  }
+
+  /**
    * Filter events by date range
    * @param {Array} events - Array of events to filter
    * @param {string} dateRange - Date range string

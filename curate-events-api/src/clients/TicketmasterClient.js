@@ -158,10 +158,31 @@ export class TicketmasterClient {
       if (!ticketmasterEvent.name) return null;
 
       // Parse event date and time
-      const eventDate = new Date(ticketmasterEvent.dates?.start?.localDate || new Date());
-      if (ticketmasterEvent.dates?.start?.localTime) {
-        const [hours, minutes] = ticketmasterEvent.dates.start.localTime.split(':');
-        eventDate.setHours(parseInt(hours), parseInt(minutes));
+      const localDate = ticketmasterEvent.dates?.start?.localDate;
+      let eventDate;
+      let hasValidDate = false;
+      
+      if (localDate) {
+        eventDate = new Date(localDate);
+        if (ticketmasterEvent.dates?.start?.localTime) {
+          const [hours, minutes] = ticketmasterEvent.dates.start.localTime.split(':');
+          eventDate.setHours(parseInt(hours), parseInt(minutes));
+        }
+        hasValidDate = true;
+        
+        // Filter out past events (only if we have a date)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (eventDate < today) {
+          logger.debug('Skipping past Ticketmaster event', {
+            title: ticketmasterEvent.name?.substring(0, 50),
+            date: localDate
+          });
+          return null;
+        }
+      } else {
+        // No date - default to today (user preference)
+        eventDate = new Date();
       }
 
       // Extract venue information
@@ -192,6 +213,7 @@ export class TicketmasterClient {
         externalUrl: ticketmasterEvent.url, // Add externalUrl field for frontend compatibility
         source: 'ticketmaster',
         confidence: this.calculateQualityScore(ticketmasterEvent) / 10,
+        dateConfidence: hasValidDate ? 'high' : 'none', // Ticketmaster dates are authoritative when present
         aiReasoning: `Ticketmaster official event: ${ticketmasterEvent.name}`,
         priceRange: priceDisplay,
         imageUrl: ticketmasterEvent.images?.[0]?.url || null,

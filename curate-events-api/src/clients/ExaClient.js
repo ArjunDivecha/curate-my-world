@@ -18,6 +18,7 @@ import { createLogger } from '../utils/logger.js';
 import { calculateAggregatorScore } from '../utils/eventPageDetector.js';
 import { getVenueDomains, buildVenueQueries } from '../utils/venueWhitelist.js';
 import { getSearchQueries, getPreferredDomains, getCategoryKeywords } from '../utils/categoryMapping.js';
+import { extractEventDate } from '../utils/dateExtractor.js';
 
 const logger = createLogger('ExaClient');
 
@@ -268,6 +269,24 @@ export class ExaClient {
       const eventUrl = exaResult.url;
       const finalTicketUrl = ticketUrl || eventUrl;
 
+      // Use chrono-node based date extractor for robust parsing
+      const dateResult = extractEventDate(content);
+      
+      // Filter out events with dates clearly in the PAST
+      // But keep events without dates (default to today)
+      if (dateResult.isValid && dateResult.isPast) {
+        logger.debug('Skipping event - date is in the past', {
+          title: exaResult.title?.substring(0, 50),
+          date: dateResult.date
+        });
+        return null;
+      }
+
+      // If no date found, default to today (user preference)
+      const today = new Date().toISOString();
+      const finalStartDate = dateResult.date || today;
+      const finalEndDate = dateResult.endDate || finalStartDate;
+
       return {
         id: `exa_${exaResult.id}`,
         title: exaResult.title,
@@ -275,13 +294,14 @@ export class ExaClient {
         category: category,
         venue: venue,
         location: location,
-        startDate: this.extractDate(content) || new Date().toISOString(),
-        endDate: this.extractDate(content) || new Date().toISOString(),
+        startDate: finalStartDate,
+        endDate: finalEndDate,
         eventUrl: eventUrl,
         ticketUrl: finalTicketUrl,
         externalUrl: eventUrl, // Add externalUrl field for frontend compatibility
         source: 'exa_fast',
-        confidence: 0.8, // Higher confidence with better extraction
+        confidence: 0.8,
+        dateConfidence: dateResult.confidence, // Track date extraction quality
         aiReasoning: exaResult.summary
       };
     } catch (error) {

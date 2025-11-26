@@ -982,9 +982,12 @@ router.get('/all-categories', async (req, res) => {
         // Apply XLSX blacklist filtering
         const blacklistFilteredEvents = filterBlacklistedEvents(rulesFilteredEvents);
         
-        // Apply date filtering to ensure events are within the specified date range
+        // FIRST: Filter out past events (events before today)
+        const pastFilterResult = dateFilter.filterPastEvents(blacklistFilteredEvents);
+        
+        // THEN: Apply date range filtering to ensure events are within the specified date range
         const dateFilterResult = dateFilter.filterEventsByDateRange(
-          blacklistFilteredEvents,
+          pastFilterResult.filteredEvents,
           date_range || 'next 30 days'
         );
         
@@ -1341,9 +1344,18 @@ router.get('/:category', async (req, res) => {
       removalRate: preLocationFilterCount > 0 ? ((preLocationFilterCount - postLocationFilterCount) / preLocationFilterCount * 100).toFixed(1) + '%' : '0%'
     };
     
-    // Apply date filtering to ensure events are within the specified date range
+    // FIRST: Filter out past events (events before today)
+    const pastFilterResult = dateFilter.filterPastEvents(locationFilteredEvents);
+    const pastFilterStats = {
+      preFilterCount: pastFilterResult.originalCount,
+      postFilterCount: pastFilterResult.filteredEvents.length,
+      removedCount: pastFilterResult.removedCount,
+      samplePastEvents: pastFilterResult.pastEvents?.slice(0, 3) || []
+    };
+    
+    // THEN: Apply date range filtering to ensure events are within the specified date range
     const dateFilterResult = dateFilter.filterEventsByDateRange(
-      locationFilteredEvents,
+      pastFilterResult.filteredEvents,
       date_range || 'next 30 days'
     );
     const finalFilteredEvents = dateFilterResult.filteredEvents;

@@ -20,6 +20,7 @@ import { expandAggregatorUrl, isAggregatorDomain } from '../utils/aggregators/in
 import { calculateAggregatorScore } from '../utils/eventPageDetector.js';
 import { buildVenueQueries } from '../utils/venueWhitelist.js';
 import { getSearchQueries, getPreferredDomains, getCategoryKeywords } from '../utils/categoryMapping.js';
+import { extractEventDate } from '../utils/dateExtractor.js';
 
 const logger = createLogger('SerperClient');
 
@@ -236,8 +237,31 @@ export class SerperClient {
       return null;
     }
 
-    const startDate = event.date?.startDate || event.startDate || event.start_time || event.date;
-    const endDate = event.date?.endDate || event.endDate || event.end_time || startDate;
+    const startDateRaw = event.date?.startDate || event.startDate || event.start_time || event.date;
+    const endDateRaw = event.date?.endDate || event.endDate || event.end_time || startDateRaw;
+
+    const normalizedStartDate = this.normalizeDate(startDateRaw);
+    const normalizedEndDate = this.normalizeDate(endDateRaw) || normalizedStartDate;
+
+    // Filter out past events - but keep events without dates (default to today)
+    if (normalizedStartDate) {
+      const eventDate = new Date(normalizedStartDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (eventDate < today) {
+        logger.debug('Skipping past event from Events endpoint', {
+          title: title?.substring(0, 50),
+          date: normalizedStartDate
+        });
+        return null;
+      }
+    }
+    
+    // If no date found, default to today (user preference)
+    const todayISO = new Date().toISOString();
+    const finalStartDate = normalizedStartDate || todayISO;
+    const finalEndDate = normalizedEndDate || finalStartDate;
 
     const venueName = event.venue || event.location?.name || event.location;
     const address = event.address || event.location?.address || location;
@@ -250,13 +274,14 @@ export class SerperClient {
       categories: [category].filter(Boolean),
       venue: venueName || 'See Event Page',
       location: address || location,
-      startDate: this.normalizeDate(startDate),
-      endDate: this.normalizeDate(endDate) || this.normalizeDate(startDate),
+      startDate: finalStartDate,
+      endDate: finalEndDate,
       eventUrl: url,
       ticketUrl: event.ticket || url,
       externalUrl: url,
       source: 'serper',
       confidence: 0.7,
+      dateConfidence: normalizedStartDate ? 'high' : 'none', // Events endpoint dates are authoritative when present
       aiReasoning: event.snippet || 'Provided by Serper events endpoint.'
     };
   }
@@ -390,7 +415,23 @@ export class SerperClient {
       if (this.isAggregatorPage(title, serperResult.link, snippet)) {
         return null;
       }
-      const dateInfo = this.extractDateInfo(title + ' ' + snippet);
+      // Use chrono-node based date extractor for robust parsing
+      const dateResult = extractEventDate(title + ' ' + snippet);
+      
+      // Filter out events with dates clearly in the PAST
+      // But keep events without dates (default to today)
+      if (dateResult.isValid && dateResult.isPast) {
+        logger.debug('Skipping event - date is in the past', {
+          title: title?.substring(0, 50),
+          date: dateResult.date
+        });
+        return null;
+      }
+      
+      // If no date found, default to today (user preference)
+      const today = new Date().toISOString();
+      const finalStartDate = dateResult.date || today;
+      const finalEndDate = dateResult.endDate || finalStartDate;
       
       // Extract venue information
       const venue = this.extractVenue(title + ' ' + snippet);
@@ -405,12 +446,13 @@ export class SerperClient {
         category: category,
         venue: venue,
         location: venue,
-        startDate: dateInfo.startDate,
-        endDate: dateInfo.endDate,
+        startDate: finalStartDate,
+        endDate: finalEndDate,
         eventUrl: serperResult.link,
         ticketUrl: this.extractTicketUrl(serperResult.link, snippet),
         source: 'serper',
         confidence: this.calculateConfidence(serperResult, category),
+        dateConfidence: dateResult.confidence, // Track date extraction quality
         thumbnail: null // Serper doesn't provide thumbnails in basic search
       };
     } catch (error) {
