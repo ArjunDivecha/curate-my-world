@@ -17,6 +17,7 @@ import eventsRoutes from './src/routes/events.js';
 import personalizationRoutes from './src/routes/personalization.js';
 import rulesRoutes from './src/routes/rules.js';
 import previewRoutes from './src/routes/preview.js';
+import listsRoutes from './src/routes/lists.js';
 
 // Get directory paths for serving static files
 const __filename = fileURLToPath(import.meta.url);
@@ -95,6 +96,7 @@ app.use('/api/events', eventsRoutes);
 app.use('/api/personalization', personalizationRoutes);
 app.use('/api/rules', rulesRoutes);
 app.use('/api/preview', (req, res, next) => { logger.info('Preview route hit pre-router'); next(); }, previewRoutes);
+app.use('/api/lists', listsRoutes);
 
 // ============================================
 // STATIC FILE SERVING (React Frontend)

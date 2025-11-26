@@ -25,6 +25,7 @@ import { ExaClient } from '../clients/ExaClient.js';
 import SerperClient from '../clients/SerperClient.js';
 import TicketmasterClient from '../clients/TicketmasterClient.js';
 import PerplexitySearchClient from '../clients/PerplexitySearchClient.js';
+import WhitelistClient from '../clients/WhitelistClient.js';
 import { LocationFilter } from '../utils/locationFilter.js';
 import { DateFilter } from '../utils/dateFilter.js';
 import { createLogger, logRequest, logResponse } from '../utils/logger.js';
@@ -32,6 +33,7 @@ import { config } from '../utils/config.js';
 import { eventCache } from '../utils/cache.js';
 import { buildCustomEventPrompt, buildProviderSearchQuery } from '../utils/promptUtils.js';
 import { filterEvents as applyRulesFilter } from '../utils/rulesFilter.js';
+import { filterBlacklistedEvents } from '../utils/listManager.js';
 
 const router = express.Router();
 const logger = createLogger('EventsRoute');
@@ -43,6 +45,7 @@ const exaClient = new ExaClient();
 const serperClient = new SerperClient();
 const ticketmasterClient = new TicketmasterClient();
 const perplexitySearchClient = new PerplexitySearchClient();
+const whitelistClient = new WhitelistClient();
 const deduplicator = new EventDeduplicator();
 const locationFilter = new LocationFilter();
 const dateFilter = new DateFilter();
@@ -53,10 +56,10 @@ const PROVIDER_LABELS = {
   serper: 'Serper',
   exa: 'EXA',
   perplexity: 'Perplexity (LLM)',
-  // Removed: Apyflux, PredictHQ
   ticketmaster: 'Ticketmaster',
   pplx: 'Perplexity Search',
-  pplx_search: 'Perplexity Search'
+  pplx_search: 'Perplexity Search',
+  whitelist: 'Whitelist'
 };
 
 const ALL_PROVIDERS = [
@@ -358,13 +361,16 @@ router.get('/:category/combined', async (req, res) => {
     // Apply whitelist/blacklist rules filter
     const rulesFilteredEvents = applyRulesFilter(deduplicationResult.uniqueEvents);
     
+    // Apply XLSX blacklist filtering
+    const blacklistFilteredEvents = filterBlacklistedEvents(rulesFilteredEvents);
+    
     const duration = Date.now() - startTime;
 
     // Build response
     const response = {
       success: true,
-      events: rulesFilteredEvents,
-      count: rulesFilteredEvents.length,
+      events: blacklistFilteredEvents,
+      count: blacklistFilteredEvents.length,
       deduplication: {
         totalProcessed: deduplicationResult.totalProcessed,
         duplicatesRemoved: deduplicationResult.duplicatesRemoved,
@@ -556,6 +562,7 @@ router.get('/all-categories', async (req, res) => {
   let includeExa = selectedProviders.has('exa');
   let includeSonoma = selectedProviders.has('sonoma');
   let includePerplexityProvider = selectedProviders.has('perplexity');
+  const includeWhitelist = selectedProviders.has('whitelist') || true; // Always search whitelist
 
   // Optional source toggles
   const disablePerplexityQuery = ['true', '1', 'yes'].includes(String(req.query.disable_perplexity || '').toLowerCase());
@@ -923,6 +930,23 @@ router.get('/all-categories', async (req, res) => {
           providerResults.pplx = { success: false, events: [], count: 0, source: 'pplx_search', skipped: true };
         }
 
+        // Always search whitelist domains
+        if (includeWhitelist) {
+          enqueueProvider('whitelist', async () => {
+            const result = await whitelistClient.searchEvents(category, location, { limit: eventLimit });
+            return {
+              success: true,
+              events: result.events || [],
+              count: result.events?.length || 0,
+              processingTime: result.stats?.processingTime || 0,
+              source: 'whitelist',
+              domainsSearched: result.stats?.domainsSearched || 0
+            };
+          });
+        } else {
+          providerResults.whitelist = { success: false, events: [], count: 0, source: 'whitelist', skipped: true };
+        }
+
         const settled = await Promise.all(providerPromises);
         settled.forEach(result => {
           const { key, status } = result;
@@ -955,9 +979,12 @@ router.get('/all-categories', async (req, res) => {
         // Apply whitelist/blacklist rules filter
         const rulesFilteredEvents = applyRulesFilter(deduplicationResult.uniqueEvents);
         
+        // Apply XLSX blacklist filtering
+        const blacklistFilteredEvents = filterBlacklistedEvents(rulesFilteredEvents);
+        
         // Apply date filtering to ensure events are within the specified date range
         const dateFilterResult = dateFilter.filterEventsByDateRange(
-          rulesFilteredEvents,
+          blacklistFilteredEvents,
           date_range || 'next 30 days'
         );
         
@@ -1292,10 +1319,13 @@ router.get('/:category', async (req, res) => {
     // Apply whitelist/blacklist rules filter
     const rulesFilteredEvents = applyRulesFilter(deduplicationResult.uniqueEvents);
     
+    // Apply XLSX blacklist filtering
+    const blacklistFilteredEvents = filterBlacklistedEvents(rulesFilteredEvents);
+    
     // Apply location filtering to remove events from incorrect locations
-    const preLocationFilterCount = rulesFilteredEvents.length;
+    const preLocationFilterCount = blacklistFilteredEvents.length;
     const locationFilteredEvents = locationFilter.filterEventsByLocation(
-      rulesFilteredEvents, 
+      blacklistFilteredEvents, 
       location, 
       {
         radiusKm: 50, // 50km radius for Bay Area
@@ -1570,12 +1600,15 @@ router.get('/:category/all-sources', async (req, res) => {
     // Apply whitelist/blacklist rules filter
     const rulesFilteredEvents = applyRulesFilter(deduplicationResult.uniqueEvents || deduplicationResult);
     
+    // Apply XLSX blacklist filtering
+    const blacklistFilteredEvents = filterBlacklistedEvents(rulesFilteredEvents);
+    
     const duration = Date.now() - startTime;
     
     const response = {
       success: true,
-      events: rulesFilteredEvents,
-      count: rulesFilteredEvents.length,
+      events: blacklistFilteredEvents,
+      count: blacklistFilteredEvents.length,
       sources: ['perplexity_api'],
       sourceStats,
       processingTime: duration,

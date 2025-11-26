@@ -8,6 +8,39 @@ import { cleanHtmlText } from "@/lib/utils";
 import { saveToCalendar, validateEventForCalendar } from "@/lib/calendarUtils";
 import { useToast } from "@/hooks/use-toast";
 import { getCategoryColor, getCategoryBadgeClasses } from "@/utils/categoryColors";
+import { getApiBaseUrl } from "@/utils/apiConfig";
+
+// Source badge styling helper
+const getSourceBadgeStyle = (source: string): string => {
+  const styles: Record<string, string> = {
+    whitelist: 'bg-emerald-100 text-emerald-700 border-emerald-300',
+    serper: 'bg-blue-100 text-blue-700 border-blue-300',
+    exa: 'bg-purple-100 text-purple-700 border-purple-300',
+    exa_fast: 'bg-purple-100 text-purple-700 border-purple-300',
+    ticketmaster: 'bg-red-100 text-red-700 border-red-300',
+    pplx: 'bg-orange-100 text-orange-700 border-orange-300',
+    pplx_search: 'bg-orange-100 text-orange-700 border-orange-300',
+    perplexity: 'bg-amber-100 text-amber-700 border-amber-300',
+    perplexity_api: 'bg-amber-100 text-amber-700 border-amber-300',
+  };
+  return styles[source?.toLowerCase()] || 'bg-gray-100 text-gray-700 border-gray-300';
+};
+
+// Source label helper
+const getSourceLabel = (source: string): string => {
+  const labels: Record<string, string> = {
+    whitelist: '⭐ Whitelist',
+    serper: 'Serper',
+    exa: 'EXA',
+    exa_fast: 'EXA',
+    ticketmaster: 'Ticketmaster',
+    pplx: 'PPLX',
+    pplx_search: 'PPLX',
+    perplexity: 'Perplexity',
+    perplexity_api: 'Perplexity',
+  };
+  return labels[source?.toLowerCase()] || source;
+};
 
 interface Event {
   id: string;
@@ -125,34 +158,37 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
       toast({ title: 'No URL to whitelist', description: 'This event has no valid URL.' });
       return;
     }
+    // Ask for category (optional)
+    const category = window.prompt(`Category for ${domain}? (music, theatre, comedy, etc. or leave blank for 'all')`, event.categories[0] || 'all');
     try {
-      const res = await fetch('/api/rules/whitelist', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain })
+      const res = await fetch(`${getApiBaseUrl()}/lists/whitelist`, {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ 
+          domain, 
+          category: category || 'all',
+          name: event.venue?.name || domain 
+        })
       });
       const data = await res.json();
-      if (res.ok) toast({ title: 'Whitelisted', description: `${domain} has been whitelisted.` });
+      if (res.ok) toast({ title: '⭐ Whitelisted!', description: `${domain} added to whitelist. Events will be fetched from this site.` });
       else toast({ title: 'Whitelist failed', description: data.error || 'Unknown error', variant: 'destructive' });
     } catch (e: any) {
       toast({ title: 'Whitelist failed', description: e.message, variant: 'destructive' });
     }
   };
 
-  const handleBlacklistPath = async () => {
+  const handleBlacklistEvent = async () => {
     const targetUrl = event.eventUrl || event.ticketUrl;
-    const { domain, path } = domainAndPath(targetUrl);
-    if (!domain) {
-      toast({ title: 'No URL to blacklist', description: 'This event has no valid URL.' });
-      return;
-    }
-    const defaultRx = `^${(path || '/').replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}$`;
-    const rx = window.prompt(`Blacklist path regex for ${domain}`, defaultRx);
-    if (!rx) return;
+    if (!window.confirm(`Blacklist this specific event: "${event.title}"?`)) return;
     try {
-      const res = await fetch('/api/rules/blacklist', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain, mode: 'path', path: rx })
+      const res = await fetch(`${getApiBaseUrl()}/lists/blacklist-event`, {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ title: event.title, url: targetUrl })
       });
       const data = await res.json();
-      if (res.ok) toast({ title: 'Blacklisted path', description: `${domain}${path} is now blacklisted.` });
+      if (res.ok) toast({ title: '🚫 Event Blacklisted', description: `"${event.title}" will no longer appear.` });
       else toast({ title: 'Blacklist failed', description: data.error || 'Unknown error', variant: 'destructive' });
     } catch (e: any) {
       toast({ title: 'Blacklist failed', description: e.message, variant: 'destructive' });
@@ -166,13 +202,15 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
       toast({ title: 'No URL to blacklist', description: 'This event has no valid URL.' });
       return;
     }
-    if (!window.confirm(`Blacklist ENTIRE domain ${domain}?`)) return;
+    if (!window.confirm(`Blacklist ENTIRE domain ${domain}? No events from this site will ever appear.`)) return;
     try {
-      const res = await fetch('/api/rules/blacklist', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain, mode: 'domain' })
+      const res = await fetch(`${getApiBaseUrl()}/lists/blacklist-site`, {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ domain, reason: 'Blocked via GUI' })
       });
       const data = await res.json();
-      if (res.ok) toast({ title: 'Blacklisted domain', description: `${domain} is now blacklisted.` });
+      if (res.ok) toast({ title: '🚫 Domain Blacklisted', description: `${domain} is now blocked. No events from this site will appear.` });
       else toast({ title: 'Blacklist failed', description: data.error || 'Unknown error', variant: 'destructive' });
     } catch (e: any) {
       toast({ title: 'Blacklist failed', description: e.message, variant: 'destructive' });
@@ -181,7 +219,7 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
 
   // Determine API base for preview endpoint
   // Use relative /api path - works in both dev (Vite proxy) and prod (same server)
-  const API_BASE = '/api';
+  const API_BASE = getApiBaseUrl();
 
   const handleExternalCalendarSave = (calendarType: 'google' | 'outlook' | 'apple' | 'download') => {
     // Convert event to calendar format
@@ -252,12 +290,14 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
             </div>
           </div>
 
-          {/* Whitelist / Blacklist controls */}
-          <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
-            <Button size="sm" variant="outline" onClick={handleWhitelistDomain}>Whitelist Domain</Button>
-            <Button size="sm" variant="outline" onClick={handleBlacklistPath}>Blacklist Path</Button>
-            <Button size="sm" variant="outline" onClick={handleBlacklistDomain}>Blacklist Domain</Button>
-          </div>
+          {/* Whitelist / Blacklist controls - Only show in development */}
+          {import.meta.env.MODE === 'development' && (
+            <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+              <Button size="sm" variant="outline" onClick={handleWhitelistDomain} className="hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300">⭐ Whitelist Site</Button>
+              <Button size="sm" variant="outline" onClick={handleBlacklistEvent} className="hover:bg-red-50 hover:text-red-700 hover:border-red-300">🚫 Block Event</Button>
+              <Button size="sm" variant="outline" onClick={handleBlacklistDomain} className="hover:bg-red-50 hover:text-red-700 hover:border-red-300">🚫 Block Site</Button>
+            </div>
+          )}
         </div>
 
         {/* Description Section - Fixed Height */}
@@ -280,9 +320,18 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
           )}
         </div>
 
-        {/* Categories Section - Fixed Height */}
+        {/* Categories & Source Section - Fixed Height */}
         <div className="mb-4 min-h-[2rem]">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* Source Badge */}
+            {event.source && (
+              <Badge 
+                className={`text-xs font-medium ${getSourceBadgeStyle(event.source)}`}
+              >
+                {getSourceLabel(event.source)}
+              </Badge>
+            )}
+            {/* Category Badges */}
             {event.categories.slice(0, 3).map((category) => {
               const badgeColor = getCategoryColor(category);
               return (
