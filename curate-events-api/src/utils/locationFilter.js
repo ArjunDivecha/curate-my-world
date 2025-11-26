@@ -42,6 +42,69 @@ export class LocationFilter {
       'san rafael', 'novato', 'petaluma', 'santa rosa', 'napa',
       'vallejo', 'fairfield', 'vacaville', 'benicia', 'suisun city'
     ];
+    
+    // Locations that are clearly NOT in the Bay Area (blacklist for filtering)
+    this.excludedLocations = [
+      // Major US cities outside CA
+      'new york', 'nyc', 'brooklyn', 'manhattan', 'bronx', 'queens', 'broadway',
+      // Famous NYC venues/theatres that indicate non-Bay Area
+      'richard rodgers', 'gershwin theatre', 'majestic theatre', 'shubert theatre',
+      'booth theatre', 'lyceum theatre', 'winter garden', 'st james theatre',
+      'lincoln center', 'carnegie hall', 'radio city', 'madison square garden',
+      // Famous venues in other cities
+      'kennedy center', 'wolf trap', 'the met', 'metropolitan opera',
+      'chicago', 'boston', 'seattle', 'portland', 'denver', 'buffalo',
+      'minneapolis', 'st paul', 'detroit', 'atlanta', 'miami', 'dallas', 'houston', 'austin',
+      'phoenix', 'las vegas', 'philadelphia', 'washington dc', 'baltimore',
+      'pittsburgh', 'cleveland', 'cincinnati', 'nashville', 'memphis', 'new orleans',
+      'st louis', 'kansas city', 'milwaukee', 'indianapolis', 'columbus', 'charlotte',
+      'raleigh', 'durham', 'tampa', 'orlando', 'jacksonville', 'salt lake city', 'albuquerque',
+      'tucson', 'el paso', 'oklahoma city', 'tulsa', 'omaha', 'wichita', 'flint',
+      'rochester', 'syracuse', 'albany', 'hartford', 'providence', 'richmond',
+      'virginia beach', 'norfolk', 'louisville', 'lexington', 'knoxville',
+      'chattanooga', 'birmingham', 'montgomery', 'mobile', 'little rock',
+      'baton rouge', 'shreveport', 'jackson', 'des moines', 'madison',
+      'grand rapids', 'ann arbor', 'lansing', 'toledo', 'akron', 'dayton',
+      'huntsville', 'fort worth', 'arlington', 'plano', 'irving', 'garland',
+      'lubbock', 'amarillo', 'corpus christi', 'laredo', 'mcallen', 'brownsville',
+      'savannah', 'augusta', 'macon', 'athens', 'greenville', 'spartanburg',
+      'columbia', 'charleston', 'rock hill', 'asheville', 'wilmington',
+      // CA cities NOT in Bay Area
+      'los angeles', 'san diego', 'glendale', 'pasadena', 'long beach', 'anaheim',
+      'santa monica', 'burbank', 'hollywood', 'irvine', 'riverside', 'ontario',
+      'fresno', 'bakersfield', 'sacramento', 'stockton', 'modesto', 'santa barbara',
+      'palm springs', 'san bernardino', 'huntington beach', 'oceanside', 'chula vista',
+      'carlsbad', 'escondido', 'temecula', 'murrieta', 'newport beach', 'laguna beach',
+      'santa ana', 'costa mesa', 'torrance', 'culver city', 'west hollywood',
+      // International cities
+      'london', 'paris', 'berlin', 'munich', 'stuttgart', 'frankfurt', 'amsterdam',
+      'madrid', 'barcelona', 'rome', 'milan', 'vienna', 'zurich', 'toronto',
+      'montreal', 'vancouver', 'sydney', 'melbourne', 'tokyo', 'seoul', 'singapore',
+      'helsinki', 'stockholm', 'oslo', 'copenhagen', 'dublin', 'edinburgh', 'glasgow',
+      'manchester', 'birmingham', 'brussels', 'prague', 'budapest', 'warsaw',
+      'hamburg', 'cologne', 'dusseldorf', 'dresden', 'leipzig', 'hannover',
+      'lisbon', 'porto', 'athens', 'istanbul', 'moscow', 'st petersburg',
+      'beijing', 'shanghai', 'hong kong', 'taipei', 'osaka', 'kyoto',
+      'mumbai', 'delhi', 'bangalore', 'dubai', 'tel aviv', 'jerusalem',
+      // US States (non-CA)
+      'minnesota', 'michigan', 'florida', 'texas', 'new york', 'illinois',
+      'pennsylvania', 'ohio', 'georgia', 'north carolina', 'washington',
+      'arizona', 'massachusetts', 'tennessee', 'indiana', 'missouri',
+      'virginia', 'maryland', 'wisconsin', 'colorado', 'oregon', 'nevada',
+      'connecticut', 'new jersey', 'south carolina', 'alabama', 'kentucky',
+      'louisiana', 'oklahoma', 'iowa', 'arkansas', 'mississippi', 'kansas',
+      'nebraska', 'new mexico', 'utah', 'west virginia', 'maine', 'new hampshire',
+      'vermont', 'rhode island', 'delaware', 'montana', 'idaho', 'wyoming',
+      'north dakota', 'south dakota', 'alaska', 'hawaii',
+      // Countries
+      'germany', 'france', 'uk', 'united kingdom', 'england', 'canada', 'australia',
+      'italy', 'spain', 'netherlands', 'belgium', 'switzerland', 'austria',
+      'sweden', 'norway', 'denmark', 'finland', 'ireland', 'scotland', 'japan', 'korea',
+      'china', 'india', 'brazil', 'mexico', 'argentina', 'russia', 'poland',
+      'czech republic', 'hungary', 'greece', 'turkey', 'israel', 'uae',
+      'south africa', 'egypt', 'thailand', 'vietnam', 'indonesia', 'philippines',
+      'new zealand', 'portugal'
+    ];
   }
 
   /**
@@ -124,6 +187,24 @@ export class LocationFilter {
     const eventCity = this.extractCityFromEvent(event);
     const eventState = this.extractStateFromEvent(event);
     const eventLocation = event.location || '';
+    const eventVenue = event.venue || '';
+    const eventTitle = event.title || '';
+    const eventAddress = event.address || '';
+    const eventDescription = event.description || '';
+    
+    // Combine all location-related text for comprehensive checking (including description for embedded location info)
+    const allLocationText = `${eventCity} ${eventState} ${eventLocation} ${eventVenue} ${eventAddress} ${eventTitle} ${eventDescription}`.toLowerCase();
+
+    // FIRST: Check for explicit exclusions (wrong cities, states, countries)
+    if (this.containsExcludedLocation(allLocationText)) {
+      logger.debug('Event excluded due to blacklisted location', {
+        title: event.title,
+        venue: eventVenue,
+        location: eventLocation,
+        detectedExclusion: this.getMatchedExclusion(allLocationText)
+      });
+      return false;
+    }
 
     // If we have no location information, keep the event (benefit of doubt)
     if (!eventCity && !eventState && !eventLocation) {
@@ -186,6 +267,43 @@ export class LocationFilter {
 
     // Default: keep the event if we're not sure
     return true;
+  }
+  
+  /**
+   * Check if location text contains any excluded location
+   * @param {string} text - Combined location text (lowercase)
+   * @returns {boolean} True if contains excluded location
+   */
+  containsExcludedLocation(text) {
+    // Use word boundaries to avoid false positives (e.g., "Dublin" in "Dublin, CA" vs actual Dublin, Ireland)
+    // But be careful: Dublin is in Bay Area list, so it should be handled first
+    
+    // First check if it's a Bay Area location (takes priority)
+    if (this.bayAreaCities.some(city => text.includes(city))) {
+      return false; // It's in Bay Area, don't exclude
+    }
+    
+    // Then check for excluded locations
+    return this.excludedLocations.some(excluded => {
+      // Use word boundary-like matching to avoid partial matches
+      const pattern = new RegExp(`\\b${excluded}\\b`, 'i');
+      return pattern.test(text);
+    });
+  }
+  
+  /**
+   * Get the matched exclusion for debugging
+   * @param {string} text - Combined location text (lowercase)
+   * @returns {string|null} Matched exclusion or null
+   */
+  getMatchedExclusion(text) {
+    for (const excluded of this.excludedLocations) {
+      const pattern = new RegExp(`\\b${excluded}\\b`, 'i');
+      if (pattern.test(text)) {
+        return excluded;
+      }
+    }
+    return null;
   }
 
   /**
