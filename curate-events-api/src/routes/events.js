@@ -744,53 +744,72 @@ router.get('/all-categories', async (req, res) => {
     
     if (isCustomMode) {
       // Custom AI Instructions mode: Use only the custom prompt, skip category-based search
-      logger.info('Using custom AI instructions mode', {
-        rawPrompt: rawCustomPrompt.substring(0, 100) + '...',
-        appliedPrompt: appliedCustomPrompt.substring(0, 120) + '...',
-        location,
-        eventLimit: eventLimit * 5 // Higher limit for custom search
-      });
-      
-      // Single search with custom prompt instead of category-based searches
-      const customResult = await eventPipeline.collectEvents({
-        category: 'general', // Placeholder category
-        location,
-        dateRange: date_range,
-        customPrompt: appliedCustomPrompt,
-        options: {
-          limit: eventLimit * 5, // Higher limit for custom search
-          minConfidence: 0.5,
-          maxTokens: config.perplexity.maxTokens,
-          temperature: config.perplexity.temperature
-        }
-      });
-      
-      const duration = Date.now() - startTime;
-      
-      // Return custom search results
-      if (customResult.success) {
-        const response = {
-          success: true,
-          eventsByCategory: {
-            'custom_search': customResult.events
-          },
-          categoryStats: {
-            'custom_search': { count: customResult.events.length }
-          },
-          totalEvents: customResult.events.length,
-          processingTime: duration,
-          searchMode: 'custom_ai_instructions',
-          customPrompt: rawCustomPrompt.substring(0, 200) + '...',
-          appliedPrompt: appliedCustomPrompt.substring(0, 200) + '...',
-          timestamp: new Date().toISOString()
-        };
+      try {
+        logger.info('Using custom AI instructions mode', {
+          rawPrompt: rawCustomPrompt.substring(0, 100) + '...',
+          appliedPrompt: appliedCustomPrompt.substring(0, 120) + '...',
+          location,
+          eventLimit: eventLimit * 5 // Higher limit for custom search
+        });
         
-        logResponse(logger, req, response, 'allCategoriesEvents');
-        return res.json(response);
-      } else {
-        throw new Error(customResult.error || 'Custom search failed');
+        // Single search with custom prompt instead of category-based searches
+        const customResult = await eventPipeline.collectEvents({
+          category: 'general', // Placeholder category
+          location,
+          dateRange: date_range,
+          customPrompt: appliedCustomPrompt,
+          options: {
+            limit: eventLimit * 5, // Higher limit for custom search
+            minConfidence: 0.5,
+            maxTokens: config.perplexity.maxTokens,
+            temperature: config.perplexity.temperature
+          }
+        });
+        
+        const duration = Date.now() - startTime;
+        
+        // Return custom search results
+        if (customResult.success) {
+          const response = {
+            success: true,
+            eventsByCategory: {
+              'custom_search': customResult.events || []
+            },
+            categoryStats: {
+              'custom_search': { count: (customResult.events || []).length }
+            },
+            totalEvents: (customResult.events || []).length,
+            processingTime: duration,
+            searchMode: 'custom_ai_instructions',
+            customPrompt: rawCustomPrompt.substring(0, 200) + '...',
+            appliedPrompt: appliedCustomPrompt.substring(0, 200) + '...',
+            timestamp: new Date().toISOString()
+          };
+          
+          logResponse(logger, req, response, 'allCategoriesEvents');
+          return res.json(response);
+        } else {
+          logger.error('Custom search failed', {
+            error: customResult.error,
+            location,
+            rawPrompt: rawCustomPrompt.substring(0, 100)
+          });
+          throw new Error(customResult.error || 'Custom search failed');
+        }
+      } catch (customError) {
+        logger.warn('Custom AI instructions mode failed, falling back to multi-provider search', {
+          error: customError.message,
+          location,
+          rawPrompt: rawCustomPrompt.substring(0, 100)
+        });
+        // Fall through to regular category-based search with the custom prompt as a filter
+        // Continue to the regular search below instead of returning 500
       }
     }
+    
+    // If custom mode failed or wasn't used, continue with regular search
+    // Use the custom prompt as a search query modifier if provided
+    const searchQueryModifier = isCustomMode ? rawCustomPrompt : '';
     
     // Regular category-based search mode
     const supportedCategories = categoryManager.getSupportedCategories()

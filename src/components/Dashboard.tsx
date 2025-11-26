@@ -496,10 +496,17 @@ export const Dashboard = () => {
                   className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
                   placeholder="e.g., 'Only show me events with live music.'"
                   value={preferences.aiInstructions}
-                  onChange={(e) => setPreferences(prev => ({
-                    ...prev,
-                    aiInstructions: e.target.value
-                  }))}
+                  onChange={(e) => {
+                    try {
+                      setPreferences(prev => ({
+                        ...prev,
+                        aiInstructions: e.target.value
+                      }));
+                    } catch (error) {
+                      console.error('Error updating AI instructions:', error);
+                      // Silently handle the error to prevent app crash
+                    }
+                  }}
                 />
               </div>
               <div>

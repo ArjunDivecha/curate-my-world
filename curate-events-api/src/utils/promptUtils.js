@@ -39,20 +39,23 @@ export function buildCustomEventPrompt({
   dateRange,
   limit
 }) {
-  const trimmed = (userPrompt || '').trim();
-  if (!trimmed) {
-    return '';
-  }
+  try {
+    // Ensure userPrompt is a string
+    const userPromptStr = typeof userPrompt === 'string' ? userPrompt : String(userPrompt || '');
+    const trimmed = userPromptStr.trim();
+    if (!trimmed) {
+      return '';
+    }
 
-  const scope = describeDateRange(dateRange);
-  const safeLocation = location ? location : 'the target region';
-  const numericLimit = typeof limit === 'number' && Number.isFinite(limit) ? limit : undefined;
-  const inferred = numericLimit
-    ? Math.round(Math.min(Math.max(numericLimit, MIN_TARGET), MAX_TARGET))
-    : DEFAULT_TARGET;
-  const target = Math.min(Math.max(inferred, MIN_TARGET), MAX_TARGET);
+    const scope = describeDateRange(dateRange);
+    const safeLocation = location ? String(location) : 'the target region';
+    const numericLimit = typeof limit === 'number' && Number.isFinite(limit) ? limit : undefined;
+    const inferred = numericLimit
+      ? Math.round(Math.min(Math.max(numericLimit, MIN_TARGET), MAX_TARGET))
+      : DEFAULT_TARGET;
+    const target = Math.min(Math.max(inferred, MIN_TARGET), MAX_TARGET);
 
-  return [
+    return [
     'You are Curate, an event intelligence research agent building a personalized feed.',
     `Mission: surface at least ${target} high-quality upcoming events for "${trimmed}" in ${safeLocation}, covering the period ${scope}.`,
     '',
@@ -80,6 +83,15 @@ export function buildCustomEventPrompt({
     '',
     'Return the JSON array first, followed by the optional note.'
   ].join('\n');
+  } catch (error) {
+    // If there's any error building the prompt, return a simple fallback
+    console.error('Error building custom event prompt:', error);
+    const trimmed = typeof userPrompt === 'string' ? userPrompt.trim() : String(userPrompt || '').trim();
+    if (!trimmed) {
+      return '';
+    }
+    return `Find upcoming events related to "${trimmed}" in ${location || 'the target region'}. Return a JSON array of events with title, description, start_date, venue, address, category, ticket_url, and price.`;
+  }
 }
 
 /**
