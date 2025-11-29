@@ -72,6 +72,7 @@ const personalizedPreferences: Preferences = {
 const defaultPreferences: Preferences = personalizedPreferences;
 
 const defaultProviderSelection: Record<string, boolean> = {
+  whitelist: true,
   serper: true,
   exa: true,
   ticketmaster: true,

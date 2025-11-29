@@ -23,6 +23,12 @@ interface ProviderControlPanelProps {
 
 const PROVIDER_LIBRARY: ProviderMeta[] = [
   {
+    key: "whitelist",
+    label: "Whitelist",
+    description: "Events from trusted, manually curated domains",
+    costHint: "Free"
+  },
+  {
     key: "serper",
     label: "Serper",
     description: "Google SERP scraping tuned for speed and breadth",
