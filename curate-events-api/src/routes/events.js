@@ -26,7 +26,7 @@ import SerperClient from '../clients/SerperClient.js';
 import TicketmasterClient from '../clients/TicketmasterClient.js';
 import PerplexitySearchClient from '../clients/PerplexitySearchClient.js';
 import WhitelistClient from '../clients/WhitelistClient.js';
-import { LocationFilter } from '../utils/locationFilter.js';
+import { GeocodingFilter } from '../utils/geocodingFilter.js';
 import { DateFilter } from '../utils/dateFilter.js';
 import { createLogger, logRequest, logResponse } from '../utils/logger.js';
 import { config } from '../utils/config.js';
@@ -47,7 +47,7 @@ const ticketmasterClient = new TicketmasterClient();
 const perplexitySearchClient = new PerplexitySearchClient();
 const whitelistClient = new WhitelistClient();
 const deduplicator = new EventDeduplicator();
-const locationFilter = new LocationFilter();
+const geocodingFilter = new GeocodingFilter();
 const dateFilter = new DateFilter();
 
 // Provider metadata
@@ -63,6 +63,7 @@ const PROVIDER_LABELS = {
 };
 
 const ALL_PROVIDERS = [
+  'whitelist',
   'sonoma',
   'serper',
   'exa',
@@ -72,6 +73,7 @@ const ALL_PROVIDERS = [
 ];
 
 const SOURCE_PROVIDER_MAP = {
+  whitelist: 'whitelist',
   serper: 'serper',
   serpapi: 'serper',
   exa: 'exa',
@@ -84,6 +86,7 @@ const SOURCE_PROVIDER_MAP = {
 };
 
 const PROVIDER_DEFAULTS = {
+  whitelist: true,
   sonoma: config.superHybrid?.enabledByDefault !== false,
   serper: true,
   exa: true,
@@ -93,12 +96,11 @@ const PROVIDER_DEFAULTS = {
 };
 
 const PROVIDER_ORDER = [
-  'ticketmaster',
+  'whitelist',
   'serper',
   'exa',
-  'sonoma',
-  'perplexity',
-  'pplx'
+  'pplx',
+  'ticketmaster'
 ];
 
 function mapSourceToProvider(source) {
@@ -986,7 +988,9 @@ router.get('/all-categories', async (req, res) => {
         Object.entries(providerResults).forEach(([key, value]) => {
           if (!value || !Array.isArray(value.events)) return;
           const providerKey = mapSourceToProvider(value.source || key);
-          if (!selectedProviders.has(providerKey)) return;
+          // Always include whitelist events (since includeWhitelist is always true)
+          // For other providers, check if they're in selectedProviders
+          if (providerKey !== 'whitelist' && !selectedProviders.has(providerKey)) return;
           if (value.events.length === 0) return;
           eventLists.push(value);
         });
@@ -1001,8 +1005,15 @@ router.get('/all-categories', async (req, res) => {
         // Apply XLSX blacklist filtering
         const blacklistFilteredEvents = filterBlacklistedEvents(rulesFilteredEvents);
         
+        // Apply geocoding-based location filtering (Google Maps API)
+        const locationFilteredEvents = await geocodingFilter.filterEventsByLocation(
+          blacklistFilteredEvents, 
+          location, 
+          { radiusKm: 80 }
+        );
+        
         // FIRST: Filter out past events (events before today)
-        const pastFilterResult = dateFilter.filterPastEvents(blacklistFilteredEvents);
+        const pastFilterResult = dateFilter.filterPastEvents(locationFilteredEvents);
         
         // THEN: Apply date range filtering to ensure events are within the specified date range
         const dateFilterResult = dateFilter.filterEventsByDateRange(
@@ -1344,15 +1355,13 @@ router.get('/:category', async (req, res) => {
     // Apply XLSX blacklist filtering
     const blacklistFilteredEvents = filterBlacklistedEvents(rulesFilteredEvents);
     
-    // Apply location filtering to remove events from incorrect locations
+    // Apply geocoding-based location filtering (Google Maps API)
     const preLocationFilterCount = blacklistFilteredEvents.length;
-    const locationFilteredEvents = locationFilter.filterEventsByLocation(
+    const locationFilteredEvents = await geocodingFilter.filterEventsByLocation(
       blacklistFilteredEvents, 
       location, 
       {
-        radiusKm: 50, // 50km radius for Bay Area
-        allowBayArea: true, // Allow Bay Area cities for SF searches
-        strictMode: false // Keep events if location is unclear
+        radiusKm: 80 // 80km radius covers entire Bay Area
       }
     );
     const postLocationFilterCount = locationFilteredEvents.length;
@@ -1360,7 +1369,8 @@ router.get('/:category', async (req, res) => {
       preFilterCount: preLocationFilterCount,
       postFilterCount: postLocationFilterCount,
       removedCount: preLocationFilterCount - postLocationFilterCount,
-      removalRate: preLocationFilterCount > 0 ? ((preLocationFilterCount - postLocationFilterCount) / preLocationFilterCount * 100).toFixed(1) + '%' : '0%'
+      removalRate: preLocationFilterCount > 0 ? ((preLocationFilterCount - postLocationFilterCount) / preLocationFilterCount * 100).toFixed(1) + '%' : '0%',
+      method: 'geocoding'
     };
     
     // FIRST: Filter out past events (events before today)

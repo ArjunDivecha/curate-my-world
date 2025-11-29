@@ -46,13 +46,14 @@ export const config = {
   serperApiKey: process.env.SERPER_API_KEY,
   ticketmasterConsumerKey: process.env.TICKETMASTER_CONSUMER_KEY,
   ticketmasterConsumerSecret: process.env.TICKETMASTER_CONSUMER_SECRET,
+  googleMapsApiKey: process.env.GOOGLE_MAPS_PLATFORM_API_KEY || process.env.GOOGLE_MAPS_API_KEY,
   
   // Logging
   logLevel: process.env.LOG_LEVEL || (nodeEnv === 'development' ? 'debug' : 'info'),
   
-  // CORS configuration
+  // CORS configuration - allow all origins in development for browser preview proxy support
   corsOrigins: nodeEnv === 'development' 
-    ? ['http://localhost:8766', 'http://127.0.0.1:8766', 'http://localhost:8767', 'http://127.0.0.1:8767', 'http://localhost:8768', 'http://127.0.0.1:8768']  // Frontend ports
+    ? true  // Allow all origins in development (browser preview uses random proxy ports)
     : (process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : ['*']),
   
   // Rate limiting

@@ -144,7 +144,7 @@ export class DateFilter {
    */
   isWithinRange(eventDate, startDate, endDate) {
     if (!eventDate) {
-      return false;
+      return true; // No date = keep event (benefit of the doubt)
     }
 
     try {
@@ -152,8 +152,7 @@ export class DateFilter {
       
       // Check if date is valid
       if (isNaN(date.getTime())) {
-        this.logger.warn('Invalid event date format', { eventDate });
-        return false;
+        return true; // Invalid date = keep event (benefit of the doubt)
       }
 
       // Check if date is within range
@@ -163,7 +162,7 @@ export class DateFilter {
         error: error.message, 
         eventDate 
       });
-      return false;
+      return true; // Error = keep event
     }
   }
 
@@ -174,14 +173,14 @@ export class DateFilter {
    */
   isPastEvent(eventDate) {
     if (!eventDate) {
-      return true; // No date = assume past/invalid
+      return false; // No date = keep event (benefit of the doubt)
     }
 
     try {
       const date = new Date(eventDate);
       
       if (isNaN(date.getTime())) {
-        return true; // Invalid date = treat as past
+        return false; // Invalid date = keep event (benefit of the doubt)
       }
 
       const today = new Date();
@@ -189,7 +188,7 @@ export class DateFilter {
       
       return date < today;
     } catch (error) {
-      return true; // Error = treat as past
+      return false; // Error = keep event
     }
   }
 
