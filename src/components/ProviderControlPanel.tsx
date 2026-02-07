@@ -23,36 +23,23 @@ interface ProviderControlPanelProps {
 
 const PROVIDER_LIBRARY: ProviderMeta[] = [
   {
-    key: "whitelist",
-    label: "Whitelist",
-    description: "Events from trusted, manually curated domains",
-    costHint: "Free"
-  },
-  {
-    key: "serper",
-    label: "Serper",
-    description: "Google SERP scraping tuned for speed and breadth",
-    costHint: "≈$0.059/run"
-  },
-  {
-    key: "exa",
-    label: "EXA",
-    description: "Structured event discovery via Exa semantic search",
-    costHint: "≈$0.065/run"
-  },
-  {
-    key: "pplx",
-    label: "Perplexity Search",
-    description: "Direct web search results via Perplexity's Search API",
-    costHint: "≈$0.005/query"
-  },
-  {
     key: "ticketmaster",
     label: "Ticketmaster",
-    description: "Official Ticketmaster Discovery API events",
+    description: "Official Ticketmaster Discovery API — 1,600+ structured Bay Area events",
     costHint: "Free"
   },
-  // Removed: Apyflux and PredictHQ
+  {
+    key: "venue_scraper",
+    label: "Venue Scraper",
+    description: "Events scraped from 197 whitelisted venue calendars (daily refresh)",
+    costHint: "Free"
+  },
+  {
+    key: "whitelist",
+    label: "Whitelist (Legacy)",
+    description: "Legacy web search across trusted domains — may include listing pages",
+    costHint: "Free"
+  },
 ];
 
 const formatSeconds = (ms: number | undefined) => {

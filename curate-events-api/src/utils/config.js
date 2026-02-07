@@ -4,6 +4,7 @@
  * Environment configuration and settings management
  */
 
+import fs from 'fs';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -38,10 +39,10 @@ export const config = {
   
   // API keys - ALL from environment variables
   perplexityApiKey: process.env.PERPLEXITY_API_KEY || process.env.PPLX_API_KEY,
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY,
   apyfluxApiKey: process.env.APYFLUX_API_KEY,
   apyfluxAppId: process.env.APYFLUX_APP_ID,
   apyfluxClientId: process.env.APYFLUX_CLIENT_ID,
-  // Removed PredictHQ
   exaApiKey: process.env.EXA_API_KEY,
   serperApiKey: process.env.SERPER_API_KEY,
   ticketmasterConsumerKey: process.env.TICKETMASTER_CONSUMER_KEY,
@@ -105,6 +106,13 @@ export const config = {
     retryDelay: 1000 // ms
   },
   
+  // Venue scraper configuration
+  venueScraper: {
+    jinaReaderUrl: process.env.JINA_READER_URL || 'https://r.jina.ai',
+    venueEventsCachePath: path.resolve(__dirname, '../../../data/venue-events-cache.json'),
+    venueRegistryPath: path.resolve(__dirname, '../../../data/venue-registry.json')
+  },
+
   // File paths
   paths: {
     root: path.resolve(__dirname, '../../'),
@@ -118,29 +126,31 @@ export const config = {
  * Validate required configuration
  */
 export function validateConfig() {
-  // Only the Perplexity key is strictly required for startup
-  const critical = ['perplexityApiKey'];
+  // Ticketmaster is the backbone - required for startup
+  const critical = ['ticketmasterConsumerKey'];
   const missingCritical = critical.filter(key => !config[key]);
 
   if (missingCritical.length > 0) {
-    throw new Error(`Missing required API keys: ${missingCritical.join(', ')}`);
+    throw new Error(`Missing required API keys: ${missingCritical.join(', ')}. Ticketmaster is the primary event source.`);
   }
 
   // Warn (do not block) when optional provider keys are missing
   const optional = [
-    'exaApiKey', 'serperApiKey',
-    'ticketmasterConsumerKey', 'ticketmasterConsumerSecret'
+    'perplexityApiKey', 'anthropicApiKey', 'exaApiKey', 'serperApiKey',
+    'ticketmasterConsumerSecret'
   ];
   const missingOptional = optional.filter(key => !config[key]);
   if (missingOptional.length > 0) {
     console.warn(`Optional provider keys missing (features disabled by default): ${missingOptional.join(', ')}`);
   }
-  
-  // Validate API key formats
-  if (config.perplexityApiKey && !config.perplexityApiKey.startsWith('pplx-')) {
-    console.warn('Warning: Perplexity API key format may be invalid (should start with pplx-)');
-  }
-  
+
+  // Warn if venue scraper cache is missing
+  try {
+    if (!fs.existsSync(config.venueScraper.venueEventsCachePath)) {
+      console.warn('Venue events cache not found. Run "npm run scrape:venues" to populate it.');
+    }
+  } catch {}
+
   return true;
 }
 

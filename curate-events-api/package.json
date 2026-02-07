@@ -15,9 +15,11 @@
     "test:watch": "jest --watch",
     "test:integration": "jest tests/integration",
     "lint": "eslint src/ --ext .js",
-    "build": "echo 'No build step required for Node.js'"
+    "build": "echo 'No build step required for Node.js'",
+    "scrape:venues": "node scripts/scrape-venues.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
     "chrono-node": "^2.9.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",

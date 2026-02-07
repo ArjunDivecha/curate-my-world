@@ -344,29 +344,35 @@ export class LocationFilter {
 
   /**
    * Extract city from location string
+   * Handles both "City, State" and "Address, City, State" formats
    * @param {string} location - Location string
    * @returns {string} City name
    */
   extractCityFromLocation(location) {
     if (!location) return '';
-    
-    // Handle "City, State" format
-    const parts = location.split(',');
-    return parts[0].trim();
+
+    const parts = location.split(',').map(p => p.trim());
+    if (parts.length >= 3) {
+      // "Address, City, State" → return City (second-to-last)
+      return parts[parts.length - 2];
+    }
+    // "City, State" → return City (first part)
+    return parts[0];
   }
 
   /**
    * Extract state from location string
+   * Handles both "City, State" and "Address, City, State" formats
    * @param {string} location - Location string
    * @returns {string} State name
    */
   extractStateFromLocation(location) {
     if (!location) return '';
-    
-    // Handle "City, State" format
-    const parts = location.split(',');
-    if (parts.length > 1) {
-      return parts[1].trim();
+
+    const parts = location.split(',').map(p => p.trim());
+    if (parts.length >= 2) {
+      // Always return the last part as state
+      return parts[parts.length - 1];
     }
     return '';
   }

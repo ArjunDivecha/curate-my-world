@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,9 +14,10 @@ import { FetchEventsButton, type ProviderStatSummary } from "./FetchEventsButton
 import SuggestedCategories from './SuggestedCategories';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Brain, Eye, EyeOff, Cpu, Mic2, BookOpen, Baby } from "lucide-react";
+import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Brain, Eye, EyeOff, Cpu, Mic2, BookOpen, Baby, RefreshCw } from "lucide-react";
 import { getCategoryColor } from "@/utils/categoryColors";
 import { ProviderControlPanel } from "./ProviderControlPanel";
+import { API_BASE_URL } from "@/utils/apiConfig";
 
 interface Preferences {
   interests: {
@@ -72,16 +73,14 @@ const personalizedPreferences: Preferences = {
 const defaultPreferences: Preferences = personalizedPreferences;
 
 const defaultProviderSelection: Record<string, boolean> = {
-  whitelist: true,
-  serper: true,
-  exa: true,
   ticketmaster: true,
-  pplx: true,
+  venue_scraper: true,
+  whitelist: false,
 };
 
 export const Dashboard = () => {
   // Simple local cache to survive refresh/hot-reload
-  const LOCAL_EVENTS_CACHE_KEY = 'cmw_events_cache_v1';
+  const LOCAL_EVENTS_CACHE_KEY = 'cmw_events_cache_v2';
   const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -99,6 +98,9 @@ export const Dashboard = () => {
   const [selectedProviders, setSelectedProviders] = useState<Record<string, boolean>>(defaultProviderSelection);
   const [providerDetails, setProviderDetails] = useState<ProviderStatSummary[]>([]);
   const [totalProcessingTime, setTotalProcessingTime] = useState<number>(0);
+  const [backgroundRefreshing, setBackgroundRefreshing] = useState(false);
+  const refreshPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const fetchEventsRef = useRef<(() => void) | null>(null);
 
   // Category mapping: Frontend display names to backend API names
   // Current supported categories: music, theatre, comedy, movies, art, food, tech, lectures, kids
@@ -167,6 +169,50 @@ export const Dashboard = () => {
       return changed ? next : prev;
     });
   }, [providerDetails]);
+
+  // Poll for background refresh completion, then auto-refetch
+  const handleBackgroundRefreshing = useCallback((refreshing: boolean) => {
+    setBackgroundRefreshing(refreshing);
+
+    // Clear any existing poll
+    if (refreshPollRef.current) {
+      clearInterval(refreshPollRef.current);
+      refreshPollRef.current = null;
+    }
+
+    if (!refreshing) return;
+
+    // Start polling the lightweight status endpoint every 10s
+    refreshPollRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/events/refresh-status`);
+        const status = await res.json();
+        if (!status.refreshing) {
+          // Scrape finished — stop polling and auto-refetch
+          setBackgroundRefreshing(false);
+          if (refreshPollRef.current) {
+            clearInterval(refreshPollRef.current);
+            refreshPollRef.current = null;
+          }
+          // Trigger a silent re-fetch by clicking the FetchEventsButton programmatically
+          if (fetchEventsRef.current) {
+            fetchEventsRef.current();
+          }
+        }
+      } catch {
+        // Ignore polling errors — keep trying
+      }
+    }, 10_000);
+  }, []);
+
+  // Cleanup poll on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshPollRef.current) {
+        clearInterval(refreshPollRef.current);
+      }
+    };
+  }, []);
 
   const handleSaveToCalendar = (eventId: string) => {
     const event = events.find(e => e.id === eventId);
@@ -527,6 +573,15 @@ export const Dashboard = () => {
             </div>
           </div>
 
+          {/* Background Refresh Indicator */}
+          {backgroundRefreshing && (
+            <div className="mb-6 flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-5 py-3 text-sm text-blue-700 shadow-sm">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              <span className="font-medium">Refreshing venue data in the background&hellip;</span>
+              <span className="text-blue-500">Events will update automatically when ready.</span>
+            </div>
+          )}
+
           {/* Category Filters */}
           <div className="mb-10 space-y-8">
             <h3 className="text-2xl font-bold text-gray-700">Filter by Category</h3>
@@ -562,6 +617,8 @@ export const Dashboard = () => {
                   aiInstructions: preferences.aiInstructions
                 }}
                 selectedProviders={selectedProviders}
+                onBackgroundRefreshing={handleBackgroundRefreshing}
+                fetchRef={fetchEventsRef}
                 onAllEventsFetched={(fetchedEventsByCategory, fetchedCategoryStats, fetchedProviderDetails) => {
                   console.log('✅ Received raw events by category:', fetchedEventsByCategory);
                   console.log('🔑 Raw category keys:', Object.keys(fetchedEventsByCategory));
@@ -630,6 +687,7 @@ export const Dashboard = () => {
                         ticketUrl: event.ticketUrl || event.externalUrl,
                         eventUrl: event.eventUrl || event.externalUrl,
                         aiReasoning: event.aiReasoning || 'Fetched from curated sources.',
+                        imageUrl: event.imageUrl || null,
                         source: event.source,
                         sources: event.sources,
                       };
