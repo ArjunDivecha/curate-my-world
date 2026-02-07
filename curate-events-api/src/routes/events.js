@@ -293,8 +293,8 @@ router.get('/all-categories', async (req, res) => {
         // Filter by re-classified category (e.g. comedy events out of art bucket)
         // Map equivalent category names for matching
         const categoryAliases = {
-          'art': ['art', 'arts', 'visual arts', 'fine art'],
-          'theatre': ['theatre', 'theater', 'arts'],
+          'art': ['art', 'visual arts', 'fine art'],
+          'theatre': ['theatre', 'theater'],
           'comedy': ['comedy', 'standup'],
           'music': ['music'],
           'movies': ['movies', 'film'],

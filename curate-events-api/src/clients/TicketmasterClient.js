@@ -361,7 +361,7 @@ export class TicketmasterClient {
       if (genre === 'fine art' || genre === 'visual arts') return 'art';
       if (genre === 'lecture' || genre === 'seminar') return 'lectures';
       if (genre === 'children' || genre === 'family') return 'kids';
-      return 'arts'; // fallback for segment
+      return 'theatre'; // default: most Arts & Theatre events are theatre
     }
 
     // Miscellaneous — use genre
