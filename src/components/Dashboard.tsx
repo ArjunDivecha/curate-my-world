@@ -80,7 +80,7 @@ const defaultProviderSelection: Record<string, boolean> = {
 
 export const Dashboard = () => {
   // Simple local cache to survive refresh/hot-reload
-  const LOCAL_EVENTS_CACHE_KEY = 'cmw_events_cache_v2';
+  const LOCAL_EVENTS_CACHE_KEY = 'cmw_events_cache_v3';
   const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -99,6 +99,7 @@ export const Dashboard = () => {
   const [providerDetails, setProviderDetails] = useState<ProviderStatSummary[]>([]);
   const [totalProcessingTime, setTotalProcessingTime] = useState<number>(0);
   const [backgroundRefreshing, setBackgroundRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');  // Local search within fetched events
   const refreshPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fetchEventsRef = useRef<(() => void) | null>(null);
 
@@ -317,9 +318,9 @@ export const Dashboard = () => {
   const displayedEvents = React.useMemo(() => {
     // Derive strictly from buckets + activeCategory
     if (!Object.keys(transformedEventsByCategory).length) return [] as any[];
-    
+
     let events: any[] = [];
-    
+
     if (activeCategory === null) {
       events = Object.values(transformedEventsByCategory).flat();
     } else if (activeCategory === 'technology') {
@@ -329,7 +330,7 @@ export const Dashboard = () => {
     } else {
       events = transformedEventsByCategory[activeCategory] || [];
     }
-    
+
     // Apply date filter if selected
     if (selectedDate) {
       const targetDateString = selectedDate.toDateString();
@@ -343,11 +344,22 @@ export const Dashboard = () => {
           return false;
         }
       });
-      console.log(`🔍 Filtered to ${events.length} events for ${targetDateString} in category '${activeCategory || 'all'}'`);
     }
-    
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      events = events.filter(event => {
+        const title = (event.title || '').toLowerCase();
+        const desc = (event.description || '').toLowerCase();
+        const venue = (event.venue?.name || '').toLowerCase();
+        const address = (event.venue?.address || '').toLowerCase();
+        return title.includes(q) || desc.includes(q) || venue.includes(q) || address.includes(q);
+      });
+    }
+
     return events;
-  }, [activeCategory, transformedEventsByCategory, selectedDate]);
+  }, [activeCategory, transformedEventsByCategory, selectedDate, searchQuery]);
 
   useEffect(() => {
     console.log('🧭 Active category:', activeCategory, ' | displayedEvents:', displayedEvents.length, ' | buckets:', Object.keys(transformedEventsByCategory));
@@ -530,31 +542,31 @@ export const Dashboard = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2 text-center">Curate Your Event Feed</h2>
           <p className="text-gray-500 mb-10 text-center">Select your interests and we'll handle the rest.</p>
 
-          {/* AI Instructions & Location */}
+          {/* Search & Location */}
           <div className="bg-gray-50 p-8 rounded-2xl shadow-inner mb-10 border border-gray-200">
             <div className="grid md:grid-cols-2 gap-8">
               <div>
-                <Label htmlFor="ai-instructions" className="block text-lg font-semibold text-gray-700 mb-2">
-                  AI Instructions
+                <Label htmlFor="event-search" className="block text-lg font-semibold text-gray-700 mb-2">
+                  Search Events
                 </Label>
-                <Textarea
-                  id="ai-instructions"
-                  rows={3}
-                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
-                  placeholder="e.g., 'Only show me events with live music.'"
-                  value={preferences.aiInstructions}
-                  onChange={(e) => {
-                    try {
-                      setPreferences(prev => ({
-                        ...prev,
-                        aiInstructions: e.target.value
-                      }));
-                    } catch (error) {
-                      console.error('Error updating AI instructions:', error);
-                      // Silently handle the error to prevent app crash
-                    }
-                  }}
-                />
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Input
+                    id="event-search"
+                    className="w-full pl-10 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+                    placeholder="Search by title, venue, description..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      &times;
+                    </button>
+                  )}
+                </div>
               </div>
               <div>
                 <Label htmlFor="location" className="block text-lg font-semibold text-gray-700 mb-2">
@@ -874,11 +886,16 @@ export const Dashboard = () => {
 
               <TabsContent key={`${activeCategory ?? 'all'}-${selectedDate?.toISOString() ?? 'no-date'}`} value="grid" className="space-y-6">
                 {/* Filter Status Display */}
-                {(activeCategory || selectedDate) && (
+                {(activeCategory || selectedDate || searchQuery.trim()) && (
                   <div className="bg-muted/50 rounded-lg p-4 mb-6 border">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-sm font-medium">Active Filters:</h3>
+                        {searchQuery.trim() && (
+                          <Badge variant="secondary">
+                            Search: "{searchQuery.trim()}"
+                          </Badge>
+                        )}
                         {activeCategory && (
                           <Badge variant="secondary">
                             Category: {activeCategory}
@@ -889,6 +906,7 @@ export const Dashboard = () => {
                             Date: {selectedDate.toLocaleDateString()}
                           </Badge>
                         )}
+                        <span className="text-xs text-muted-foreground">({displayedEvents.length} results)</span>
                       </div>
                       <Button
                         variant="outline"
@@ -896,6 +914,7 @@ export const Dashboard = () => {
                         onClick={() => {
                           setActiveCategory(null);
                           setSelectedDate(null);
+                          setSearchQuery('');
                         }}
                       >
                         Clear Filters

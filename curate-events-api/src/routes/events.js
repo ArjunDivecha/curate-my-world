@@ -35,6 +35,7 @@ import { config } from '../utils/config.js';
 import { eventCache } from '../utils/cache.js';
 import { filterEvents as applyRulesFilter } from '../utils/rulesFilter.js';
 import { filterBlacklistedEvents } from '../utils/listManager.js';
+import { normalizeCategory, SUPPORTED_CATEGORIES } from '../utils/categoryMapping.js';
 
 const router = express.Router();
 const logger = createLogger('EventsRoute');
@@ -290,23 +291,13 @@ router.get('/all-categories', async (req, res) => {
           date_range || 'next 30 days'
         );
 
-        // Filter by re-classified category (e.g. comedy events out of art bucket)
-        // Map equivalent category names for matching
-        const categoryAliases = {
-          'art': ['art', 'visual arts', 'fine art'],
-          'theatre': ['theatre', 'theater'],
-          'comedy': ['comedy', 'standup'],
-          'music': ['music'],
-          'movies': ['movies', 'film'],
-          'food': ['food'],
-          'tech': ['tech', 'technology'],
-          'lectures': ['lectures', 'lecture', 'seminar'],
-          'kids': ['kids', 'family', 'children'],
-        };
-        const allowedCats = categoryAliases[category] || [category];
+        // Filter by normalized category — ensures events land in the correct bucket
+        // Uses centralised normalizeCategory() so "theater" → "theatre", "film" → "movies", etc.
         const categoryFilteredEvents = dateFilterResult.filteredEvents.filter(event => {
           const eventCat = (event.category || '').toLowerCase();
-          return allowedCats.includes(eventCat) || !eventCat;
+          if (!eventCat) return true; // No category — keep in requested bucket
+          const normalized = normalizeCategory(eventCat);
+          return normalized === category;
         });
 
         const sourceStats = {};

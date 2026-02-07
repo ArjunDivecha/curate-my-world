@@ -124,10 +124,8 @@ export const CATEGORY_CONFIG = {
     displayName: 'Art',
     description: 'Art exhibitions, galleries, museums',
     priority: 'high',
-    ticketmaster: {
-      segmentId: 'KZFzniwnSyZfZ7v7na',  // Arts & Theatre segment
-      genreId: null                      // All art-related under this segment
-    },
+    ticketmaster: null,  // Not supported — TM "Arts & Theatre" segment is theatre/comedy, not visual art
+
     searchQueries: [
       'art exhibitions {location}',
       'gallery openings {location}',
@@ -324,28 +322,53 @@ export function normalizeCategory(category) {
     }
   }
   
-  // Common aliases
+  // Common aliases — used for both incoming categories AND bucket filtering
   const aliases = {
     'theater': 'theatre',
+    'performing arts': 'theatre',
+    'performance art': 'theatre',
+    'musical': 'theatre',
+    'broadway': 'theatre',
+    'opera': 'theatre',
+    'dance': 'theatre',
     'concerts': 'music',
+    'concert': 'music',
+    'live music': 'music',
     'film': 'movies',
+    'cinema': 'movies',
+    'screening': 'movies',
     'standup': 'comedy',
     'stand-up': 'comedy',
     'improv': 'comedy',
+    'comedian': 'comedy',
     'family': 'kids',
     'children': 'kids',
     'workshops': 'lectures',
+    'workshop': 'lectures',
     'seminars': 'lectures',
+    'seminar': 'lectures',
     'talks': 'lectures',
+    'lecture': 'lectures',
+    'conference': 'lectures',
     'technology': 'tech',
     'ai': 'tech',
     'artificial-intelligence': 'tech',
     'programming': 'tech',
     'culinary': 'food',
     'wine': 'food',
+    'dining': 'food',
     'galleries': 'art',
+    'gallery': 'art',
     'museums': 'art',
-    'exhibitions': 'art'
+    'museum': 'art',
+    'exhibitions': 'art',
+    'exhibition': 'art',
+    'visual arts': 'art',
+    'fine art': 'art',
+    'arts': 'art',
+    'sports': 'sports',
+    'sport': 'sports',
+    'general': 'general'
   };
   
   return aliases[input] || input;

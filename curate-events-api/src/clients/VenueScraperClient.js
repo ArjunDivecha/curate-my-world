@@ -24,6 +24,7 @@ import path from 'path';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { createLogger } from '../utils/logger.js';
+import { normalizeCategory } from '../utils/categoryMapping.js';
 
 const logger = createLogger('VenueScraperClient');
 
@@ -86,13 +87,21 @@ export class VenueScraperClient {
       if (!venueData.events || !Array.isArray(venueData.events)) continue;
 
       for (const event of venueData.events) {
+        // Normalize event category using central mapping (e.g. "theater" → "theatre")
+        if (event.category) {
+          event.category = normalizeCategory(event.category);
+        }
+
         // Filter by category if specified
         if (category && category !== 'all') {
           const eventCat = (event.category || '').toLowerCase();
           const targetCat = category.toLowerCase();
-          // Allow match on category or venue's default category
-          if (eventCat !== targetCat && (venueData.category || '').toLowerCase() !== targetCat) {
-            continue;
+          // Match on normalized event category; fall back to venue's default only if event has no category
+          if (eventCat) {
+            if (eventCat !== targetCat) continue;
+          } else {
+            // No event category — use venue default
+            if ((venueData.category || '').toLowerCase() !== targetCat) continue;
           }
         }
 
