@@ -1,41 +1,69 @@
 # Environment Variables
 
-This document describes the environment variables required for the Curate My World application.
+Configuration for the Curate My World (Squirtle) application.
 
-## Required Environment Variables
+## Backend (`curate-events-api/.env`)
 
-### Supabase Variables
-These are automatically provided by Supabase when running functions:
+### Required
+| Variable | Description |
+|----------|-------------|
+| `TICKETMASTER_CONSUMER_KEY` | Ticketmaster Discovery API key — backbone provider, validated at startup |
 
-- `SUPABASE_URL` - The Supabase project URL
-- `SUPABASE_SERVICE_ROLE_KEY` - The service role key for accessing Supabase
+### Recommended
+| Variable | Description |
+|----------|-------------|
+| `ANTHROPIC_API_KEY` | Anthropic API key — used by venue scraper for Claude Haiku event extraction |
 
-### API Keys
+### Optional
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NODE_ENV` | `development` | Environment mode |
+| `PORT` | `8765` | Backend server port |
+| `HOST` | `127.0.0.1` | Server bind address (production uses `0.0.0.0`) |
+| `TICKETMASTER_CONSUMER_SECRET` | — | Not currently used |
+| `JINA_READER_URL` | `https://r.jina.ai` | Jina Reader base URL for venue scraping |
+| `LOG_LEVEL` | `debug` (dev) / `info` (prod) | Winston log level |
+| `FRONTEND_URL` | — | Frontend URL for CORS in production |
 
-- `BRAVE_SEARCH_API_KEY` - API key for Brave Search API (required for web scraping)
-- `GOOGLE_MAPS_API_KEY` - API key for Google Maps (optional but recommended for better location filtering)
-- `TICKETMASTER_API_KEY` - API key for Ticketmaster (optional for direct Ticketmaster integration)
-- `EVENTBRITE_API_TOKEN` - API token for Eventbrite (optional for direct Eventbrite integration)
+### Legacy (not required)
+| Variable | Description |
+|----------|-------------|
+| `PERPLEXITY_API_KEY` | Removed provider — no longer used |
+| `EXA_API_KEY` | Removed provider — no longer used |
+| `SERPER_API_KEY` | Removed provider — no longer used |
+| `SERPAPI_API_KEY` | Removed provider — no longer used |
+| `APYFLUX_API_KEY` | Removed provider — no longer used |
 
-## Setting up Environment Variables
+## Frontend (`.env` in project root)
 
-### In Development
+| Variable | Description |
+|----------|-------------|
+| `ANTHROPIC_API_KEY` | For conversation analysis features |
+| `VITE_SUPABASE_URL` | Supabase project URL (if using Supabase) |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anonymous key (if using Supabase) |
 
-Create a `.env.local` file in the root of the project with the following content:
+## Setup
 
-```env
-BRAVE_SEARCH_API_KEY=your_brave_search_api_key
-GOOGLE_MAPS_API_KEY=your_google_maps_api_key
-TICKETMASTER_API_KEY=your_ticketmaster_api_key
-EVENTBRITE_API_TOKEN=your_eventbrite_api_token
+### Development
+
+```bash
+# Backend
+cd curate-events-api
+cp .env.example .env
+# Edit .env and add your TICKETMASTER_CONSUMER_KEY
+
+# Frontend (optional — Supabase features)
+cp .env.example .env
+# Edit .env and add keys if needed
 ```
 
-### In Supabase
+### Startup Validation
 
-Set the environment variables in the Supabase dashboard:
+The backend validates configuration on startup:
+- **Critical**: `TICKETMASTER_CONSUMER_KEY` must be set (server won't start without it)
+- **Warning**: Missing optional keys are logged but don't prevent startup
+- **Warning**: Missing venue events cache prompts a reminder to run `npm run scrape:venues`
 
-1. Go to your Supabase project
-2. Navigate to Settings > Configuration > Environment Variables
-3. Add each required variable with its corresponding value
+---
 
-Note: The Supabase variables (`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`) are automatically provided.
+**Last Updated**: February 2026

@@ -1,77 +1,54 @@
 # Curate Events API
 
-Simple, reliable Node.js API server that uses Perplexity AI to collect real-world events. This replaces the problematic Supabase Edge Function approach.
+Node.js Express backend for Squirtle event curation. Aggregates events from Ticketmaster and a venue calendar scraper, applies quality validation, and serves them to the frontend.
 
 ## Architecture
 
 ```
-Frontend → Node.js API Server → Perplexity API
-          ↳ Returns 30+ events like proven tests
+Frontend → Express API Server
+              ├── Ticketmaster Discovery API (backbone)
+              ├── Venue Scraper Cache Reader (gap filler)
+              └── Event Validator (quality gate)
 ```
 
 ## Quick Start
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+cp .env.example .env       # Add your TICKETMASTER_CONSUMER_KEY
+npm run dev                 # Starts on port 8765 with --watch
+```
 
-2. **Configure environment:**
-   ```bash
-   cp .env.example .env
-   # Edit .env and add your PERPLEXITY_API_KEY
-   ```
+## Environment Variables
 
-3. **Start development server:**
-   ```bash
-   npm run dev
-   ```
+```bash
+# REQUIRED
+TICKETMASTER_CONSUMER_KEY=your_key    # Backbone provider, validated at startup
 
-4. **Test the API:**
-   ```bash
-   curl http://localhost:8765/api/events/theatre?location=NYC
-   ```
+# RECOMMENDED
+ANTHROPIC_API_KEY=your_key            # For venue scraper (Claude Haiku extraction)
+
+# OPTIONAL
+NODE_ENV=development
+PORT=8765
+HOST=127.0.0.1
+```
 
 ## API Endpoints
 
-### GET /api/events/:category
-Fetch events for a specific category.
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/events/all-categories` | All events grouped by category |
+| `GET /api/events/:category` | Events for a specific category |
+| `GET /api/events/categories` | List supported categories |
+| `GET /api/health` | Basic health check |
+| `GET /api/health/deep` | Detailed health with provider status |
 
-**Parameters:**
-- `category` - Event category (theatre, music, comedy, etc.)
-- `location` - Location query (e.g., "NYC", "San Francisco")
-- `date_range` - Optional date range (e.g., "this weekend", "next month")
-
-**Example:**
-```bash
-GET /api/events/theatre?location=NYC&date_range=this weekend
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "events": [
-    {
-      "title": "Event Title",
-      "venue": "Venue Name",
-      "date": "2024-01-15",
-      "time": "8:00 PM",
-      "location": "123 Main St, NYC",
-      "description": "Event description...",
-      "price": "$25-$75",
-      "website": "https://example.com",
-      "category": "theatre"
-    }
-  ],
-  "count": 15,
-  "query": {
-    "category": "theatre",
-    "location": "NYC",
-    "date_range": "this weekend"
-  }
-}
-```
+**Query Parameters:**
+- `location` — Location string (default: San Francisco Bay Area)
+- `limit` — Max events per provider (default: 50)
+- `providers` — Comma-separated: `ticketmaster,venue_scraper,whitelist`
+- `date` — Date filter (ISO format)
 
 ## Project Structure
 
@@ -79,44 +56,74 @@ GET /api/events/theatre?location=NYC&date_range=this weekend
 curate-events-api/
 ├── src/
 │   ├── clients/
-│   │   └── PerplexityClient.js    # Direct API wrapper
-│   ├── parsers/
-│   │   ├── EventParser.js         # Response parsing logic
-│   │   └── ResponseValidator.js   # Validation utilities
-│   ├── managers/
-│   │   └── CategoryManager.js     # Prompt & category config
-│   ├── pipeline/
-│   │   └── EventPipeline.js       # Orchestration logic
+│   │   ├── TicketmasterClient.js    # Ticketmaster Discovery API
+│   │   ├── VenueScraperClient.js    # Cache reader + stale-while-revalidate
+│   │   └── WhitelistClient.js       # Legacy whitelist (disabled by default)
 │   ├── routes/
-│   │   ├── events.js              # Event API endpoints
-│   │   └── health.js              # Health check endpoint
+│   │   ├── events.js                # Main API routes (three-layer pipeline)
+│   │   └── health.js                # Health check endpoints
 │   ├── utils/
-│   │   ├── logger.js              # Logging utility
-│   │   └── config.js              # Configuration
-│   └── server.js                  # Express server
+│   │   ├── categoryMapping.js       # Category normalization (single source of truth)
+│   │   ├── eventValidator.js        # Quality gate (rejects listing pages)
+│   │   ├── locationFilter.js        # Bay Area geographic filtering
+│   │   ├── dateFilter.js            # Date range filtering
+│   │   ├── eventDeduplicator.js     # Cross-source dedup
+│   │   ├── config.js                # Environment configuration
+│   │   ├── rulesFilter.js           # Custom rules filtering
+│   │   ├── listManager.js           # Blacklist management
+│   │   ├── cache.js                 # Request caching
+│   │   └── logger.js                # Winston logging
+│   └── server.js                    # Express server entry point
+├── scripts/
+│   └── scrape-venues.js             # Jina Reader + Claude Haiku venue scraper
 ├── tests/
-│   └── integration/
 ├── package.json
-├── .env.example
-└── README.md
+└── .env.example
 ```
 
-## Deployment
+## Venue Scraper
 
-Ready for deployment on:
-- Vercel
-- Railway  
-- Traditional hosting
-- Docker containers
+The venue scraper populates `data/venue-events-cache.json` by:
+1. Reading 286 venue definitions from `data/venue-registry.json`
+2. Fetching each venue's calendar page via Jina Reader (`https://r.jina.ai/{url}`)
+3. Sending the markdown to Claude Haiku for structured event extraction
+4. Saving results incrementally to the cache file
 
-## Environment Variables
+```bash
+npm run scrape:venues        # Full scrape (~15 min, ~$0.05)
+npm run scrape:retry         # Retry only failed venues
+```
 
-See `.env.example` for all configuration options.
+The `VenueScraperClient` reads this cache at request time (instant, no network calls) and triggers a background refresh when the cache is > 24h old (stale-while-revalidate).
 
-Required:
-- `PERPLEXITY_API_KEY` - Your Perplexity API key
+## Categories
 
-Optional:
-- `PORT` - Server port (default: 8765)
-- `NODE_ENV` - Environment (development/production)
-- `FRONTEND_URL` - Frontend URL for CORS
+9 supported categories defined in `categoryMapping.js`:
+
+| Category | TM Supported | Description |
+|----------|-------------|-------------|
+| music | Yes | Concerts, live music, festivals |
+| theatre | Yes | Plays, musicals, opera, dance |
+| comedy | Yes | Stand-up, improv |
+| movies | Yes | Film screenings, premieres |
+| art | **No** | Galleries, exhibitions, museums |
+| food | No | Culinary events, wine tastings |
+| tech | No | Meetups, hackathons, conferences |
+| lectures | Yes | Talks, seminars, workshops |
+| kids | Yes | Family events, children's activities |
+
+## Scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm start` | Start production server |
+| `npm run dev` | Start with --watch |
+| `npm test` | Run Jest tests |
+| `npm run scrape:venues` | Full venue scrape |
+| `npm run scrape:retry` | Retry failed venues |
+| `npm run lint` | ESLint |
+
+---
+
+**Last Updated**: February 2026
+**Architecture**: v2.0 — Three-layer pipeline

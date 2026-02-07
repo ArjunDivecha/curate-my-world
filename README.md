@@ -1,395 +1,331 @@
-# 🐢 Squirtle - AI-Powered Personalized Event Curation System
+# Squirtle - AI-Powered Bay Area Event Curation
 
-> **Revolutionary event discovery powered by conversation analysis and Claude Sonnet 4**
+> **Personalized event discovery for the San Francisco Bay Area, powered by Ticketmaster + venue calendar scraping**
 
-[![GitHub](https://img.shields.io/badge/GitHub-Squirtle-blue?logo=github)](https://github.com/ArjunDivecha/Squirtle)
-[![AI](https://img.shields.io/badge/AI-Claude%20Sonnet%204-purple)](https://www.anthropic.com/)
-[![React](https://img.shields.io/badge/Frontend-React%20%2B%20TypeScript-blue)](https://reactjs.org/)
-[![Node.js](https://img.shields.io/badge/Backend-Node.js%20%2B%20Express-green)](https://nodejs.org/)
+## What Is Squirtle
 
-## 🎯 What Makes Squirtle Special
+Squirtle is a local event curation system that aggregates events from two complementary sources — Ticketmaster (for major ticketed events) and a venue calendar scraper (for independent/local venues) — and presents them in a clean, searchable dashboard organized by category.
 
-Squirtle is the world's first **conversation-aware event curation system** that analyzes your chat history using Claude Sonnet 4 to understand your true interests and deliver hyper-personalized event recommendations. No more generic event lists – get events that actually match who you are.
+**Key features:**
+- **Two-source aggregation**: Ticketmaster API (backbone) + venue calendar scraper (gap filler)
+- **9 event categories**: Music, Theatre, Comedy, Movies, Art, Food, Tech, Lectures, Kids
+- **Event search**: Filter displayed events by title, venue, description, or address
+- **Quality gate**: Event validator rejects listing pages, out-of-area events, and placeholder entries
+- **Central category normalization**: 40+ aliases ensure events land in the right bucket
+- **Bay Area focus**: Geographic filtering for 60+ cities in the SF Bay Area
 
-### 🧠 **Revolutionary AI Personalization**
+## Architecture
 
-- **Deep Conversation Analysis**: Processes thousands of conversations with Claude Sonnet 4
-- **Interest Extraction**: Identifies categories, preferences, personality traits, and lifestyle factors
-- **Dynamic Prompt Generation**: Creates personalized AI instructions for event curation
-- **Behavioral Learning**: Understands your learning style, social preferences, and event patterns
-- **Real-time Adaptation**: Continuously refines recommendations based on feedback
-
-### 🔍 **Comprehensive Multi-Source Discovery**
-
-- **Perplexity AI**: AI-curated events with intelligent context understanding
-- **Apyflux**: Comprehensive venue database with rich event metadata
-- **PredictHQ**: Attendance predictions and local event impact rankings
-- **Portfolio Scraping**: Direct venue website integration for exclusive events
-- **Smart Deduplication**: Advanced algorithms merge events across all sources
-
-### 🎨 **Intelligent Frontend Experience**
-
-- **Personalized Dashboard**: Categories automatically derived from conversation analysis
-- **AI-Generated Keywords**: Search terms extracted from your interests and discussions
-- **Adaptive Filtering**: Time, price, and format preferences learned from your behavior
-- **Interactive Calendar**: Weekly view with intelligent event scheduling
-- **Real-time Updates**: Live event fetching with personalized scoring
-
-## 🚀 **Live Demo & Repository**
-
-**🌟 Main Repository**: [github.com/ArjunDivecha/Squirtle](https://github.com/ArjunDivecha/Squirtle)
-
-**Quick Start**:
-### 🎯 Intelligent Event Categorization
-Our advanced categorization engine solves the common problem of events being miscategorized (e.g., music events labeled as food). The system uses:
-
-#### **Multi-Layer Analysis**:
-1. **Location-Specific Venue Learning** (70% weight)
-   - Automatically learns venue-category associations per location
-   - Builds persistent knowledge database (`/curate-events-api/data/learned-venues.json`)
-   - High confidence scoring for known venue patterns
-
-2. **Generic Venue Pattern Matching** (30-60% weight)
-   - Universal venue type detection (e.g., "symphony hall" → music, "art gallery" → art)
-   - Works across all global locations, not just specific cities
-   - Covers 700+ common venue patterns across all categories
-
-3. **Content Keyword Analysis** (40% weight)
-   - Natural language processing of event titles and descriptions
-   - Context-aware keyword matching with confidence scoring
-   - Handles synonyms and category aliases
-
-#### **Categories Supported**:
-- **Music**: Concerts, live performances, festivals
-- **Theatre**: Plays, musicals, drama performances  
-- **Art**: Exhibitions, galleries, cultural events
-- **Food**: Culinary experiences, tastings, food festivals
-- **Movies**: Film screenings, premieres, cinema events
-- **Tech**: Conferences, meetups, innovation events
-- **Education**: Lectures, workshops, academic events
-
-#### **Performance Metrics**:
-- **Accuracy**: 100% on test cases (5/5 correct categorizations)
-- **Confidence Threshold**: 60% minimum for recategorization
-- **Learning Rate**: Improves with each processed event
-- **Global Scalability**: Works for any location worldwide
-
-## 🔌 Data Sources (Backend API)
-
-The backend integrates **5 data sources** in parallel for comprehensive event coverage:
-
-### 1. Perplexity API ✅ 
-- **Status**: Active, working with enhanced URL extraction
-- **Type**: AI-powered search and content parsing
-- **Strengths**: High-quality event descriptions, intelligent categorization, extracted event URLs
-- **Coverage**: 3-15 events per request
-- **Processing Time**: ~20-25 seconds (AI analysis)
-- **Recent Improvements**: Enhanced URL extraction from event descriptions and content
-
-### 2. Apyflux API ❌
-- **Status**: Experiencing 403 errors (API key issues)
-- **Type**: Comprehensive event database
-- **Strengths**: Rich venue metadata, ticket links, ratings
-- **Coverage**: 10-50 events per request when working
-- **Processing Time**: ~1-2 seconds
-
-### 3. PredictHQ API ⚠️
-- **Status**: Active but with location filtering issues (fixed)
-- **Type**: Event impact and attendance predictions
-- **Strengths**: Local event rankings, attendance forecasts
-- **Coverage**: 15-50 events per request
-- **Processing Time**: ~300-700ms
-- **Issue Fixed**: Was returning events from incorrect locations (Missouri, New York, etc.)
-- **Solution**: Post-processing location filter removes 50-60% of incorrectly located events
-
-### 4. Exa API ✅
-- **Status**: Active, working with enhanced URL extraction
-- **Type**: AI-powered web search for events
-- **Strengths**: Finds events from any website, comprehensive coverage, direct event URLs
-- **Coverage**: 10-15 events per request
-- **Processing Time**: ~3-4 seconds
-- **Recent Improvements**: Added externalUrl field for frontend compatibility
-
-### 5. SerpAPI ✅
-- **Status**: Active, working with good location accuracy
-- **Type**: Google Events search integration
-- **Strengths**: Real-time Google Events data, structured results, accurate Bay Area filtering
-- **Coverage**: 10 events per request
-- **Processing Time**: ~150-200ms (fastest) responses
-
-## 🚀 Current System Status
-
-### ✅ Production Ready Components
-- **Multi-Source Integration**: All 5 APIs working in parallel
-- **AI-Powered Categorization**: 100% accuracy content-based event categorization
-- **Enhanced URL Extraction**: Comprehensive event URL extraction from all sources
-- **Smart Location Filtering**: Geographic filtering removes events from incorrect locations
-- **Location-Aware Learning**: Automatic venue learning system for global scalability
-- **Smart Deduplication**: Cross-source duplicate detection and merging
-- **Security**: All API keys properly secured in environment variables
-
-### 🆕 Recent Improvements (August 2025)
-
-#### **Enhanced Event URL Extraction**
-- **Problem Solved**: Event Page buttons weren't appearing due to missing URLs
-- **Solution**: Added comprehensive URL extraction from event descriptions and content
-- **Coverage**: Now extracts URLs from Perplexity, Exa, and other text-based sources
-- **Prioritization**: Favors event platforms (Eventbrite, Meetup, Lu.ma, Facebook Events)
-- **Result**: 90%+ of events now have clickable Event Page buttons with hover preview
-
-#### **Smart Location Filtering System**
-- **Problem Solved**: PredictHQ was returning events from incorrect locations (Missouri, New York, etc.)
-- **Solution**: Post-processing geographic filter with Bay Area intelligence
-- **Accuracy**: Removes 50-63% of incorrectly located events
-- **Bay Area Aware**: Recognizes 60+ Bay Area cities for San Francisco searches
-- **Configurable**: 50km radius, strict/loose modes, neighboring state detection
-- **Result**: Only location-relevant events displayed to users
-- **Performance**: Sub-second response times for most sources
-- **Error Handling**: Graceful fallbacks and comprehensive logging
-- **Partner Collaboration**: Environment-based configuration ready
-
-### 🔧 Recent Major Updates (August 2025)
-- **🎯 AI Categorization System**: Revolutionary content-based categorization that prevents miscategorization
-- **🌍 Global Venue Learning**: Location-aware venue pattern learning for worldwide scalability
-- **🧪 100% Test Accuracy**: Verified categorization accuracy with comprehensive test cases
-- **🔐 Security Overhaul**: Moved all hardcoded API keys to `.env` configuration
-- **🔗 Architecture Fix**: Integrated all 5 sources (was only using Perplexity before)
-- **📊 Enhanced Analytics**: Added categorization confidence scoring and venue learning metrics
-- **⚡ Performance Optimization**: Improved categorization processing with intelligent caching
-
-## 📝 Setup Instructions
-
-### For New Team Members
-
-1. **Clone Repository**
-   ```bash
-   git clone https://github.com/ArjunDivecha/curate-my-world
-   cd curate-my-world
-   ```
-
-2. **Frontend Setup**
-   ```bash
-   npm install
-   npm run dev  # Starts on port 8766
-   ```
-
-3. **AI & Personalization Setup** (Main `.env` file)
-   ```bash
-   # Copy and configure main environment file for AI features
-   cp .env.example .env
-   ```
-   
-   **Required AI API Keys** (`.env` in project root):
-   ```bash
-   # REQUIRED: For conversation analysis and personalization
-   ANTHROPIC_API_KEY=your_anthropic_claude_key_here
-   OPENAI_API_KEY=your_openai_key_here  # Optional fallback
-   
-   # Optional: For additional AI features
-   PERPLEXITY_API_KEY=your_perplexity_key_here
-   BRAVE_API_KEY=your_brave_search_key_here
-   ```
-
-4. **Backend Setup**
-   ```bash
-   cd curate-events-api
-   npm install
-   cp .env.example .env  # Then add your API keys
-   node server.js        # Starts on port 8765
-   ```
-
-5. **Required Environment Variables** (`.env` in `curate-events-api/`)
-   ```bash
-   # ALL 5 DATA SOURCES
-   PERPLEXITY_API_KEY=your_key_here
-   APYFLUX_API_KEY=your_key_here
-   APYFLUX_APP_ID=your_app_id_here
-   APYFLUX_CLIENT_ID=your_client_id_here
-   PREDICTHQ_API_KEY=your_key_here
-   EXA_API_KEY=your_key_here
-   SERPAPI_API_KEY=your_key_here
-   
-   # Server Configuration
-   NODE_ENV=development
-   PORT=8765
-   HOST=127.0.0.1
-   ```
-
-### Testing the System
-
-```bash
-# Health check
-curl http://127.0.0.1:8765/api/health
-
-# Test event fetching with AI categorization (all 5 sources)
-curl "http://127.0.0.1:8765/api/events/music?location=San%20Francisco&limit=10"
-
-# Test categorization system directly
-cd curate-events-api && node test-categorization.js
-
-# Test venue learning statistics
-curl "http://127.0.0.1:8765/api/venue-stats"
+```
+Frontend (React + TypeScript + Vite, port 8766)
+    ↓
+Backend API (Node.js + Express, port 8765)
+    ├── Layer 1: Ticketmaster API (backbone - structured, ticketed events)
+    ├── Layer 2: Venue Calendar Scraper (gap filler - 286 local venues)
+    └── Layer 3: Event Validator (quality gate on all events)
 ```
 
-## 🗂️ Key File Locations
+### Three-Layer Event Pipeline
 
-### Configuration & Security
-- **API Keys**: `curate-events-api/.env` (NOT in git)
-- **Key Template**: `curate-events-api/.env.example` (in git)
-- **Config Logic**: `curate-events-api/src/utils/config.js`
-- **Validation**: Environment variable validation in config.js
+**Layer 1 — Ticketmaster API (backbone)**
+- ~1,600+ structured Bay Area events with real prices, URLs, dates
+- Covers: Music (800+), Arts/Theatre (400+), Sports (200+), Film, Misc
+- Built-in location filtering via DMA and lat/long
 
-### Backend API Structure
-- **API Clients**: `curate-events-api/src/clients/` (5 data source clients)
-- **Main Routes**: `curate-events-api/src/routes/events.js` (multi-source integration)
-- **Orchestration**: `curate-events-api/src/pipeline/EventPipeline.js`
-- **AI Categorization**: `curate-events-api/src/parsers/EventParser.js` (intelligent categorization)
-- **Venue Learning**: `curate-events-api/src/managers/VenueManager.js` (location-aware learning)
-- **Category Management**: `curate-events-api/src/managers/CategoryManager.js` (universal patterns)
-- **Deduplication**: `curate-events-api/src/utils/eventDeduplicator.js`
-- **Learned Data**: `curate-events-api/data/learned-venues.json` (persistent venue knowledge)
+**Layer 2 — Venue Calendar Scraper (gap filler)**
+- Scrapes 286 Bay Area venue websites via Jina Reader + Claude Haiku
+- Fills gaps Ticketmaster doesn't cover: galleries, independent theatres, food events, tech meetups
+- Results cached in `data/venue-events-cache.json` (~800+ events)
+- Stale-while-revalidate: auto-refreshes when cache > 24h old
 
-### Frontend Components
-- **Main Dashboard**: `src/components/Dashboard.tsx`
-- **Event Display**: `src/components/EventCard.tsx` 
-- **Calendar View**: `src/components/WeeklyCalendar.tsx`
-- **UI Components**: `src/components/ui/` (shadcn-ui components)
+**Layer 3 — Event Validator (quality gate)**
+- Rejects listing/calendar pages (URLs ending in /events/, /calendar/, etc.)
+- Rejects events without dates or with placeholder venues
+- Filters out non-Bay Area events
+- Applied to ALL events from all sources
 
-## 🔍 API Endpoints
+### Categorization System
 
-### Backend API (Port 8765)
-- `GET /api/health` - System health check
-- `GET /api/health/deep` - Detailed health with all sources
-- `GET /api/events/:category` - Multi-source event aggregation with AI categorization
-  - **Parameters**: `location`, `limit`, `date_range`
-  - **Categories**: `music`, `theatre`, `comedy`, `art`, `food`, `sports`, `movies`, `tech`, `education`
-  - **Response**: Unified events from all active sources with categorization analytics and venue learning stats
+Single source of truth: `categoryMapping.js` with `normalizeCategory()` function
 
-### Example Response Structure
-```json
-{
-  "success": true,
-  "events": [...],
-  "count": 17,
-  "sources": ["perplexity_api", "predicthq_api", "exa_fast", "serpapi"],
-  "sourceStats": {
-    "perplexity": {"count": 3, "processingTime": "22027ms"},
-    "predicthq": {"count": 5, "processingTime": 706},
-    "exa": {"count": 5, "processingTime": 3621},
-    "serpapi": {"count": 5, "processingTime": 167}
-  },
-  "categorization": {
-    "totalAnalyzed": 17,
-    "recategorized": 3,
-    "avgConfidence": 0.84,
-    "venuesLearned": 5,
-    "categoryChanges": {
-      "food->music": 1,
-      "music->art": 1,
-      "theatre->food": 1
-    }
-  },
-  "deduplication": {
-    "totalProcessed": 18,
-    "duplicatesRemoved": 1,
-    "duplicateGroups": 17
-  },
-  "locationFilter": {
-    "preFilterCount": 30,
-    "postFilterCount": 17,
-    "removedCount": 13,
-    "removalRate": "43.3%"
-  },
-  "venueIntelligence": {
-    "knownVenues": 127,
-    "locationsTracked": 8,
-    "avgVenueConfidence": 0.91
-  }
-}
+**9 Supported Categories:**
+| Category | Ticketmaster | Venue Scraper | Notes |
+|----------|-------------|---------------|-------|
+| Music | Segment: Music | Yes | Concerts, live music, festivals |
+| Theatre | Segment: Arts & Theatre (Theatre genre) | Yes | Plays, musicals, opera, dance |
+| Comedy | Segment: Arts & Theatre (Comedy genre) | Yes | Stand-up, improv |
+| Movies | Segment: Film | Yes | Screenings, premieres |
+| Art | **Not supported** | Yes | TM "Arts & Theatre" is theatre/comedy, not visual art |
+| Food | Not supported | Yes | Culinary events, wine tastings |
+| Tech | Not supported | Yes | Meetups, hackathons, AI conferences |
+| Lectures | Segment: Miscellaneous (Lecture genre) | Yes | Talks, seminars, workshops |
+| Kids | Segment: Miscellaneous (Family genre) | Yes | Family events, children's activities |
+
+**Key normalization aliases:** `theater`→`theatre`, `performing arts`→`theatre`, `concert`→`music`, `film`→`movies`, `standup`→`comedy`, `family`→`kids`, `gallery`→`art`, `workshop`→`lectures`
+
+## Data Sources
+
+### Ticketmaster Discovery API
+- **Status**: Active (primary source)
+- **API Key**: `TICKETMASTER_CONSUMER_KEY` (required at startup)
+- **Performance**: ~1-2 seconds per category request
+- **Coverage**: ~1,600+ Bay Area events across music, theatre, comedy, sports, film
+
+### Venue Calendar Scraper
+- **Status**: Active (supplementary source)
+- **Registry**: 286 Bay Area venues in `data/venue-registry.json`
+- **How it works**: Jina Reader fetches venue calendar pages → Claude Haiku extracts structured events
+- **Cache**: `data/venue-events-cache.json` (~800+ events)
+- **Cost**: ~$0.05 per full 286-venue scrape
+- **Refresh**: Run `npm run scrape:venues` or auto-refreshes when cache > 24h old
+- **Retry failed**: `npm run scrape:retry` re-scrapes only venues that errored
+
+### Removed Providers (pre-Feb 2026)
+The following providers were removed during the v2.0 architecture overhaul:
+- Perplexity LLM (hallucinated event details)
+- Perplexity Search / Serper (returned listing pages, not events)
+- Exa API (low quality results)
+- Apyflux (API issues, discontinued)
+- SerpAPI (Google Events endpoint unreliable)
+- Super-Hybrid experiment (deprecated)
+
+## Quick Start
+
+### Prerequisites
+- Node.js >= 18
+- Ticketmaster API key ([get one here](https://developer.ticketmaster.com/))
+- Anthropic API key (for venue scraper's Claude Haiku extraction)
+- Jina Reader (free, no key needed — `https://r.jina.ai`)
+
+### Setup
+
+```bash
+# Clone and install
+git clone https://github.com/ArjunDivecha/curate-my-world
+cd curate-my-world
+
+# Frontend
+npm install
+
+# Backend
+cd curate-events-api
+npm install
+cp .env.example .env  # Then add your API keys
 ```
 
-## 🛠️ Development Workflow
+### Environment Variables (`curate-events-api/.env`)
 
-### Start Services
 ```bash
-# Frontend (from root)
-npm run dev
+# REQUIRED — Ticketmaster is the backbone
+TICKETMASTER_CONSUMER_KEY=your_ticketmaster_key
 
-# Backend (from curate-events-api/)
-node server.js
+# RECOMMENDED — For venue scraper (Claude Haiku extraction)
+ANTHROPIC_API_KEY=your_anthropic_key
 
-# Or use the convenience scripts
+# Server
+NODE_ENV=development
+PORT=8765
+HOST=127.0.0.1
+```
+
+### Run
+
+```bash
+# Start backend (from curate-events-api/)
+npm run dev                  # Development with --watch
+npm start                    # Production
+
+# Start frontend (from project root)
+npm run dev                  # Vite dev server on port 8766
+
+# Or start everything
 ./scripts/start-all.sh
 ```
 
-### Git Workflow
-- **Main Branch**: `main`
-- **Recent Commits**: 
-  - `3299fa4`: Security improvements (API key migration)
-  - `f375541`: Multi-source integration
-  - `d8a347d`: Category name fixes
+### Populate Venue Scraper Cache
 
-## 🚨 Security Notes
+```bash
+cd curate-events-api
+npm run scrape:venues        # Full scrape of all 286 venues (~15 min)
+npm run scrape:retry         # Retry only failed venues
+```
 
-### ✅ Secure (Current State)
-- All API keys in `.env` files (excluded from git)
-- Environment-based configuration
-- No hardcoded credentials in source code
-- Partner collaboration template (`.env.example`)
+## API Endpoints
 
-### ⚠️ Previous Issues (Fixed)
-- Hardcoded API keys in `config.js` and `ApyfluxClient.js` (removed)
-- Missing environment variable validation (added)
-- No collaboration template (created `.env.example`)
+### Backend API (port 8765)
 
-## 📊 Performance Benchmarks
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/events/all-categories` | All events grouped by category |
+| `GET /api/events/:category` | Events for a specific category |
+| `GET /api/events/categories` | List supported categories |
+| `GET /api/health` | Basic health check |
+| `GET /api/health/deep` | Detailed health with provider status |
 
-### Response Times (as of Aug 2025)
-- **SerpAPI**: ~167ms (fastest)
-- **PredictHQ**: ~700ms (good)
-- **Exa**: ~3.6s (acceptable for comprehensive search)
-- **Perplexity**: ~22s (AI processing, high quality)
-- **Apyflux**: Currently experiencing API errors
+**Query Parameters:**
+- `location` — Location string (default: San Francisco Bay Area)
+- `limit` — Max events per provider (default: 50)
+- `providers` — Comma-separated: `ticketmaster,venue_scraper,whitelist`
+- `date` — Date filter (ISO format)
 
-### System Metrics
-- **Deduplication Rate**: ~5-10% of events are duplicates across sources
-- **Total Coverage**: 15-20 events per request from 4 active sources
-- **Error Rate**: <1% for configured sources
-- **Memory Usage**: ~26MB backend, stable
+**Example:**
+```bash
+curl "http://127.0.0.1:8765/api/events/music?location=San%20Francisco&limit=20&providers=ticketmaster,venue_scraper"
+```
 
-## 🤝 Team Collaboration
+### Response Format
 
-### For Partners/Collaborators
-1. Contact project owner for API keys
-2. Use `.env.example` template to create local `.env`
-3. Backend will validate all required keys on startup
-4. System will fail gracefully if keys are missing/invalid
+```json
+{
+  "success": true,
+  "eventsByCategory": {
+    "Music": [...],
+    "Theatre": [...],
+    "Comedy": [...]
+  },
+  "categoryStats": { "Music": 50, "Theatre": 20 },
+  "totalEvents": 150,
+  "processingTime": "1.2s",
+  "providerStats": [...],
+  "providerDetails": [...]
+}
+```
 
-### Development Guidelines
-- Always test with multiple data sources
-- Verify AI categorization accuracy using test scripts
-- Check source statistics and categorization analytics in API responses
-- Monitor venue learning progression and confidence scores
-- Test with various locations to ensure global scalability
-- Use health endpoints for system monitoring
+### Event Format
 
-## 📚 Additional Documentation
+```json
+{
+  "id": "unique-id",
+  "title": "Event Name",
+  "description": "...",
+  "startDate": "2026-02-15T20:00:00",
+  "endDate": "2026-02-15T22:00:00",
+  "venue": { "name": "The Fillmore", "address": "1805 Geary Blvd" },
+  "category": "music",
+  "price": "$45-$85",
+  "ticketUrl": "https://...",
+  "eventUrl": "https://...",
+  "source": "ticketmaster"
+}
+```
 
-- **Environment Setup**: See `ENVIRONMENT.md`
-- **Port Management**: See `PORT_MANAGEMENT.md`
-- **Product Requirements**: See `PRD.md`
-- **Supabase Functions**: See `supabase/functions/`
+## Project Structure
 
-## 🔗 External Links
+```
+curate-my-world/
+├── src/                              # Frontend (React + TypeScript)
+│   ├── components/
+│   │   ├── Dashboard.tsx             # Main dashboard with search and event display
+│   │   ├── EventCard.tsx             # Individual event card
+│   │   ├── WeeklyCalendar.tsx        # Calendar view
+│   │   ├── ProviderControlPanel.tsx  # Toggle Ticketmaster / Venue Scraper
+│   │   └── ui/                       # shadcn/ui primitives
+│   ├── hooks/
+│   ├── lib/
+│   └── utils/
+├── curate-events-api/                # Backend (Node.js + Express)
+│   ├── src/
+│   │   ├── clients/
+│   │   │   ├── TicketmasterClient.js # Ticketmaster Discovery API
+│   │   │   ├── VenueScraperClient.js # Cache reader + stale-while-revalidate
+│   │   │   └── WhitelistClient.js    # Legacy whitelist (disabled by default)
+│   │   ├── routes/
+│   │   │   ├── events.js             # Main API routes (three-layer pipeline)
+│   │   │   └── health.js             # Health check endpoints
+│   │   └── utils/
+│   │       ├── categoryMapping.js    # Single source of truth for categories
+│   │       ├── eventValidator.js     # Quality gate (rejects listing pages)
+│   │       ├── locationFilter.js     # Bay Area geographic filtering
+│   │       ├── dateFilter.js         # Date range filtering
+│   │       ├── config.js             # Environment configuration
+│   │       └── eventDeduplicator.js  # Cross-source dedup
+│   ├── scripts/
+│   │   └── scrape-venues.js          # Jina Reader + Claude Haiku scraper
+│   └── package.json
+├── data/
+│   ├── venue-registry.json           # 286 Bay Area venues with calendar URLs
+│   └── venue-events-cache.json       # Scraped events cache (~800+ events)
+└── scripts/
+    └── start-all.sh                  # Start frontend + backend
+```
 
-- **Lovable Project**: https://lovable.dev/projects/1f3ba898-a1c1-461e-9ff3-7d241f2d501d
-- **GitHub Repository**: https://github.com/ArjunDivecha/curate-my-world
-- **API Documentation**: Available via health endpoints
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `curate-events-api/src/routes/events.js` | Main API routes — three-layer event pipeline |
+| `curate-events-api/src/utils/categoryMapping.js` | Category normalization (40+ aliases) |
+| `curate-events-api/src/clients/VenueScraperClient.js` | Reads venue cache, stale-while-revalidate |
+| `curate-events-api/src/utils/eventValidator.js` | Quality gate — rejects listing pages |
+| `curate-events-api/scripts/scrape-venues.js` | Venue scraper (Jina + Claude Haiku) |
+| `data/venue-registry.json` | 286 Bay Area venue definitions |
+| `data/venue-events-cache.json` | Scraped events cache |
+| `src/components/Dashboard.tsx` | Frontend dashboard with search |
+
+## Event Pipeline Flow
+
+```
+1. Frontend sends request: GET /api/events/all-categories?providers=ticketmaster,venue_scraper
+
+2. Backend fetches from enabled providers in parallel:
+   ├── Ticketmaster: API call with category/location filters
+   └── Venue Scraper: reads local cache (instant)
+
+3. All events pass through pipeline:
+   ├── Deduplication (cross-source)
+   ├── Rules filter
+   ├── Blacklist filter
+   ├── Event Validator (quality gate)
+   ├── Location filter (Bay Area)
+   ├── Date filter
+   └── Category filter (normalizeCategory)
+
+4. Events grouped by category, returned to frontend
+```
+
+## Development
+
+### Testing
+```bash
+cd curate-events-api
+npm test                     # Jest tests
+npm run test:watch           # Watch mode
+
+# Manual API testing
+curl http://127.0.0.1:8765/api/health
+curl "http://127.0.0.1:8765/api/events/theatre?location=San+Francisco"
+```
+
+### Port Management
+```bash
+npm run port:status          # Check port usage
+npm run port:cleanup         # Kill processes on 8765/8766
+npm run stop                 # Clean shutdown
+```
+
+### Venue Scraper Management
+```bash
+npm run scrape:venues        # Full scrape (all 286 venues, ~15 min)
+npm run scrape:retry         # Retry only failed venues
+```
+
+The scraper uses:
+- **Jina Reader** (`https://r.jina.ai/{url}`) to render JS-heavy pages → clean markdown
+- **Claude Haiku** (`claude-haiku-4-5-20251001`) to extract structured events from markdown
+- **60-second timeout** per venue (some JS-heavy sites need 35-45s)
+- **Incremental writes** — saves after each venue, recoverable on crash
+
+## Security
+
+- All API keys in `curate-events-api/.env` (git-ignored)
+- Only `TICKETMASTER_CONSUMER_KEY` is required at startup
+- Helmet, CORS, rate limiting middleware on backend
+- No sensitive data in logs
 
 ---
 
-**Last Updated**: August 2, 2025  
-**System Status**: ✅ Production Ready with Enhanced Features  
-**Active Data Sources**: 4 of 5 (Apyflux experiencing API issues)  
-**Recent Improvements**: Enhanced URL extraction, Smart location filtering  
-**Security Status**: ✅ All credentials secured
+**Last Updated**: February 2026
+**System Status**: Production Ready
+**Architecture**: v2.0 — Three-layer pipeline (Ticketmaster + Venue Scraper + Validator)
+**Active Providers**: Ticketmaster (backbone) + Venue Scraper (286 venues)
+**Event Coverage**: ~2,400+ Bay Area events

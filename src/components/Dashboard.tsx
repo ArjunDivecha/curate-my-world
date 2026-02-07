@@ -16,7 +16,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Brain, Eye, EyeOff, Cpu, Mic2, BookOpen, Baby, RefreshCw } from "lucide-react";
 import { getCategoryColor } from "@/utils/categoryColors";
-import { ProviderControlPanel } from "./ProviderControlPanel";
 import { API_BASE_URL } from "@/utils/apiConfig";
 
 interface Preferences {
@@ -542,46 +541,27 @@ export const Dashboard = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2 text-center">Curate Your Event Feed</h2>
           <p className="text-gray-500 mb-10 text-center">Select your interests and we'll handle the rest.</p>
 
-          {/* Search & Location */}
+          {/* Search Events */}
           <div className="bg-gray-50 p-8 rounded-2xl shadow-inner mb-10 border border-gray-200">
-            <div className="grid md:grid-cols-2 gap-8">
-              <div>
-                <Label htmlFor="event-search" className="block text-lg font-semibold text-gray-700 mb-2">
-                  Search Events
-                </Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <Input
-                    id="event-search"
-                    className="w-full pl-10 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
-                    placeholder="Search by title, venue, description..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      &times;
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="location" className="block text-lg font-semibold text-gray-700 mb-2">
-                  Location
-                </Label>
-                <Input
-                  id="location"
-                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
-                  value={preferences.location.address}
-                  onChange={(e) => setPreferences(prev => ({
-                    ...prev,
-                    location: { address: e.target.value }
-                  }))}
-                />
-              </div>
+            <Label htmlFor="event-search" className="block text-lg font-semibold text-gray-700 mb-2">
+              Search Events
+            </Label>
+            <div className="relative">
+              <Input
+                id="event-search"
+                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+                placeholder="Search by title, venue, description..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  &times;
+                </button>
+              )}
             </div>
           </div>
 
@@ -597,13 +577,6 @@ export const Dashboard = () => {
           {/* Category Filters */}
           <div className="mb-10 space-y-8">
             <h3 className="text-2xl font-bold text-gray-700">Filter by Category</h3>
-
-            <ProviderControlPanel
-              selectedProviders={selectedProviders}
-              onToggleProvider={handleProviderToggle}
-              providerDetails={providerDetails}
-              totalProcessingTime={totalProcessingTime}
-            />
 
             {/* Top Row - All, Fetch Events, Clear All */}
             <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-center gap-4">

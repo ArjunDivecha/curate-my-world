@@ -1,303 +1,192 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working with code in this repository.
 
 ## Project Overview
 
-**Squirtle** is an AI-powered personalized event curation system that analyzes user conversations to deliver hyper-personalized event recommendations. The system consists of:
+**Squirtle** is a Bay Area event curation system with a three-layer event pipeline:
 
-- **Frontend**: React + TypeScript application built with Vite, using shadcn/ui components (port 8766)
-- **Backend API**: Node.js Express server that aggregates events from 5 data sources (port 8765)
-- **Supabase**: Database and edge functions for data persistence and additional processing (port 54321)
-- **AI Integration**: Claude Sonnet 4 for conversation analysis and event personalization
+- **Frontend**: React + TypeScript + Vite (port 8766)
+- **Backend API**: Node.js Express (port 8765)
+- **Data Sources**: Ticketmaster API (backbone) + Venue Calendar Scraper (gap filler)
+- **Quality Gate**: Event Validator rejects listing pages, out-of-area events, and bad data
 
 ## Essential Commands
 
 ### Development
 ```bash
-# Start entire system (recommended)
-npm run start                    # Uses start-all.sh script
-./scripts/start-all.sh          # Direct script execution
+# Start everything
+./scripts/start-all.sh
 
 # Individual services
-npm run dev                     # Frontend only (Vite dev server)
-cd curate-events-api && npm run dev  # Backend only (Node.js with --watch)
-
-# Alternative service scripts
-npm run start:frontend          # Frontend via script
-npm run start:backend           # Backend via script
+npm run dev                              # Frontend (Vite dev server, port 8766)
+cd curate-events-api && npm run dev      # Backend (Node.js --watch, port 8765)
 ```
 
-### Testing & Health Checks
+### Venue Scraper
 ```bash
-# Backend testing
 cd curate-events-api
-npm test                       # Run Jest tests
-npm run test:watch            # Watch mode
-npm run test:integration      # Integration tests
-
-# System health validation
-curl http://127.0.0.1:8765/api/health      # Basic health check
-curl http://127.0.0.1:8765/api/health/deep # Deep health with all data sources
-
-# Test multi-source event fetching
-curl "http://127.0.0.1:8765/api/events/music?location=San%20Francisco&limit=10"
+npm run scrape:venues      # Full scrape of all 286 venues
+npm run scrape:retry       # Retry only failed venues
 ```
 
-### Build & Deployment
+### Testing & Health
 ```bash
-npm run build                  # Production build
-npm run build:dev             # Development build
-npm run preview               # Preview production build
-```
+cd curate-events-api
+npm test                   # Jest tests
+npm run test:watch         # Watch mode
 
-### Code Quality
-```bash
-npm run lint                   # Frontend ESLint
-cd curate-events-api && npm run lint  # Backend ESLint
+# Health checks
+curl http://127.0.0.1:8765/api/health
+curl http://127.0.0.1:8765/api/health/deep
 ```
 
 ### Port Management
 ```bash
-npm run port:status           # Check port usage
-npm run port:cleanup         # Kill processes on default ports (8765, 8766)
-npm run stop                 # Clean shutdown
+npm run port:status        # Check port usage
+npm run port:cleanup       # Kill processes on 8765/8766
+npm run stop               # Clean shutdown
 ```
 
-### Utility Scripts
-```bash
-npm run bench:providers       # Benchmark data source performance
-npm run export:events        # Export events data
+## Architecture
+
+### Three-Layer Event Pipeline
+
+```
+Frontend → Backend API → Layer 1: Ticketmaster (backbone)
+                       → Layer 2: Venue Scraper (cache reader)
+                       → Layer 3: Event Validator (quality gate)
 ```
 
-## Architecture Overview
+All events pass through: **dedup → rules filter → blacklist → eventValidator → locationFilter → dateFilter → categoryFilter**
 
-### Frontend Architecture (`src/`)
-- **Build System**: Vite + React 18 with TypeScript strict mode
-- **Routing**: React Router v6 with route-based lazy loading
-- **State Management**: React Query for server state, React hooks for local state
-- **UI Framework**: shadcn/ui components built on Radix UI primitives
-- **Styling**: Tailwind CSS with CSS custom properties
-- **Forms**: React Hook Form with Zod validation
+### Providers (in events.js)
+| Provider | Default | Description |
+|----------|---------|-------------|
+| `ticketmaster` | ON | Ticketmaster Discovery API — ~1,600+ events |
+| `venue_scraper` | ON | Reads `data/venue-events-cache.json` — ~800+ events |
+| `whitelist` | OFF | Legacy whitelist search (disabled by default) |
 
-**Key Components**:
-- `Dashboard.tsx`: Main application dashboard with event display
-- `WeeklyCalendar.tsx`: Calendar view for event scheduling
-- `EventCard.tsx`: Individual event display with metadata
-- `SuggestedCategories.tsx`: AI-powered category suggestions
-- `PreferencesModal.tsx`: User preference configuration
+Frontend sends `providers=ticketmaster,venue_scraper` query param.
 
-### Backend Architecture (`curate-events-api/`)
-- **Express.js**: RESTful API server with comprehensive middleware stack
-- **Multi-Source Integration**: 5 concurrent data source clients with parallel processing
-- **AI Categorization**: Intelligent event categorization with venue learning
-- **Security**: Helmet, CORS, rate limiting, input validation with Zod schemas
-- **Logging**: Winston with structured logging and request tracing
+### Removed Providers (pre-Feb 2026)
+Perplexity LLM, Perplexity Search, Serper, Exa, Apyflux, SerpAPI, Super-Hybrid — all removed.
 
-**Critical Modules**:
-- `src/clients/`: Data source integrations (Perplexity, Exa, PredictHQ, SerpAPI, Apyflux)
-- `src/pipeline/EventPipeline.js`: Multi-source orchestration and processing
-- `src/parsers/EventParser.js`: AI-powered event categorization
-- `src/managers/`: Venue learning and category management
-- `src/utils/eventDeduplicator.js`: Cross-source duplicate detection
-- `src/utils/config.js`: Environment-based configuration management
+### Categorization System
+**Single source of truth**: `categoryMapping.js` → `normalizeCategory()` with 40+ aliases
 
-### Data Sources Status & Performance
-1. **Perplexity API** ✅ - AI-curated events (~22s processing, high quality)
-2. **SerpAPI** ✅ - Google Events integration (~167ms, fastest)
-3. **PredictHQ** ✅ - Event intelligence and predictions (~700ms)
-4. **Exa API** ✅ - AI web search (~3.6s processing)
-5. **Apyflux API** ⚠️ - Event database (currently experiencing API issues)
+9 categories: `music`, `theatre`, `comedy`, `movies`, `art`, `food`, `tech`, `lectures`, `kids`
 
-### Supabase Integration
-- **Database**: PostgreSQL with Row Level Security (RLS) policies
-- **Edge Functions**: Serverless functions for event processing (`supabase/functions/`)
-- **Real-time**: Live event updates via websockets
-- **Auth**: JWT-based session management
-- **Configuration**: `supabase/config.toml`
+Key rules:
+- `art` category: TM config set to `null` (TM "Arts & Theatre" is theatre/comedy, NOT visual art)
+- VenueScraperClient normalizes categories on read via `normalizeCategory()`
+- events.js uses `normalizeCategory()` for bucket filtering
+- Frontend cache key: `cmw_events_cache_v3` (bump when backend changes categories)
 
-## Environment Configuration
+## Key Files
 
-### Required Environment Variables
+### Backend
+| File | Purpose |
+|------|---------|
+| `curate-events-api/src/routes/events.js` | Main API routes — three-layer pipeline |
+| `curate-events-api/src/utils/categoryMapping.js` | Category normalization (single source of truth) |
+| `curate-events-api/src/clients/TicketmasterClient.js` | Ticketmaster Discovery API client |
+| `curate-events-api/src/clients/VenueScraperClient.js` | Cache reader + stale-while-revalidate |
+| `curate-events-api/src/utils/eventValidator.js` | Quality gate (rejects listing URLs) |
+| `curate-events-api/src/utils/locationFilter.js` | Bay Area geographic filtering |
+| `curate-events-api/scripts/scrape-venues.js` | Jina Reader + Claude Haiku scraper |
+| `curate-events-api/src/utils/config.js` | Environment configuration |
 
-**Frontend (`.env` in project root)**:
+### Data
+| File | Purpose |
+|------|---------|
+| `data/venue-registry.json` | 286 Bay Area venues with calendar URLs |
+| `data/venue-events-cache.json` | Scraped events cache (~800+ events) |
+
+### Frontend
+| File | Purpose |
+|------|---------|
+| `src/components/Dashboard.tsx` | Main dashboard with search, category tabs |
+| `src/components/EventCard.tsx` | Individual event display |
+| `src/components/ProviderControlPanel.tsx` | Toggle ticketmaster/venue_scraper |
+| `src/components/WeeklyCalendar.tsx` | Calendar view |
+
+## Environment Variables
+
+### Required (`curate-events-api/.env`)
 ```bash
-ANTHROPIC_API_KEY=              # For conversation analysis
-VITE_SUPABASE_URL=             # Supabase project URL
-VITE_SUPABASE_ANON_KEY=        # Supabase anonymous key
+TICKETMASTER_CONSUMER_KEY=     # REQUIRED — backbone provider, validated at startup
 ```
 
-**Backend (`curate-events-api/.env`)**:
+### Recommended
 ```bash
-# Core configuration
+ANTHROPIC_API_KEY=             # For venue scraper (Claude Haiku extraction)
+```
+
+### Optional
+```bash
 NODE_ENV=development
 PORT=8765
 HOST=127.0.0.1
-
-# Data source API keys
-PERPLEXITY_API_KEY=            # Required for startup
-EXA_API_KEY=                   # AI web search
-PREDICTHQ_API_KEY=             # Event predictions
-SERPAPI_API_KEY=               # Google Events (not SERPER)
-APYFLUX_API_KEY=               # Event database
-APYFLUX_APP_ID=                # Apyflux app identifier
-APYFLUX_CLIENT_ID=             # Apyflux client identifier
-
-# Optional integrations
-TICKETMASTER_CONSUMER_KEY=     # Ticketmaster integration
-TICKETMASTER_CONSUMER_SECRET=  # Ticketmaster secret
+TICKETMASTER_CONSUMER_SECRET=  # Not currently used
+JINA_READER_URL=               # Default: https://r.jina.ai
 ```
 
-**Security Notes**:
-- All API keys stored in `.env` files (never committed to git)
-- Use `curate-events-api/.env.example` as template
-- System validates required keys on startup
-- Only Perplexity API key is critical for basic functionality
+## API Endpoints
 
-## Key Design Principles
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/events/all-categories` | All events grouped by category |
+| `GET /api/events/:category` | Events for a specific category |
+| `GET /api/events/categories` | List supported categories |
+| `GET /api/health` | Basic health check |
+| `GET /api/health/deep` | Detailed health with provider status |
 
-### Multi-Source Event Aggregation
-The system processes 5 data sources concurrently with intelligent deduplication:
-- **Parallel Processing**: All sources called simultaneously for performance
-- **Deduplication**: ~5-10% duplicate rate across sources with smart merging
-- **Error Handling**: Graceful degradation when individual sources fail
-- **Performance Monitoring**: Response time tracking per source
-
-### AI-Powered Categorization
-- **Content Analysis**: NLP processing of event titles and descriptions
-- **Venue Learning**: Location-specific venue-category associations (700+ patterns)
-- **Confidence Scoring**: Threshold-based recategorization (60% minimum confidence)
-- **Category Management**: Centralized in `CategoryManager.js` and `VenueManager.js`
-
-### Data Quality Management
-- **Geographic Filtering**: 50km radius validation from requested location
-- **URL Extraction**: Comprehensive event URL extraction from descriptions
-- **Schema Validation**: Zod schemas for all API inputs and outputs
-- **Error Boundary**: Comprehensive error handling at all pipeline levels
-
-## Code Organization Patterns
-
-### Frontend Structure (`src/`)
-```
-src/
-├── components/           # Feature-organized components
-│   ├── ui/              # Reusable shadcn/ui primitives
-│   └── [feature]/       # Feature-specific components
-├── hooks/               # Custom React hooks
-├── lib/                 # Utility functions
-├── utils/               # Pure helper functions
-└── integrations/
-    └── supabase/        # Supabase types and client
-        └── types.ts     # Centralized TypeScript types
-```
-
-### Backend Structure (`curate-events-api/src/`)
-```
-src/
-├── clients/             # External API integrations
-├── managers/            # Business logic (Category, Venue)
-├── parsers/             # Event processing (AI categorization)
-├── pipeline/            # Multi-source orchestration
-├── routes/              # Express route handlers
-└── utils/               # Configuration and utilities
-    ├── config.js        # Environment-based configuration
-    └── eventDeduplicator.js  # Cross-source deduplication
-```
+Query params: `location`, `limit`, `providers` (comma-separated), `date`
 
 ## Development Workflow
 
 ### Before Making Changes
-1. **Read README.md** for current system status and recent updates
-2. **Check API health**: `curl http://127.0.0.1:8765/api/health/deep`
-3. **Verify data sources**: Ensure 4-5 sources returning events
-4. **Monitor performance**: Check processing times and error rates
-5. **Environment validation**: Confirm all required API keys are configured
+1. Check API health: `curl http://127.0.0.1:8765/api/health`
+2. Understand the three-layer pipeline before modifying events.js
+3. Category changes go in `categoryMapping.js` only (single source of truth)
 
-### Common Development Tasks
+### Adding a New Category
+1. Add to `CATEGORY_CONFIG` in `categoryMapping.js`
+2. Add to `SUPPORTED_CATEGORIES` array
+3. Add aliases to `normalizeCategory()` if needed
+4. Bump frontend cache key in Dashboard.tsx
 
-#### Adding New Event Sources
-1. Create client in `curate-events-api/src/clients/`
-2. Add integration to `EventPipeline.js`
-3. Update `config.js` for new environment variables
-4. Add validation in `validateConfig()` function
-5. Update documentation and health checks
+### Modifying Venue Scraper
+1. Venue URLs are in `data/venue-registry.json`
+2. Scraper script: `curate-events-api/scripts/scrape-venues.js`
+3. Cache reader: `curate-events-api/src/clients/VenueScraperClient.js`
+4. After fixing URLs, mark venues as `"status": "error"` in cache, then `npm run scrape:retry`
 
-#### Modifying Event Categories
-1. Update patterns in `CategoryManager.js`
-2. Modify venue learning in `VenueManager.js`
-3. Test with `node test-categorization.js`
-4. Update frontend category displays
+### Event Pipeline Order (in events.js)
+```
+Provider fetch → dedup → rules filter → blacklist → eventValidator → locationFilter → dateFilter → categoryFilter
+```
 
-#### Database Schema Changes
-1. Create migration: `supabase migration new [name]`
-2. Update TypeScript types in `src/integrations/supabase/types.ts`
-3. Test with local Supabase: `supabase start`
-4. Deploy: `supabase db push`
-
-## Performance Optimization
-
-### Response Time Benchmarks
-- **SerpAPI**: ~167ms (fastest, Google Events)
-- **PredictHQ**: ~700ms (good performance)
-- **Exa**: ~3.6s (acceptable for AI search)
-- **Perplexity**: ~22s (AI processing, highest quality)
-
-### System Monitoring
-- **Memory Usage**: ~26MB backend baseline
-- **Event Coverage**: 15-20 events per request from active sources
-- **Deduplication Rate**: 5-10% across all sources
-- **Health Monitoring**: Real-time via `/api/health` endpoints
-
-## Security Guidelines
-
-### API Security
-- **Environment Variables**: All credentials in `.env` files (git-ignored)
-- **Input Validation**: Zod schemas for all API inputs
-- **Rate Limiting**: Express rate limiting with IP-based throttling
-- **CORS**: Environment-specific origin configuration
-- **Security Headers**: Helmet middleware for HTTP security
-
-### Data Protection
-- **Supabase RLS**: Row-level security policies for user data
-- **JWT Authentication**: Secure session management
-- **Logging Security**: No sensitive data in Winston logs
+## Critical Files (Require Permission Before Modification)
+- `curate-events-api/.env` — API keys
+- `curate-events-api/src/routes/events.js` — Main pipeline logic
+- `curate-events-api/src/utils/categoryMapping.js` — Category definitions
+- `data/venue-registry.json` — Venue definitions
 
 ## Troubleshooting
 
-### Common Issues
-1. **Port Conflicts**: Run `npm run port:cleanup` to free ports 8765/8766
-2. **API Key Errors**: Check `curate-events-api/.env` configuration
-3. **Build Failures**: Verify TypeScript errors with `npm run lint`
-4. **Data Source Failures**: Monitor via `/api/health/deep` endpoint
+| Issue | Fix |
+|-------|-----|
+| Port conflicts | `npm run port:cleanup` |
+| No events showing | Check `curl http://127.0.0.1:8765/api/health/deep` |
+| Venue scraper empty | Run `npm run scrape:venues` to populate cache |
+| Events in wrong category | Check `normalizeCategory()` in categoryMapping.js |
+| Valid events filtered out | Check `eventValidator.js` listing URL patterns |
+| Stale venue data | `npm run scrape:retry` or full `npm run scrape:venues` |
 
-### Debug Commands
-```bash
-# System diagnostics
-curl http://127.0.0.1:8765/api/health/deep
-tail -f curate-events-api/logs/combined.log
+---
 
-# Test individual components
-cd curate-events-api
-node test-categorization.js      # Test AI categorization
-node test-location-filtering.js  # Test geographic filtering
-```
-
-### Performance Monitoring
-- **Backend Logs**: Winston structured logging in `curate-events-api/logs/`
-- **Health Endpoints**: Real-time system status and source statistics
-- **Categorization Analytics**: AI performance metrics in API responses
-
-## Critical Files (Require Permission Before Modification)
-- `curate-events-api/.env` - API keys and configuration
-- `curate-events-api/src/utils/config.js` - Configuration logic
-- `curate-events-api/src/routes/events.js` - Multi-source integration
-- `supabase/migrations/` - Database schema changes
-- `package.json` scripts - Build and deployment configuration
-
-## Additional Resources
-
-- **README.md**: Comprehensive system overview and current status
-- **ENVIRONMENT.md**: Detailed environment setup guide
-- **PORT_MANAGEMENT.md**: Port conflict resolution procedures
-- **PRD.md**: Business requirements and product specifications
-- **supabase/functions/**: Edge function implementations
+**Last Updated**: February 2026
+**Architecture**: v2.0 — Three-layer pipeline
+**Active Providers**: Ticketmaster + Venue Scraper (286 venues)
