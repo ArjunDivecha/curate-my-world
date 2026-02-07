@@ -106,6 +106,43 @@ export class VenueScraperClient {
           }
         }
 
+        // Filter out events that are clearly not in the Bay Area based on title
+        const titleLower = (event.title || '').toLowerCase();
+        const nonLocalSignals = [
+          'istanbul', 'london', 'dubai', 'hong kong', 'amsterdam', 'oslo',
+          'nairobi', 'pune', 'india', 'paraguay', 'lima', 'são paulo',
+          'brazil', 'singapore', 'tokyo', 'berlin', 'paris', 'sydney',
+          'toronto', 'melbourne', 'barcelona', 'madrid', 'mumbai',
+          'bangkok', 'seoul', 'taipei', 'vietnam', 'africa', 'europe',
+          'cern', 'new york', 'nyc', 'chicago', 'austin', 'miami',
+          'seattle', 'boston', 'denver', 'las vegas', 'atlanta',
+          'portland', 'phoenix', 'dallas', 'houston',
+        ];
+        if (nonLocalSignals.some(s => titleLower.includes(s))) {
+          continue; // Skip obviously non-local events
+        }
+
+        // Filter out events with non-Bay Area cities (from global listing sites)
+        if (event.city) {
+          const cityLower = event.city.toLowerCase().trim();
+          const bayAreaCities = [
+            'san francisco', 'oakland', 'berkeley', 'san jose', 'palo alto',
+            'mountain view', 'sunnyvale', 'santa clara', 'redwood city',
+            'menlo park', 'fremont', 'hayward', 'concord', 'walnut creek',
+            'san mateo', 'daly city', 'richmond', 'santa cruz', 'sausalito',
+            'mill valley', 'tiburon', 'napa', 'sonoma', 'petaluma',
+            'san rafael', 'novato', 'livermore', 'pleasanton', 'cupertino',
+            'campbell', 'los gatos', 'saratoga', 'milpitas', 'union city',
+            'alameda', 'emeryville', 'half moon bay', 'pacifica',
+            'south san francisco', 'burlingame', 'san bruno', 'foster city',
+            'belmont', 'san carlos', 'woodside', 'portola valley',
+            'los altos', 'stanford', 'east palo alto',
+          ];
+          if (!bayAreaCities.some(ba => cityLower.includes(ba))) {
+            continue; // Skip non-Bay Area events
+          }
+        }
+
         // Ensure every event has a URL — fall back to venue calendar page
         if (!event.eventUrl && event.venueDomain) {
           event.eventUrl = `https://${event.venueDomain}/events`;

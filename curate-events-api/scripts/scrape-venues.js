@@ -135,12 +135,14 @@ Return a JSON array of events. Each event must have:
 - "category": string (one of: music, theatre, comedy, movies, art, food, tech, lectures, kids)
 - "price": string or null (e.g. "$25", "$15-$45", "Free")
 - "eventUrl": string or null (direct link to event page)
+- "city": string or null (the city where the event takes place, e.g. "San Francisco", "Oakland", "London", "Istanbul")
 
 RULES:
 - Only include events on or after ${today}
 - Skip generic "view calendar" or "upcoming events" links - only real specific events
 - Skip if there's no specific event title (just venue name is not an event)
 - If you can't find any specific events, return an empty array []
+- Extract the actual city where each event takes place from the page content. If the page lists events in multiple cities worldwide, include the city for each one.
 - Return ONLY the JSON array, no other text
 
 CALENDAR CONTENT:
