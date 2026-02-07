@@ -63,6 +63,7 @@ interface Event {
   };
   ticketUrl?: string;
   eventUrl?: string;
+  imageUrl?: string | null;
   aiReasoning: string;
   source?: string;
   sources?: string[];
@@ -451,7 +452,21 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
                 </div>
                 <div className="h-[70vh] bg-gray-50">
                   <iframe
-                    src={`${API_BASE}/preview?url=${encodeURIComponent(event.eventUrl || event.ticketUrl || '')}`}
+                    src={event.source === 'ticketmaster'
+                      ? `${API_BASE}/preview/event?${new URLSearchParams({
+                          title: event.title || '',
+                          description: event.description || '',
+                          imageUrl: event.imageUrl || '',
+                          venue: event.venue?.name || '',
+                          address: event.venue?.address || '',
+                          date: event.startDate || '',
+                          price: event.price?.amount || (event.price?.type === 'free' ? 'Free' : ''),
+                          category: event.categories?.[0] || '',
+                          ticketUrl: event.eventUrl || event.ticketUrl || '',
+                          source: event.source || '',
+                        }).toString()}`
+                      : `${API_BASE}/preview?url=${encodeURIComponent(event.eventUrl || event.ticketUrl || '')}`
+                    }
                     className="w-full h-full border-0"
                     title={`Preview of ${event.title}`}
                   />

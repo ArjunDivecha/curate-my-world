@@ -1,0 +1,272 @@
+/**
+ * =============================================================================
+ * SCRIPT NAME: VenueScraperClient.js
+ * =============================================================================
+ *
+ * DESCRIPTION:
+ * Cache reader client for venue-scraped events. Reads from the pre-built
+ * venue-events-cache.json (populated by scripts/scrape-venues.js) and
+ * returns events in the same standardized format as TicketmasterClient.
+ *
+ * Stale-while-revalidate: always returns cached data immediately, but if the
+ * cache is older than 24h, spawns the scraper as a background child process.
+ * The user never waits for the scrape — they see current events instantly,
+ * and fresh data appears on the next fetch after the scrape completes.
+ *
+ * VERSION: 1.1
+ * LAST UPDATED: 2026-02-07
+ * AUTHOR: Claude Code
+ * =============================================================================
+ */
+
+import fs from 'fs';
+import path from 'path';
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('VenueScraperClient');
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const DEFAULT_CACHE_PATH = path.resolve(__dirname, '../../../data/venue-events-cache.json');
+const SCRAPER_SCRIPT = path.resolve(__dirname, '../../scripts/scrape-venues.js');
+const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+export class VenueScraperClient {
+  constructor(cachePath) {
+    this.cachePath = cachePath || DEFAULT_CACHE_PATH;
+    this._cache = null;
+    this._cacheLoadedAt = null;
+    this._cacheTTL = 5 * 60 * 1000; // Re-read file every 5 minutes
+    this._scrapeInProgress = false;
+    this._lastScrapeTriggeredAt = null;
+  }
+
+  /**
+   * Load or refresh the cache from disk.
+   * Returns the parsed cache object, or null if file missing/corrupt.
+   */
+  _loadCache() {
+    const now = Date.now();
+    if (this._cache && this._cacheLoadedAt && (now - this._cacheLoadedAt < this._cacheTTL)) {
+      return this._cache;
+    }
+
+    try {
+      if (!fs.existsSync(this.cachePath)) {
+        logger.warn('Venue events cache file not found', { path: this.cachePath });
+        return null;
+      }
+
+      const raw = fs.readFileSync(this.cachePath, 'utf-8');
+      this._cache = JSON.parse(raw);
+      this._cacheLoadedAt = now;
+      return this._cache;
+    } catch (error) {
+      logger.error('Failed to load venue events cache', { error: error.message, path: this.cachePath });
+      return null;
+    }
+  }
+
+  /**
+   * Get all events from cache, optionally filtered by category.
+   * Only returns future events.
+   */
+  _getAllEvents(category) {
+    const cache = this._loadCache();
+    if (!cache || !cache.venues) return [];
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const events = [];
+
+    for (const venueData of Object.values(cache.venues)) {
+      if (!venueData.events || !Array.isArray(venueData.events)) continue;
+
+      for (const event of venueData.events) {
+        // Filter by category if specified
+        if (category && category !== 'all') {
+          const eventCat = (event.category || '').toLowerCase();
+          const targetCat = category.toLowerCase();
+          // Allow match on category or venue's default category
+          if (eventCat !== targetCat && (venueData.category || '').toLowerCase() !== targetCat) {
+            continue;
+          }
+        }
+
+        // Only include future events
+        if (event.startDate) {
+          try {
+            const eventDate = new Date(event.startDate);
+            if (eventDate < now) continue;
+          } catch {
+            // Keep events with unparseable dates
+          }
+        }
+
+        // Ensure every event has a URL — fall back to venue calendar page
+        if (!event.eventUrl && event.venueDomain) {
+          event.eventUrl = `https://${event.venueDomain}/events`;
+        }
+
+        events.push(event);
+      }
+    }
+
+    return events;
+  }
+
+  /**
+   * Check if the cache is stale and trigger a background scrape if needed.
+   * Always returns immediately — never blocks the caller.
+   */
+  _maybeRefreshInBackground() {
+    // Don't double-trigger
+    if (this._scrapeInProgress) return;
+
+    const cache = this._loadCache();
+    if (!cache || !cache.lastUpdated) return;
+
+    const ageMs = Date.now() - new Date(cache.lastUpdated).getTime();
+    if (ageMs < STALE_THRESHOLD_MS) return;
+
+    // Don't re-trigger within 30 min of the last attempt
+    if (this._lastScrapeTriggeredAt && (Date.now() - this._lastScrapeTriggeredAt < 30 * 60 * 1000)) return;
+
+    this._scrapeInProgress = true;
+    this._lastScrapeTriggeredAt = Date.now();
+
+    const ageHours = Math.round(ageMs / (1000 * 60 * 60));
+    logger.info(`Cache is ${ageHours}h old (>${STALE_THRESHOLD_MS / (1000 * 60 * 60)}h). Spawning background scrape.`);
+
+    try {
+      const child = spawn('node', [SCRAPER_SCRIPT], {
+        stdio: 'ignore',
+        detached: true,
+        env: { ...process.env }
+      });
+
+      child.unref(); // Let the parent exit without waiting
+
+      child.on('exit', (code) => {
+        this._scrapeInProgress = false;
+        if (code === 0) {
+          // Force re-read from disk on next request
+          this._cacheLoadedAt = null;
+          logger.info('Background venue scrape completed successfully');
+        } else {
+          logger.warn(`Background venue scrape exited with code ${code}`);
+        }
+      });
+
+      child.on('error', (err) => {
+        this._scrapeInProgress = false;
+        logger.error('Failed to spawn background venue scrape', { error: err.message });
+      });
+    } catch (err) {
+      this._scrapeInProgress = false;
+      logger.error('Error starting background scrape', { error: err.message });
+    }
+  }
+
+  /**
+   * Search for events - matches the TicketmasterClient interface.
+   * Returns cached data immediately. If cache is stale, triggers a background
+   * refresh so the next fetch gets fresh data (stale-while-revalidate).
+   * @param {Object} options - { category, location, limit }
+   * @returns {Promise<Object>} Standard provider response
+   */
+  async searchEvents({ category, location, limit = 50 }) {
+    const startTime = Date.now();
+
+    // Check staleness and kick off background refresh if needed (non-blocking)
+    this._maybeRefreshInBackground();
+
+    try {
+      const allEvents = this._getAllEvents(category);
+
+      // Apply limit
+      const limitedEvents = allEvents.slice(0, limit);
+
+      const processingTime = Date.now() - startTime;
+
+      logger.info('Venue scraper cache read', {
+        category,
+        totalCached: allEvents.length,
+        returned: limitedEvents.length,
+        processingTime: `${processingTime}ms`,
+        backgroundScrapeRunning: this._scrapeInProgress
+      });
+
+      return {
+        success: true,
+        events: limitedEvents,
+        count: limitedEvents.length,
+        processingTime,
+        source: 'venue_scraper',
+        cost: 0,
+        backgroundRefreshing: this._scrapeInProgress
+      };
+    } catch (error) {
+      const processingTime = Date.now() - startTime;
+      logger.error('Venue scraper search error', { error: error.message, category });
+      return {
+        success: false,
+        error: error.message,
+        events: [],
+        count: 0,
+        processingTime,
+        source: 'venue_scraper',
+        cost: 0
+      };
+    }
+  }
+
+  /**
+   * Get health status of the venue scraper cache.
+   * @returns {Object} Health status
+   */
+  getHealthStatus() {
+    const cache = this._loadCache();
+
+    if (!cache) {
+      return {
+        status: 'unhealthy',
+        message: 'Cache file not found or unreadable',
+        cachePath: this.cachePath
+      };
+    }
+
+    const lastUpdated = cache.lastUpdated ? new Date(cache.lastUpdated) : null;
+    const ageHours = lastUpdated ? (Date.now() - lastUpdated.getTime()) / (1000 * 60 * 60) : null;
+    const venueCount = cache.venues ? Object.keys(cache.venues).length : 0;
+    const totalEvents = cache.totalEvents || 0;
+    const isStale = ageHours !== null && ageHours > 48;
+
+    let message;
+    if (this._scrapeInProgress) {
+      message = `Cache is ${ageHours !== null ? Math.round(ageHours) + 'h' : 'unknown age'} old — background refresh in progress`;
+    } else if (isStale) {
+      message = `Cache is ${Math.round(ageHours)}h old (>48h stale). Will auto-refresh on next fetch.`;
+    } else {
+      message = `Cache is ${ageHours !== null ? Math.round(ageHours) + 'h' : 'unknown age'} old with ${totalEvents} events from ${venueCount} venues`;
+    }
+
+    return {
+      status: isStale ? 'degraded' : 'healthy',
+      cacheExists: true,
+      lastUpdated: cache.lastUpdated,
+      ageHours: ageHours !== null ? Math.round(ageHours * 10) / 10 : null,
+      isStale,
+      backgroundRefreshing: this._scrapeInProgress,
+      venueCount,
+      totalEvents,
+      stats: cache.metadata?.stats || null,
+      message
+    };
+  }
+}
+
+export default VenueScraperClient;

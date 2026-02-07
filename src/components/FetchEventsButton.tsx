@@ -11,6 +11,8 @@ interface FetchEventsButtonProps {
   onAllEventsFetched?: (eventsByCategory: any, categoryStats: any, providerDetails?: ProviderStatSummary[]) => void;
   onProviderDetails?: (details: ProviderStatSummary[], statsMap: ProviderStatsMap) => void;
   onProcessingTime?: (timeMs: number) => void;
+  onBackgroundRefreshing?: (refreshing: boolean) => void;
+  fetchRef?: React.MutableRefObject<(() => void) | null>;
   selectedProviders: Record<string, boolean>;
   className?: string;
 }
@@ -40,6 +42,8 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
   onAllEventsFetched,
   onProviderDetails,
   onProcessingTime,
+  onBackgroundRefreshing,
+  fetchRef,
   selectedProviders,
   className
 }) => {
@@ -67,6 +71,13 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
     
     return unsubscribe;
   }, []);
+
+  // Expose fetch function to parent via ref for programmatic triggers
+  useEffect(() => {
+    if (fetchRef) {
+      fetchRef.current = () => fetchRealEvents();
+    }
+  });
 
   const fetchRealEvents = async () => {
     setIsLoading(true);
@@ -187,6 +198,10 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
 
       if (onProcessingTime) {
         onProcessingTime(processingTime);
+      }
+
+      if (onBackgroundRefreshing) {
+        onBackgroundRefreshing(!!data.backgroundRefreshing);
       }
       
       // Also pass all events as a flat array for backward compatibility
