@@ -152,9 +152,10 @@ export class VenueScraperClient {
           }
         }
 
-        // Ensure every event has a URL — fall back to venue calendar page
+        // Ensure every event has a URL — fall back to venue homepage
+        // (avoid /events or /shows suffixes which trip the listing-URL validator)
         if (!event.eventUrl && event.venueDomain) {
-          event.eventUrl = `https://${event.venueDomain}/events`;
+          event.eventUrl = `https://${event.venueDomain}`;
         }
 
         events.push(event);

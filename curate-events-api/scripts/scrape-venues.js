@@ -82,7 +82,7 @@ function sleep(ms) {
 async function fetchViaJina(calendarUrl) {
   const jinaUrl = `${JINA_READER_BASE}/${calendarUrl}`;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout (some JS-heavy sites need 30-45s)
 
   try {
     const response = await fetch(jinaUrl, {
@@ -218,11 +218,24 @@ async function main() {
   console.log(`Loaded ${venues.length} venues from registry`);
 
   // Filter to venues with calendar URLs
-  const scrapableVenues = venues.filter(v => v.calendar_url && v.calendar_url.startsWith('http'));
+  let scrapableVenues = venues.filter(v => v.calendar_url && v.calendar_url.startsWith('http'));
   console.log(`${scrapableVenues.length} venues have scrapable calendar URLs`);
 
   // Load existing cache for incremental update
   const cache = loadExistingCache();
+
+  // --retry-failed: only re-scrape venues that previously errored
+  const retryFailed = process.argv.includes('--retry-failed');
+  if (retryFailed) {
+    const failedDomains = new Set(
+      Object.entries(cache.venues || {})
+        .filter(([, v]) => v.status === 'error')
+        .map(([domain]) => domain)
+    );
+    scrapableVenues = scrapableVenues.filter(v => failedDomains.has(v.domain));
+    console.log(`--retry-failed: retrying ${scrapableVenues.length} previously failed venues`);
+  }
+
   cache.lastUpdated = new Date().toISOString();
   cache.metadata = {
     totalVenues: scrapableVenues.length,
@@ -320,14 +333,19 @@ async function main() {
     }
   }
 
-  // Final cache update
-  cache.totalEvents = totalEvents;
+  // Final cache update — recount all events across the full cache (covers retry mode)
+  let grandTotal = 0;
+  for (const v of Object.values(cache.venues)) {
+    grandTotal += (v.events || []).length;
+  }
+  cache.totalEvents = grandTotal;
   cache.metadata.scrapeCompleted = new Date().toISOString();
   cache.metadata.stats = {
     success: successCount,
     failed: failCount,
     skipped: skippedCount,
-    totalEvents
+    totalEvents: grandTotal,
+    thisRunEvents: totalEvents
   };
   saveCache(cache);
 

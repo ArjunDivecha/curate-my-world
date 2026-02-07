@@ -16,7 +16,8 @@
     "test:integration": "jest tests/integration",
     "lint": "eslint src/ --ext .js",
     "build": "echo 'No build step required for Node.js'",
-    "scrape:venues": "node scripts/scrape-venues.js"
+    "scrape:venues": "node scripts/scrape-venues.js",
+    "scrape:retry": "node scripts/scrape-venues.js --retry-failed"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
