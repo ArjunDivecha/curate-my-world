@@ -290,6 +290,25 @@ router.get('/all-categories', async (req, res) => {
           date_range || 'next 30 days'
         );
 
+        // Filter by re-classified category (e.g. comedy events out of art bucket)
+        // Map equivalent category names for matching
+        const categoryAliases = {
+          'art': ['art', 'arts', 'visual arts', 'fine art'],
+          'theatre': ['theatre', 'theater', 'arts'],
+          'comedy': ['comedy', 'standup'],
+          'music': ['music'],
+          'movies': ['movies', 'film'],
+          'food': ['food'],
+          'tech': ['tech', 'technology'],
+          'lectures': ['lectures', 'lecture', 'seminar'],
+          'kids': ['kids', 'family', 'children'],
+        };
+        const allowedCats = categoryAliases[category] || [category];
+        const categoryFilteredEvents = dateFilterResult.filteredEvents.filter(event => {
+          const eventCat = (event.category || '').toLowerCase();
+          return allowedCats.includes(eventCat) || !eventCat;
+        });
+
         const sourceStats = {};
         Object.entries(providerResults).forEach(([key, value]) => {
           if (!value) return;
@@ -305,8 +324,8 @@ router.get('/all-categories', async (req, res) => {
         return {
           category,
           success: true,
-          events: dateFilterResult.filteredEvents,
-          count: dateFilterResult.filteredCount,
+          events: categoryFilteredEvents,
+          count: categoryFilteredEvents.length,
           sourceStats,
           providerAttribution: dedupStats?.sourceBreakdown || null,
           totals: dedupStats ? { totalOriginal: dedupStats.totalOriginal, totalUnique: dedupStats.totalUnique } : null

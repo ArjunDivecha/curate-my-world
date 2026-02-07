@@ -203,7 +203,7 @@ export class TicketmasterClient {
         id: `ticketmaster_${ticketmasterEvent.id}`,
         title: ticketmasterEvent.name,
         description: ticketmasterEvent.info || ticketmasterEvent.pleaseNote || ticketmasterEvent.name,
-        category: this.getCategoryFromSegment(ticketmasterEvent.classifications?.[0]?.segment?.name) || category,
+        category: this.getCategoryFromClassification(ticketmasterEvent.classifications?.[0]) || category,
         venue: venueName,
         location: location,
         startDate: eventDate.toISOString(),
@@ -329,6 +329,50 @@ export class TicketmasterClient {
     };
 
     return mapping[segmentName] || 'general';
+  }
+
+  /**
+   * Convert Ticketmaster classification (segment + genre) to our category.
+   * Uses genre to distinguish comedy from theatre within "Arts & Theatre".
+   * @param {Object} classification - Ticketmaster classification object.
+   * @returns {string} Our category name.
+   */
+  getCategoryFromClassification(classification) {
+    if (!classification) return 'general';
+
+    const segment = classification.segment?.name || '';
+    const genre = (classification.genre?.name || '').toLowerCase();
+    const subGenre = (classification.subGenre?.name || '').toLowerCase();
+
+    // Music segment
+    if (segment === 'Music') return 'music';
+
+    // Film segment
+    if (segment === 'Film') return 'movies';
+
+    // Sports segment
+    if (segment === 'Sports') return 'sports';
+
+    // Arts & Theatre — use genre to distinguish
+    if (segment === 'Arts & Theatre') {
+      if (genre === 'comedy' || subGenre === 'comedy' || subGenre === 'stand-up') return 'comedy';
+      if (genre === 'theatre' || genre === 'theater' || subGenre.includes('musical') || subGenre.includes('play')) return 'theatre';
+      if (genre === 'dance' || genre === 'opera') return 'theatre';
+      if (genre === 'fine art' || genre === 'visual arts') return 'art';
+      if (genre === 'lecture' || genre === 'seminar') return 'lectures';
+      if (genre === 'children' || genre === 'family') return 'kids';
+      return 'arts'; // fallback for segment
+    }
+
+    // Miscellaneous — use genre
+    if (segment === 'Miscellaneous') {
+      if (genre === 'family' || genre === 'children') return 'kids';
+      if (genre === 'lecture' || genre === 'seminar') return 'lectures';
+      if (genre === 'comedy') return 'comedy';
+      return 'general';
+    }
+
+    return 'general';
   }
 
   /**
