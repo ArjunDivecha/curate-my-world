@@ -33,6 +33,8 @@ Notes:
 | `FRONTEND_URL` | `http://127.0.0.1:8766` | `https://squirtle-eta.vercel.app` | `https://squirtle-eta.vercel.app` | yes |
 | `LIST_STORAGE_MODE` | `file` | `db` (after migration) | `db` | yes |
 | `DATABASE_URL` | optional | Railway Postgres URL | Railway Postgres URL | required for `db` mode |
+| `VENUE_CACHE_STORAGE_MODE` | `file` | `db` | `db` | recommended |
+| `VENUE_BACKGROUND_REFRESH` | enabled | enabled | enabled | optional |
 | `LIST_DB_SYNC_INTERVAL_MS` | `30000` | `30000` | `30000` | optional |
 | `TICKETMASTER_CONSUMER_KEY` | local secret | staging secret | prod secret | yes |
 | `ANTHROPIC_API_KEY` | local secret | staging secret | prod secret | recommended |

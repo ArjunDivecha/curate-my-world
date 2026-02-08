@@ -38,6 +38,13 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import Anthropic from '@anthropic-ai/sdk';
 import dotenv from 'dotenv';
+import {
+  completeVenueScrapeRun,
+  insertVenueScrapeRun,
+  releaseVenueScrapeLock,
+  tryAcquireVenueScrapeLock,
+  upsertVenueCacheToDb,
+} from '../src/utils/venueCacheDb.js';
 
 // Load environment
 dotenv.config();
@@ -192,6 +199,13 @@ function saveCache(cache) {
   fs.renameSync(tmpPath, CACHE_PATH);
 }
 
+async function persistCache(cache, { writeDb } = {}) {
+  saveCache(cache);
+  if (!writeDb) return;
+  // Best-effort DB persistence; never fail the scrape if DB is unavailable.
+  await upsertVenueCacheToDb(cache);
+}
+
 /**
  * Main scraping function
  */
@@ -199,164 +213,216 @@ async function main() {
   console.log('=== Venue Calendar Scraper ===');
   console.log(`Started: ${new Date().toISOString()}`);
 
-  // Validate API key
-  const apiKey = getAnthropicKey();
-  if (!apiKey) {
-    console.error('ERROR: ANTHROPIC_API_KEY not found. Set it in .env or environment.');
-    process.exit(1);
+  const writeDb =
+    process.argv.includes('--write-db') ||
+    (process.env.VENUE_CACHE_STORAGE_MODE || '').toLowerCase().trim() === 'db' ||
+    (process.env.NODE_ENV === 'production' && !!process.env.DATABASE_URL);
+
+  let dbLockAcquired = false;
+  let scrapeRunId = null;
+  let scrapeRunCompleted = false;
+
+  if (writeDb) {
+    const lock = await tryAcquireVenueScrapeLock();
+    if (!lock.ok) {
+      if (lock.reason === 'locked') {
+        console.log('Another venue scrape is already running (DB lock held). Exiting.');
+        return;
+      }
+      console.log('DB lock unavailable; continuing without DB persistence.');
+    } else {
+      dbLockAcquired = true;
+      scrapeRunId = await insertVenueScrapeRun();
+    }
   }
 
-  const anthropic = new Anthropic({ apiKey });
+  try {
+    // Validate API key
+    const apiKey = getAnthropicKey();
+    if (!apiKey) {
+      console.error('ERROR: ANTHROPIC_API_KEY not found. Set it in .env or environment.');
+      if (scrapeRunId) {
+        await completeVenueScrapeRun(scrapeRunId, { status: 'error', error: 'ANTHROPIC_API_KEY missing' });
+        scrapeRunCompleted = true;
+      }
+      throw new Error('ANTHROPIC_API_KEY missing');
+    }
 
-  // Load venue registry
-  if (!fs.existsSync(VENUE_REGISTRY_PATH)) {
-    console.error(`ERROR: venue-registry.json not found at ${VENUE_REGISTRY_PATH}`);
-    process.exit(1);
-  }
+    const anthropic = new Anthropic({ apiKey });
 
-  const venues = JSON.parse(fs.readFileSync(VENUE_REGISTRY_PATH, 'utf-8'));
-  console.log(`Loaded ${venues.length} venues from registry`);
+    // Load venue registry
+    if (!fs.existsSync(VENUE_REGISTRY_PATH)) {
+      console.error(`ERROR: venue-registry.json not found at ${VENUE_REGISTRY_PATH}`);
+      if (scrapeRunId) {
+        await completeVenueScrapeRun(scrapeRunId, { status: 'error', error: 'venue-registry.json missing' });
+        scrapeRunCompleted = true;
+      }
+      throw new Error('venue-registry.json missing');
+    }
 
-  // Filter to venues with calendar URLs
-  let scrapableVenues = venues.filter(v => v.calendar_url && v.calendar_url.startsWith('http'));
-  console.log(`${scrapableVenues.length} venues have scrapable calendar URLs`);
+    const venues = JSON.parse(fs.readFileSync(VENUE_REGISTRY_PATH, 'utf-8'));
+    console.log(`Loaded ${venues.length} venues from registry`);
 
-  // Load existing cache for incremental update
-  const cache = loadExistingCache();
+    // Filter to venues with calendar URLs
+    let scrapableVenues = venues.filter(v => v.calendar_url && v.calendar_url.startsWith('http'));
+    console.log(`${scrapableVenues.length} venues have scrapable calendar URLs`);
 
-  // --retry-failed: only re-scrape venues that previously errored
-  const retryFailed = process.argv.includes('--retry-failed');
-  if (retryFailed) {
-    const failedDomains = new Set(
-      Object.entries(cache.venues || {})
-        .filter(([, v]) => v.status === 'error')
-        .map(([domain]) => domain)
-    );
-    scrapableVenues = scrapableVenues.filter(v => failedDomains.has(v.domain));
-    console.log(`--retry-failed: retrying ${scrapableVenues.length} previously failed venues`);
-  }
+    // Load existing cache for incremental update
+    const cache = loadExistingCache();
 
-  cache.lastUpdated = new Date().toISOString();
-  cache.metadata = {
-    totalVenues: scrapableVenues.length,
-    scrapeStarted: new Date().toISOString(),
-    scrapeCompleted: null
-  };
+    // --retry-failed: only re-scrape venues that previously errored
+    const retryFailed = process.argv.includes('--retry-failed');
+    if (retryFailed) {
+      const failedDomains = new Set(
+        Object.entries(cache.venues || {})
+          .filter(([, v]) => v.status === 'error')
+          .map(([domain]) => domain)
+      );
+      scrapableVenues = scrapableVenues.filter(v => failedDomains.has(v.domain));
+      console.log(`--retry-failed: retrying ${scrapableVenues.length} previously failed venues`);
+    }
 
-  let totalEvents = 0;
-  let successCount = 0;
-  let failCount = 0;
-  let skippedCount = 0;
+    cache.metadata = {
+      totalVenues: scrapableVenues.length,
+      scrapeStarted: new Date().toISOString(),
+      scrapeCompleted: null
+    };
 
-  for (let i = 0; i < scrapableVenues.length; i++) {
-    const venue = scrapableVenues[i];
-    const progress = `[${i + 1}/${scrapableVenues.length}]`;
+    let totalEvents = 0;
+    let successCount = 0;
+    let failCount = 0;
+    let skippedCount = 0;
 
-    console.log(`${progress} Scraping: ${venue.name} (${venue.calendar_url})`);
+    for (let i = 0; i < scrapableVenues.length; i++) {
+      const venue = scrapableVenues[i];
+      const progress = `[${i + 1}/${scrapableVenues.length}]`;
 
-    try {
-      // Fetch via Jina Reader
-      const markdown = await fetchViaJina(venue.calendar_url);
+      console.log(`${progress} Scraping: ${venue.name} (${venue.calendar_url})`);
 
-      if (!markdown || markdown.length < 100) {
-        console.log(`  Skipped: too little content (${markdown?.length || 0} chars)`);
-        skippedCount++;
+      try {
+        // Fetch via Jina Reader
+        const markdown = await fetchViaJina(venue.calendar_url);
+
+        if (!markdown || markdown.length < 100) {
+          console.log(`  Skipped: too little content (${markdown?.length || 0} chars)`);
+          skippedCount++;
+          cache.venues[venue.domain] = {
+            venueName: venue.name,
+            domain: venue.domain,
+            category: venue.category,
+            events: [],
+            lastScraped: new Date().toISOString(),
+            status: 'empty_page'
+          };
+          await persistCache(cache, { writeDb: dbLockAcquired });
+          await sleep(JINA_DELAY_MS);
+          continue;
+        }
+
+        // Extract events with Haiku
+        const events = await extractEventsWithHaiku(
+          anthropic,
+          venue.name,
+          venue.category || 'general',
+          markdown
+        );
+
+        // Stamp each event with venue metadata
+        const stampedEvents = events.map((event, idx) => ({
+          ...event,
+          id: `venue_${venue.domain.replace(/\./g, '_')}_${idx}_${Date.now()}`,
+          venue: venue.name,
+          venueDomain: venue.domain,
+          location: [venue.city, venue.state].filter(Boolean).join(', ') || 'Bay Area, CA',
+          source: 'venue_scraper',
+          scrapedAt: new Date().toISOString()
+        }));
+
+        cache.venues[venue.domain] = {
+          venueName: venue.name,
+          domain: venue.domain,
+          category: venue.category,
+          city: venue.city,
+          state: venue.state,
+          events: stampedEvents,
+          lastScraped: new Date().toISOString(),
+          status: 'success',
+          eventCount: stampedEvents.length
+        };
+
+        totalEvents += stampedEvents.length;
+        successCount++;
+        console.log(`  Found ${stampedEvents.length} events`);
+
+        // Save incrementally
+        await persistCache(cache, { writeDb: dbLockAcquired });
+
+      } catch (error) {
+        console.error(`  ERROR: ${error.message}`);
+        failCount++;
         cache.venues[venue.domain] = {
           venueName: venue.name,
           domain: venue.domain,
           category: venue.category,
           events: [],
           lastScraped: new Date().toISOString(),
-          status: 'empty_page'
+          status: 'error',
+          error: error.message
         };
-        saveCache(cache);
-        await sleep(JINA_DELAY_MS);
-        continue;
+        await persistCache(cache, { writeDb: dbLockAcquired });
       }
 
-      // Extract events with Haiku
-      const events = await extractEventsWithHaiku(
-        anthropic,
-        venue.name,
-        venue.category || 'general',
-        markdown
-      );
+      // Rate limit between Jina calls
+      if (i < scrapableVenues.length - 1) {
+        await sleep(JINA_DELAY_MS);
+      }
+    }
 
-      // Stamp each event with venue metadata
-      const stampedEvents = events.map((event, idx) => ({
-        ...event,
-        id: `venue_${venue.domain.replace(/\./g, '_')}_${idx}_${Date.now()}`,
-        venue: venue.name,
-        venueDomain: venue.domain,
-        location: [venue.city, venue.state].filter(Boolean).join(', ') || 'Bay Area, CA',
-        source: 'venue_scraper',
-        scrapedAt: new Date().toISOString()
-      }));
+    // Final cache update — recount all events across the full cache (covers retry mode)
+    let grandTotal = 0;
+    for (const v of Object.values(cache.venues)) {
+      grandTotal += (v.events || []).length;
+    }
+    cache.totalEvents = grandTotal;
+    cache.lastUpdated = new Date().toISOString();
+    cache.metadata.scrapeCompleted = new Date().toISOString();
+    cache.metadata.stats = {
+      success: successCount,
+      failed: failCount,
+      skipped: skippedCount,
+      totalEvents: grandTotal,
+      thisRunEvents: totalEvents
+    };
+    await persistCache(cache, { writeDb: dbLockAcquired });
 
-      cache.venues[venue.domain] = {
-        venueName: venue.name,
-        domain: venue.domain,
-        category: venue.category,
-        city: venue.city,
-        state: venue.state,
-        events: stampedEvents,
-        lastScraped: new Date().toISOString(),
+    if (scrapeRunId) {
+      await completeVenueScrapeRun(scrapeRunId, {
         status: 'success',
-        eventCount: stampedEvents.length
-      };
-
-      totalEvents += stampedEvents.length;
-      successCount++;
-      console.log(`  Found ${stampedEvents.length} events`);
-
-      // Save incrementally
-      saveCache(cache);
-
-    } catch (error) {
-      console.error(`  ERROR: ${error.message}`);
-      failCount++;
-      cache.venues[venue.domain] = {
-        venueName: venue.name,
-        domain: venue.domain,
-        category: venue.category,
-        events: [],
-        lastScraped: new Date().toISOString(),
-        status: 'error',
-        error: error.message
-      };
-      saveCache(cache);
+        stats: { ...cache.metadata.stats, totalVenues: scrapableVenues.length },
+        cacheLastUpdated: cache.lastUpdated
+      });
+      scrapeRunCompleted = true;
     }
 
-    // Rate limit between Jina calls
-    if (i < scrapableVenues.length - 1) {
-      await sleep(JINA_DELAY_MS);
+    console.log('\n=== Scrape Complete ===');
+    console.log(`Success: ${successCount} | Failed: ${failCount} | Skipped: ${skippedCount}`);
+    console.log(`Total events extracted: ${totalEvents}`);
+    console.log(`Cache saved to: ${CACHE_PATH}`);
+    console.log(`Finished: ${new Date().toISOString()}`);
+  } catch (error) {
+    if (scrapeRunId && !scrapeRunCompleted) {
+      await completeVenueScrapeRun(scrapeRunId, { status: 'error', error: error.message });
+    }
+    throw error;
+  } finally {
+    if (dbLockAcquired) {
+      await releaseVenueScrapeLock();
     }
   }
-
-  // Final cache update — recount all events across the full cache (covers retry mode)
-  let grandTotal = 0;
-  for (const v of Object.values(cache.venues)) {
-    grandTotal += (v.events || []).length;
-  }
-  cache.totalEvents = grandTotal;
-  cache.metadata.scrapeCompleted = new Date().toISOString();
-  cache.metadata.stats = {
-    success: successCount,
-    failed: failCount,
-    skipped: skippedCount,
-    totalEvents: grandTotal,
-    thisRunEvents: totalEvents
-  };
-  saveCache(cache);
-
-  console.log('\n=== Scrape Complete ===');
-  console.log(`Success: ${successCount} | Failed: ${failCount} | Skipped: ${skippedCount}`);
-  console.log(`Total events extracted: ${totalEvents}`);
-  console.log(`Cache saved to: ${CACHE_PATH}`);
-  console.log(`Finished: ${new Date().toISOString()}`);
 }
 
 main().catch(error => {
   console.error('Fatal error:', error);
+  // Do not throw from here; exit non-zero so schedulers / logs catch it.
   process.exit(1);
 });

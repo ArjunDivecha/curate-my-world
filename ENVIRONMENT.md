@@ -24,6 +24,8 @@ Configuration for the Curate My World (Squirtle) application.
 | `JINA_READER_URL` | `https://r.jina.ai` | Jina Reader base URL for venue scraping |
 | `LOG_LEVEL` | `debug` (dev) / `info` (prod) | Winston log level |
 | `FRONTEND_URL` | — | Frontend URL for CORS in production |
+| `VENUE_CACHE_STORAGE_MODE` | `file` / `db` | Where venue scraper cache is read from. Defaults to `db` in production when `DATABASE_URL` is set, otherwise `file`. |
+| `VENUE_BACKGROUND_REFRESH` | enabled | If set to `disabled`, the API will not spawn a background scrape on requests (use a scheduled job instead). |
 
 ### Legacy (not required)
 | Variable | Description |

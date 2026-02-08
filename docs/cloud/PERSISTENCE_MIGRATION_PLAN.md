@@ -11,7 +11,7 @@ Goal: remove runtime dependence on local filesystem so Railway/Vercel/iOS work r
 | `data/whitelist.xlsx` | whitelist domains | read + write | `list_entries` table |
 | `data/blacklist-sites.xlsx` | blocked domains | read + write | `list_entries` table |
 | `data/blacklist-events.xlsx` | blocked event title/url | read + write | `list_entries` table |
-| `data/venue-events-cache.json` | cached venue scraper events | read + write | `venue_event_cache` table (or object store + metadata table) |
+| `data/venue-events-cache.json` | cached venue scraper events | read + write | `venue_events_cache` table (DB-backed cache blob) |
 
 ### Versioned/static files (can stay in git)
 
@@ -40,19 +40,34 @@ Indexes:
 - `(list_type, url)`
 - `(list_type, title)`
 
-### Table: `venue_event_cache`
+### Table: `venue_events_cache` (Implemented)
+
+Stores the full cache blob (same shape as `data/venue-events-cache.json`) so the API can survive redeploys/restarts.
+
+Columns:
+- `id` text PK (single row, `default`)
+- `cache` jsonb
+- `updated_at` timestamptz
+
+### Table: `venue_scrape_runs` (Implemented)
+
+Tracks scrape job status so the UI "Refreshing venue data..." indicator can survive server restarts.
 
 Columns:
 - `id` BIGSERIAL PK
-- `venue_domain` text
-- `payload` jsonb
-- `event_count` integer
-- `last_updated` timestamptz
-- `source_version` text
+- `status` text (`running` | `success` | `error`)
+- `started_at` timestamptz
+- `completed_at` timestamptz nullable
+- `error` text nullable
+- `venues_total` integer nullable
+- `venues_success` integer nullable
+- `venues_failed` integer nullable
+- `venues_skipped` integer nullable
+- `events_total` integer nullable
+- `cache_last_updated` timestamptz nullable
 
 Indexes:
-- `(venue_domain)`
-- `(last_updated)`
+- `venue_scrape_runs(started_at DESC)`
 
 ## Migration Steps
 

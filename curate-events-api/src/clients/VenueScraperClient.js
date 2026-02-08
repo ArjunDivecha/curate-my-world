@@ -25,6 +25,11 @@ import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { createLogger } from '../utils/logger.js';
 import { normalizeCategory } from '../utils/categoryMapping.js';
+import {
+  getLatestVenueScrapeRun,
+  readVenueCacheFromDb,
+  upsertVenueCacheToDb,
+} from '../utils/venueCacheDb.js';
 
 const logger = createLogger('VenueScraperClient');
 
@@ -38,6 +43,9 @@ const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 export class VenueScraperClient {
   constructor(cachePath) {
     this.cachePath = cachePath || DEFAULT_CACHE_PATH;
+    const configuredMode = (process.env.VENUE_CACHE_STORAGE_MODE || '').toLowerCase().trim();
+    const defaultMode = process.env.NODE_ENV === 'production' && process.env.DATABASE_URL ? 'db' : 'file';
+    this.storageMode = (configuredMode === 'db' || configuredMode === 'file') ? configuredMode : defaultMode;
     this._cache = null;
     this._cacheLoadedAt = null;
     this._cacheTTL = 5 * 60 * 1000; // Re-read file every 5 minutes
@@ -46,27 +54,67 @@ export class VenueScraperClient {
   }
 
   /**
-   * Load or refresh the cache from disk.
-   * Returns the parsed cache object, or null if file missing/corrupt.
+   * Load or refresh the cache (DB or file).
+   * Returns the parsed cache object, or null if missing/corrupt/unavailable.
    */
-  _loadCache() {
+  async _loadCache() {
     const now = Date.now();
     if (this._cache && this._cacheLoadedAt && (now - this._cacheLoadedAt < this._cacheTTL)) {
       return this._cache;
     }
 
-    try {
-      if (!fs.existsSync(this.cachePath)) {
-        logger.warn('Venue events cache file not found', { path: this.cachePath });
+    const loadFromFile = () => {
+      try {
+        if (!fs.existsSync(this.cachePath)) {
+          logger.warn('Venue events cache file not found', { path: this.cachePath });
+          return null;
+        }
+
+        const raw = fs.readFileSync(this.cachePath, 'utf-8');
+        return JSON.parse(raw);
+      } catch (error) {
+        logger.error('Failed to load venue events cache from file', { error: error.message, path: this.cachePath });
         return null;
       }
+    };
 
-      const raw = fs.readFileSync(this.cachePath, 'utf-8');
-      this._cache = JSON.parse(raw);
+    try {
+      let cache = null;
+
+      if (this.storageMode === 'db') {
+        const [dbCache, fileCache] = await Promise.all([
+          readVenueCacheFromDb(),
+          Promise.resolve(loadFromFile()),
+        ]);
+
+        const getLastUpdatedMs = (value) => {
+          if (!value?.lastUpdated) return null;
+          const ms = new Date(value.lastUpdated).getTime();
+          return Number.isFinite(ms) ? ms : null;
+        };
+
+        const dbMs = getLastUpdatedMs(dbCache);
+        const fileMs = getLastUpdatedMs(fileCache);
+
+        if (dbCache && fileCache) {
+          cache = (fileMs !== null && (dbMs === null || fileMs > dbMs)) ? fileCache : dbCache;
+        } else {
+          cache = dbCache || fileCache || null;
+        }
+
+        // If file is fresher, seed/repair DB in the background.
+        if (cache === fileCache && fileCache) {
+          void upsertVenueCacheToDb(fileCache);
+        }
+      } else {
+        cache = loadFromFile();
+      }
+
+      this._cache = cache;
       this._cacheLoadedAt = now;
       return this._cache;
     } catch (error) {
-      logger.error('Failed to load venue events cache', { error: error.message, path: this.cachePath });
+      logger.error('Failed to load venue events cache', { error: error.message, storageMode: this.storageMode });
       return null;
     }
   }
@@ -75,8 +123,8 @@ export class VenueScraperClient {
    * Get all events from cache, optionally filtered by category.
    * Only returns future events.
    */
-  _getAllEvents(category) {
-    const cache = this._loadCache();
+  async _getAllEvents(category) {
+    const cache = await this._loadCache();
     if (!cache || !cache.venues) return [];
 
     const now = new Date();
@@ -169,11 +217,16 @@ export class VenueScraperClient {
    * Check if the cache is stale and trigger a background scrape if needed.
    * Always returns immediately — never blocks the caller.
    */
-  _maybeRefreshInBackground() {
+  async _maybeRefreshInBackground() {
+    const refreshMode = (process.env.VENUE_BACKGROUND_REFRESH || '').toLowerCase().trim();
+    if (refreshMode === 'disabled' || refreshMode === 'off' || refreshMode === 'false' || refreshMode === '0') {
+      return;
+    }
+
     // Don't double-trigger
     if (this._scrapeInProgress) return;
 
-    const cache = this._loadCache();
+    const cache = await this._loadCache();
     if (!cache || !cache.lastUpdated) return;
 
     const ageMs = Date.now() - new Date(cache.lastUpdated).getTime();
@@ -189,7 +242,12 @@ export class VenueScraperClient {
     logger.info(`Cache is ${ageHours}h old (>${STALE_THRESHOLD_MS / (1000 * 60 * 60)}h). Spawning background scrape.`);
 
     try {
-      const child = spawn('node', [SCRAPER_SCRIPT], {
+      const args = [SCRAPER_SCRIPT];
+      if (this.storageMode === 'db') {
+        args.push('--write-db');
+      }
+
+      const child = spawn('node', args, {
         stdio: 'ignore',
         detached: true,
         env: { ...process.env }
@@ -229,10 +287,10 @@ export class VenueScraperClient {
     const startTime = Date.now();
 
     // Check staleness and kick off background refresh if needed (non-blocking)
-    this._maybeRefreshInBackground();
+    void this._maybeRefreshInBackground();
 
     try {
-      const allEvents = this._getAllEvents(category);
+      const allEvents = await this._getAllEvents(category);
 
       // Apply limit
       const limitedEvents = allEvents.slice(0, limit);
@@ -275,14 +333,15 @@ export class VenueScraperClient {
    * Get health status of the venue scraper cache.
    * @returns {Object} Health status
    */
-  getHealthStatus() {
-    const cache = this._loadCache();
+  async getHealthStatus() {
+    const cache = await this._loadCache();
 
     if (!cache) {
       return {
         status: 'unhealthy',
-        message: 'Cache file not found or unreadable',
-        cachePath: this.cachePath
+        message: 'Cache not found or unreadable',
+        cachePath: this.cachePath,
+        storageMode: this.storageMode
       };
     }
 
@@ -292,8 +351,23 @@ export class VenueScraperClient {
     const totalEvents = cache.totalEvents || 0;
     const isStale = ageHours !== null && ageHours > 48;
 
+    // If we have DB access, use the latest run status as a stronger signal than in-memory state.
+    // This makes refresh-status resilient to server restarts.
+    let dbRun = null;
+    let backgroundRefreshing = this._scrapeInProgress;
+    if (this.storageMode === 'db') {
+      dbRun = await getLatestVenueScrapeRun();
+      if (dbRun?.status === 'running' && dbRun.started_at) {
+        const startedAt = new Date(dbRun.started_at).getTime();
+        // Treat a run as "active" only within a reasonable window (avoid "stuck running forever").
+        if (Date.now() - startedAt < 3 * 60 * 60 * 1000) {
+          backgroundRefreshing = true;
+        }
+      }
+    }
+
     let message;
-    if (this._scrapeInProgress) {
+    if (backgroundRefreshing) {
       message = `Cache is ${ageHours !== null ? Math.round(ageHours) + 'h' : 'unknown age'} old — background refresh in progress`;
     } else if (isStale) {
       message = `Cache is ${Math.round(ageHours)}h old (>48h stale). Will auto-refresh on next fetch.`;
@@ -307,7 +381,9 @@ export class VenueScraperClient {
       lastUpdated: cache.lastUpdated,
       ageHours: ageHours !== null ? Math.round(ageHours * 10) / 10 : null,
       isStale,
-      backgroundRefreshing: this._scrapeInProgress,
+      backgroundRefreshing,
+      storageMode: this.storageMode,
+      latestRunStatus: dbRun?.status || null,
       venueCount,
       totalEvents,
       stats: cache.metadata?.stats || null,

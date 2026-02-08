@@ -19,7 +19,9 @@
     "lint": "eslint src/ --ext .js",
     "build": "echo 'No build step required for Node.js'",
     "scrape:venues": "node scripts/scrape-venues.js",
-    "scrape:retry": "node scripts/scrape-venues.js --retry-failed"
+    "scrape:retry": "node scripts/scrape-venues.js --retry-failed",
+    "scrape:venues:db": "node scripts/scrape-venues.js --write-db",
+    "scrape:retry:db": "node scripts/scrape-venues.js --retry-failed --write-db"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

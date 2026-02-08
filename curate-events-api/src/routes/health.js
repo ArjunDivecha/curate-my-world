@@ -81,7 +81,7 @@ async function handleHealth(req, res, { checkApi } = {}) {
         })()
       ]);
 
-      const venueScraperHealth = venueScraperClient.getHealthStatus();
+      const venueScraperHealth = await venueScraperClient.getHealthStatus();
 
       providerStatus = {
         ticketmaster: ticketmasterResult.status === 'fulfilled' ? ticketmasterResult.value : {

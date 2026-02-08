@@ -36,7 +36,8 @@ Backend API (Node.js + Express, port 8765)
 **Layer 2 — Venue Calendar Scraper (gap filler)**
 - Scrapes 286 Bay Area venue websites via Jina Reader + Claude Haiku
 - Fills gaps Ticketmaster doesn't cover: galleries, independent theatres, food events, tech meetups
-- Results cached in `data/venue-events-cache.json` (~800 events from 284 venues)
+- Cache file: `data/venue-events-cache.json` (~800 events from 284 venues)
+- Cloud durability: when `DATABASE_URL` is set (Railway), cache is also persisted to Postgres (`venue_events_cache`) so it survives redeploys/restarts
 - Stale-while-revalidate: auto-refreshes when cache > 24h old
 
 **Layer 3 — Event Validator (quality gate)**
@@ -76,9 +77,14 @@ Single source of truth: `categoryMapping.js` with `normalizeCategory()` function
 - **Status**: Active (supplementary source)
 - **Registry**: 286 Bay Area venues in `data/venue-registry.json`
 - **How it works**: Jina Reader fetches venue calendar pages → Claude Haiku extracts structured events
-- **Cache**: `data/venue-events-cache.json` (~800 events from 284 venues)
+- **Cache**:
+  - File: `data/venue-events-cache.json`
+  - DB (when `DATABASE_URL` set): Postgres `venue_events_cache`
 - **Cost**: ~$0.05 per full 286-venue scrape
-- **Refresh**: Run `npm run scrape:venues` or auto-refreshes when cache > 24h old
+- **Refresh**:
+  - Local/manual: `npm run scrape:venues`
+  - DB-backed (recommended in cloud): `npm run scrape:venues:db`
+  - Automatic: API spawns a background scrape when cache > 24h old (stale-while-revalidate)
 - **Retry failed**: `npm run scrape:retry` re-scrapes only venues that errored
 
 ### Adding New Venues

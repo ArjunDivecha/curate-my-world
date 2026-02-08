@@ -414,7 +414,7 @@ router.get('/all-categories', async (req, res) => {
     });
 
     // Check if venue scraper is refreshing in the background
-    const venueHealth = venueScraperClient.getHealthStatus();
+    const venueHealth = await venueScraperClient.getHealthStatus();
     const backgroundRefreshing = venueHealth.backgroundRefreshing || false;
 
     const response = {
@@ -470,8 +470,8 @@ router.get('/all-categories', async (req, res) => {
  * Lightweight polling endpoint for frontend to check if a background
  * venue scrape is in progress. Used for the "Refreshing Data" indicator.
  */
-router.get('/refresh-status', (req, res) => {
-  const health = venueScraperClient.getHealthStatus();
+router.get('/refresh-status', async (req, res) => {
+  const health = await venueScraperClient.getHealthStatus();
   res.json({
     refreshing: health.backgroundRefreshing || false,
     lastUpdated: health.lastUpdated || null,
