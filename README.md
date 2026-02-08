@@ -10,6 +10,7 @@ Squirtle is a local event curation system that aggregates events from two comple
 - **Two-source aggregation**: Ticketmaster API (backbone) + venue calendar scraper (gap filler)
 - **9 event categories**: Music, Theatre, Comedy, Movies, Art, Food, Tech, Lectures, Kids
 - **Event search**: Filter displayed events by title, venue, description, or address
+- **Event moderation**: Block individual events or entire domains from appearing
 - **Quality gate**: Event validator rejects listing pages, out-of-area events, and placeholder entries
 - **Central category normalization**: 40+ aliases ensure events land in the right bucket
 - **Bay Area focus**: Geographic filtering for 60+ cities in the SF Bay Area
@@ -35,7 +36,7 @@ Backend API (Node.js + Express, port 8765)
 **Layer 2 — Venue Calendar Scraper (gap filler)**
 - Scrapes 286 Bay Area venue websites via Jina Reader + Claude Haiku
 - Fills gaps Ticketmaster doesn't cover: galleries, independent theatres, food events, tech meetups
-- Results cached in `data/venue-events-cache.json` (~800+ events)
+- Results cached in `data/venue-events-cache.json` (~800 events from 284 venues)
 - Stale-while-revalidate: auto-refreshes when cache > 24h old
 
 **Layer 3 — Event Validator (quality gate)**
@@ -75,10 +76,33 @@ Single source of truth: `categoryMapping.js` with `normalizeCategory()` function
 - **Status**: Active (supplementary source)
 - **Registry**: 286 Bay Area venues in `data/venue-registry.json`
 - **How it works**: Jina Reader fetches venue calendar pages → Claude Haiku extracts structured events
-- **Cache**: `data/venue-events-cache.json` (~800+ events)
+- **Cache**: `data/venue-events-cache.json` (~800 events from 284 venues)
 - **Cost**: ~$0.05 per full 286-venue scrape
 - **Refresh**: Run `npm run scrape:venues` or auto-refreshes when cache > 24h old
 - **Retry failed**: `npm run scrape:retry` re-scrapes only venues that errored
+
+### Adding New Venues
+
+Edit `data/venue-registry.json` and add an entry:
+
+```json
+{
+  "name": "Venue Name",
+  "domain": "venuename.com",
+  "category": "music",
+  "city": "San Francisco",
+  "state": "CA",
+  "website": "https://venuename.com",
+  "calendar_url": "https://venuename.com/events"
+}
+```
+
+Then run `npm run scrape:venues` (or `npm run scrape:retry` after marking the new venue as `"status": "error"` in the cache) to populate events from the new venue.
+
+**Key fields:**
+- `calendar_url` — The page listing the venue's upcoming events (what Jina Reader fetches)
+- `category` — Default category fallback if the scraper can't determine one
+- `domain` — Unique key in the cache (must match the website domain)
 
 ### Removed Providers (pre-Feb 2026)
 The following providers were removed during the v2.0 architecture overhaul:
@@ -88,6 +112,32 @@ The following providers were removed during the v2.0 architecture overhaul:
 - Apyflux (API issues, discontinued)
 - SerpAPI (Google Events endpoint unreliable)
 - Super-Hybrid experiment (deprecated)
+
+## Frontend Features
+
+### Dashboard
+- Category tabs to filter by event type (All, Music, Theatre, Comedy, etc.)
+- Search box to filter events by title, venue, description, or address
+- Date picker to filter by date
+- "Fetch Events" button to reload from the API
+- Events displayed as cards in a responsive grid
+
+### Event Cards
+Each event card shows:
+- Title, date, time, venue, description
+- Category and source badges (ticketmaster / venue_scraper)
+- "Event Page" link to the original event URL
+- "Save to Calendar" button
+- Share button
+- **Block Event** — blacklist a specific event so it never appears again
+- **Block Site** — blacklist an entire domain (all events from that site hidden)
+
+### Event Moderation (Blacklist)
+The blacklist system lets you hide unwanted events:
+- **Block Event**: Hides one specific event by title/URL
+- **Block Site**: Hides ALL events from a domain permanently
+- Blacklist persists across refreshes via the backend API
+- Managed through `/api/lists/` endpoints
 
 ## Quick Start
 
@@ -152,26 +202,41 @@ npm run scrape:retry         # Retry only failed venues
 
 ## API Endpoints
 
-### Backend API (port 8765)
+### Events (port 8765)
 
 | Endpoint | Description |
 |----------|-------------|
 | `GET /api/events/all-categories` | All events grouped by category |
 | `GET /api/events/:category` | Events for a specific category |
 | `GET /api/events/categories` | List supported categories |
-| `GET /api/health` | Basic health check |
-| `GET /api/health/deep` | Detailed health with provider status |
 
 **Query Parameters:**
 - `location` — Location string (default: San Francisco Bay Area)
 - `limit` — Max events per provider (default: 50)
-- `providers` — Comma-separated: `ticketmaster,venue_scraper,whitelist`
+- `providers` — Comma-separated: `ticketmaster,venue_scraper`
 - `date` — Date filter (ISO format)
 
 **Example:**
 ```bash
 curl "http://127.0.0.1:8765/api/events/music?location=San%20Francisco&limit=20&providers=ticketmaster,venue_scraper"
 ```
+
+### Event Moderation
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/lists/` | View all lists (whitelist + blacklists) |
+| `POST /api/lists/blacklist-event` | Block a specific event |
+| `DELETE /api/lists/blacklist-event` | Unblock a specific event |
+| `POST /api/lists/blacklist-site` | Block all events from a domain |
+| `DELETE /api/lists/blacklist-site` | Unblock a domain |
+
+### Health
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/health` | Basic health check |
+| `GET /api/health/deep` | Detailed health with provider status |
 
 ### Response Format
 
@@ -215,10 +280,9 @@ curl "http://127.0.0.1:8765/api/events/music?location=San%20Francisco&limit=20&p
 curate-my-world/
 ├── src/                              # Frontend (React + TypeScript)
 │   ├── components/
-│   │   ├── Dashboard.tsx             # Main dashboard with search and event display
-│   │   ├── EventCard.tsx             # Individual event card
+│   │   ├── Dashboard.tsx             # Main dashboard with search and category tabs
+│   │   ├── EventCard.tsx             # Event card with block/share/calendar actions
 │   │   ├── WeeklyCalendar.tsx        # Calendar view
-│   │   ├── ProviderControlPanel.tsx  # Toggle Ticketmaster / Venue Scraper
 │   │   └── ui/                       # shadcn/ui primitives
 │   ├── hooks/
 │   ├── lib/
@@ -227,16 +291,17 @@ curate-my-world/
 │   ├── src/
 │   │   ├── clients/
 │   │   │   ├── TicketmasterClient.js # Ticketmaster Discovery API
-│   │   │   ├── VenueScraperClient.js # Cache reader + stale-while-revalidate
-│   │   │   └── WhitelistClient.js    # Legacy whitelist (disabled by default)
+│   │   │   └── VenueScraperClient.js # Cache reader + stale-while-revalidate
 │   │   ├── routes/
 │   │   │   ├── events.js             # Main API routes (three-layer pipeline)
-│   │   │   └── health.js             # Health check endpoints
+│   │   │   ├── health.js             # Health check endpoints
+│   │   │   └── lists.js              # Blacklist/whitelist management
 │   │   └── utils/
 │   │       ├── categoryMapping.js    # Single source of truth for categories
 │   │       ├── eventValidator.js     # Quality gate (rejects listing pages)
 │   │       ├── locationFilter.js     # Bay Area geographic filtering
 │   │       ├── dateFilter.js         # Date range filtering
+│   │       ├── listManager.js        # Blacklist persistence
 │   │       ├── config.js             # Environment configuration
 │   │       └── eventDeduplicator.js  # Cross-source dedup
 │   ├── scripts/
@@ -244,7 +309,7 @@ curate-my-world/
 │   └── package.json
 ├── data/
 │   ├── venue-registry.json           # 286 Bay Area venues with calendar URLs
-│   └── venue-events-cache.json       # Scraped events cache (~800+ events)
+│   └── venue-events-cache.json       # Scraped events cache (~800 events)
 └── scripts/
     └── start-all.sh                  # Start frontend + backend
 ```
@@ -254,13 +319,15 @@ curate-my-world/
 | File | Purpose |
 |------|---------|
 | `curate-events-api/src/routes/events.js` | Main API routes — three-layer event pipeline |
+| `curate-events-api/src/routes/lists.js` | Blacklist/whitelist management API |
 | `curate-events-api/src/utils/categoryMapping.js` | Category normalization (40+ aliases) |
 | `curate-events-api/src/clients/VenueScraperClient.js` | Reads venue cache, stale-while-revalidate |
 | `curate-events-api/src/utils/eventValidator.js` | Quality gate — rejects listing pages |
 | `curate-events-api/scripts/scrape-venues.js` | Venue scraper (Jina + Claude Haiku) |
 | `data/venue-registry.json` | 286 Bay Area venue definitions |
 | `data/venue-events-cache.json` | Scraped events cache |
-| `src/components/Dashboard.tsx` | Frontend dashboard with search |
+| `src/components/Dashboard.tsx` | Frontend dashboard with search and categories |
+| `src/components/EventCard.tsx` | Event card with block/share/calendar actions |
 
 ## Event Pipeline Flow
 
@@ -274,13 +341,15 @@ curate-my-world/
 3. All events pass through pipeline:
    ├── Deduplication (cross-source)
    ├── Rules filter
-   ├── Blacklist filter
+   ├── Blacklist filter (blocked events/domains removed)
    ├── Event Validator (quality gate)
    ├── Location filter (Bay Area)
    ├── Date filter
    └── Category filter (normalizeCategory)
 
 4. Events grouped by category, returned to frontend
+
+5. Frontend filters further by search query if one is entered
 ```
 
 ## Development
@@ -324,8 +393,7 @@ The scraper uses:
 
 ---
 
-**Last Updated**: February 2026
+**Last Updated**: February 7, 2026
 **System Status**: Production Ready
 **Architecture**: v2.0 — Three-layer pipeline (Ticketmaster + Venue Scraper + Validator)
-**Active Providers**: Ticketmaster (backbone) + Venue Scraper (286 venues)
-**Event Coverage**: ~2,400+ Bay Area events
+**Active Providers**: Ticketmaster (backbone) + Venue Scraper (286 venues, ~800 cached events)
