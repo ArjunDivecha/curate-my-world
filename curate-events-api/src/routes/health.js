@@ -18,12 +18,7 @@ const logger = createLogger('HealthRoute');
 const ticketmasterClient = new TicketmasterClient();
 const venueScraperClient = new VenueScraperClient();
 
-/**
- * GET /api/health
- *
- * Returns server health status, configuration info, and API connectivity
- */
-router.get('/', async (req, res) => {
+async function handleHealth(req, res, { checkApi } = {}) {
   const startTime = Date.now();
 
   logger.info('Health check requested');
@@ -68,7 +63,7 @@ router.get('/', async (req, res) => {
 
     // Check providers if requested
     let providerStatus = null;
-    if (req.query.check_api === 'true') {
+    if (checkApi) {
       logger.info('Testing provider connectivity');
 
       const [ticketmasterResult] = await Promise.allSettled([
@@ -115,12 +110,11 @@ router.get('/', async (req, res) => {
 
     logger.info('Health check completed', {
       responseTime: `${responseTime}ms`,
-      apiTestRequested: req.query.check_api === 'true',
+      apiTestRequested: checkApi,
       status: healthInfo.status
     });
 
-    res.json(response);
-
+    return res.json(response);
   } catch (error) {
     const responseTime = Date.now() - startTime;
 
@@ -129,13 +123,22 @@ router.get('/', async (req, res) => {
       responseTime: `${responseTime}ms`
     });
 
-    res.status(500).json({
+    return res.status(500).json({
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
       error: error.message,
       responseTime: `${responseTime}ms`
     });
   }
+}
+
+/**
+ * GET /api/health
+ *
+ * Returns server health status, configuration info, and API connectivity
+ */
+router.get('/', async (req, res) => {
+  return handleHealth(req, res, { checkApi: req.query.check_api === 'true' });
 });
 
 /**
@@ -144,8 +147,7 @@ router.get('/', async (req, res) => {
  * Comprehensive health check including API connectivity test
  */
 router.get('/deep', async (req, res) => {
-  req.query.check_api = 'true';
-  return router.handle(req, res);
+  return handleHealth(req, res, { checkApi: true });
 });
 
 export default router;
