@@ -26,7 +26,7 @@ Local Development: Docker setup for easy local deployment
 2.2 External Integrations
 
 Comprehensive Web Scraping: Puppeteer/Playwright for JavaScript-heavy sites, BeautifulSoup for simpler sites
-AI Platforms: OpenAI API, Perplexity API for post-collection intelligent filtering and curation
+AI Platforms: Anthropic API (venue scraping extraction). Legacy multi-provider experiments (Perplexity/Apyflux/etc.) are deprecated in the current deployed path.
 Social Media APIs: Twitter/Instagram APIs for venue and hashtag monitoring
 Maps & Location: Google Maps API for venue information and location services
 RSS/Feed Processing: Universal feed parser for venue RSS feeds and event calendars
@@ -411,5 +411,4 @@ Personal performance optimizations
 Individual feature customizations
 Custom personal integrations
 Enhanced personal analytics
-
 

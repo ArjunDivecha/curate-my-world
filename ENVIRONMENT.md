@@ -64,6 +64,21 @@ The backend validates configuration on startup:
 - **Warning**: Missing optional keys are logged but don't prevent startup
 - **Warning**: Missing venue events cache prompts a reminder to run `npm run scrape:venues`
 
+## Current Cloud Deployment (Feb 2026)
+
+This repo is currently deployed and working.
+
+- Frontend (Vercel): `https://squirtle-eta.vercel.app`
+- Backend (Railway, currently running from the `staging` environment): `https://squirtle-api-staging.up.railway.app`
+  - Health: `https://squirtle-api-staging.up.railway.app/api/health`
+- Vercel `VITE_API_BASE_URL`: `https://squirtle-api-staging.up.railway.app/api`
+- Railway `FRONTEND_URL` (CORS): `https://squirtle-eta.vercel.app`
+- Railway `LIST_STORAGE_MODE`: `db` (uses Railway Postgres)
+
+Notes:
+- Railway `production` environment in the `squirtle` project is currently empty. Treat `staging` as production unless you intentionally migrate.
+- Avoid Railway UI “Sync/Merge changes from production into staging” unless you understand the diff; it can propose deleting staging services.
+
 ---
 
 **Last Updated**: February 2026

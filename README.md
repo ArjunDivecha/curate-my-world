@@ -200,6 +200,46 @@ npm run scrape:venues        # Full scrape of all 286 venues (~15 min)
 npm run scrape:retry         # Retry only failed venues
 ```
 
+## Current Live Deployment (Feb 2026)
+
+This repo is currently deployed and working. The simplest operational rule is: **leave Railway as-is unless you are intentionally changing production infrastructure**.
+
+### URLs
+
+- Frontend (Vercel): `https://squirtle-eta.vercel.app`
+- Backend API (Railway, currently running from the `staging` environment): `https://squirtle-api-staging.up.railway.app`
+  - Health: `https://squirtle-api-staging.up.railway.app/api/health`
+
+### Source Of Truth (What Is Deployed)
+
+Railway staging backend deploy metadata (confirmed via Railway API):
+
+- Repo: `ArjunDivecha/curate-my-world`
+- Branch: `main`
+- Commit: `32869445547086abab57c06a9468b8f59181aa97` (merge commit `3286944`)
+
+### Required Cloud Env Vars (Backend)
+
+On Railway `squirtle-api` (staging environment), expect at minimum:
+
+- `NODE_ENV=production`
+- `FRONTEND_URL=https://squirtle-eta.vercel.app` (CORS allow-origin)
+- `TICKETMASTER_CONSUMER_KEY=...`
+- `DATABASE_URL=...` (Railway Postgres)
+- `LIST_STORAGE_MODE=db`
+
+### Required Cloud Env Vars (Frontend)
+
+On Vercel (production), ensure:
+
+- `VITE_API_BASE_URL=https://squirtle-api-staging.up.railway.app/api`
+
+### Critical Safety Notes (Railway UI)
+
+- The Railway `production` environment for this project is currently empty. The site is backed by Railway `staging`.
+- **Do not use Railway “Sync/Merge changes from production into staging”** unless you are certain of the diff. It can propose deleting services in staging.
+- Do not paste API tokens/keys into chat. Create short-lived tokens for admin automation and revoke them after.
+
 ## API Endpoints
 
 ### Events (port 8765)

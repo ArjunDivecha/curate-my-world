@@ -8,11 +8,16 @@ This matrix is the Phase 0 baseline for cloud deployment and iOS integration.
 - `staging`: pre-production deployment for validation
 - `production`: public deployment for end users
 
+Current operational state (Feb 2026):
+- Frontend is deployed on Vercel production.
+- Backend is deployed on Railway `staging` and is acting as the effective production backend URL.
+- Railway `production` environment currently has no services for this project.
+
 ## Frontend (Vercel / local Vite)
 
 | Variable | local | staging | production | Owner |
 | --- | --- | --- | --- | --- |
-| `VITE_API_BASE_URL` | `http://127.0.0.1:8765/api` | `https://<railway-staging>/api` | `https://<railway-prod>/api` | frontend |
+| `VITE_API_BASE_URL` | `http://127.0.0.1:8765/api` | `https://squirtle-api-staging.up.railway.app/api` | `https://squirtle-api-staging.up.railway.app/api` | frontend |
 | `NODE_ENV` | `development` | `production` | `production` | platform |
 
 Notes:
@@ -25,7 +30,7 @@ Notes:
 | `NODE_ENV` | `development` | `production` | `production` | yes |
 | `PORT` | `8765` | Railway assigned | Railway assigned | yes |
 | `HOST` | `127.0.0.1` | `0.0.0.0` | `0.0.0.0` | yes |
-| `FRONTEND_URL` | `http://127.0.0.1:8766` | `https://<vercel-staging>` | `https://<vercel-prod>` | yes |
+| `FRONTEND_URL` | `http://127.0.0.1:8766` | `https://squirtle-eta.vercel.app` | `https://squirtle-eta.vercel.app` | yes |
 | `LIST_STORAGE_MODE` | `file` | `db` (after migration) | `db` | yes |
 | `DATABASE_URL` | optional | Railway Postgres URL | Railway Postgres URL | required for `db` mode |
 | `LIST_DB_SYNC_INTERVAL_MS` | `30000` | `30000` | `30000` | optional |

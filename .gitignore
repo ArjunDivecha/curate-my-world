@@ -53,3 +53,8 @@ config.json
 # Local caches / generated data (keep out of git)
 data/geocode-cache.json
 data/venue-registry.backup-*.json
+
+# Local-only planning artifacts / scratch
+IMPLEMENTATION_PLAN.md
+REDESIGN_REPORT.md
+backend/
