@@ -98,6 +98,7 @@ export const Dashboard = () => {
   const [providerDetails, setProviderDetails] = useState<ProviderStatSummary[]>([]);
   const [totalProcessingTime, setTotalProcessingTime] = useState<number>(0);
   const [backgroundRefreshing, setBackgroundRefreshing] = useState(false);
+  const [refreshStatusText, setRefreshStatusText] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');  // Local search within fetched events
   const refreshPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fetchEventsRef = useRef<(() => void) | null>(null);
@@ -187,9 +188,20 @@ export const Dashboard = () => {
       try {
         const res = await fetch(`${API_BASE_URL}/events/refresh-status`);
         const status = await res.json();
+
+        // Optional extra UI context (non-breaking; backend may omit these fields).
+        if (typeof status?.message === 'string' && status.message.trim().length > 0) {
+          setRefreshStatusText(status.message);
+        } else if (typeof status?.ageHours === 'number') {
+          setRefreshStatusText(`Cache age: ${status.ageHours}h`);
+        } else {
+          setRefreshStatusText(null);
+        }
+
         if (!status.refreshing) {
           // Scrape finished — stop polling and auto-refetch
           setBackgroundRefreshing(false);
+          setRefreshStatusText(null);
           if (refreshPollRef.current) {
             clearInterval(refreshPollRef.current);
             refreshPollRef.current = null;
@@ -571,6 +583,9 @@ export const Dashboard = () => {
               <RefreshCw className="h-4 w-4 animate-spin" />
               <span className="font-medium">Refreshing venue data in the background&hellip;</span>
               <span className="text-blue-500">Events will update automatically when ready.</span>
+              {refreshStatusText && (
+                <span className="text-blue-500">({refreshStatusText})</span>
+              )}
             </div>
           )}
 

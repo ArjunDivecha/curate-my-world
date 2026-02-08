@@ -476,7 +476,14 @@ router.get('/refresh-status', async (req, res) => {
     refreshing: health.backgroundRefreshing || false,
     lastUpdated: health.lastUpdated || null,
     ageHours: health.ageHours,
-    isStale: health.isStale || false
+    isStale: health.isStale || false,
+
+    // Extra status for UI (non-breaking; existing fields preserved)
+    message: health.message || null,
+    latestRunStatus: health.latestRunStatus || null,
+    storageMode: health.storageMode || null,
+    venueCount: typeof health.venueCount === 'number' ? health.venueCount : null,
+    totalEvents: typeof health.totalEvents === 'number' ? health.totalEvents : null
   });
 });
 
