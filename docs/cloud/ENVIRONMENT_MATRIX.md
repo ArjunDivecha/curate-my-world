@@ -35,6 +35,10 @@ Notes:
 | `DATABASE_URL` | optional | Railway Postgres URL | Railway Postgres URL | required for `db` mode |
 | `VENUE_CACHE_STORAGE_MODE` | `file` | `db` | `db` | recommended |
 | `VENUE_BACKGROUND_REFRESH` | enabled | enabled | enabled | optional |
+| `VENUE_DAILY_REFRESH_ENABLED` | unset | auto (enabled in `production` when `DATABASE_URL` + `ANTHROPIC_API_KEY` are set) | auto (enabled in `production` when `DATABASE_URL` + `ANTHROPIC_API_KEY` are set) | optional |
+| `VENUE_DAILY_REFRESH_TIMEZONE` | `America/Los_Angeles` | `America/Los_Angeles` | `America/Los_Angeles` | optional |
+| `VENUE_DAILY_REFRESH_HOUR` | `6` | `6` | `6` | optional |
+| `VENUE_DAILY_REFRESH_MINUTE` | `0` | `0` | `0` | optional |
 | `LIST_DB_SYNC_INTERVAL_MS` | `30000` | `30000` | `30000` | optional |
 | `TICKETMASTER_CONSUMER_KEY` | local secret | staging secret | prod secret | yes |
 | `ANTHROPIC_API_KEY` | local secret | staging secret | prod secret | recommended |

@@ -26,6 +26,10 @@ Configuration for the Curate My World (Squirtle) application.
 | `FRONTEND_URL` | — | Frontend URL for CORS in production |
 | `VENUE_CACHE_STORAGE_MODE` | `file` / `db` | Where venue scraper cache is read from. Defaults to `db` in production when `DATABASE_URL` is set, otherwise `file`. |
 | `VENUE_BACKGROUND_REFRESH` | enabled | If set to `disabled`, the API will not spawn a background scrape on requests (use a scheduled job instead). |
+| `VENUE_DAILY_REFRESH_ENABLED` | enabled | If enabled, the backend schedules a daily venue scrape (default 6:00am Pacific) and writes results to DB. |
+| `VENUE_DAILY_REFRESH_TIMEZONE` | `America/Los_Angeles` | Scheduler time zone |
+| `VENUE_DAILY_REFRESH_HOUR` | `6` | Scheduler hour (0-23) |
+| `VENUE_DAILY_REFRESH_MINUTE` | `0` | Scheduler minute (0-59) |
 
 ### Legacy (not required)
 | Variable | Description |

@@ -84,8 +84,10 @@ Single source of truth: `categoryMapping.js` with `normalizeCategory()` function
 - **Refresh**:
   - Local/manual: `npm run scrape:venues`
   - DB-backed (recommended in cloud): `npm run scrape:venues:db`
+  - Scheduled daily (default 6:00am Pacific in production when `DATABASE_URL` + `ANTHROPIC_API_KEY` are set): configured via `VENUE_DAILY_REFRESH_*` env vars
   - Automatic: API spawns a background scrape when cache > 24h old (stale-while-revalidate)
 - **Retry failed**: `npm run scrape:retry` re-scrapes only venues that errored
+- **Failure behavior**: if a refresh fails (missing keys, rate limits, CPU/timeouts), the API keeps serving the last cached data. Check `GET /api/events/refresh-status` for run status and cache age.
 
 ### Adding New Venues
 

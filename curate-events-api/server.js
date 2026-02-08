@@ -18,6 +18,7 @@ import personalizationRoutes from './src/routes/personalization.js';
 import rulesRoutes from './src/routes/rules.js';
 import previewRoutes from './src/routes/preview.js';
 import listsRoutes from './src/routes/lists.js';
+import { startVenueRefreshScheduler } from './src/utils/venueRefreshScheduler.js';
 
 // Get directory paths for serving static files
 const __filename = fileURLToPath(import.meta.url);
@@ -210,6 +211,10 @@ const server = app.listen(config.port, config.host, () => {
 🔍 Deep Health: http://${config.host}:${config.port}/api/health/deep
 ================================
   `);
+
+  // Daily scheduled refresh (6am America/Los_Angeles) for venue scraper cache.
+  // Uses Postgres advisory lock, so it is safe even if multiple app instances exist.
+  startVenueRefreshScheduler();
 });
 
 // Graceful shutdown handling

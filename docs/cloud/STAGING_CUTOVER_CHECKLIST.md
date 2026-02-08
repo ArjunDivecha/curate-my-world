@@ -15,6 +15,9 @@ Use this checklist to move from local file-backed lists to cloud DB-backed lists
   - `ANTHROPIC_API_KEY=...` (recommended)
   - `LIST_STORAGE_MODE=db`
   - `DATABASE_URL=<railway-postgres-url>`
+  - `VENUE_CACHE_STORAGE_MODE=db` (recommended for cloud durability)
+  - Optional daily refresh (6:00am Pacific by default):
+    - `VENUE_DAILY_REFRESH_ENABLED=true` (or leave unset to auto-enable when `DATABASE_URL` + `ANTHROPIC_API_KEY` exist)
 
 ### Vercel (frontend)
 - Set env var:
