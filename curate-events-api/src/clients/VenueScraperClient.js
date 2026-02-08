@@ -93,11 +93,33 @@ export class VenueScraperClient {
           return Number.isFinite(ms) ? ms : null;
         };
 
+        const getTotalEvents = (value) => {
+          if (value?.totalEvents === 0) return 0;
+          if (!value?.totalEvents) return null;
+          return Number.isFinite(Number(value.totalEvents)) ? Number(value.totalEvents) : null;
+        };
+
+        const getStats = (value) => value?.metadata?.stats || null;
+
         const dbMs = getLastUpdatedMs(dbCache);
         const fileMs = getLastUpdatedMs(fileCache);
+        const dbTotalEvents = getTotalEvents(dbCache);
+        const fileTotalEvents = getTotalEvents(fileCache);
+        const dbStats = getStats(dbCache);
 
         if (dbCache && fileCache) {
-          cache = (fileMs !== null && (dbMs === null || fileMs > dbMs)) ? fileCache : dbCache;
+          // Prefer the file cache if DB looks "fresh but empty" (typically caused by a failed scrape
+          // run clobbering the DB row). This restores functionality immediately while allowing the
+          // next successful scrape to update DB again.
+          const dbLooksBroken =
+            (dbTotalEvents === 0 && (fileTotalEvents || 0) > 0) ||
+            (dbStats?.success === 0 && (dbStats?.failed || 0) > 0 && (fileTotalEvents || 0) > 0);
+
+          if (dbLooksBroken) {
+            cache = fileCache;
+          } else {
+            cache = (fileMs !== null && (dbMs === null || fileMs > dbMs)) ? fileCache : dbCache;
+          }
         } else {
           cache = dbCache || fileCache || null;
         }
@@ -350,6 +372,9 @@ export class VenueScraperClient {
     const venueCount = cache.venues ? Object.keys(cache.venues).length : 0;
     const totalEvents = cache.totalEvents || 0;
     const isStale = ageHours !== null && ageHours > 48;
+    const stats = cache.metadata?.stats || null;
+    const hasData = totalEvents > 0;
+    const lastRunLooksFailed = stats?.success === 0 && (stats?.failed || 0) > 0;
 
     // If we have DB access, use the latest run status as a stronger signal than in-memory state.
     // This makes refresh-status resilient to server restarts.
@@ -369,14 +394,20 @@ export class VenueScraperClient {
     let message;
     if (backgroundRefreshing) {
       message = `Cache is ${ageHours !== null ? Math.round(ageHours) + 'h' : 'unknown age'} old — background refresh in progress`;
+    } else if (!hasData) {
+      const failed = stats?.failed ?? null;
+      const success = stats?.success ?? null;
+      message = `Venue cache has 0 events${(success !== null || failed !== null) ? ` (last run: success=${success ?? '?'}, failed=${failed ?? '?'})` : ''}. Serving Ticketmaster-only until the next refresh.`;
     } else if (isStale) {
       message = `Cache is ${Math.round(ageHours)}h old (>48h stale). Will auto-refresh on next fetch.`;
+    } else if (lastRunLooksFailed) {
+      message = `Cache is ${ageHours !== null ? Math.round(ageHours) + 'h' : 'unknown age'} old with ${totalEvents} events from ${venueCount} venues (last refresh attempt failed).`;
     } else {
       message = `Cache is ${ageHours !== null ? Math.round(ageHours) + 'h' : 'unknown age'} old with ${totalEvents} events from ${venueCount} venues`;
     }
 
     return {
-      status: isStale ? 'degraded' : 'healthy',
+      status: (isStale || !hasData || lastRunLooksFailed) ? 'degraded' : 'healthy',
       cacheExists: true,
       lastUpdated: cache.lastUpdated,
       ageHours: ageHours !== null ? Math.round(ageHours * 10) / 10 : null,
@@ -386,7 +417,7 @@ export class VenueScraperClient {
       latestRunStatus: dbRun?.status || null,
       venueCount,
       totalEvents,
-      stats: cache.metadata?.stats || null,
+      stats,
       message
     };
   }

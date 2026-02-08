@@ -269,6 +269,8 @@ async function main() {
 
     // Load existing cache for incremental update
     const cache = loadExistingCache();
+    const previousLastUpdated = cache.lastUpdated || null;
+    const previousTotalEvents = Number.isFinite(Number(cache.totalEvents)) ? Number(cache.totalEvents) : 0;
 
     // --retry-failed: only re-scrape venues that previously errored
     const retryFailed = process.argv.includes('--retry-failed');
@@ -306,13 +308,21 @@ async function main() {
         if (!markdown || markdown.length < 100) {
           console.log(`  Skipped: too little content (${markdown?.length || 0} chars)`);
           skippedCount++;
+
+          // Preserve previously-scraped events if we have them (avoid clobbering cache on transient failures).
+          const prev = cache.venues?.[venue.domain] || {};
+          const preservedEvents = Array.isArray(prev?.events) ? prev.events : [];
+
           cache.venues[venue.domain] = {
             venueName: venue.name,
             domain: venue.domain,
             category: venue.category,
-            events: [],
+            city: venue.city,
+            state: venue.state,
+            events: preservedEvents,
             lastScraped: new Date().toISOString(),
-            status: 'empty_page'
+            status: preservedEvents.length > 0 ? 'empty_page_preserved' : 'empty_page',
+            eventCount: preservedEvents.length
           };
           await persistCache(cache, { writeDb: dbLockAcquired });
           await sleep(JINA_DELAY_MS);
@@ -360,14 +370,23 @@ async function main() {
       } catch (error) {
         console.error(`  ERROR: ${error.message}`);
         failCount++;
+
+        // Preserve previously-scraped events if we have them (avoid wiping cache on systemic failures).
+        const prev = cache.venues?.[venue.domain] || {};
+        const preservedEvents = Array.isArray(prev?.events) ? prev.events : [];
+
         cache.venues[venue.domain] = {
           venueName: venue.name,
           domain: venue.domain,
           category: venue.category,
-          events: [],
+          city: venue.city,
+          state: venue.state,
+          events: preservedEvents,
           lastScraped: new Date().toISOString(),
           status: 'error',
-          error: error.message
+          error: error.message,
+          eventCount: preservedEvents.length,
+          preservedEvents: preservedEvents.length
         };
         await persistCache(cache, { writeDb: dbLockAcquired });
       }
@@ -384,20 +403,31 @@ async function main() {
       grandTotal += (v.events || []).length;
     }
     cache.totalEvents = grandTotal;
-    cache.lastUpdated = new Date().toISOString();
+    const runSucceeded = successCount > 0;
+
+    // Only bump cache freshness if we actually fetched something successfully.
+    // If the run was a systemic failure (0 successes), keep the previous lastUpdated so the API can
+    // retry later and we don't pretend the cache is "fresh but empty".
+    if (runSucceeded) {
+      cache.lastUpdated = new Date().toISOString();
+    } else {
+      cache.lastUpdated = previousLastUpdated;
+    }
     cache.metadata.scrapeCompleted = new Date().toISOString();
     cache.metadata.stats = {
       success: successCount,
       failed: failCount,
       skipped: skippedCount,
       totalEvents: grandTotal,
-      thisRunEvents: totalEvents
+      thisRunEvents: totalEvents,
+      previousTotalEvents
     };
     await persistCache(cache, { writeDb: dbLockAcquired });
 
     if (scrapeRunId) {
       await completeVenueScrapeRun(scrapeRunId, {
-        status: 'success',
+        status: runSucceeded ? 'success' : 'error',
+        error: runSucceeded ? null : 'No venues scraped successfully (cache preserved; lastUpdated not bumped)',
         stats: { ...cache.metadata.stats, totalVenues: scrapableVenues.length },
         cacheLastUpdated: cache.lastUpdated
       });
