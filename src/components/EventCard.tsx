@@ -294,7 +294,6 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
           {/* Whitelist / Blacklist controls - Only show in development */}
           {import.meta.env.MODE === 'development' && (
             <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <Button size="sm" variant="outline" onClick={handleWhitelistDomain} className="hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300">⭐ Whitelist Site</Button>
               <Button size="sm" variant="outline" onClick={handleBlacklistEvent} className="hover:bg-red-50 hover:text-red-700 hover:border-red-300">🚫 Block Event</Button>
               <Button size="sm" variant="outline" onClick={handleBlacklistDomain} className="hover:bg-red-50 hover:text-red-700 hover:border-red-300">🚫 Block Site</Button>
             </div>
