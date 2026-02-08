@@ -4,20 +4,32 @@
  * =============================================================================
  * 
  * Handles API base URL for both development and production:
- * - Development: Direct URL to backend http://127.0.0.1:8765/api
- * - Production (Railway): Uses relative /api path (same server)
+ * - Preferred: VITE_API_BASE_URL from environment
+ * - Development fallback: http://127.0.0.1:8765/api
+ * - Production fallback: relative /api path (same origin)
  * 
  * VERSION: 1.1
  * =============================================================================
  */
 
+function normalizeBaseUrl(value: string): string {
+  return value.replace(/\/+$/, '');
+}
+
 // Get the API base URL based on environment
 export function getApiBaseUrl(): string {
-  // In development, call backend directly
+  // Explicit env wins across local/staging/prod
+  const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined;
+  if (configuredBaseUrl && configuredBaseUrl.trim().length > 0) {
+    return normalizeBaseUrl(configuredBaseUrl.trim());
+  }
+
+  // Fallback in development: call backend directly
   if (import.meta.env.DEV) {
     return 'http://127.0.0.1:8765/api';
   }
-  // In production, use relative path (frontend and backend on same server)
+
+  // Fallback in production: same-origin API
   return '/api';
 }
 
@@ -33,4 +45,3 @@ export function getApiUrl(path: string): string {
 }
 
 export default API_BASE_URL;
-

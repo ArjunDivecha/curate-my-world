@@ -1,17 +1,16 @@
 /**
  * =============================================================================
- * LIST MANAGER - Whitelist & Blacklist XLSX Management
+ * LIST MANAGER - Whitelist & Blacklist Storage
  * =============================================================================
  * 
- * Simple system for managing:
- * - whitelist.xlsx: Sites to always search for events
- * - blacklist-sites.xlsx: Domains to never show
- * - blacklist-events.xlsx: Specific events to hide
+ * Storage modes:
+ * - file (default): XLSX-backed lists in PROJECT_ROOT/data/
+ * - db: PostgreSQL-backed lists via DATABASE_URL
  * 
  * Features:
- * - Auto-reload files every 30 seconds
- * - Add/remove entries programmatically
- * - Query by category/location
+ * - In-memory read path for fast filtering in request handlers
+ * - Periodic refresh from active backing store
+ * - Feature-flag migration path with fallback safety
  * 
  * =============================================================================
  */
@@ -40,9 +39,10 @@ const FILES = {
   blacklistEvents: path.join(DATA_DIR, 'blacklist-events.xlsx'),
 };
 
-logger.info(`ListManager data directory: ${DATA_DIR}`);
-
 const RELOAD_INTERVAL_MS = 30 * 1000; // 30 seconds
+const STORAGE_MODE = String(process.env.LIST_STORAGE_MODE || 'file').toLowerCase();
+const DATABASE_URL = process.env.DATABASE_URL || '';
+const DB_SYNC_INTERVAL_MS = Number(process.env.LIST_DB_SYNC_INTERVAL_MS || RELOAD_INTERVAL_MS);
 
 // =============================================================================
 // STATE
@@ -52,9 +52,51 @@ let whitelist = [];
 let blacklistSites = [];
 let blacklistEvents = [];
 let lastLoadTime = 0;
+let lastLoadSource = 'file';
+
+let dbPool = null;
+let dbOperational = false;
+let dbInitStarted = false;
+let dbInitPromise = null;
+let dbRefreshPromise = null;
+let lastDbRefreshAt = 0;
+
+logger.info(`ListManager initialized`, {
+  mode: STORAGE_MODE,
+  dataDirectory: DATA_DIR,
+  dbConfigured: !!DATABASE_URL
+});
 
 // =============================================================================
-// FILE OPERATIONS
+// NORMALIZATION HELPERS
+// =============================================================================
+
+function todayDateString() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function normalizeDomain(domain) {
+  return String(domain || '').toLowerCase().trim().replace(/^www\./, '');
+}
+
+function normalizeCategory(category) {
+  return String(category || 'all').toLowerCase().trim() || 'all';
+}
+
+function normalizeText(value) {
+  return String(value || '').trim();
+}
+
+function isDbModeRequested() {
+  return STORAGE_MODE === 'db';
+}
+
+function isDbActive() {
+  return isDbModeRequested() && dbOperational && !!dbPool;
+}
+
+// =============================================================================
+// FILE BACKING OPERATIONS
 // =============================================================================
 
 function loadXLSX(filepath) {
@@ -86,39 +128,329 @@ function saveXLSX(filepath, data, sheetName = 'Sheet1') {
   }
 }
 
-function loadAllLists() {
+function loadAllListsFromFiles() {
   whitelist = loadXLSX(FILES.whitelist).map(row => ({
-    domain: String(row.domain || '').toLowerCase().trim(),
-    category: String(row.category || 'all').toLowerCase().trim(),
-    name: String(row.name || '').trim(),
-    city: String(row.city || '').trim(),
+    domain: normalizeDomain(row.domain),
+    category: normalizeCategory(row.category),
+    name: normalizeText(row.name),
+    city: normalizeText(row.city),
   })).filter(r => r.domain);
 
   blacklistSites = loadXLSX(FILES.blacklistSites).map(row => ({
-    domain: String(row.domain || '').toLowerCase().trim(),
-    reason: String(row.reason || '').trim(),
-    date_added: row.date_added || new Date().toISOString().split('T')[0],
+    domain: normalizeDomain(row.domain),
+    reason: normalizeText(row.reason),
+    date_added: row.date_added || todayDateString(),
   })).filter(r => r.domain && r.domain !== 'example-spam-site.com');
 
   blacklistEvents = loadXLSX(FILES.blacklistEvents).map(row => ({
-    title: String(row.title || '').trim(),
-    url: String(row.url || '').trim(),
-    date_added: row.date_added || new Date().toISOString().split('T')[0],
+    title: normalizeText(row.title),
+    url: normalizeText(row.url),
+    date_added: row.date_added || todayDateString(),
   })).filter(r => (r.title || r.url) && r.title !== 'Example Event to Block');
 
   lastLoadTime = Date.now();
+  lastLoadSource = 'file';
   
-  logger.info(`Loaded lists: ${whitelist.length} whitelist, ${blacklistSites.length} blacklist sites, ${blacklistEvents.length} blacklist events`);
+  logger.info(`Loaded lists from files`, {
+    whitelist: whitelist.length,
+    blacklistSites: blacklistSites.length,
+    blacklistEvents: blacklistEvents.length
+  });
 }
 
-function reloadIfStale() {
+function maybeRefreshFromFile() {
   if (Date.now() - lastLoadTime > RELOAD_INTERVAL_MS) {
-    loadAllLists();
+    loadAllListsFromFiles();
   }
 }
 
-// Initial load
-loadAllLists();
+// =============================================================================
+// DB BACKING OPERATIONS
+// =============================================================================
+
+function setListsFromDbRows(rows = []) {
+  const nextWhitelist = [];
+  const nextBlacklistSites = [];
+  const nextBlacklistEvents = [];
+
+  rows.forEach((row) => {
+    const listType = String(row.list_type || '').toLowerCase();
+    if (listType === 'whitelist') {
+      const domain = normalizeDomain(row.domain);
+      if (!domain) return;
+      nextWhitelist.push({
+        domain,
+        category: normalizeCategory(row.category),
+        name: normalizeText(row.name) || domain,
+        city: normalizeText(row.city),
+      });
+      return;
+    }
+
+    if (listType === 'blacklist_site') {
+      const domain = normalizeDomain(row.domain);
+      if (!domain) return;
+      nextBlacklistSites.push({
+        domain,
+        reason: normalizeText(row.reason),
+        date_added: row.created_at ? new Date(row.created_at).toISOString().split('T')[0] : todayDateString(),
+      });
+      return;
+    }
+
+    if (listType === 'blacklist_event') {
+      const title = normalizeText(row.title);
+      const url = normalizeText(row.url);
+      if (!title && !url) return;
+      nextBlacklistEvents.push({
+        title,
+        url,
+        date_added: row.created_at ? new Date(row.created_at).toISOString().split('T')[0] : todayDateString(),
+      });
+    }
+  });
+
+  whitelist = nextWhitelist;
+  blacklistSites = nextBlacklistSites;
+  blacklistEvents = nextBlacklistEvents;
+  lastLoadTime = Date.now();
+  lastLoadSource = 'db';
+}
+
+async function createDbSchema() {
+  if (!dbPool) return;
+
+  await dbPool.query(`
+    CREATE TABLE IF NOT EXISTS list_entries (
+      id BIGSERIAL PRIMARY KEY,
+      list_type TEXT NOT NULL,
+      domain TEXT,
+      category TEXT,
+      name TEXT,
+      city TEXT,
+      reason TEXT,
+      title TEXT,
+      url TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_list_entries_type ON list_entries(list_type);`);
+  await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_list_entries_domain ON list_entries(domain);`);
+  await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_list_entries_url ON list_entries(url);`);
+}
+
+async function refreshFromDb({ force = false } = {}) {
+  if (!dbPool) return false;
+
+  if (!force && (Date.now() - lastDbRefreshAt < DB_SYNC_INTERVAL_MS)) {
+    return true;
+  }
+
+  if (dbRefreshPromise) {
+    return dbRefreshPromise;
+  }
+
+  dbRefreshPromise = (async () => {
+    const result = await dbPool.query(`
+      SELECT list_type, domain, category, name, city, reason, title, url, created_at
+      FROM list_entries
+    `);
+
+    setListsFromDbRows(result.rows || []);
+    lastDbRefreshAt = Date.now();
+
+    logger.info('Loaded lists from database', {
+      whitelist: whitelist.length,
+      blacklistSites: blacklistSites.length,
+      blacklistEvents: blacklistEvents.length
+    });
+
+    return true;
+  })();
+
+  try {
+    return await dbRefreshPromise;
+  } finally {
+    dbRefreshPromise = null;
+  }
+}
+
+async function ensureDbInitialized() {
+  if (!isDbModeRequested()) return false;
+  if (dbOperational) return true;
+  if (dbInitStarted) return dbInitPromise;
+
+  dbInitStarted = true;
+  dbInitPromise = (async () => {
+    if (!DATABASE_URL) {
+      logger.warn('LIST_STORAGE_MODE=db requested but DATABASE_URL is missing. Falling back to file storage.');
+      return false;
+    }
+
+    let PoolCtor;
+    try {
+      ({ Pool: PoolCtor } = await import('pg'));
+    } catch (error) {
+      logger.warn('pg package is unavailable. Falling back to file storage.', { error: error.message });
+      return false;
+    }
+
+    try {
+      dbPool = new PoolCtor({
+        connectionString: DATABASE_URL,
+      });
+
+      await createDbSchema();
+      await refreshFromDb({ force: true });
+      dbOperational = true;
+
+      logger.info('Database list storage is active');
+      return true;
+    } catch (error) {
+      logger.error('Failed to initialize database list storage; using file fallback', {
+        error: error.message
+      });
+      dbOperational = false;
+      return false;
+    }
+  })();
+
+  return dbInitPromise;
+}
+
+function refreshIfStale() {
+  if (isDbModeRequested()) {
+    if (!dbInitStarted) {
+      void ensureDbInitialized();
+      maybeRefreshFromFile();
+      return;
+    }
+
+    if (!dbOperational) {
+      maybeRefreshFromFile();
+      return;
+    }
+
+    if (Date.now() - lastDbRefreshAt > DB_SYNC_INTERVAL_MS) {
+      void refreshFromDb().catch((error) => {
+        logger.error('DB list refresh failed', { error: error.message });
+      });
+    }
+    return;
+  }
+
+  maybeRefreshFromFile();
+}
+
+async function persistAddWhitelist(entry) {
+  if (isDbActive()) {
+    await dbPool.query(
+      `INSERT INTO list_entries (list_type, domain, category, name, city, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+      ['whitelist', entry.domain, entry.category, entry.name, entry.city]
+    );
+    return true;
+  }
+
+  return saveXLSX(FILES.whitelist, whitelist, 'Whitelist');
+}
+
+async function persistRemoveWhitelist(domain) {
+  if (isDbActive()) {
+    await dbPool.query(
+      `DELETE FROM list_entries WHERE list_type = 'whitelist' AND LOWER(COALESCE(domain, '')) = $1`,
+      [domain]
+    );
+    return true;
+  }
+
+  return saveXLSX(FILES.whitelist, whitelist, 'Whitelist');
+}
+
+async function persistAddBlacklistSite(entry) {
+  if (isDbActive()) {
+    await dbPool.query(
+      `INSERT INTO list_entries (list_type, domain, reason, created_at, updated_at)
+       VALUES ($1, $2, $3, NOW(), NOW())`,
+      ['blacklist_site', entry.domain, entry.reason]
+    );
+    return true;
+  }
+
+  return saveXLSX(FILES.blacklistSites, blacklistSites, 'Blacklist Sites');
+}
+
+async function persistRemoveBlacklistSite(domain) {
+  if (isDbActive()) {
+    await dbPool.query(
+      `DELETE FROM list_entries WHERE list_type = 'blacklist_site' AND LOWER(COALESCE(domain, '')) = $1`,
+      [domain]
+    );
+    return true;
+  }
+
+  return saveXLSX(FILES.blacklistSites, blacklistSites, 'Blacklist Sites');
+}
+
+async function persistAddBlacklistEvent(entry) {
+  if (isDbActive()) {
+    await dbPool.query(
+      `INSERT INTO list_entries (list_type, title, url, created_at, updated_at)
+       VALUES ($1, $2, $3, NOW(), NOW())`,
+      ['blacklist_event', entry.title, entry.url]
+    );
+    return true;
+  }
+
+  return saveXLSX(FILES.blacklistEvents, blacklistEvents, 'Blacklist Events');
+}
+
+async function persistRemoveBlacklistEvent(title, url) {
+  if (isDbActive()) {
+    if (title && url) {
+      await dbPool.query(
+        `DELETE FROM list_entries
+         WHERE list_type = 'blacklist_event'
+           AND LOWER(COALESCE(title, '')) = $1
+           AND LOWER(COALESCE(url, '')) = $2`,
+        [title.toLowerCase(), url.toLowerCase()]
+      );
+      return true;
+    }
+
+    if (title) {
+      await dbPool.query(
+        `DELETE FROM list_entries
+         WHERE list_type = 'blacklist_event'
+           AND LOWER(COALESCE(title, '')) = $1`,
+        [title.toLowerCase()]
+      );
+      return true;
+    }
+
+    if (url) {
+      await dbPool.query(
+        `DELETE FROM list_entries
+         WHERE list_type = 'blacklist_event'
+           AND LOWER(COALESCE(url, '')) = $1`,
+        [url.toLowerCase()]
+      );
+      return true;
+    }
+
+    return false;
+  }
+
+  return saveXLSX(FILES.blacklistEvents, blacklistEvents, 'Blacklist Events');
+}
+
+// Initial load always starts from file for safe fallback.
+loadAllListsFromFiles();
+if (isDbModeRequested()) {
+  void ensureDbInitialized();
+}
 
 // =============================================================================
 // WHITELIST OPERATIONS
@@ -131,10 +463,10 @@ loadAllLists();
  * @returns {Array} Array of { domain, name, category }
  */
 export function getWhitelistDomains(category = 'all', location = '') {
-  reloadIfStale();
+  refreshIfStale();
   
-  const normalizedCategory = (category || 'all').toLowerCase().trim();
-  const normalizedLocation = (location || '').toLowerCase();
+  const normalizedCategory = normalizeCategory(category);
+  const normalizedLocation = String(location || '').toLowerCase();
   
   return whitelist.filter(entry => {
     // Category match: 
@@ -156,10 +488,13 @@ export function getWhitelistDomains(category = 'all', location = '') {
 /**
  * Add a domain to the whitelist
  */
-export function addToWhitelist(domain, category = 'all', name = '', city = '') {
-  reloadIfStale();
+export async function addToWhitelist(domain, category = 'all', name = '', city = '') {
+  refreshIfStale();
   
-  const normalizedDomain = domain.toLowerCase().trim().replace(/^www\./, '');
+  const normalizedDomain = normalizeDomain(domain);
+  if (!normalizedDomain) {
+    return { success: false, message: 'Domain is required' };
+  }
   
   // Check if already exists
   const exists = whitelist.some(e => e.domain === normalizedDomain);
@@ -169,31 +504,52 @@ export function addToWhitelist(domain, category = 'all', name = '', city = '') {
   }
   
   // Add new entry
-  whitelist.push({
+  const nextEntry = {
     domain: normalizedDomain,
-    category: category.toLowerCase().trim(),
-    name: name || normalizedDomain,
-    city: city || '',
-  });
+    category: normalizeCategory(category),
+    name: normalizeText(name) || normalizedDomain,
+    city: normalizeText(city),
+  };
+  whitelist.push(nextEntry);
   
-  // Save to file
-  const saved = saveXLSX(FILES.whitelist, whitelist, 'Whitelist');
-  return { success: saved, message: saved ? 'Added to whitelist' : 'Failed to save' };
+  try {
+    const saved = await persistAddWhitelist(nextEntry);
+    return {
+      success: saved,
+      message: saved ? 'Added to whitelist' : 'Failed to save',
+      storage: isDbActive() ? 'db' : 'file'
+    };
+  } catch (error) {
+    whitelist = whitelist.filter(e => e.domain !== normalizedDomain);
+    logger.error('Failed to persist whitelist entry', { error: error.message, domain: normalizedDomain });
+    return { success: false, message: 'Failed to save' };
+  }
 }
 
 /**
  * Remove a domain from the whitelist
  */
-export function removeFromWhitelist(domain) {
-  reloadIfStale();
+export async function removeFromWhitelist(domain) {
+  refreshIfStale();
   
-  const normalizedDomain = domain.toLowerCase().trim().replace(/^www\./, '');
+  const normalizedDomain = normalizeDomain(domain);
   const before = whitelist.length;
+  const previous = [...whitelist];
   whitelist = whitelist.filter(e => e.domain !== normalizedDomain);
   
   if (whitelist.length < before) {
-    saveXLSX(FILES.whitelist, whitelist, 'Whitelist');
-    return { success: true, message: 'Removed from whitelist' };
+    try {
+      await persistRemoveWhitelist(normalizedDomain);
+      return {
+        success: true,
+        message: 'Removed from whitelist',
+        storage: isDbActive() ? 'db' : 'file'
+      };
+    } catch (error) {
+      whitelist = previous;
+      logger.error('Failed to remove whitelist entry', { error: error.message, domain: normalizedDomain });
+      return { success: false, message: 'Failed to save' };
+    }
   }
   return { success: false, message: 'Domain not found in whitelist' };
 }
@@ -206,9 +562,9 @@ export function removeFromWhitelist(domain) {
  * Check if a domain is blacklisted
  */
 export function isDomainBlacklisted(domain) {
-  reloadIfStale();
+  refreshIfStale();
   
-  const normalizedDomain = (domain || '').toLowerCase().trim().replace(/^www\./, '');
+  const normalizedDomain = normalizeDomain(domain);
   return blacklistSites.some(e => 
     normalizedDomain === e.domain || 
     normalizedDomain.endsWith('.' + e.domain)
@@ -218,10 +574,13 @@ export function isDomainBlacklisted(domain) {
 /**
  * Add a domain to the blacklist
  */
-export function addToBlacklistSites(domain, reason = '') {
-  reloadIfStale();
+export async function addToBlacklistSites(domain, reason = '') {
+  refreshIfStale();
   
-  const normalizedDomain = domain.toLowerCase().trim().replace(/^www\./, '');
+  const normalizedDomain = normalizeDomain(domain);
+  if (!normalizedDomain) {
+    return { success: false, message: 'Domain is required' };
+  }
   
   // Check if already exists
   const exists = blacklistSites.some(e => e.domain === normalizedDomain);
@@ -230,29 +589,51 @@ export function addToBlacklistSites(domain, reason = '') {
   }
   
   // Add new entry
-  blacklistSites.push({
+  const nextEntry = {
     domain: normalizedDomain,
-    reason: reason || 'Added via GUI',
-    date_added: new Date().toISOString().split('T')[0],
-  });
+    reason: normalizeText(reason) || 'Added via GUI',
+    date_added: todayDateString(),
+  };
+  blacklistSites.push(nextEntry);
   
-  const saved = saveXLSX(FILES.blacklistSites, blacklistSites, 'Blacklist Sites');
-  return { success: saved, message: saved ? 'Domain blacklisted' : 'Failed to save' };
+  try {
+    const saved = await persistAddBlacklistSite(nextEntry);
+    return {
+      success: saved,
+      message: saved ? 'Domain blacklisted' : 'Failed to save',
+      storage: isDbActive() ? 'db' : 'file'
+    };
+  } catch (error) {
+    blacklistSites = blacklistSites.filter(e => e.domain !== normalizedDomain);
+    logger.error('Failed to persist blacklist site', { error: error.message, domain: normalizedDomain });
+    return { success: false, message: 'Failed to save' };
+  }
 }
 
 /**
  * Remove a domain from the blacklist
  */
-export function removeFromBlacklistSites(domain) {
-  reloadIfStale();
+export async function removeFromBlacklistSites(domain) {
+  refreshIfStale();
   
-  const normalizedDomain = domain.toLowerCase().trim().replace(/^www\./, '');
+  const normalizedDomain = normalizeDomain(domain);
   const before = blacklistSites.length;
+  const previous = [...blacklistSites];
   blacklistSites = blacklistSites.filter(e => e.domain !== normalizedDomain);
   
   if (blacklistSites.length < before) {
-    saveXLSX(FILES.blacklistSites, blacklistSites, 'Blacklist Sites');
-    return { success: true, message: 'Removed from blacklist' };
+    try {
+      await persistRemoveBlacklistSite(normalizedDomain);
+      return {
+        success: true,
+        message: 'Removed from blacklist',
+        storage: isDbActive() ? 'db' : 'file'
+      };
+    } catch (error) {
+      blacklistSites = previous;
+      logger.error('Failed to remove blacklist site', { error: error.message, domain: normalizedDomain });
+      return { success: false, message: 'Failed to save' };
+    }
   }
   return { success: false, message: 'Domain not found in blacklist' };
 }
@@ -265,10 +646,10 @@ export function removeFromBlacklistSites(domain) {
  * Check if an event is blacklisted (by title or URL)
  */
 export function isEventBlacklisted(title, url) {
-  reloadIfStale();
+  refreshIfStale();
   
-  const normalizedTitle = (title || '').toLowerCase().trim();
-  const normalizedUrl = (url || '').toLowerCase().trim();
+  const normalizedTitle = String(title || '').toLowerCase().trim();
+  const normalizedUrl = String(url || '').toLowerCase().trim();
   
   return blacklistEvents.some(e => {
     const titleMatch = e.title && normalizedTitle.includes(e.title.toLowerCase());
@@ -280,45 +661,74 @@ export function isEventBlacklisted(title, url) {
 /**
  * Add an event to the blacklist
  */
-export function addToBlacklistEvents(title, url) {
-  reloadIfStale();
+export async function addToBlacklistEvents(title, url) {
+  refreshIfStale();
+  const cleanTitle = normalizeText(title);
+  const cleanUrl = normalizeText(url);
+  if (!cleanTitle && !cleanUrl) {
+    return { success: false, message: 'Title or URL is required' };
+  }
   
   // Check if already exists
   const exists = blacklistEvents.some(e => 
-    (e.url && e.url.toLowerCase() === url?.toLowerCase()) ||
-    (e.title && e.title.toLowerCase() === title?.toLowerCase())
+    (e.url && e.url.toLowerCase() === cleanUrl.toLowerCase()) ||
+    (e.title && e.title.toLowerCase() === cleanTitle.toLowerCase())
   );
   if (exists) {
     return { success: true, message: 'Event already blacklisted' };
   }
   
   // Add new entry
-  blacklistEvents.push({
-    title: title || '',
-    url: url || '',
-    date_added: new Date().toISOString().split('T')[0],
-  });
+  const nextEntry = {
+    title: cleanTitle,
+    url: cleanUrl,
+    date_added: todayDateString(),
+  };
+  blacklistEvents.push(nextEntry);
   
-  const saved = saveXLSX(FILES.blacklistEvents, blacklistEvents, 'Blacklist Events');
-  return { success: saved, message: saved ? 'Event blacklisted' : 'Failed to save' };
+  try {
+    const saved = await persistAddBlacklistEvent(nextEntry);
+    return {
+      success: saved,
+      message: saved ? 'Event blacklisted' : 'Failed to save',
+      storage: isDbActive() ? 'db' : 'file'
+    };
+  } catch (error) {
+    blacklistEvents = blacklistEvents.filter(e => !(e.title === nextEntry.title && e.url === nextEntry.url));
+    logger.error('Failed to persist blacklist event', { error: error.message });
+    return { success: false, message: 'Failed to save' };
+  }
 }
 
 /**
  * Remove an event from the blacklist
  */
-export function removeFromBlacklistEvents(title, url) {
-  reloadIfStale();
+export async function removeFromBlacklistEvents(title, url) {
+  refreshIfStale();
+  const cleanTitle = normalizeText(title);
+  const cleanUrl = normalizeText(url);
   
   const before = blacklistEvents.length;
+  const previous = [...blacklistEvents];
   blacklistEvents = blacklistEvents.filter(e => {
-    const titleMatch = title && e.title?.toLowerCase() === title.toLowerCase();
-    const urlMatch = url && e.url?.toLowerCase() === url.toLowerCase();
+    const titleMatch = cleanTitle && e.title?.toLowerCase() === cleanTitle.toLowerCase();
+    const urlMatch = cleanUrl && e.url?.toLowerCase() === cleanUrl.toLowerCase();
     return !(titleMatch || urlMatch);
   });
   
   if (blacklistEvents.length < before) {
-    saveXLSX(FILES.blacklistEvents, blacklistEvents, 'Blacklist Events');
-    return { success: true, message: 'Event removed from blacklist' };
+    try {
+      await persistRemoveBlacklistEvent(cleanTitle, cleanUrl);
+      return {
+        success: true,
+        message: 'Event removed from blacklist',
+        storage: isDbActive() ? 'db' : 'file'
+      };
+    } catch (error) {
+      blacklistEvents = previous;
+      logger.error('Failed to remove blacklist event', { error: error.message });
+      return { success: false, message: 'Failed to save' };
+    }
   }
   return { success: false, message: 'Event not found in blacklist' };
 }
@@ -333,7 +743,7 @@ export function removeFromBlacklistEvents(title, url) {
  * @returns {Array} Filtered events
  */
 export function filterBlacklistedEvents(events) {
-  reloadIfStale();
+  refreshIfStale();
   
   if (!Array.isArray(events)) return events;
   
@@ -369,8 +779,11 @@ export function filterBlacklistedEvents(events) {
  * Get list statistics
  */
 export function getListStats() {
-  reloadIfStale();
+  refreshIfStale();
   return {
+    storageMode: STORAGE_MODE,
+    storageSource: lastLoadSource,
+    dbActive: isDbActive(),
     whitelist: whitelist.length,
     blacklistSites: blacklistSites.length,
     blacklistEvents: blacklistEvents.length,
@@ -382,7 +795,7 @@ export function getListStats() {
  * Get all list contents (for admin display)
  */
 export function getAllLists() {
-  reloadIfStale();
+  refreshIfStale();
   return {
     whitelist: [...whitelist],
     blacklistSites: [...blacklistSites],
@@ -393,8 +806,15 @@ export function getAllLists() {
 /**
  * Force reload all lists
  */
-export function forceReload() {
-  loadAllLists();
+export async function forceReload() {
+  if (isDbModeRequested()) {
+    await ensureDbInitialized();
+    if (isDbActive()) {
+      await refreshFromDb({ force: true });
+      return;
+    }
+  }
+  loadAllListsFromFiles();
 }
 
 export default {
@@ -412,4 +832,3 @@ export default {
   getAllLists,
   forceReload,
 };
-

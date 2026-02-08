@@ -10,6 +10,7 @@ import { createLogger } from '../utils/logger.js';
 import { config } from '../utils/config.js';
 import TicketmasterClient from '../clients/TicketmasterClient.js';
 import { VenueScraperClient } from '../clients/VenueScraperClient.js';
+import { getListStats } from '../utils/listManager.js';
 
 const router = express.Router();
 const logger = createLogger('HealthRoute');
@@ -28,6 +29,8 @@ router.get('/', async (req, res) => {
   logger.info('Health check requested');
 
   try {
+    const listStats = getListStats();
+
     const healthInfo = {
       status: 'healthy',
       timestamp: new Date().toISOString(),
@@ -54,6 +57,11 @@ router.get('/', async (req, res) => {
         },
         venue_scraper: {
           cachePath: config.venueScraper?.venueEventsCachePath || 'not configured'
+        },
+        lists: {
+          storageMode: listStats.storageMode,
+          storageSource: listStats.storageSource,
+          dbActive: listStats.dbActive
         }
       }
     };

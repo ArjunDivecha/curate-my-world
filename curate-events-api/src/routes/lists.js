@@ -32,6 +32,33 @@ import { createLogger } from '../utils/logger.js';
 
 const router = express.Router();
 const logger = createLogger('ListsAPI');
+const listStorageMode = String(process.env.LIST_STORAGE_MODE || 'file').toLowerCase();
+
+function areWritesBlockedInCurrentEnv() {
+  const inProductionRuntime = process.env.NODE_ENV === 'production' || !!process.env.RAILWAY_ENVIRONMENT;
+  return inProductionRuntime && listStorageMode !== 'db';
+}
+
+function buildWriteBlockedMessage() {
+  if (listStorageMode === 'db') {
+    return 'Writes are unexpectedly blocked. Verify LIST_STORAGE_MODE and runtime environment.';
+  }
+  return 'List editing is disabled in production unless LIST_STORAGE_MODE=db is enabled.';
+}
+
+function shouldRequireDbActive() {
+  const inProductionRuntime = process.env.NODE_ENV === 'production' || !!process.env.RAILWAY_ENVIRONMENT;
+  return inProductionRuntime && listStorageMode === 'db';
+}
+
+function hasActiveDbStorage() {
+  try {
+    const stats = getListStats();
+    return stats.dbActive === true;
+  } catch {
+    return false;
+  }
+}
 
 // =============================================================================
 // GET ALL LISTS
@@ -61,9 +88,9 @@ router.get('/', (req, res) => {
  * POST /api/lists/reload
  * Force reload all lists from disk
  */
-router.post('/reload', (req, res) => {
+router.post('/reload', async (req, res) => {
   try {
-    forceReload();
+    await forceReload();
     const stats = getListStats();
     res.json({ success: true, message: 'Lists reloaded', stats });
   } catch (error) {
@@ -101,13 +128,16 @@ router.get('/whitelist', (req, res) => {
  * Add a domain to the whitelist
  * Body: { domain, category?, name?, city? }
  */
-router.post('/whitelist', (req, res) => {
-  // Block saves in production (Railway) - changes would be lost on redeploy
-  if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT) {
+router.post('/whitelist', async (req, res) => {
+  // Writes are only allowed in production when DB-backed storage is enabled.
+  if (areWritesBlockedInCurrentEnv()) {
     return res.status(403).json({ 
       success: false, 
-      error: 'Whitelist editing is disabled in production. Edit the XLSX file locally and push to git.' 
+      error: buildWriteBlockedMessage(),
     });
+  }
+  if (shouldRequireDbActive() && !hasActiveDbStorage()) {
+    return res.status(503).json({ success: false, error: 'DB storage is not active; refusing write in production.' });
   }
   
   try {
@@ -117,7 +147,7 @@ router.post('/whitelist', (req, res) => {
       return res.status(400).json({ success: false, error: 'Domain is required' });
     }
     
-    const result = addToWhitelist(domain, category, name, city);
+    const result = await addToWhitelist(domain, category, name, city);
     logger.info(`Whitelist add: ${domain} (${category || 'all'}) - ${result.message}`);
     
     res.json(result);
@@ -132,13 +162,16 @@ router.post('/whitelist', (req, res) => {
  * Remove a domain from the whitelist
  * Body: { domain }
  */
-router.delete('/whitelist', (req, res) => {
-  // Block saves in production (Railway) - changes would be lost on redeploy
-  if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT) {
+router.delete('/whitelist', async (req, res) => {
+  // Writes are only allowed in production when DB-backed storage is enabled.
+  if (areWritesBlockedInCurrentEnv()) {
     return res.status(403).json({ 
       success: false, 
-      error: 'Whitelist editing is disabled in production. Edit the XLSX file locally and push to git.' 
+      error: buildWriteBlockedMessage(),
     });
+  }
+  if (shouldRequireDbActive() && !hasActiveDbStorage()) {
+    return res.status(503).json({ success: false, error: 'DB storage is not active; refusing write in production.' });
   }
   
   try {
@@ -148,7 +181,7 @@ router.delete('/whitelist', (req, res) => {
       return res.status(400).json({ success: false, error: 'Domain is required' });
     }
     
-    const result = removeFromWhitelist(domain);
+    const result = await removeFromWhitelist(domain);
     logger.info(`Whitelist remove: ${domain} - ${result.message}`);
     
     res.json(result);
@@ -167,13 +200,16 @@ router.delete('/whitelist', (req, res) => {
  * Add a domain to the site blacklist
  * Body: { domain, reason? }
  */
-router.post('/blacklist-site', (req, res) => {
-  // Block saves in production (Railway) - changes would be lost on redeploy
-  if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT) {
+router.post('/blacklist-site', async (req, res) => {
+  // Writes are only allowed in production when DB-backed storage is enabled.
+  if (areWritesBlockedInCurrentEnv()) {
     return res.status(403).json({ 
       success: false, 
-      error: 'Blacklist editing is disabled in production. Edit the XLSX file locally and push to git.' 
+      error: buildWriteBlockedMessage(),
     });
+  }
+  if (shouldRequireDbActive() && !hasActiveDbStorage()) {
+    return res.status(503).json({ success: false, error: 'DB storage is not active; refusing write in production.' });
   }
   
   try {
@@ -183,7 +219,7 @@ router.post('/blacklist-site', (req, res) => {
       return res.status(400).json({ success: false, error: 'Domain is required' });
     }
     
-    const result = addToBlacklistSites(domain, reason);
+    const result = await addToBlacklistSites(domain, reason);
     logger.info(`Blacklist site add: ${domain} - ${result.message}`);
     
     res.json(result);
@@ -198,13 +234,16 @@ router.post('/blacklist-site', (req, res) => {
  * Remove a domain from the site blacklist
  * Body: { domain }
  */
-router.delete('/blacklist-site', (req, res) => {
-  // Block saves in production (Railway) - changes would be lost on redeploy
-  if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT) {
+router.delete('/blacklist-site', async (req, res) => {
+  // Writes are only allowed in production when DB-backed storage is enabled.
+  if (areWritesBlockedInCurrentEnv()) {
     return res.status(403).json({ 
       success: false, 
-      error: 'Blacklist editing is disabled in production. Edit the XLSX file locally and push to git.' 
+      error: buildWriteBlockedMessage(),
     });
+  }
+  if (shouldRequireDbActive() && !hasActiveDbStorage()) {
+    return res.status(503).json({ success: false, error: 'DB storage is not active; refusing write in production.' });
   }
   
   try {
@@ -214,7 +253,7 @@ router.delete('/blacklist-site', (req, res) => {
       return res.status(400).json({ success: false, error: 'Domain is required' });
     }
     
-    const result = removeFromBlacklistSites(domain);
+    const result = await removeFromBlacklistSites(domain);
     logger.info(`Blacklist site remove: ${domain} - ${result.message}`);
     
     res.json(result);
@@ -233,13 +272,16 @@ router.delete('/blacklist-site', (req, res) => {
  * Add an event to the event blacklist
  * Body: { title?, url? } (at least one required)
  */
-router.post('/blacklist-event', (req, res) => {
-  // Block saves in production (Railway) - changes would be lost on redeploy
-  if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT) {
+router.post('/blacklist-event', async (req, res) => {
+  // Writes are only allowed in production when DB-backed storage is enabled.
+  if (areWritesBlockedInCurrentEnv()) {
     return res.status(403).json({ 
       success: false, 
-      error: 'Blacklist editing is disabled in production. Edit the XLSX file locally and push to git.' 
+      error: buildWriteBlockedMessage(),
     });
+  }
+  if (shouldRequireDbActive() && !hasActiveDbStorage()) {
+    return res.status(503).json({ success: false, error: 'DB storage is not active; refusing write in production.' });
   }
   
   try {
@@ -249,7 +291,7 @@ router.post('/blacklist-event', (req, res) => {
       return res.status(400).json({ success: false, error: 'Title or URL is required' });
     }
     
-    const result = addToBlacklistEvents(title, url);
+    const result = await addToBlacklistEvents(title, url);
     logger.info(`Blacklist event add: "${title || url}" - ${result.message}`);
     
     res.json(result);
@@ -264,13 +306,16 @@ router.post('/blacklist-event', (req, res) => {
  * Remove an event from the event blacklist
  * Body: { title?, url? }
  */
-router.delete('/blacklist-event', (req, res) => {
-  // Block saves in production (Railway) - changes would be lost on redeploy
-  if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT) {
+router.delete('/blacklist-event', async (req, res) => {
+  // Writes are only allowed in production when DB-backed storage is enabled.
+  if (areWritesBlockedInCurrentEnv()) {
     return res.status(403).json({ 
       success: false, 
-      error: 'Blacklist editing is disabled in production. Edit the XLSX file locally and push to git.' 
+      error: buildWriteBlockedMessage(),
     });
+  }
+  if (shouldRequireDbActive() && !hasActiveDbStorage()) {
+    return res.status(503).json({ success: false, error: 'DB storage is not active; refusing write in production.' });
   }
   
   try {
@@ -280,7 +325,7 @@ router.delete('/blacklist-event', (req, res) => {
       return res.status(400).json({ success: false, error: 'Title or URL is required' });
     }
     
-    const result = removeFromBlacklistEvents(title, url);
+    const result = await removeFromBlacklistEvents(title, url);
     logger.info(`Blacklist event remove: "${title || url}" - ${result.message}`);
     
     res.json(result);
@@ -291,4 +336,3 @@ router.delete('/blacklist-event', (req, res) => {
 });
 
 export default router;
-
