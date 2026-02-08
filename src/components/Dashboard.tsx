@@ -217,6 +217,35 @@ export const Dashboard = () => {
     }, 10_000);
   }, []);
 
+  // If a refresh is already running (e.g., daily scheduled job), show the banner and start polling.
+  useEffect(() => {
+    if (!user) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/events/refresh-status`);
+        const status = await res.json();
+        if (cancelled) return;
+
+        if (status?.refreshing) {
+          if (typeof status?.message === 'string' && status.message.trim().length > 0) {
+            setRefreshStatusText(status.message);
+          } else if (typeof status?.ageHours === 'number') {
+            setRefreshStatusText(`Cache age: ${status.ageHours}h`);
+          }
+          handleBackgroundRefreshing(true);
+        }
+      } catch {
+        // Ignore errors (offline / transient)
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, handleBackgroundRefreshing]);
+
   // Cleanup poll on unmount
   useEffect(() => {
     return () => {
