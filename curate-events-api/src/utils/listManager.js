@@ -241,6 +241,59 @@ async function createDbSchema() {
   await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_list_entries_url ON list_entries(url);`);
 }
 
+async function seedDbFromFilesIfEmpty() {
+  if (!dbPool) return false;
+
+  const countResult = await dbPool.query(`SELECT COUNT(*)::int AS count FROM list_entries`);
+  const count = countResult.rows?.[0]?.count ?? 0;
+  if (count > 0) return false;
+
+  logger.info('list_entries is empty; seeding from XLSX files');
+
+  // Load current file-backed lists into memory, then persist into DB.
+  loadAllListsFromFiles();
+
+  await dbPool.query('BEGIN');
+  try {
+    for (const entry of whitelist) {
+      await dbPool.query(
+        `INSERT INTO list_entries (list_type, domain, category, name, city, created_at, updated_at)
+         VALUES ('whitelist', $1, $2, $3, $4, NOW(), NOW())`,
+        [entry.domain, entry.category, entry.name, entry.city]
+      );
+    }
+
+    for (const entry of blacklistSites) {
+      await dbPool.query(
+        `INSERT INTO list_entries (list_type, domain, reason, created_at, updated_at)
+         VALUES ('blacklist_site', $1, $2, NOW(), NOW())`,
+        [entry.domain, entry.reason]
+      );
+    }
+
+    for (const entry of blacklistEvents) {
+      await dbPool.query(
+        `INSERT INTO list_entries (list_type, title, url, created_at, updated_at)
+         VALUES ('blacklist_event', $1, $2, NOW(), NOW())`,
+        [entry.title, entry.url]
+      );
+    }
+
+    await dbPool.query('COMMIT');
+
+    logger.info('Seeded list_entries from files', {
+      whitelist: whitelist.length,
+      blacklistSites: blacklistSites.length,
+      blacklistEvents: blacklistEvents.length
+    });
+    return true;
+  } catch (error) {
+    await dbPool.query('ROLLBACK');
+    logger.error('Failed to seed list_entries from files', { error: error.message });
+    throw error;
+  }
+}
+
 async function refreshFromDb({ force = false } = {}) {
   if (!dbPool) return false;
 
@@ -303,6 +356,7 @@ async function ensureDbInitialized() {
       });
 
       await createDbSchema();
+      await seedDbFromFilesIfEmpty();
       await refreshFromDb({ force: true });
       dbOperational = true;
 
