@@ -45,3 +45,11 @@ secrets.json
 credentials.json
 config.json
 
+.vercel
+
+# Local tooling
+.windsurf/
+
+# Local caches / generated data (keep out of git)
+data/geocode-cache.json
+data/venue-registry.backup-*.json

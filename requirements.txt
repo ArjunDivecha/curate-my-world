@@ -1,8 +1,5 @@
 requests
 python-dotenv
 tabulate
-# Additional dependencies for user input processor
-argparse  # Built-in, but listed for clarity
-json  # Built-in
-pathlib  # Built-in
-datetime  # Built-in
+# Note: Standard-library modules (e.g., argparse/json/pathlib/datetime) are intentionally
+# not listed here because they are not installable via pip.

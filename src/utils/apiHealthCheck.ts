@@ -11,6 +11,8 @@
  * =============================================================================
  */
 
+import { getApiBaseUrl } from "./apiConfig";
+
 export interface ApiHealthStatus {
   isHealthy: boolean;
   backend: {
@@ -36,8 +38,8 @@ class ApiHealthChecker {
   private listeners: ((status: ApiHealthStatus) => void)[] = [];
   
   private constructor() {
-    // Use relative /api path - works in both dev (Vite proxy) and prod (same server)
-    this.baseUrl = '/api';
+    // Shared API base URL resolution for local/staging/prod.
+    this.baseUrl = getApiBaseUrl();
       
     this.status = {
       isHealthy: false,
