@@ -1,0 +1,882 @@
+[
+  {
+    "name": "1015 Folsom",
+    "domain": "1015.com",
+    "category": "all",
+    "website": "https://1015.com/#calendar",
+    "calendar_url": "https://1015.com/#calendar",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"1015 Folsom\",\n  \"domain\": \"1015.com\",\n  \"category\": \"all\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://1015.com\",\n  \"calendar_url\": \"https://1015.com/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:01.124057+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "42nd Street Moon",
+    "domain": "42ndstmoon.org",
+    "category": "theatre",
+    "website": "https://42ndstmoon.org/events",
+    "calendar_url": "https://42ndstmoon.org/events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"42nd Street Moon\",\n  \"domain\": \"42ndstmoon.org\",\n  \"category\": \"theatre\",\n  \"city\": null,\n  \"state\": \"CA\",\n  \"website\": \"https://42ndstmoon.org\",\n  \"calendar_url\": \"https://42ndstmoon.org/events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:02.834519+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Altarena Playhouse",
+    "domain": "altarena.org",
+    "category": "theatre",
+    "website": "https://www.altarena.org/buy-tickets/",
+    "calendar_url": "https://www.altarena.org/buy-tickets/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Altarena Playhouse\",\n  \"domain\": \"altarena.org\",\n  \"category\": \"theatre\",\n  \"city\": null,\n  \"state\": \"CA\",\n  \"website\": \"https://altarena.org\",\n  \"calendar_url\": \"https://www.altarena.org/buy-tickets/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:04.793981+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Aquarium of the Bay",
+    "domain": "aquariumofthebay.org",
+    "category": "kids",
+    "website": "https://www.aquariumofthebay.org/events/",
+    "calendar_url": "https://www.aquariumofthebay.org/events/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Aquarium of the Bay\",\n  \"domain\": \"aquariumofthebay.org\",\n  \"category\": \"kids\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://aquariumofthebay.org\",\n  \"calendar_url\": \"https://www.aquariumofthebay.org/events/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:05.123994+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Memorial Auditorium (Stanford)",
+    "domain": "arts.stanford.edu",
+    "category": "lectures",
+    "website": "https://arts.stanford.edu/events/",
+    "calendar_url": "https://arts.stanford.edu/events/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Memorial Auditorium (Stanford)\",\n  \"domain\": \"arts.stanford.edu\",\n  \"category\": \"lectures\",\n  \"city\": \"Stanford\",\n  \"state\": \"CA\",\n  \"website\": \"https://arts.stanford.edu\",\n  \"calendar_url\": \"https://arts.stanford.edu/events/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:05.392496+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Ashkenaz Music & Dance Community Center",
+    "domain": "ashkenaz.com",
+    "category": "music",
+    "website": "https://www.ashkenaz.com/full-calendar",
+    "calendar_url": "https://www.ashkenaz.com/full-calendar",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Ashkenaz Music & Dance Community Center\",\n  \"domain\": \"ashkenaz.com\",\n  \"category\": \"music\",\n  \"city\": \"Berkeley\",\n  \"state\": \"CA\",\n  \"website\": \"https://ashkenaz.com\",\n  \"calendar_url\": \"https://www.ashkenaz.com/full-calendar\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:05.766114+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Audio SF",
+    "domain": "audiosf.com",
+    "category": "all",
+    "website": "https://audiosf.com/events/",
+    "calendar_url": "https://audiosf.com/events/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Audio SF\",\n  \"domain\": \"audiosf.com\",\n  \"category\": \"all\",\n  \"city\": null,\n  \"state\": \"CA\",\n  \"website\": \"https://audiosf.com\",\n  \"calendar_url\": \"https://audiosf.com/events/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:06.074503+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "August Hall",
+    "domain": "augusthallsf.com",
+    "category": "music",
+    "website": "https://www.augusthallsf.com/events/",
+    "calendar_url": "https://www.augusthallsf.com/events/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"August Hall\",\n  \"domain\": \"augusthallsf.com\",\n  \"category\": \"music\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://augusthallsf.com\",\n  \"calendar_url\": \"https://www.augusthallsf.com/events/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:06.466300+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Bazaar Cafe",
+    "domain": "bazaarcafe.com",
+    "category": "lectures",
+    "website": "https://bazaarcafe.com/events/ryan-pesce-residency/",
+    "calendar_url": "https://bazaarcafe.com/events/ryan-pesce-residency/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Bazaar Cafe\",\n  \"domain\": \"bazaarcafe.com\",\n  \"category\": \"lectures\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://bazaarcafe.com\",\n  \"calendar_url\": \"https://bazaarcafe.com/events/ryan-pesce-residency/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:07.904438+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Bayview Opera House",
+    "domain": "bfrb.org",
+    "category": "theatre",
+    "website": "https://www.bfrb.org/all-events",
+    "calendar_url": "https://www.bfrb.org/all-events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Bayview Opera House\",\n  \"domain\": \"bfrb.org\",\n  \"category\": \"theatre\",\n  \"city\": null,\n  \"state\": \"CA\",\n  \"website\": \"https://bfrb.org\",\n  \"calendar_url\": \"https://www.bfrb.org/all-events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:08.212482+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Bill Graham Civic Auditorium",
+    "domain": "billgrahamcivic.com",
+    "category": "music",
+    "website": "https://billgrahamcivic.com/events/steve-aoki-260220",
+    "calendar_url": "https://billgrahamcivic.com/events/steve-aoki-260220",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Bill Graham Civic Auditorium\",\n  \"domain\": \"billgrahamcivic.com\",\n  \"category\": \"music\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://billgrahamcivic.com\",\n  \"calendar_url\": \"https://billgrahamcivic.com/events/steve-aoki-260220\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:08.505648+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Bimbo's 365 Club",
+    "domain": "bimbos365club.com",
+    "category": "music",
+    "website": "https://bimbos365club.com/events",
+    "calendar_url": "https://bimbos365club.com/events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Bimbo's 365 Club\",\n  \"domain\": \"bimbos365club.com\",\n  \"category\": \"music\",\n  \"city\": \"SAN FRANCISCO\",\n  \"state\": \"CA\",\n  \"website\": \"https://bimbos365club.com\",\n  \"calendar_url\": \"https://bimbos365club.com/events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:26.769501+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Bindlestiff Studio",
+    "domain": "bindlestiff.org",
+    "category": "theatre",
+    "website": "https://bindlestiff.org/events/",
+    "calendar_url": "https://bindlestiff.org/events/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Bindlestiff Studio\",\n  \"domain\": \"bindlestiff.org\",\n  \"category\": \"theatre\",\n  \"city\": null,\n  \"state\": \"CA\",\n  \"website\": \"https://bindlestiff.org\",\n  \"calendar_url\": \"https://bindlestiff.org/events/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:31.706502+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Bird & Beckett Books",
+    "domain": "birdbeckett.com",
+    "category": "lectures",
+    "website": "https://birdbeckett.com/events/",
+    "calendar_url": "https://birdbeckett.com/events/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Bird & Beckett Books\",\n  \"domain\": \"birdbeckett.com\",\n  \"category\": \"lectures\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://birdbeckett.com\",\n  \"calendar_url\": \"https://birdbeckett.com/events/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:32.032121+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Boom Boom Room",
+    "domain": "boomboomroom.com",
+    "category": "music",
+    "website": "https://boomboomroom.com/events/",
+    "calendar_url": "https://boomboomroom.com/events/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Boom Boom Room\",\n  \"domain\": \"boomboomroom.com\",\n  \"category\": \"music\",\n  \"city\": null,\n  \"state\": \"CA\",\n  \"website\": \"https://boomboomroom.com\",\n  \"calendar_url\": \"https://boomboomroom.com/events/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:32.242147+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Brick & Mortar Music Hall",
+    "domain": "brickandmortarmusic.com",
+    "category": "music",
+    "website": "https://www.brickandmortarmusic.com/calendar",
+    "calendar_url": "https://www.brickandmortarmusic.com/calendar",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Brick & Mortar Music Hall\",\n  \"domain\": \"brickandmortarmusic.com\",\n  \"category\": \"music\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://brickandmortarmusic.com\",\n  \"calendar_url\": \"https://www.brickandmortarmusic.com/calendar\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:32.741099+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "California Shakespeare Theater",
+    "domain": "calshakes.org",
+    "category": "theatre",
+    "website": "https://www.calshakes.org/events",
+    "calendar_url": "https://www.calshakes.org/events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"California Shakespeare Theater\",\n  \"domain\": \"calshakes.org\",\n  \"category\": \"theatre\",\n  \"city\": null,\n  \"state\": \"CA\",\n  \"website\": \"https://calshakes.org\",\n  \"calendar_url\": \"https://www.calshakes.org/events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:32.972808+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Cartoon Art Museum",
+    "domain": "cartoonart.org",
+    "category": "art",
+    "website": "https://www.cartoonart.org/calendar",
+    "calendar_url": "https://www.cartoonart.org/calendar",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Cartoon Art Museum\",\n  \"domain\": \"cartoonart.org\",\n  \"category\": \"art\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://cartoonart.org\",\n  \"calendar_url\": \"https://www.cartoonart.org/calendar\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:33.413208+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Chinese Culture Center",
+    "domain": "cccsf.us",
+    "category": "art",
+    "website": "https://www.cccsf.us/upcoming-events",
+    "calendar_url": "https://www.cccsf.us/upcoming-events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Chinese Culture Center\",\n  \"domain\": \"cccsf.us\",\n  \"category\": \"art\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://cccsf.us\",\n  \"calendar_url\": \"https://www.cccsf.us/upcoming-events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:33.684841+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "City Lights Theater Company",
+    "domain": "cltc.org",
+    "category": "theatre",
+    "website": "https://cltc.org/event/dial-m/",
+    "calendar_url": "https://cltc.org/event/dial-m/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"City Lights Theater Company\",\n  \"domain\": \"cltc.org\",\n  \"category\": \"theatre\",\n  \"city\": \"San Jose\",\n  \"state\": \"CA\",\n  \"website\": \"https://cltc.org\",\n  \"calendar_url\": \"https://cltc.org/event/dial-m/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:34.211584+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "CounterPulse",
+    "domain": "counterpulse.org",
+    "category": "theatre",
+    "website": "https://counterpulse.org/events",
+    "calendar_url": "https://counterpulse.org/events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"CounterPulse\",\n  \"domain\": \"counterpulse.org\",\n  \"category\": \"theatre\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://counterpulse.org\",\n  \"calendar_url\": \"https://counterpulse.org/events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:34.527683+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Cow Palace",
+    "domain": "cowpalace.com",
+    "category": "music",
+    "website": "https://www.cowpalace.com/events-calendar/photo/?shortcode=70fd4331&eventDisplay=past",
+    "calendar_url": "https://www.cowpalace.com/events-calendar/photo/?shortcode=70fd4331&eventDisplay=past",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Cow Palace\",\n  \"domain\": \"cowpalace.com\",\n  \"category\": \"music\",\n  \"city\": null,\n  \"state\": \"CA\",\n  \"website\": \"https://cowpalace.com\",\n  \"calendar_url\": \"https://www.cowpalace.com/events-calendar/photo/?shortcode=70fd4331&eventDisplay=past\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:35.159598+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Creativity Explored",
+    "domain": "creativityexplored.org",
+    "category": "art",
+    "website": "https://www.creativityexplored.org/events-exhibitions",
+    "calendar_url": "https://www.creativityexplored.org/events-exhibitions",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Creativity Explored\",\n  \"domain\": \"creativityexplored.org\",\n  \"category\": \"art\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://creativityexplored.org\",\n  \"calendar_url\": \"https://www.creativityexplored.org/events-exhibitions\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:35.598512+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Dance Mission Theater",
+    "domain": "dancemissiontheater.org",
+    "category": "theatre",
+    "website": "https://dancemissiontheater.org/shows-and-events/",
+    "calendar_url": "https://dancemissiontheater.org/shows-and-events/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Dance Mission Theater\",\n  \"domain\": \"dancemissiontheater.org\",\n  \"category\": \"theatre\",\n  \"city\": \"SAN FRANCISCO\",\n  \"state\": \"CA\",\n  \"website\": \"https://dancemissiontheater.org\",\n  \"calendar_url\": \"https://dancemissiontheater.org/shows-and-events/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:36.019932+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "di Rosa Center for Contemporary Art",
+    "domain": "dirosaart.org",
+    "category": "art",
+    "website": "https://www.dirosaart.org/visit-di-rosa/",
+    "calendar_url": "https://www.dirosaart.org/visit-di-rosa/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"di Rosa Center for Contemporary Art\",\n  \"domain\": \"dirosaart.org\",\n  \"category\": \"art\",\n  \"city\": \"Napa\",\n  \"state\": \"CA\",\n  \"website\": \"https://dirosaart.org\",\n  \"calendar_url\": \"https://www.dirosaart.org/visit-di-rosa/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:36.503515+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "DNA Lounge",
+    "domain": "dnalounge.com",
+    "category": "all",
+    "website": "https://www.dnalounge.com/calendar/latest.html",
+    "calendar_url": "https://www.dnalounge.com/calendar/latest.html",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"DNA Lounge\",\n  \"domain\": \"dnalounge.com\",\n  \"category\": \"all\",\n  \"city\": \"Berkeley\",\n  \"state\": \"CA\",\n  \"website\": \"https://dnalounge.com\",\n  \"calendar_url\": \"https://www.dnalounge.com/calendar/latest.html\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:36.898503+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Rosicrucian Egyptian Museum",
+    "domain": "egyptianmuseum.org",
+    "category": "art",
+    "website": "https://www.egyptianmuseum.org/events-calendar",
+    "calendar_url": "https://www.egyptianmuseum.org/events-calendar",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Rosicrucian Egyptian Museum\",\n  \"domain\": \"egyptianmuseum.org\",\n  \"category\": \"art\",\n  \"city\": null,\n  \"state\": \"CA\",\n  \"website\": \"https://egyptianmuseum.org\",\n  \"calendar_url\": \"https://www.egyptianmuseum.org/events-calendar\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:37.194773+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "UC Berkeley Pauley Ballroom",
+    "domain": "eventservices.berkeley.edu",
+    "category": "lectures",
+    "website": "https://eventservices.berkeley.edu/",
+    "calendar_url": "https://eventservices.berkeley.edu/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"UC Berkeley Pauley Ballroom\",\n  \"domain\": \"eventservices.berkeley.edu\",\n  \"category\": \"lectures\",\n  \"city\": \"Berkeley\",\n  \"state\": \"CA\",\n  \"website\": \"https://eventservices.berkeley.edu\",\n  \"calendar_url\": \"https://eventservices.berkeley.edu/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:37.405622+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Filoli",
+    "domain": "filoli.org",
+    "category": "kids",
+    "website": "https://filoli.org/events/stories-in-bloom/",
+    "calendar_url": "https://filoli.org/events/stories-in-bloom/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Filoli\",\n  \"domain\": \"filoli.org\",\n  \"category\": \"kids\",\n  \"city\": null,\n  \"state\": \"CA\",\n  \"website\": \"https://filoli.org\",\n  \"calendar_url\": \"https://filoli.org/events/stories-in-bloom/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:37.748313+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Fox Theatre (Redwood City)",
+    "domain": "foxrwc.com",
+    "category": "theatre",
+    "website": "https://foxrwc.com/event-schedule",
+    "calendar_url": "https://foxrwc.com/event-schedule",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Fox Theatre (Redwood City)\",\n  \"domain\": \"foxrwc.com\",\n  \"category\": \"theatre\",\n  \"city\": \"REDWOOD CITY\",\n  \"state\": \"CA\",\n  \"website\": \"https://foxrwc.com\",\n  \"calendar_url\": \"https://foxrwc.com/event-schedule\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:38.347327+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Gallery Wendi Norris",
+    "domain": "gallerywendinorris.com",
+    "category": "art",
+    "website": "https://gallerywendinorris.com/events/",
+    "calendar_url": "https://gallerywendinorris.com/events/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Gallery Wendi Norris\",\n  \"domain\": \"gallerywendinorris.com\",\n  \"category\": \"art\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://gallerywendinorris.com\",\n  \"calendar_url\": \"https://gallerywendinorris.com/events/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:40.596232+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "GLBT History Museum",
+    "domain": "glbthistory.org",
+    "category": "art",
+    "website": "https://www.glbthistory.org/events",
+    "calendar_url": "https://www.glbthistory.org/events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"GLBT History Museum\",\n  \"domain\": \"glbthistory.org\",\n  \"category\": \"art\",\n  \"city\": \"Sausalito\",\n  \"state\": \"CA\",\n  \"website\": \"https://glbthistory.org\",\n  \"calendar_url\": \"https://www.glbthistory.org/events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:41.105900+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Great American Music Hall",
+    "domain": "greatamericanmusichall.com",
+    "category": "music",
+    "website": "https://greatamericanmusichall.com/events",
+    "calendar_url": "https://greatamericanmusichall.com/events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Great American Music Hall\",\n  \"domain\": \"greatamericanmusichall.com\",\n  \"category\": \"music\",\n  \"city\": null,\n  \"state\": \"CA\",\n  \"website\": \"https://greatamericanmusichall.com\",\n  \"calendar_url\": \"https://greatamericanmusichall.com/events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:41.351512+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Great Star Theater",
+    "domain": "greatstartheater.org",
+    "category": "music",
+    "website": "https://www.greatstartheater.org/special-events",
+    "calendar_url": "https://www.greatstartheater.org/special-events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Great Star Theater\",\n  \"domain\": \"greatstartheater.org\",\n  \"category\": \"music\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://greatstartheater.org\",\n  \"calendar_url\": \"https://www.greatstartheater.org/special-events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:41.553057+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Green Apple Books",
+    "domain": "greenapplebooks.com",
+    "category": "lectures",
+    "website": "https://greenapplebooks.com/events/calendar",
+    "calendar_url": "https://greenapplebooks.com/events/calendar",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Green Apple Books\",\n  \"domain\": \"greenapplebooks.com\",\n  \"category\": \"lectures\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://greenapplebooks.com\",\n  \"calendar_url\": \"https://greenapplebooks.com/events/calendar\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:42.294852+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Hawthorn SF",
+    "domain": "hawthornsf.com",
+    "category": "all",
+    "website": "https://hawthornsf.com/nightlife-events/",
+    "calendar_url": "https://hawthornsf.com/nightlife-events/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Hawthorn SF\",\n  \"domain\": \"hawthornsf.com\",\n  \"category\": \"all\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://hawthornsf.com\",\n  \"calendar_url\": \"https://hawthornsf.com/nightlife-events/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:42.850033+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Headlands Center for the Arts",
+    "domain": "headlands.org",
+    "category": "art",
+    "website": "https://www.headlands.org/programs/",
+    "calendar_url": "https://www.headlands.org/programs/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Headlands Center for the Arts\",\n  \"domain\": \"headlands.org\",\n  \"category\": \"art\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://headlands.org\",\n  \"calendar_url\": \"https://www.headlands.org/programs/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:43.406001+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Hillbarn Theatre",
+    "domain": "hillbarntheatre.org",
+    "category": "theatre",
+    "website": "https://www.hillbarntheatre.org/shows-tickets/",
+    "calendar_url": "https://www.hillbarntheatre.org/shows-tickets/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Hillbarn Theatre\",\n  \"domain\": \"hillbarntheatre.org\",\n  \"category\": \"theatre\",\n  \"city\": \"San Jose\",\n  \"state\": \"CA\",\n  \"website\": \"https://hillbarntheatre.org\",\n  \"calendar_url\": \"https://www.hillbarntheatre.org/shows-tickets/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:44.665173+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Calvin Simmons Theatre (Henry J. Kaiser Center)",
+    "domain": "hjkarts.org",
+    "category": "theatre",
+    "website": "https://www.hjkarts.org/#calendar-04d66c74-9140-4b96-a786-85315a72d846-event-62c44f50-3f49-40e5-ade5-879c3c8d583f",
+    "calendar_url": "https://www.hjkarts.org/#calendar-04d66c74-9140-4b96-a786-85315a72d846-event-62c44f50-3f49-40e5-ade5-879c3c8d583f",
+    "ok": false,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/add_venue_registry_strict.py\", line 332, in <module>\n    main()\n    ~~~~^^\n  File \"/Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/add_venue_registry_strict.py\", line 309, in main\n    fail(\n    ~~~~^\n        f\"Domain already exists: {domain}. \"\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        \"Re-run with --update-existing to modify existing record.\"\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/add_venue_registry_strict.py\", line 93, in fail\n    raise RuntimeError(msg)\nRuntimeError: Domain already exists: hjkarts.org. Re-run with --update-existing to modify existing record."
+  },
+  {
+    "name": "Hotel Utah Saloon",
+    "domain": "hotelutah.com",
+    "category": "music",
+    "website": "https://hotelutah.com/calendar",
+    "calendar_url": "https://hotelutah.com/calendar",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Hotel Utah Saloon\",\n  \"domain\": \"hotelutah.com\",\n  \"category\": \"music\",\n  \"city\": null,\n  \"state\": \"CA\",\n  \"website\": \"https://hotelutah.com\",\n  \"calendar_url\": \"https://hotelutah.com/calendar\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:46.571444+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Letterform Archive",
+    "domain": "letterformarchive.org",
+    "category": "art",
+    "website": "https://letterformarchive.org/events/",
+    "calendar_url": "https://letterformarchive.org/events/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Letterform Archive\",\n  \"domain\": \"letterformarchive.org\",\n  \"category\": \"art\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://letterformarchive.org\",\n  \"calendar_url\": \"https://letterformarchive.org/events/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:46.904421+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Lorraine Hansberry Theatre",
+    "domain": "lhtsf.org",
+    "category": "theatre",
+    "website": "https://www.lhtsf.org/events",
+    "calendar_url": "https://www.lhtsf.org/events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Lorraine Hansberry Theatre\",\n  \"domain\": \"lhtsf.org\",\n  \"category\": \"theatre\",\n  \"city\": null,\n  \"state\": \"CA\",\n  \"website\": \"https://lhtsf.org\",\n  \"calendar_url\": \"https://www.lhtsf.org/events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:47.151979+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Alonzo King LINES Ballet",
+    "domain": "linesballet.org",
+    "category": "theatre",
+    "website": "https://linesballet.org/events",
+    "calendar_url": "https://linesballet.org/events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Alonzo King LINES Ballet\",\n  \"domain\": \"linesballet.org\",\n  \"category\": \"theatre\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://linesballet.org\",\n  \"calendar_url\": \"https://linesballet.org/events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:48.271112+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Litquake",
+    "domain": "litquake.org",
+    "category": "lectures",
+    "website": "https://www.litquake.org/year-round-programs",
+    "calendar_url": "https://www.litquake.org/year-round-programs",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Litquake\",\n  \"domain\": \"litquake.org\",\n  \"category\": \"lectures\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://litquake.org\",\n  \"calendar_url\": \"https://www.litquake.org/year-round-programs\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:48.513213+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Memorial Auditorium (Stanford)",
+    "domain": "live.stanford.edu",
+    "category": "music",
+    "website": "https://live.stanford.edu/events/events",
+    "calendar_url": "https://live.stanford.edu/events/events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Memorial Auditorium (Stanford)\",\n  \"domain\": \"live.stanford.edu\",\n  \"category\": \"music\",\n  \"city\": \"Stanford\",\n  \"state\": \"CA\",\n  \"website\": \"https://live.stanford.edu\",\n  \"calendar_url\": \"https://live.stanford.edu/events/events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:48.816408+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Local Edition",
+    "domain": "localeditionsf.com",
+    "category": "music",
+    "website": "https://www.localeditionsf.com/music-calendar/2023/1/2/steve-lucky-and-the-rhumba-bums-dme25-msbez-sn6nm-ksmzw-azd2w-jb4lb-ecjes-ncf6e-p5sln-3wblb-gr5y9-mayyf-653yc-ejl3s-htp7z-fwdmz-5f4e8-waw23-m8apn-5b8p7-29cse-4n3xk-z2nmg-r6xdf-47zha",
+    "calendar_url": "https://www.localeditionsf.com/music-calendar/2023/1/2/steve-lucky-and-the-rhumba-bums-dme25-msbez-sn6nm-ksmzw-azd2w-jb4lb-ecjes-ncf6e-p5sln-3wblb-gr5y9-mayyf-653yc-ejl3s-htp7z-fwdmz-5f4e8-waw23-m8apn-5b8p7-29cse-4n3xk-z2nmg-r6xdf-47zha",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Local Edition\",\n  \"domain\": \"localeditionsf.com\",\n  \"category\": \"music\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://localeditionsf.com\",\n  \"calendar_url\": \"https://www.localeditionsf.com/music-calendar/2023/1/2/steve-lucky-and-the-rhumba-bums-dme25-msbez-sn6nm-ksmzw-azd2w-jb4lb-ecjes-ncf6e-p5sln-3wblb-gr5y9-mayyf-653yc-ejl3s-htp7z-fwdmz-5f4e8-waw23-m8apn-5b8p7-29cse-4n3xk-z2nmg-r6xdf-47zha\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:49.165936+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "MACLA",
+    "domain": "maclaarte.org",
+    "category": "art",
+    "website": "https://maclaarte.org/calendar/buy-tickets/",
+    "calendar_url": "https://maclaarte.org/calendar/buy-tickets/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"MACLA\",\n  \"domain\": \"maclaarte.org\",\n  \"category\": \"art\",\n  \"city\": null,\n  \"state\": \"CA\",\n  \"website\": \"https://maclaarte.org\",\n  \"calendar_url\": \"https://maclaarte.org/calendar/buy-tickets/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:49.677518+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Madrone Art Bar",
+    "domain": "madroneartbar.com",
+    "category": "music",
+    "website": "https://madroneartbar.com/calendar/",
+    "calendar_url": "https://madroneartbar.com/calendar/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Madrone Art Bar\",\n  \"domain\": \"madroneartbar.com\",\n  \"category\": \"music\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://madroneartbar.com\",\n  \"calendar_url\": \"https://madroneartbar.com/calendar/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:50.104074+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Magic Theatre",
+    "domain": "magictheatre.org",
+    "category": "theatre",
+    "website": "https://magictheatre.org/calendar",
+    "calendar_url": "https://magictheatre.org/calendar",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Magic Theatre\",\n  \"domain\": \"magictheatre.org\",\n  \"category\": \"theatre\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://magictheatre.org\",\n  \"calendar_url\": \"https://magictheatre.org/calendar\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:50.524356+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Mechanics' Institute",
+    "domain": "milibrary.org",
+    "category": "lectures",
+    "website": "https://www.milibrary.org/events/",
+    "calendar_url": "https://www.milibrary.org/events/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Mechanics' Institute\",\n  \"domain\": \"milibrary.org\",\n  \"category\": \"lectures\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://milibrary.org\",\n  \"calendar_url\": \"https://www.milibrary.org/events/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:51.821007+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Mission Cultural Center for Latino Arts",
+    "domain": "missionculturalcenter.org",
+    "category": "art",
+    "website": "https://www.missionculturalcenter.org/class-calendar",
+    "calendar_url": "https://www.missionculturalcenter.org/class-calendar",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Mission Cultural Center for Latino Arts\",\n  \"domain\": \"missionculturalcenter.org\",\n  \"category\": \"art\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://missionculturalcenter.org\",\n  \"calendar_url\": \"https://www.missionculturalcenter.org/class-calendar\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:52.245523+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Museum of the African Diaspora (MoAD)",
+    "domain": "moadsf.org",
+    "category": "art",
+    "website": "https://www.moadsf.org/events",
+    "calendar_url": "https://www.moadsf.org/events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Museum of the African Diaspora (MoAD)\",\n  \"domain\": \"moadsf.org\",\n  \"category\": \"art\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://moadsf.org\",\n  \"calendar_url\": \"https://www.moadsf.org/events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:52.524005+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Moe's Books",
+    "domain": "moesbooks.com",
+    "category": "lectures",
+    "website": "https://www.moesbooks.com/events.php",
+    "calendar_url": "https://www.moesbooks.com/events.php",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Moe's Books\",\n  \"domain\": \"moesbooks.com\",\n  \"category\": \"lectures\",\n  \"city\": \"Berkeley\",\n  \"state\": \"CA\",\n  \"website\": \"https://moesbooks.com\",\n  \"calendar_url\": \"https://www.moesbooks.com/events.php\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:52.997412+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Monarch SF",
+    "domain": "monarchsf.com",
+    "category": "all",
+    "website": "https://www.monarchsf.com/private-events",
+    "calendar_url": "https://www.monarchsf.com/private-events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Monarch SF\",\n  \"domain\": \"monarchsf.com\",\n  \"category\": \"all\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://monarchsf.com\",\n  \"calendar_url\": \"https://www.monarchsf.com/private-events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:53.352221+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Montalvo Arts Center",
+    "domain": "montalvoarts.org",
+    "category": "art",
+    "website": "https://montalvoarts.org/experience/events-calendar/",
+    "calendar_url": "https://montalvoarts.org/experience/events-calendar/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Montalvo Arts Center\",\n  \"domain\": \"montalvoarts.org\",\n  \"category\": \"art\",\n  \"city\": null,\n  \"state\": \"CA\",\n  \"website\": \"https://montalvoarts.org\",\n  \"calendar_url\": \"https://montalvoarts.org/experience/events-calendar/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:57.727649+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "The Mountain Winery",
+    "domain": "mountainwinery.com",
+    "category": "music",
+    "website": "https://www.mountainwinery.com/calendar",
+    "calendar_url": "https://www.mountainwinery.com/calendar",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"The Mountain Winery\",\n  \"domain\": \"mountainwinery.com\",\n  \"category\": \"music\",\n  \"city\": null,\n  \"state\": \"CA\",\n  \"website\": \"https://mountainwinery.com\",\n  \"calendar_url\": \"https://www.mountainwinery.com/calendar\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:57.989144+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Dinkelspiel Auditorium (Stanford)",
+    "domain": "music.stanford.edu",
+    "category": "lectures",
+    "website": "https://music.stanford.edu/events/events/upcoming-events",
+    "calendar_url": "https://music.stanford.edu/events/events/upcoming-events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Dinkelspiel Auditorium (Stanford)\",\n  \"domain\": \"music.stanford.edu\",\n  \"category\": \"lectures\",\n  \"city\": \"Stanford\",\n  \"state\": \"CA\",\n  \"website\": \"https://music.stanford.edu\",\n  \"calendar_url\": \"https://music.stanford.edu/events/events/upcoming-events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:58.364664+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Napa Valley Museum",
+    "domain": "napavalleymuseum.org",
+    "category": "art",
+    "website": "https://napavalleymuseum.org/collections/event-tickets",
+    "calendar_url": "https://napavalleymuseum.org/collections/event-tickets",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Napa Valley Museum\",\n  \"domain\": \"napavalleymuseum.org\",\n  \"category\": \"art\",\n  \"city\": \"Napa\",\n  \"state\": \"CA\",\n  \"website\": \"https://napavalleymuseum.org\",\n  \"calendar_url\": \"https://napavalleymuseum.org/collections/event-tickets\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:58.701147+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "New Conservatory Theatre Center",
+    "domain": "nctcsf.org",
+    "category": "theatre",
+    "website": "https://nctcsf.org/calendar/",
+    "calendar_url": "https://nctcsf.org/calendar/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"New Conservatory Theatre Center\",\n  \"domain\": \"nctcsf.org\",\n  \"category\": \"theatre\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://nctcsf.org\",\n  \"calendar_url\": \"https://nctcsf.org/calendar/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:59.403438+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Oakland Art Murmur",
+    "domain": "oaklandartmurmur.org",
+    "category": "art",
+    "website": "https://oaklandartmurmur.org/events/",
+    "calendar_url": "https://oaklandartmurmur.org/events/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Oakland Art Murmur\",\n  \"domain\": \"oaklandartmurmur.org\",\n  \"category\": \"art\",\n  \"city\": \"Oakland\",\n  \"state\": \"CA\",\n  \"website\": \"https://oaklandartmurmur.org\",\n  \"calendar_url\": \"https://oaklandartmurmur.org/events/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:59.695048+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Palace of Fine Arts Theatre",
+    "domain": "palaceoffinearts.org",
+    "category": "theatre",
+    "website": "https://www.palaceoffinearts.org/event/modi",
+    "calendar_url": "https://www.palaceoffinearts.org/event/modi",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Palace of Fine Arts Theatre\",\n  \"domain\": \"palaceoffinearts.org\",\n  \"category\": \"theatre\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://palaceoffinearts.org\",\n  \"calendar_url\": \"https://www.palaceoffinearts.org/event/modi\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:03:59.902313+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Peninsula Museum of Art",
+    "domain": "peninsulamuseum.org",
+    "category": "art",
+    "website": "https://peninsulamuseum.org/events",
+    "calendar_url": "https://peninsulamuseum.org/events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Peninsula Museum of Art\",\n  \"domain\": \"peninsulamuseum.org\",\n  \"category\": \"art\",\n  \"city\": null,\n  \"state\": \"CA\",\n  \"website\": \"https://peninsulamuseum.org\",\n  \"calendar_url\": \"https://peninsulamuseum.org/events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:00.463788+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Public Works SF",
+    "domain": "publicsf.com",
+    "category": "music",
+    "website": "https://publicsf.com/calendar",
+    "calendar_url": "https://publicsf.com/calendar",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Public Works SF\",\n  \"domain\": \"publicsf.com\",\n  \"category\": \"music\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://publicsf.com\",\n  \"calendar_url\": \"https://publicsf.com/calendar\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:02.811522+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Randall Museum",
+    "domain": "randallmuseum.org",
+    "category": "art",
+    "website": "https://randallmuseum.org/events-calendar/",
+    "calendar_url": "https://randallmuseum.org/events-calendar/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Randall Museum\",\n  \"domain\": \"randallmuseum.org\",\n  \"category\": \"art\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://randallmuseum.org\",\n  \"calendar_url\": \"https://randallmuseum.org/events-calendar/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:04.675842+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "SF Arts Commission Gallery",
+    "domain": "sfartscommission.org",
+    "category": "art",
+    "website": "https://www.sfartscommission.org/calendar",
+    "calendar_url": "https://www.sfartscommission.org/calendar",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"SF Arts Commission Gallery\",\n  \"domain\": \"sfartscommission.org\",\n  \"category\": \"art\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://sfartscommission.org\",\n  \"calendar_url\": \"https://www.sfartscommission.org/calendar\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:05.144833+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "SF Camerawork",
+    "domain": "sfcamerawork.org",
+    "category": "art",
+    "website": "https://sfcamerawork.org/upcoming-events",
+    "calendar_url": "https://sfcamerawork.org/upcoming-events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"SF Camerawork\",\n  \"domain\": \"sfcamerawork.org\",\n  \"category\": \"art\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://sfcamerawork.org\",\n  \"calendar_url\": \"https://sfcamerawork.org/upcoming-events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:05.505365+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "SF Conservatory of Music",
+    "domain": "sfcm.edu",
+    "category": "music",
+    "website": "https://sfcm.edu/experience/performance-calendar",
+    "calendar_url": "https://sfcm.edu/experience/performance-calendar",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"SF Conservatory of Music\",\n  \"domain\": \"sfcm.edu\",\n  \"category\": \"music\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://sfcm.edu\",\n  \"calendar_url\": \"https://sfcm.edu/experience/performance-calendar\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:05.719085+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "San Francisco Mime Troupe",
+    "domain": "sfmt.org",
+    "category": "theatre",
+    "website": "https://www.sfmt.org/sfmt-educational-programs",
+    "calendar_url": "https://www.sfmt.org/sfmt-educational-programs",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"San Francisco Mime Troupe\",\n  \"domain\": \"sfmt.org\",\n  \"category\": \"theatre\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://sfmt.org\",\n  \"calendar_url\": \"https://www.sfmt.org/sfmt-educational-programs\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:05.991062+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Oasis SF",
+    "domain": "sfoasis.com",
+    "category": "all",
+    "website": "https://www.sfoasis.com/events",
+    "calendar_url": "https://www.sfoasis.com/events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Oasis SF\",\n  \"domain\": \"sfoasis.com\",\n  \"category\": \"all\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://sfoasis.com\",\n  \"calendar_url\": \"https://www.sfoasis.com/events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:06.539802+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Shotgun Players",
+    "domain": "shotgunplayers.org",
+    "category": "theatre",
+    "website": "https://shotgunplayers.org/box-office/accessibility-programs",
+    "calendar_url": "https://shotgunplayers.org/box-office/accessibility-programs",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Shotgun Players\",\n  \"domain\": \"shotgunplayers.org\",\n  \"category\": \"theatre\",\n  \"city\": \"San Jose\",\n  \"state\": \"CA\",\n  \"website\": \"https://shotgunplayers.org\",\n  \"calendar_url\": \"https://shotgunplayers.org/box-office/accessibility-programs\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:07.114131+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "SLATE Contemporary Gallery",
+    "domain": "slatecontemporary.com",
+    "category": "art",
+    "website": "https://slatecontemporary.com/news--events",
+    "calendar_url": "https://slatecontemporary.com/news--events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"SLATE Contemporary Gallery\",\n  \"domain\": \"slatecontemporary.com\",\n  \"category\": \"art\",\n  \"city\": \"Oakland\",\n  \"state\": \"CA\",\n  \"website\": \"https://slatecontemporary.com\",\n  \"calendar_url\": \"https://slatecontemporary.com/news--events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:07.719719+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Smuin Ballet",
+    "domain": "smuinballet.org",
+    "category": "theatre",
+    "website": "https://www.smuinballet.org/events/company-class/",
+    "calendar_url": "https://www.smuinballet.org/events/company-class/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Smuin Ballet\",\n  \"domain\": \"smuinballet.org\",\n  \"category\": \"theatre\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://smuinballet.org\",\n  \"calendar_url\": \"https://www.smuinballet.org/events/company-class/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:07.928249+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Sonoma Valley Museum of Art",
+    "domain": "svma.org",
+    "category": "art",
+    "website": "https://svma.org/events/",
+    "calendar_url": "https://svma.org/events/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Sonoma Valley Museum of Art\",\n  \"domain\": \"svma.org\",\n  \"category\": \"art\",\n  \"city\": \"Sonoma\",\n  \"state\": \"CA\",\n  \"website\": \"https://svma.org\",\n  \"calendar_url\": \"https://svma.org/events/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:09.133425+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Symphony San Jose",
+    "domain": "symphonysanjose.org",
+    "category": "music",
+    "website": "https://www.symphonysanjose.org/community-education/our-programs/music-notes/",
+    "calendar_url": "https://www.symphonysanjose.org/community-education/our-programs/music-notes/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Symphony San Jose\",\n  \"domain\": \"symphonysanjose.org\",\n  \"category\": \"music\",\n  \"city\": \"San Jose\",\n  \"state\": \"CA\",\n  \"website\": \"https://symphonysanjose.org\",\n  \"calendar_url\": \"https://www.symphonysanjose.org/community-education/our-programs/music-notes/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:09.443600+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Temple Nightclub",
+    "domain": "templesf.com",
+    "category": "all",
+    "website": "https://www.templesf.com/calendar",
+    "calendar_url": "https://www.templesf.com/calendar",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Temple Nightclub\",\n  \"domain\": \"templesf.com\",\n  \"category\": \"all\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://templesf.com\",\n  \"calendar_url\": \"https://www.templesf.com/calendar\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:09.986014+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "TheatreWorks Silicon Valley",
+    "domain": "theatreworks.org",
+    "category": "theatre",
+    "website": "https://theatreworks.org/information/plan-your-visit/accessibility/",
+    "calendar_url": "https://theatreworks.org/information/plan-your-visit/accessibility/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"TheatreWorks Silicon Valley\",\n  \"domain\": \"theatreworks.org\",\n  \"category\": \"theatre\",\n  \"city\": \"Mountain View\",\n  \"state\": \"CA\",\n  \"website\": \"https://theatreworks.org\",\n  \"calendar_url\": \"https://theatreworks.org/information/plan-your-visit/accessibility/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:10.917610+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "The Great Northern",
+    "domain": "thegreatnorthernsf.com",
+    "category": "all",
+    "website": "https://www.thegreatnorthernsf.com/private-events",
+    "calendar_url": "https://www.thegreatnorthernsf.com/private-events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"The Great Northern\",\n  \"domain\": \"thegreatnorthernsf.com\",\n  \"category\": \"all\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://thegreatnorthernsf.com\",\n  \"calendar_url\": \"https://www.thegreatnorthernsf.com/private-events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:11.271381+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Intersection for the Arts",
+    "domain": "theintersection.org",
+    "category": "art",
+    "website": "https://theintersection.org/events",
+    "calendar_url": "https://theintersection.org/events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Intersection for the Arts\",\n  \"domain\": \"theintersection.org\",\n  \"category\": \"art\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://theintersection.org\",\n  \"calendar_url\": \"https://theintersection.org/events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:13.195950+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "The Lost Church SF",
+    "domain": "thelostchurch.org",
+    "category": "music",
+    "website": "https://thelostchurch.org/programs/",
+    "calendar_url": "https://thelostchurch.org/programs/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"The Lost Church SF\",\n  \"domain\": \"thelostchurch.org\",\n  \"category\": \"music\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://thelostchurch.org\",\n  \"calendar_url\": \"https://thelostchurch.org/programs/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:13.623690+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "The Marsh",
+    "domain": "themarsh.org",
+    "category": "theatre",
+    "website": "https://themarsh.org/shows_and_events/marshstream/dan-hoyle-takes-all-kinds/",
+    "calendar_url": "https://themarsh.org/shows_and_events/marshstream/dan-hoyle-takes-all-kinds/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"The Marsh\",\n  \"domain\": \"themarsh.org\",\n  \"category\": \"theatre\",\n  \"city\": \"Berkeley\",\n  \"state\": \"CA\",\n  \"website\": \"https://themarsh.org\",\n  \"calendar_url\": \"https://themarsh.org/shows_and_events/marshstream/dan-hoyle-takes-all-kinds/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:14.014422+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "The Midway SF",
+    "domain": "themidwaysf.com",
+    "category": "music",
+    "website": "https://themidwaysf.com/events/",
+    "calendar_url": "https://themidwaysf.com/events/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"The Midway SF\",\n  \"domain\": \"themidwaysf.com\",\n  \"category\": \"music\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://themidwaysf.com\",\n  \"calendar_url\": \"https://themidwaysf.com/events/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:14.244867+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "San Jose Stage Company",
+    "domain": "thestage.org",
+    "category": "theatre",
+    "website": "https://www.thestage.org/tickets",
+    "calendar_url": "https://www.thestage.org/tickets",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"San Jose Stage Company\",\n  \"domain\": \"thestage.org\",\n  \"category\": \"theatre\",\n  \"city\": \"San Jose\",\n  \"state\": \"CA\",\n  \"website\": \"https://thestage.org\",\n  \"calendar_url\": \"https://www.thestage.org/tickets\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:14.666545+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "The Starry Plough",
+    "domain": "thestarryplough.com",
+    "category": "music",
+    "website": "https://thestarryplough.com/calendar/",
+    "calendar_url": "https://thestarryplough.com/calendar/",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"The Starry Plough\",\n  \"domain\": \"thestarryplough.com\",\n  \"category\": \"music\",\n  \"city\": \"Berkeley\",\n  \"state\": \"CA\",\n  \"website\": \"https://thestarryplough.com\",\n  \"calendar_url\": \"https://thestarryplough.com/calendar/\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:15.148675+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "UC Theatre",
+    "domain": "theuctheatre.org",
+    "category": "music",
+    "website": "https://www.theuctheatre.org/events",
+    "calendar_url": "https://www.theuctheatre.org/events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"UC Theatre\",\n  \"domain\": \"theuctheatre.org\",\n  \"category\": \"music\",\n  \"city\": \"Berkeley\",\n  \"state\": \"CA\",\n  \"website\": \"https://theuctheatre.org\",\n  \"calendar_url\": \"https://www.theuctheatre.org/events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:16.710307+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Triton Museum of Art",
+    "domain": "tritonmuseum.org",
+    "category": "art",
+    "website": "https://www.tritonmuseum.org/events",
+    "calendar_url": "https://www.tritonmuseum.org/events",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Triton Museum of Art\",\n  \"domain\": \"tritonmuseum.org\",\n  \"category\": \"art\",\n  \"city\": \"Santa Clara\",\n  \"state\": \"CA\",\n  \"website\": \"https://tritonmuseum.org\",\n  \"calendar_url\": \"https://www.tritonmuseum.org/events\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:16.974343+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Thacher Gallery (USF)",
+    "domain": "usfca.edu",
+    "category": "art",
+    "website": "https://www.usfca.edu/thacher-gallery/events-exhibitions-calendar",
+    "calendar_url": "https://www.usfca.edu/thacher-gallery/events-exhibitions-calendar",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Thacher Gallery (USF)\",\n  \"domain\": \"usfca.edu\",\n  \"category\": \"art\",\n  \"city\": \"San Francisco\",\n  \"state\": \"CA\",\n  \"website\": \"https://usfca.edu\",\n  \"calendar_url\": \"https://www.usfca.edu/thacher-gallery/events-exhibitions-calendar\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:18.397990+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Wattis Institute for Contemporary Arts",
+    "domain": "wattis.org",
+    "category": "art",
+    "website": "https://www.wattis.org/calendar",
+    "calendar_url": "https://www.wattis.org/calendar",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Wattis Institute for Contemporary Arts\",\n  \"domain\": \"wattis.org\",\n  \"category\": \"art\",\n  \"city\": null,\n  \"state\": \"CA\",\n  \"website\": \"https://wattis.org\",\n  \"calendar_url\": \"https://www.wattis.org/calendar\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:18.662892+00:00\"\n}",
+    "stderr": ""
+  },
+  {
+    "name": "Woodminster Amphitheater",
+    "domain": "woodminster.com",
+    "category": "music",
+    "website": "https://www.woodminster.com/tickets",
+    "calendar_url": "https://www.woodminster.com/tickets",
+    "ok": true,
+    "stdout": "Successfully added venue in active registry.\n{\n  \"name\": \"Woodminster Amphitheater\",\n  \"domain\": \"woodminster.com\",\n  \"category\": \"music\",\n  \"city\": \"Oakland\",\n  \"state\": \"CA\",\n  \"website\": \"https://woodminster.com\",\n  \"calendar_url\": \"https://www.woodminster.com/tickets\",\n  \"source\": \"manual_add_strict\",\n  \"discovered_at\": \"2026-02-09T21:04:19.101826+00:00\"\n}",
+    "stderr": ""
+  }
+]
