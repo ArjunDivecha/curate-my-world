@@ -285,7 +285,7 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
 
         {/* Description Section - Fixed Height */}
         <div className="mb-3 sm:mb-4 min-h-0 sm:min-h-[2.5rem]">
-          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
+          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1 sm:line-clamp-2">
             {cleanHtmlText(event.description)}
           </p>
         </div>
@@ -455,11 +455,11 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
                   description: `"${event.title}" has been added to your calendar.`,
                 });
               }}
-              className="flex-1 h-9 sm:h-10 bg-gradient-primary hover:opacity-90 transition-all duration-300 shadow-elegant text-sm"
+              className="flex-1 min-w-0 h-9 sm:h-10 bg-gradient-primary hover:opacity-90 transition-all duration-300 shadow-elegant text-sm"
             >
               <Bookmark className="w-4 h-4 mr-2" />
               <span className="sm:hidden">Save</span>
-              <span className="hidden sm:inline">Save to Calendar</span>
+              <span className="hidden sm:inline truncate">Save to Calendar</span>
             </Button>
             
             {/* Export to External Calendar Dropdown */}
