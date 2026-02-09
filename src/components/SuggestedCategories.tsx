@@ -2,9 +2,10 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Brain, TrendingUp, ArrowRight, Info, DollarSign, Cpu } from 'lucide-react';
+import { Brain, TrendingUp, ArrowRight, Info, DollarSign, Cpu, X } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getCategoryColor, getCategoryIconClasses } from '@/utils/categoryColors';
+import { cn } from '@/lib/utils';
 
 interface SuggestedCategory {
   name: string;
@@ -17,12 +18,14 @@ interface SuggestedCategory {
 }
 
 interface SuggestedCategoriesProps {
+  onClose?: () => void;
   onCategoryClick: (category: string) => void;
   onEventClick: (eventId: string) => void;
   eventsByCategory: Record<string, any[]>;
 }
 
 const SuggestedCategories: React.FC<SuggestedCategoriesProps> = ({
+  onClose,
   onCategoryClick,
   onEventClick,
   eventsByCategory
@@ -100,12 +103,31 @@ const SuggestedCategories: React.FC<SuggestedCategoriesProps> = ({
   }));
 
   return (
-    <div className="fixed right-0 top-16 w-80 bg-white border-l border-gray-200 h-screen overflow-y-auto z-10 shadow-lg">
+    <div
+      className={cn(
+        "fixed top-16 bottom-0 z-20 bg-white overflow-y-auto shadow-lg",
+        "left-0 right-0 border-t border-gray-200",
+        "lg:left-auto lg:right-0 lg:w-80 lg:border-t-0 lg:border-l"
+      )}
+    >
       <div className="p-6">
         {/* Header */}
-        <div className="flex items-center space-x-2 mb-4">
-          <Brain className="w-5 h-5 text-purple-600" />
-          <h2 className="text-lg font-bold text-gray-900">Suggested for You</h2>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <Brain className="w-5 h-5 text-purple-600" />
+            <h2 className="text-lg font-bold text-gray-900">Suggested for You</h2>
+          </div>
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={onClose}
+              aria-label="Close suggestions"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          )}
         </div>
         
         <p className="text-sm text-gray-600 mb-6">

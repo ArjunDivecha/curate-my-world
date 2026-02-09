@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Brain, Eye, EyeOff, Cpu, Mic2, BookOpen, Baby, RefreshCw } from "lucide-react";
 import { getCategoryColor } from "@/utils/categoryColors";
 import { API_BASE_URL } from "@/utils/apiConfig";
+import { cn } from "@/lib/utils";
 
 interface Preferences {
   interests: {
@@ -436,13 +437,16 @@ export const Dashboard = () => {
         aiCurationStatus="complete"
       />
 
-      <main className="container mx-auto p-4 sm:p-6 lg:p-8 mr-80">
+      <main className={cn(
+        "container mx-auto p-4 sm:p-6 lg:p-8",
+        showSuggestions ? "lg:mr-80" : null
+      )}>
         <div className="max-w-5xl mx-auto bg-white/90 backdrop-blur-lg p-6 sm:p-10 rounded-2xl shadow-2xl">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2 text-center">Curate Your Event Feed</h2>
           <p className="text-gray-500 mb-10 text-center">Select your interests and we'll handle the rest.</p>
 
           {/* Search Events */}
-          <div className="bg-gray-50 p-8 rounded-2xl shadow-inner mb-10 border border-gray-200">
+          <div className="bg-gray-50 p-5 sm:p-8 rounded-2xl shadow-inner mb-10 border border-gray-200">
             <Label htmlFor="event-search" className="block text-lg font-semibold text-gray-700 mb-2">
               Search Events
             </Label>
@@ -834,24 +838,32 @@ export const Dashboard = () => {
       
       {/* Suggested Categories Sidebar - Fixed Position (Conditional) */}
       {showSuggestions && (
-        <SuggestedCategories
-          onCategoryClick={(category) => {
-            console.log('🎯 Suggested category clicked:', category);
-            console.log('🗂️ Available transformed categories:', Object.keys(transformedEventsByCategory));
-            console.log('📊 Transformed events per category:', Object.entries(transformedEventsByCategory).map(([key, events]) => `${key}: ${events.length}`));
-            handleCategoryFilter(category);
-          }}
-          onEventClick={(eventId) => {
-            console.log('📅 Suggested event clicked:', eventId);
-            // Find and highlight the event in the main view
-            const event = events.find(e => e.id === eventId);
-            if (event) {
-              // Scroll to event or show details
-              console.log('Found event:', event.title);
-            }
-          }}
-          eventsByCategory={transformedEventsByCategory}
-        />
+        <>
+          {/* Mobile backdrop for the suggestions panel */}
+          <div
+            className="fixed inset-0 z-10 bg-black/30 lg:hidden"
+            onClick={() => setShowSuggestions(false)}
+          />
+          <SuggestedCategories
+            onClose={() => setShowSuggestions(false)}
+            onCategoryClick={(category) => {
+              console.log('🎯 Suggested category clicked:', category);
+              console.log('🗂️ Available transformed categories:', Object.keys(transformedEventsByCategory));
+              console.log('📊 Transformed events per category:', Object.entries(transformedEventsByCategory).map(([key, events]) => `${key}: ${events.length}`));
+              handleCategoryFilter(category);
+            }}
+            onEventClick={(eventId) => {
+              console.log('📅 Suggested event clicked:', eventId);
+              // Find and highlight the event in the main view
+              const event = events.find(e => e.id === eventId);
+              if (event) {
+                // Scroll to event or show details
+                console.log('Found event:', event.title);
+              }
+            }}
+            eventsByCategory={transformedEventsByCategory}
+          />
+        </>
       )}
     </div>
   );
