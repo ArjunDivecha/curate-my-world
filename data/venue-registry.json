@@ -4802,5 +4802,27 @@
     "calendar_url": "https://www.woodminster.com/tickets",
     "source": "manual_add_strict",
     "discovered_at": "2026-02-09T21:04:19.101826+00:00"
+  },
+  {
+    "name": "Herbst Theatre",
+    "domain": "sfwarmemorial.org",
+    "category": "theatre",
+    "city": "San Francisco",
+    "state": "CA",
+    "website": "https://sfwarmemorial.org",
+    "calendar_url": "https://sfwarmemorial.org/herbst-theatre-performances/",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-02-09T21:13:05.222842+00:00"
+  },
+  {
+    "name": "Marin Center",
+    "domain": "tickets.marincenter.org",
+    "category": "all",
+    "city": "San Rafael",
+    "state": "CA",
+    "website": "https://tickets.marincenter.org",
+    "calendar_url": "https://tickets.marincenter.org/",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-02-09T23:10:07.322031+00:00"
   }
 ]
