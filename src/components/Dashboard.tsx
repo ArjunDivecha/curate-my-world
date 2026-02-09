@@ -13,7 +13,6 @@ import { Header } from "./Header";
 import { FetchEventsButton, type ProviderStatSummary } from "./FetchEventsButton";
 import SuggestedCategories from './SuggestedCategories';
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
 import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Brain, Eye, EyeOff, Cpu, Mic2, BookOpen, Baby, RefreshCw } from "lucide-react";
 import { getCategoryColor } from "@/utils/categoryColors";
 import { API_BASE_URL } from "@/utils/apiConfig";
@@ -130,12 +129,7 @@ export const Dashboard = () => {
   useEffect(() => {
     console.log('🔍 SavedEvents state CHANGED:', savedEvents.length, savedEvents);
   }, [savedEvents]);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { user, signIn, signUp, signInWithGoogle, signInWithGitHub } = useAuth();
 
   const handleProviderToggle = (providerKey: string, enabled: boolean) => {
     setSelectedProviders(prev => {
@@ -219,8 +213,6 @@ export const Dashboard = () => {
 
   // If a refresh is already running (e.g., daily scheduled job), show the banner and start polling.
   useEffect(() => {
-    if (!user) return;
-
     let cancelled = false;
     (async () => {
       try {
@@ -244,7 +236,7 @@ export const Dashboard = () => {
     return () => {
       cancelled = true;
     };
-  }, [user, handleBackgroundRefreshing]);
+  }, [handleBackgroundRefreshing]);
 
   // Cleanup poll on unmount
   useEffect(() => {
@@ -413,139 +405,6 @@ export const Dashboard = () => {
       return false;
     }
   }, [transformedEventsByCategory]);
-
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    const { error } = await signIn(email, password);
-    if (!error) {
-      setEmail('');
-      setPassword('');
-    }
-    setIsLoading(false);
-  };
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    const { error } = await signUp(email, password);
-    if (!error) {
-      setEmail('');
-      setPassword('');
-    }
-    setIsLoading(false);
-  };
-
-  // Show login form if user is not authenticated
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center mb-4">
-              <CalendarDays className="h-8 w-8 text-primary mr-2" />
-              <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                Event Finder
-              </h1>
-            </div>
-            <p className="text-muted-foreground">
-              Discover amazing events tailored just for you
-            </p>
-          </div>
-
-          <Card className="shadow-elegant">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl text-center">Welcome</CardTitle>
-              <CardContent className="text-center text-muted-foreground">
-                {isSignUp ? "Create your account to get started" : "Sign in to continue"}
-              </CardContent>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isLoading}
-                >
-                  {isLoading ? (isSignUp ? "Creating account..." : "Signing in...") : (isSignUp ? "Create Account" : "Sign In")}
-                </Button>
-              </form>
-
-              <div className="mt-4 text-center">
-                <Button 
-                  variant="link" 
-                  onClick={() => setIsSignUp(!isSignUp)}
-                  className="text-sm"
-                >
-                  {isSignUp ? "Already have an account? Sign in" : "Need an account? Sign up"}
-                </Button>
-              </div>
-
-              <div className="mt-6">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <Separator />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">
-                      Or continue with
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={signInWithGoogle}
-                    disabled={isLoading}
-                    className="w-full"
-                  >
-                    <Mail className="mr-2 h-4 w-4" />
-                    Google
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={signInWithGitHub}
-                    disabled={isLoading}
-                    className="w-full"
-                  >
-                    <Github className="mr-2 h-4 w-4" />
-                    GitHub
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <p className="text-center text-sm text-muted-foreground mt-6">
-            By continuing, you agree to our Terms of Service and Privacy Policy.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   // Category icons for the new category set
   const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
