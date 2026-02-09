@@ -84,37 +84,20 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
 
   // Handle hover with delay for preview
   React.useEffect(() => {
-    console.log('🔍 Hover state changed:', { isHovering, eventId: event.id });
-    let timeoutId: NodeJS.Timeout;
-    
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
     if (isHovering) {
-      console.log('⏱️ Starting hover timer for preview...');
-      // Show preview after 300ms of hovering (reduced for testing)
-      timeoutId = setTimeout(() => {
-        console.log('✅ Showing preview popup!');
-        setShowPreview(true);
-      }, 300);
+      // Show preview after 300ms of hovering
+      timeoutId = setTimeout(() => setShowPreview(true), 300);
     } else {
-      console.log('❌ Hiding preview popup');
       // Hide preview immediately when not hovering
       setShowPreview(false);
     }
-    
+
     return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [isHovering]);
-
-  // Debug logging for event data
-  console.log('🎯 EventCard rendering:', {
-    id: event.id,
-    title: event.title,
-    startDate: event.startDate,
-    endDate: event.endDate,
-    venue: event.venue
-  });
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Date TBD';
@@ -273,20 +256,20 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
   };
 
   return (
-    <Card className={`group shadow-card hover:shadow-elegant transition-all duration-300 hover:-translate-y-1 animate-fade-in h-full ${categoryColor.background} ${categoryColor.border} ${categoryColor.hover}`}>
-      <CardContent className="p-6 h-full flex flex-col">
+    <Card className={`group shadow-card sm:hover:shadow-elegant transition-all duration-300 sm:hover:-translate-y-1 animate-fade-in sm:h-full ${categoryColor.background} ${categoryColor.border} ${categoryColor.hover}`}>
+      <CardContent className="p-4 sm:p-6 flex flex-col sm:h-full">
         {/* Header Section - Fixed Height */}
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-foreground mb-2 group-hover:text-primary transition-colors duration-300 line-clamp-2 min-h-[3.5rem]">
+        <div className="mb-3 sm:mb-4">
+          <h3 className="text-base sm:text-lg font-semibold text-foreground mb-1.5 sm:mb-2 group-hover:text-primary transition-colors duration-300 line-clamp-2 min-h-0 sm:min-h-[3.5rem]">
             {cleanHtmlText(event.title)}
           </h3>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
+              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span>{formatDate(event.startDate)}</span>
             </div>
             <div className="flex items-center gap-1">
-              <Clock className="w-4 h-4" />
+              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span>{formatTime(event.startDate)}</span>
             </div>
           </div>
@@ -301,43 +284,43 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
         </div>
 
         {/* Description Section - Fixed Height */}
-        <div className="mb-4 min-h-[2.5rem]">
-          <p className="text-sm text-muted-foreground line-clamp-2">
+        <div className="mb-3 sm:mb-4 min-h-0 sm:min-h-[2.5rem]">
+          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
             {cleanHtmlText(event.description)}
           </p>
         </div>
 
         {/* Venue Section - Fixed Height */}
-        <div className="mb-4 min-h-[3rem]">
-          <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
-            <MapPin className="w-4 h-4 flex-shrink-0" />
+        <div className="mb-3 sm:mb-4 min-h-0 sm:min-h-[3rem]">
+          <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground mb-1">
+            <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
             <span className="font-medium line-clamp-1">{event.venue.name}</span>
           </div>
           {event.venue.address && (
-            <p className="text-xs text-muted-foreground pl-5 line-clamp-1">
+            <p className="text-[11px] sm:text-xs text-muted-foreground pl-5 line-clamp-1">
               {event.venue.address}
             </p>
           )}
         </div>
 
         {/* Categories & Source Section - Fixed Height */}
-        <div className="mb-4 min-h-[2rem]">
-          <div className="flex flex-wrap gap-2 items-center">
+        <div className="mb-3 sm:mb-4 min-h-0 sm:min-h-[2rem]">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 items-center">
             {/* Source Badge */}
             {event.source && (
               <Badge 
-                className={`text-xs font-medium ${getSourceBadgeStyle(event.source)}`}
+                className={`text-[10px] sm:text-xs font-medium px-2 py-0.5 ${getSourceBadgeStyle(event.source)}`}
               >
                 {getSourceLabel(event.source)}
               </Badge>
             )}
             {/* Category Badges */}
-            {event.categories.slice(0, 3).map((category) => {
+            {event.categories.slice(0, 3).map((category, idx) => {
               const badgeColor = getCategoryColor(category);
               return (
                 <Badge 
                   key={category} 
-                  className={`text-xs ${badgeColor.background} ${badgeColor.border} ${badgeColor.accent} border transition-colors`}
+                  className={`text-[10px] sm:text-xs px-2 py-0.5 ${idx >= 2 ? 'hidden sm:inline-flex' : ''} ${badgeColor.background} ${badgeColor.border} ${badgeColor.accent} border transition-colors`}
                 >
                   {category}
                 </Badge>
@@ -347,21 +330,17 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
         </div>
 
         {/* Spacer to push buttons to bottom */}
-        <div className="flex-1"></div>
+        <div className="hidden sm:block flex-1" />
 
         {/* Action Section - Fixed at Bottom */}
-        <div className="space-y-3">
-          {/* External Links - Always reserve space for consistent card height */}
-          <div className="flex flex-wrap gap-2 min-h-[2rem] items-start">
+        <div className="space-y-2 sm:space-y-3">
+          {/* Primary actions row */}
+          <div className="flex items-center gap-2">
             {(event.eventUrl || event.ticketUrl) && (
               <div 
                 className="relative"
-                onMouseEnter={() => {
-                  console.log('🐭 Mouse entered Event Page button area');
-                  setIsHovering(true);
-                }}
+                onMouseEnter={() => setIsHovering(true)}
                 onMouseLeave={(e) => {
-                  console.log('🐭 Mouse left Event Page button area');
                   // Don't hide if mouse is moving to the popup area
                   const relatedTarget = e.relatedTarget as HTMLElement;
                   if (!relatedTarget || !relatedTarget.closest('.preview-popup')) {
@@ -385,41 +364,32 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
                   }}
                 >
                   <Button 
+                    aria-label="Open event page"
                     variant="outline" 
                     size="sm"
-                    className={`text-xs transition-all duration-300 transform ${
+                    className={`h-9 sm:h-10 px-3 transition-all duration-300 transform ${
                       isHovering 
-                        ? 'bg-blue-500 text-white scale-110 shadow-xl border-2 border-blue-300' 
+                        ? 'bg-blue-500 text-white scale-105 shadow-xl border-2 border-blue-300' 
                         : 'hover:bg-accent hover:text-accent-foreground'
                     }`}
                   >
-                    <ExternalLink className="w-3 h-3 mr-1" />
-                    Event Page
+                    <ExternalLink className="w-4 h-4" />
+                    <span className="sr-only sm:not-sr-only sm:ml-2">Event Page</span>
                     {isHovering && (
-                      <Eye className="w-3 h-3 ml-1 animate-pulse" />
+                      <Eye className="hidden sm:inline-block w-3.5 h-3.5 ml-1 animate-pulse" />
                     )}
                   </Button>
                 </a>
               </div>
             )}
-          </div>
           
           {/* Hover Preview Popup */}
-          {showPreview && (event.eventUrl || event.ticketUrl) && (() => {
-            console.log('🎆 POPUP RENDERING NOW!', { showPreview, hasUrl: !!(event.eventUrl || event.ticketUrl) });
-            return true;
-          })() && (
+          {showPreview && (event.eventUrl || event.ticketUrl) && (
             <div 
               className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-60 preview-popup"
               style={{ pointerEvents: 'auto' }}
-              onMouseEnter={() => {
-                console.log('🐭 Mouse entered popup area');
-                setIsHovering(true);
-              }}
-              onMouseLeave={() => {
-                console.log('🐭 Mouse left popup area');
-                setIsHovering(false);
-              }}
+              onMouseEnter={() => setIsHovering(true)}
+              onMouseLeave={() => setIsHovering(false)}
               onClick={() => {
                 setShowPreview(false);
                 setIsHovering(false);
@@ -473,9 +443,8 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
               </div>
             </div>
           )}
-          
-          {/* Action Buttons */}
-          <div className="flex gap-2">
+            
+            {/* Save + Export */}
             {/* Save to Internal Calendar Button */}
             <Button 
               size="sm" 
@@ -486,10 +455,11 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
                   description: `"${event.title}" has been added to your calendar.`,
                 });
               }}
-              className="flex-1 bg-gradient-primary hover:opacity-90 transition-all duration-300 shadow-elegant"
+              className="flex-1 h-9 sm:h-10 bg-gradient-primary hover:opacity-90 transition-all duration-300 shadow-elegant text-sm"
             >
               <Bookmark className="w-4 h-4 mr-2" />
-              Save to Calendar
+              <span className="sm:hidden">Save</span>
+              <span className="hidden sm:inline">Save to Calendar</span>
             </Button>
             
             {/* Export to External Calendar Dropdown */}
@@ -498,7 +468,8 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
                 <Button 
                   size="sm" 
                   variant="outline"
-                  className="px-3"
+                  className="h-9 sm:h-10 px-3"
+                  aria-label="Export to external calendar"
                 >
                   <Share2 className="w-4 h-4" />
                 </Button>

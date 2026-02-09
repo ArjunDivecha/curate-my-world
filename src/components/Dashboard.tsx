@@ -809,7 +809,7 @@ export const Dashboard = () => {
                     <div className="mt-2 text-xs">Try a different date or clear filters.</div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                     {displayedEvents.map(event => (
                       <EventCard
                         key={`${event.id}-${activeCategory ?? 'all'}-${selectedDate?.toISOString() ?? 'no-date'}`}
