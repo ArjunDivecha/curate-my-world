@@ -808,11 +808,11 @@ export const Dashboard = () => {
               </div>
 
               {/* Categories (evenly distributed across width) */}
-              <div className="mt-4 w-full flex flex-wrap items-center justify-between gap-2">
+              <div className="mt-4 w-full grid grid-cols-5 gap-2">
                 <Button
                   size="sm"
                   className={cn(
-                    "flex-1 min-w-[110px] rounded-full border",
+                    "w-full rounded-full border whitespace-nowrap",
                     activeCategory === null
                       ? "bg-slate-900 text-white border-slate-900 shadow-sm"
                       : "bg-white text-slate-800 border-slate-200 hover:bg-slate-50"
@@ -831,7 +831,7 @@ export const Dashboard = () => {
                       key={category}
                       size="sm"
                       className={cn(
-                        "flex-1 min-w-[110px] rounded-full border transition",
+                        "w-full rounded-full border transition whitespace-nowrap",
                         colors.background,
                         colors.border,
                         colors.text,
