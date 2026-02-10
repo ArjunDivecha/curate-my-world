@@ -882,7 +882,7 @@ export const Dashboard = () => {
                   // Still pass savedEvents so we can highlight saved items
                   savedEvents={savedEvents}
                   activeCategory={activeCategory}
-                  onEventClick={(eventId) => {
+                  onEventToggleSaved={(eventId) => {
                     const event = events.find(e => e.id === eventId);
                     if (event) {
                       const isSaved = savedEvents.find(savedEvent => savedEvent.id === eventId);

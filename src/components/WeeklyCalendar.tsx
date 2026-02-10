@@ -13,15 +13,18 @@
  * =============================================================================
  */
 
-import { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Calendar, Star, BookmarkCheck, Clock, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Star, BookmarkCheck, Clock, MapPin, Eye } from "lucide-react";
+import { cleanHtmlText } from "@/lib/utils";
+import { getApiBaseUrl } from "@/utils/apiConfig";
 
 interface Event {
   id: string;
   title: string;
+  description?: string;
   startDate: string;
   endDate: string;
   venue: {
@@ -34,18 +37,24 @@ interface Event {
   categories: string[];
   ticketUrl?: string;
   eventUrl?: string;
+  imageUrl?: string | null;
+  source?: string;
+  price?: { type?: string; amount?: string };
 }
 
 interface WeeklyCalendarProps {
   events: Event[];
   savedEvents?: Event[];
-  onEventClick: (eventId: string) => void;
+  onEventToggleSaved: (eventId: string) => void;
   onDateClick?: (date: Date) => void;
   activeCategory?: string | null;
 }
 
-export const WeeklyCalendar = ({ events, savedEvents = [], onEventClick, onDateClick, activeCategory }: WeeklyCalendarProps) => {
+export const WeeklyCalendar = ({ events, savedEvents = [], onEventToggleSaved, onDateClick, activeCategory }: WeeklyCalendarProps) => {
   const [currentWeek, setCurrentWeek] = useState(new Date());
+  const [hoveringEventId, setHoveringEventId] = useState<string | null>(null);
+  const [showPreviewForEventId, setShowPreviewForEventId] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<null | { x: number; y: number; eventId: string }>(null);
 
   // Debug logging
   console.log('🔍 WeeklyCalendar rendered with:', {
@@ -53,6 +62,50 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventClick, onDateC
     savedEventsCount: savedEvents.length,
     events: events
   });
+
+  const previewTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const API_BASE = getApiBaseUrl();
+
+  const eventsById = useMemo(() => {
+    const map = new Map<string, Event>();
+    events.forEach(e => map.set(e.id, e));
+    return map;
+  }, [events]);
+
+  useEffect(() => {
+    if (previewTimerRef.current) {
+      clearTimeout(previewTimerRef.current);
+      previewTimerRef.current = null;
+    }
+    if (!hoveringEventId) return;
+
+    previewTimerRef.current = setTimeout(() => {
+      setShowPreviewForEventId(hoveringEventId);
+    }, 300);
+
+    return () => {
+      if (previewTimerRef.current) {
+        clearTimeout(previewTimerRef.current);
+        previewTimerRef.current = null;
+      }
+    };
+  }, [hoveringEventId]);
+
+  useEffect(() => {
+    const onDocClick = () => setContextMenu(null);
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowPreviewForEventId(null);
+        setContextMenu(null);
+      }
+    };
+    document.addEventListener('click', onDocClick);
+    document.addEventListener('keydown', onEsc);
+    return () => {
+      document.removeEventListener('click', onDocClick);
+      document.removeEventListener('keydown', onEsc);
+    };
+  }, []);
 
   const getWeekDates = (date: Date) => {
     const week = [];
@@ -140,6 +193,36 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventClick, onDateC
     return "border-l-gray-500 bg-gray-50";
   };
 
+  const openEvent = (event: Event) => {
+    const url = event.eventUrl || event.ticketUrl;
+    if (!url) return;
+    // Close preview if open; clicking should navigate
+    setShowPreviewForEventId(null);
+    setContextMenu(null);
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const getPreviewSrc = (event: Event) => {
+    const url = event.eventUrl || event.ticketUrl || '';
+    if (!url) return '';
+    if (event.source === 'ticketmaster') {
+      // Ticketmaster often blocks automated preview. Use the server-side rich preview.
+      return `${API_BASE}/preview/event?${new URLSearchParams({
+        title: event.title || '',
+        description: event.description || '',
+        imageUrl: event.imageUrl || '',
+        venue: event.venue?.name || '',
+        address: event.venue?.address || '',
+        date: event.startDate || '',
+        price: event.price?.amount || (event.price?.type === 'free' ? 'Free' : ''),
+        category: event.categories?.[0] || '',
+        ticketUrl: url,
+        source: event.source || '',
+      }).toString()}`;
+    }
+    return `${API_BASE}/preview?url=${encodeURIComponent(url)}`;
+  };
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -225,13 +308,24 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventClick, onDateC
                       return (
                         <div
                           key={event.id}
-                          onClick={() => onEventClick(event.id)}
+                          onClick={() => openEvent(event)}
+                          onContextMenu={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setContextMenu({ x: e.clientX, y: e.clientY, eventId: event.id });
+                          }}
+                          onMouseEnter={() => setHoveringEventId(event.id)}
+                          onMouseLeave={() => {
+                            setHoveringEventId(null);
+                            setShowPreviewForEventId(null);
+                          }}
                           className={`border-l-4 pl-3 py-2 cursor-pointer hover:bg-muted/50 rounded-r transition-all duration-200 ${getRelevanceColor(event.personalRelevanceScore)} ${saved ? 'ring-1 ring-primary/30' : ''}`}
+                          title="Click to open • Right-click to save/unsave • Hover to preview"
                         >
                           {/* Event Title */}
                           <div className="flex items-start justify-between mb-1">
                             <div className="text-xs font-medium text-foreground line-clamp-2 flex-1 pr-1">
-                              {event.title}
+                              {cleanHtmlText(event.title)}
                             </div>
                             {saved && (
                               <BookmarkCheck className="w-3 h-3 text-primary flex-shrink-0" />
@@ -261,7 +355,7 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventClick, onDateC
                               {event.personalRelevanceScore}/10
                             </Badge>
                             <span className="text-xs text-muted-foreground">
-                              {saved ? 'Saved' : 'Click to save'}
+                              {saved ? 'Saved' : 'Right-click to save'}
                             </span>
                           </div>
                         </div>
@@ -274,6 +368,89 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventClick, onDateC
           );
         })}
       </div>
+
+      {/* Context menu (right-click) */}
+      {contextMenu && (() => {
+        const ev = eventsById.get(contextMenu.eventId);
+        if (!ev) return null;
+        const saved = isEventSaved(ev.id);
+        return (
+          <div
+            className="fixed z-[9999] min-w-44 rounded-md border bg-white shadow-lg p-1 text-sm"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="w-full text-left px-3 py-2 rounded hover:bg-muted"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onEventToggleSaved(ev.id);
+                setContextMenu(null);
+              }}
+            >
+              {saved ? 'Unsave from Calendar' : 'Save to Calendar'}
+            </button>
+            {(ev.eventUrl || ev.ticketUrl) && (
+              <button
+                className="w-full text-left px-3 py-2 rounded hover:bg-muted"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  openEvent(ev);
+                }}
+              >
+                Open Event Page
+              </button>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Hover preview modal */}
+      {showPreviewForEventId && (() => {
+        const ev = eventsById.get(showPreviewForEventId);
+        if (!ev) return null;
+        const src = getPreviewSrc(ev);
+        if (!src) return null;
+        return (
+          <div
+            className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/60"
+            onClick={() => setShowPreviewForEventId(null)}
+          >
+            <div
+              className="bg-white rounded-xl shadow-2xl max-w-5xl max-h-[85vh] w-[95vw] overflow-hidden border-2 border-gray-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-4 border-b bg-gradient-to-r from-blue-50 to-purple-50">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Eye className="w-5 h-5 text-blue-600" />
+                    <h3 className="font-semibold text-lg truncate text-gray-800">{cleanHtmlText(ev.title)}</h3>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowPreviewForEventId(null)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    ✕
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-600 mt-1 truncate">{ev.eventUrl || ev.ticketUrl}</p>
+                <p className="text-xs text-gray-500 mt-1">Click an event to open it. Right-click to save/unsave.</p>
+              </div>
+              <div className="h-[70vh] bg-gray-50">
+                <iframe
+                  src={src}
+                  className="w-full h-full border-0"
+                  title={`Preview of ${ev.title}`}
+                />
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       
       {/* Debug Info */}
       <Card className="bg-muted/30">
