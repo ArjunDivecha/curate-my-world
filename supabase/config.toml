@@ -1,4 +1,0 @@
-project_id = "llspbinxevyitinvagvx"
-
-[functions.fetch-real-events]
-verify_jwt = true

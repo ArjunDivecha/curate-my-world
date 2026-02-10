@@ -1,5 +1,0 @@
-CURATE MY WORLD - USER INPUT PROCESSING LOG
-=============================================
-
-[2025-08-01 19:55:06] Loaded demo user preferences
-[2025-08-01 19:55:06] Processed chat history from sample_chat_history.json
