@@ -508,7 +508,7 @@ export const Dashboard = () => {
     }
   }, [transformedEventsByCategory]);
 
-  // Category icons for the new category set
+  // Category icons for the category set (shown in the category boxes)
   const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
     'Music': Music,
     'Theatre': Drama,
@@ -516,7 +516,7 @@ export const Dashboard = () => {
     'Movies': Film,
     'Art': Palette,
     'Food': Coffee,
-    'Tech': Zap,
+    'Tech': Cpu,
     'Lectures': BookOpen,
     'Kids': Baby
   };
@@ -807,31 +807,40 @@ export const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Categories (evenly distributed across width) */}
-              <div className="mt-4 w-full grid grid-cols-5 gap-2">
+              {/* Categories */}
+              <div className="mt-4 w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                 <Button
                   size="sm"
                   className={cn(
-                    "w-full rounded-full border whitespace-nowrap",
+                    "w-full rounded-2xl border whitespace-nowrap justify-start gap-3 h-14",
                     activeCategory === null
                       ? "bg-slate-900 text-white border-slate-900 shadow-sm"
                       : "bg-white text-slate-800 border-slate-200 hover:bg-slate-50"
                   )}
                   onClick={() => handleCategoryFilter(null)}
                 >
-                  All ({totalEventCount})
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
+                    <Search className="h-5 w-5" />
+                  </span>
+                  <span className="text-left leading-tight">
+                    <span className="block font-semibold">All</span>
+                    <span className={cn("block text-xs", activeCategory === null ? "text-white/80" : "text-slate-500")}>
+                      {totalEventCount} events
+                    </span>
+                  </span>
                 </Button>
                 {Object.keys(categoryIcons).map((category) => {
                   const categoryKey = mapCategoryToBackend(category);
                   const stats = categoryStats[categoryKey] || { count: 0 };
                   const selected = activeCategory === categoryKey;
                   const colors = getCategoryColor(categoryKey);
+                  const Icon = categoryIcons[category];
                   return (
                     <Button
                       key={category}
                       size="sm"
                       className={cn(
-                        "w-full rounded-full border transition whitespace-nowrap",
+                        "w-full rounded-2xl border transition whitespace-nowrap justify-start gap-3 h-14",
                         colors.background,
                         colors.border,
                         colors.text,
@@ -841,8 +850,15 @@ export const Dashboard = () => {
                       onClick={() => handleCategoryFilter(categoryKey)}
                       title={`${category}: ${stats.count} events`}
                     >
-                      <span className="font-semibold">{category}</span>
-                      <span className={cn("ml-1", colors.accent)}>({stats.count})</span>
+                      <span className={cn("inline-flex h-9 w-9 items-center justify-center rounded-xl border", colors.border, "bg-white/50")}>
+                        <Icon className={cn("h-6 w-6", colors.accent)} />
+                      </span>
+                      <span className="text-left leading-tight">
+                        <span className="block font-semibold">{category}</span>
+                        <span className={cn("block text-xs", colors.accent)}>
+                          {stats.count} events
+                        </span>
+                      </span>
                     </Button>
                   );
                 })}
