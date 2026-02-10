@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Option C - Sticky Controls (Mobile)</title>
+    <style>
+      :root{
+        --bg:#f3f5ff;
+        --card:#ffffffcc;
+        --stroke:#e5e7eb;
+        --ink:#0f172a;
+        --muted:#64748b;
+        --primary:#4f46e5;
+        --primary2:#7c3aed;
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+        background:
+          radial-gradient(1200px 750px at 10% 8%, #dbeafe 0%, transparent 55%),
+          radial-gradient(900px 620px at 88% 2%, #e9d5ff 0%, transparent 55%),
+          linear-gradient(180deg, var(--bg), #eef2ff);
+        color:var(--ink);
+      }
+      .wrap{max-width:980px;margin:0 auto;padding:0 14px 48px}
+      .sticky{
+        position:sticky;
+        top:0;
+        z-index:10;
+        backdrop-filter: blur(14px);
+        background: linear-gradient(180deg, rgba(243,245,255,.92), rgba(243,245,255,.70));
+        border-bottom:1px solid rgba(229,231,235,.85);
+        padding:14px 0 12px;
+      }
+      .brand{
+        display:flex;
+        align-items:flex-end;
+        justify-content:space-between;
+        gap:12px;
+        margin-bottom:10px;
+      }
+      h1{margin:0;font-size:18px;letter-spacing:-0.02em}
+      .meta{margin:0;color:var(--muted);font-size:12px}
+      .panel{
+        background:var(--card);
+        border:1px solid var(--stroke);
+        border-radius:18px;
+        padding:12px;
+        box-shadow:0 14px 40px rgba(15,23,42,.10);
+      }
+      .row{display:flex;gap:10px;align-items:center}
+      .search{
+        flex:1;
+        border:1px solid var(--stroke);
+        background:#fff;
+        border-radius:14px;
+        padding:11px 12px;
+        font-size:14px;
+        outline:0;
+      }
+      .btn{
+        background: linear-gradient(135deg, var(--primary), var(--primary2));
+        border:0;
+        color:#fff;
+        padding:11px 12px;
+        border-radius:14px;
+        font-weight:900;
+        font-size:13px;
+        white-space:nowrap;
+      }
+      .rail{
+        margin-top:10px;
+        display:flex;
+        gap:8px;
+        overflow:auto;
+        padding-bottom:6px;
+        -webkit-overflow-scrolling: touch;
+      }
+      .chip{
+        background:#fff;
+        border:1px solid rgba(100,116,139,.22);
+        border-radius:999px;
+        padding:9px 12px;
+        font-size:12px;
+        font-weight:900;
+        color:#334155;
+        white-space:nowrap;
+      }
+      .chip.on{
+        border-color: rgba(79,70,229,.30);
+        background: linear-gradient(135deg, rgba(79,70,229,.14), rgba(124,58,237,.12));
+        color:#312e81;
+      }
+      .content{padding-top:18px}
+      .cards{
+        display:grid;
+        grid-template-columns:repeat(3, minmax(0, 1fr));
+        gap:12px;
+        margin-top:14px;
+      }
+      .card{
+        background:#fff;
+        border:1px solid var(--stroke);
+        border-radius:18px;
+        padding:14px;
+        min-height:120px;
+      }
+      .card h3{margin:0 0 8px;font-size:14px;letter-spacing:-0.01em}
+      .card p{margin:0;color:var(--muted);font-size:12px;line-height:1.35}
+      .back{margin:16px 0;font-size:13px}
+      .back a{color:#3730a3;text-decoration:none;font-weight:900}
+      @media (max-width: 820px){
+        .cards{grid-template-columns:1fr}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="sticky">
+        <div class="brand">
+          <div>
+            <h1>SF Bay Event Finder</h1>
+            <p class="meta">Option C: sticky controls, optimized for long scrolling on iPhone.</p>
+          </div>
+          <button class="btn">Fetch</button>
+        </div>
+        <div class="panel">
+          <div class="row">
+            <input class="search" placeholder="Search events…" />
+          </div>
+          <div class="rail">
+            <div class="chip on">All</div>
+            <div class="chip">Music</div>
+            <div class="chip">Theatre</div>
+            <div class="chip">Comedy</div>
+            <div class="chip">Movies</div>
+            <div class="chip">Art</div>
+            <div class="chip">Food</div>
+            <div class="chip">Tech</div>
+            <div class="chip">Lectures</div>
+            <div class="chip">Kids</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="back"><a href="./index.html">← Back to mockups</a></div>
+        <p class="meta">Below is filler content so you can scroll and feel how the sticky header behaves.</p>
+
+        <div class="cards">
+          <div class="card"><h3>Noise Pop Festival: Pinback</h3><p>Thu, Feb 26 · UC Theatre · “festival” keyword matches show up well with this layout.</p></div>
+          <div class="card"><h3>AI DevSummit (Example)</h3><p>Conference sources can be surfaced as “Tech” plus keyword search: “conference”, “summit”, “expo”.</p></div>
+          <div class="card"><h3>Fort Mason Night Market</h3><p>Fri, Apr 24 · Markets + fairs are quick to find with chips + search.</p></div>
+          <div class="card"><h3>Oakland First Friday</h3><p>Monthly recurring. Sticky chips make hopping categories fast.</p></div>
+          <div class="card"><h3>Herbst Theatre: Chamber Night</h3><p>Venue scrapes + Ticketmaster combined listing.</p></div>
+          <div class="card"><h3>Cartoon Art Museum Opening</h3><p>Better for mobile: less “hero” whitespace, controls always present.</p></div>
+        </div>
+
+        <div class="cards">
+          <div class="card"><h3>More events…</h3><p>Scroll more to test sticky behavior.</p></div>
+          <div class="card"><h3>More events…</h3><p>Scroll more to test sticky behavior.</p></div>
+          <div class="card"><h3>More events…</h3><p>Scroll more to test sticky behavior.</p></div>
+          <div class="card"><h3>More events…</h3><p>Scroll more to test sticky behavior.</p></div>
+          <div class="card"><h3>More events…</h3><p>Scroll more to test sticky behavior.</p></div>
+          <div class="card"><h3>More events…</h3><p>Scroll more to test sticky behavior.</p></div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+

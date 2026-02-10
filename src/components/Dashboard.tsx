@@ -98,6 +98,8 @@ export const Dashboard = () => {
   const [backgroundRefreshing, setBackgroundRefreshing] = useState(false);
   const [refreshStatusText, setRefreshStatusText] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');  // Local search within fetched events
+  const [dateQuery, setDateQuery] = useState(''); // typed date filter (MM/DD or YYYY-MM-DD)
+  const [datePreset, setDatePreset] = useState<null | 'today' | 'week' | 'weekend' | '30d'>(null);
   const refreshPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fetchEventsRef = useRef<(() => void) | null>(null);
 
@@ -335,6 +337,8 @@ export const Dashboard = () => {
     console.log('🎯 Date clicked:', date.toDateString(), 'Category:', activeCategory);
     
     setSelectedDate(date);
+    setDatePreset(null);
+    setDateQuery('');
     setActiveTab('grid'); // Switch to grid view to show the filtered events
     
     toast({
@@ -377,6 +381,67 @@ export const Dashboard = () => {
       });
     }
 
+    // Apply preset date range filter (mutually exclusive with selectedDate)
+    if (!selectedDate && datePreset) {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      let end: Date | null = null;
+
+      if (datePreset === 'today') {
+        end = new Date(start);
+        end.setDate(end.getDate() + 1);
+      } else if (datePreset === 'week') {
+        end = new Date(start);
+        end.setDate(end.getDate() + 7);
+      } else if (datePreset === '30d') {
+        end = new Date(start);
+        end.setDate(end.getDate() + 30);
+      } else if (datePreset === 'weekend') {
+        // Next Saturday 00:00 through Monday 00:00
+        const day = start.getDay(); // 0 Sun ... 6 Sat
+        const daysUntilSat = (6 - day + 7) % 7;
+        const sat = new Date(start);
+        sat.setDate(sat.getDate() + daysUntilSat);
+        const mon = new Date(sat);
+        mon.setDate(mon.getDate() + 2);
+        // If today is Sat/Sun, treat "this weekend" as current weekend
+        if (day === 6) {
+          end = new Date(start);
+          end.setDate(end.getDate() + 2);
+        } else if (day === 0) {
+          const monday = new Date(start);
+          monday.setDate(monday.getDate() + 1);
+          end = monday;
+        } else {
+          // upcoming weekend
+          events = events.filter(event => {
+            try {
+              if (!event.startDate) return false;
+              const d = new Date(event.startDate);
+              if (isNaN(d.getTime())) return false;
+              return d >= sat && d < mon;
+            } catch {
+              return false;
+            }
+          });
+          end = null;
+        }
+      }
+
+      if (end) {
+        events = events.filter(event => {
+          try {
+            if (!event.startDate) return false;
+            const d = new Date(event.startDate);
+            if (isNaN(d.getTime())) return false;
+            return d >= start && d < end!;
+          } catch {
+            return false;
+          }
+        });
+      }
+    }
+
     // Apply search filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -390,7 +455,45 @@ export const Dashboard = () => {
     }
 
     return events;
-  }, [activeCategory, transformedEventsByCategory, selectedDate, searchQuery]);
+  }, [activeCategory, transformedEventsByCategory, selectedDate, datePreset, searchQuery]);
+
+  const applyTypedDate = useCallback(() => {
+    const raw = dateQuery.trim();
+    if (!raw) {
+      setSelectedDate(null);
+      return;
+    }
+
+    let parsed: Date | null = null;
+    // YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      const [y, m, d] = raw.split('-').map(Number);
+      parsed = new Date(y, (m || 1) - 1, d || 1);
+    } else {
+      // MM/DD or MM/DD/YYYY
+      const m = raw.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+      if (m) {
+        const mm = Number(m[1]);
+        const dd = Number(m[2]);
+        let yyyy = m[3] ? Number(m[3]) : new Date().getFullYear();
+        if (yyyy < 100) yyyy += 2000;
+        parsed = new Date(yyyy, (mm || 1) - 1, dd || 1);
+      }
+    }
+
+    if (!parsed || isNaN(parsed.getTime())) {
+      toast({
+        title: "Invalid date",
+        description: "Use MM/DD, MM/DD/YYYY, or YYYY-MM-DD.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSelectedDate(parsed);
+    setDatePreset(null);
+    setActiveTab('grid');
+  }, [dateQuery, toast]);
 
   useEffect(() => {
     console.log('🧭 Active category:', activeCategory, ' | displayedEvents:', displayedEvents.length, ' | buckets:', Object.keys(transformedEventsByCategory));
@@ -440,30 +543,6 @@ export const Dashboard = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2 text-center">SF Bay Event Finder</h2>
           <p className="text-gray-500 mb-10 text-center">Select your interests and we'll handle the rest.</p>
 
-          {/* Search Events */}
-          <div className="bg-gray-50 p-5 sm:p-8 rounded-2xl shadow-inner mb-10 border border-gray-200">
-            <Label htmlFor="event-search" className="block text-lg font-semibold text-gray-700 mb-2">
-              Search Events
-            </Label>
-            <div className="relative">
-              <Input
-                id="event-search"
-                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
-                placeholder="Search by title, venue, description..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  &times;
-                </button>
-              )}
-            </div>
-          </div>
-
           {/* Background Refresh Indicator */}
           {backgroundRefreshing && (
             <div className="mb-6 flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-5 py-3 text-sm text-blue-700 shadow-sm">
@@ -476,37 +555,125 @@ export const Dashboard = () => {
             </div>
           )}
 
-          {/* Category Filters */}
-          <div className="mb-10 space-y-8">
-            <h3 className="text-2xl font-bold text-gray-700">Filter by Category</h3>
+          {/* Compact Control Surface (Option A-inspired) */}
+          <div className="mb-10 space-y-5">
+            <div className="bg-gray-50 p-5 sm:p-6 rounded-2xl shadow-inner border border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="relative">
+                  <Input
+                    id="event-search"
+                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+                    placeholder="Search: title, venue, 'ai conference', 'festival'..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      aria-label="Clear search"
+                    >
+                      &times;
+                    </button>
+                  )}
+                </div>
 
-            {/* Top Row - All, Fetch Events, Clear All */}
-            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-center gap-4">
-              {/* "All" Button */}
-              <Button
-                onClick={() => handleCategoryFilter(null)}
-                className={`w-full lg:w-auto flex items-center justify-center space-x-2 font-bold py-4 px-8 rounded-full transition hover:transform hover:-translate-y-0.5 hover:shadow-lg ${
-                  activeCategory === null 
-                    ? 'bg-gradient-primary text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                <Search className="w-5 h-5" />
-                <span>All ({totalEventCount} events)</span>
-              </Button>
+                <div className="relative">
+                  <Input
+                    id="event-date"
+                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+                    placeholder="Date (MM/DD or YYYY-MM-DD)"
+                    value={dateQuery}
+                    onChange={(e) => setDateQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') applyTypedDate();
+                    }}
+                    onBlur={() => {
+                      // Only apply if user typed something; avoid surprising clears
+                      if (dateQuery.trim()) applyTypedDate();
+                    }}
+                  />
+                  {(selectedDate || dateQuery.trim()) && (
+                    <button
+                      onClick={() => {
+                        setDateQuery('');
+                        setSelectedDate(null);
+                        setDatePreset(null);
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      aria-label="Clear date"
+                    >
+                      &times;
+                    </button>
+                  )}
+                </div>
+              </div>
 
-              <FetchEventsButton
-                location={preferences.location.address}
-                preferences={{
-                  categories: Object.keys(preferences.interests.categories).filter(cat => preferences.interests.categories[cat]),
-                  timePreferences: preferences.filters.timePreferences,
-                  customKeywords: preferences.interests.keywords,
-                  aiInstructions: preferences.aiInstructions
-                }}
-                selectedProviders={selectedProviders}
-                onBackgroundRefreshing={handleBackgroundRefreshing}
-                fetchRef={fetchEventsRef}
-                onAllEventsFetched={(fetchedEventsByCategory, fetchedCategoryStats, fetchedProviderDetails) => {
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(datePreset === 'today' ? 'bg-indigo-50 border-indigo-200' : '')}
+                    onClick={() => {
+                      setDatePreset('today');
+                      setSelectedDate(null);
+                      setDateQuery('');
+                    }}
+                  >
+                    Today
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(datePreset === 'week' ? 'bg-indigo-50 border-indigo-200' : '')}
+                    onClick={() => {
+                      setDatePreset('week');
+                      setSelectedDate(null);
+                      setDateQuery('');
+                    }}
+                  >
+                    This Week
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(datePreset === 'weekend' ? 'bg-indigo-50 border-indigo-200' : '')}
+                    onClick={() => {
+                      setDatePreset('weekend');
+                      setSelectedDate(null);
+                      setDateQuery('');
+                    }}
+                  >
+                    This Weekend
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(datePreset === '30d' ? 'bg-indigo-50 border-indigo-200' : '')}
+                    onClick={() => {
+                      setDatePreset('30d');
+                      setSelectedDate(null);
+                      setDateQuery('');
+                    }}
+                  >
+                    Next 30 Days
+                  </Button>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <FetchEventsButton
+                    location={preferences.location.address}
+                    preferences={{
+                      categories: Object.keys(preferences.interests.categories).filter(cat => preferences.interests.categories[cat]),
+                      timePreferences: preferences.filters.timePreferences,
+                      customKeywords: preferences.interests.keywords,
+                      aiInstructions: preferences.aiInstructions
+                    }}
+                    selectedProviders={selectedProviders}
+                    onBackgroundRefreshing={handleBackgroundRefreshing}
+                    fetchRef={fetchEventsRef}
+                    onAllEventsFetched={(fetchedEventsByCategory, fetchedCategoryStats, fetchedProviderDetails) => {
                   console.log('✅ Received raw events by category:', fetchedEventsByCategory);
                   console.log('🔑 Raw category keys:', Object.keys(fetchedEventsByCategory));
                   setEventsByCategory(fetchedEventsByCategory);
@@ -609,89 +776,68 @@ export const Dashboard = () => {
                 onProcessingTime={(timeMs) => {
                   setTotalProcessingTime(timeMs);
                 }}
-                className="btn-primary w-full lg:w-auto flex items-center justify-center space-x-2 text-white font-bold py-4 px-8 rounded-full transition hover:transform hover:-translate-y-0.5 hover:shadow-lg"
-              />
-              
-              {/* Clear All Button */}
-              <Button
-                onClick={() => {
-                  // Clear all event-related state
-                  setEvents([]);
-                  setSavedEvents([]);
-                  setEventsByCategory({});
-                  setTransformedEventsByCategory({});
-                  setCategoryStats({});
-                  setActiveCategory(null);
-                  setProviderDetails([]);
-                  setTotalProcessingTime(0);
-                  try { localStorage.removeItem(LOCAL_EVENTS_CACHE_KEY); } catch {}
-                  toast({
-                    title: "Events Cleared",
-                    description: "All events have been cleared. Click 'Fetch Events' to get fresh events!",
-                  });
-                }}
-                className="w-full sm:w-auto flex items-center justify-center space-x-2 bg-gray-200 text-gray-600 font-bold py-4 px-8 rounded-full hover:bg-gray-300 transition"
-              >
-                <span>Clear All</span>
-              </Button>
-            </div>
-            
-            {/* First Row - 6 categories */}
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5 mb-5">
-              {Object.keys(categoryIcons).slice(0, 6).map((category) => {
-                const IconComponent = categoryIcons[category as keyof typeof categoryIcons];
-                const categoryKey = mapCategoryToBackend(category);
-                const stats = categoryStats[categoryKey] || { count: 0 };
-                const isSelected = activeCategory === categoryKey;
-                const categoryColors = getCategoryColor(category);
+                    className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-2 text-white font-bold py-3 px-6 rounded-full transition hover:transform hover:-translate-y-0.5 hover:shadow-lg"
+                  />
 
-                return (
-                  <div 
-                    key={category}
-                    className={`rounded-2xl p-4 text-center transition-all duration-300 cursor-pointer transform hover:scale-105 hover:shadow-lg ${
-                      isSelected 
-                        ? `${categoryColors.background} ${categoryColors.border} border-2 shadow-md` 
-                        : `${categoryColors.background} ${categoryColors.border} border ${categoryColors.hover}`
-                    }`}
-                    onClick={() => handleCategoryFilter(categoryKey)}
+                  <Button
+                    onClick={() => {
+                      // Clear all event-related state
+                      setEvents([]);
+                      setSavedEvents([]);
+                      setEventsByCategory({});
+                      setTransformedEventsByCategory({});
+                      setCategoryStats({});
+                      setActiveCategory(null);
+                      setSelectedDate(null);
+                      setDatePreset(null);
+                      setDateQuery('');
+                      setSearchQuery('');
+                      setProviderDetails([]);
+                      setTotalProcessingTime(0);
+                      try { localStorage.removeItem(LOCAL_EVENTS_CACHE_KEY); } catch {}
+                      toast({
+                        title: "Events Cleared",
+                        description: "All events have been cleared. Click 'Fetch Events' to get fresh events!",
+                      });
+                    }}
+                    className="w-full sm:w-auto bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-full hover:bg-gray-300 transition"
                   >
-                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${categoryColors.background} ${categoryColors.border} border-2`}>
-                      {IconComponent && <IconComponent className={`h-8 w-8 ${categoryColors.icon}`} />}
-                    </div>
-                    <p className={`font-semibold ${categoryColors.text}`}>{category}</p>
-                    <p className={`text-sm ${categoryColors.accent}`}>{stats.count} events</p>
-                  </div>
-                );
-              })}
-            </div>
-            
-            {/* Second Row - 6 categories */}
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
-              {Object.keys(categoryIcons).slice(6).map((category) => {
-                const IconComponent = categoryIcons[category as keyof typeof categoryIcons];
-                const categoryKey = mapCategoryToBackend(category);
-                const stats = categoryStats[categoryKey] || { count: 0 };
-                const isSelected = activeCategory === categoryKey;
-                const categoryColors = getCategoryColor(category);
+                    Clear
+                  </Button>
+                </div>
+              </div>
 
-                return (
-                  <div 
-                    key={category}
-                    className={`rounded-2xl p-4 text-center transition-all duration-300 cursor-pointer transform hover:scale-105 hover:shadow-lg ${
-                      isSelected 
-                        ? `${categoryColors.background} ${categoryColors.border} border-2 shadow-md` 
-                        : `${categoryColors.background} ${categoryColors.border} border ${categoryColors.hover}`
-                    }`}
-                    onClick={() => handleCategoryFilter(categoryKey)}
-                  >
-                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${categoryColors.background} ${categoryColors.border} border-2`}>
-                      {IconComponent && <IconComponent className={`h-8 w-8 ${categoryColors.icon}`} />}
-                    </div>
-                    <p className={`font-semibold ${categoryColors.text}`}>{category}</p>
-                    <p className={`text-sm ${categoryColors.accent}`}>{stats.count} events</p>
-                  </div>
-                );
-              })}
+              {/* Categories (two-row rail) */}
+              <div className="mt-4 grid grid-rows-2 grid-flow-col auto-cols-max gap-2 overflow-x-auto pb-1">
+                <Button
+                  variant={activeCategory === null ? 'default' : 'outline'}
+                  size="sm"
+                  className={cn(
+                    "rounded-full",
+                    activeCategory === null ? "bg-gradient-primary text-white" : ""
+                  )}
+                  onClick={() => handleCategoryFilter(null)}
+                >
+                  All ({totalEventCount})
+                </Button>
+                {Object.keys(categoryIcons).map((category) => {
+                  const categoryKey = mapCategoryToBackend(category);
+                  const stats = categoryStats[categoryKey] || { count: 0 };
+                  const selected = activeCategory === categoryKey;
+                  return (
+                    <Button
+                      key={category}
+                      variant={selected ? 'default' : 'outline'}
+                      size="sm"
+                      className={cn("rounded-full", selected ? "bg-gradient-primary text-white" : "")}
+                      onClick={() => handleCategoryFilter(categoryKey)}
+                      title={`${category}: ${stats.count} events`}
+                    >
+                      {category} ({stats.count})
+                    </Button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

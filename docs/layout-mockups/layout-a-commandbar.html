@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Option A - Command Bar + Chips</title>
+    <style>
+      :root{
+        --bg:#f3f5ff;
+        --card:#ffffffcc;
+        --stroke:#e5e7eb;
+        --ink:#0f172a;
+        --muted:#64748b;
+        --primary:#4f46e5;
+        --primary2:#7c3aed;
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+        background:
+          radial-gradient(1100px 700px at 15% 10%, #dbeafe 0%, transparent 55%),
+          radial-gradient(900px 600px at 85% 0%, #e9d5ff 0%, transparent 55%),
+          linear-gradient(180deg, var(--bg), #eef2ff);
+        color:var(--ink);
+      }
+      .wrap{max-width:980px;margin:0 auto;padding:22px 14px 48px}
+      .top{
+        display:flex;
+        align-items:flex-end;
+        justify-content:space-between;
+        gap:14px;
+        margin-bottom:14px;
+      }
+      .brand h1{margin:0;font-size:22px;letter-spacing:-0.02em}
+      .brand p{margin:6px 0 0;color:var(--muted);font-size:13px}
+      .btn{
+        border:1px solid rgba(79,70,229,.28);
+        background: linear-gradient(135deg, rgba(79,70,229,.14), rgba(124,58,237,.12));
+        color:#312e81;
+        padding:10px 12px;
+        border-radius:12px;
+        font-weight:700;
+        font-size:13px;
+        cursor:pointer;
+        white-space:nowrap;
+      }
+      .panel{
+        background:var(--card);
+        border:1px solid var(--stroke);
+        border-radius:18px;
+        box-shadow:0 14px 40px rgba(15,23,42,.10);
+        padding:14px;
+        backdrop-filter: blur(12px);
+      }
+      .command{
+        display:grid;
+        grid-template-columns: 1fr 140px 140px;
+        gap:10px;
+      }
+      .field{
+        border:1px solid var(--stroke);
+        background:#fff;
+        border-radius:14px;
+        padding:10px 12px;
+        display:flex;
+        gap:10px;
+        align-items:center;
+      }
+      .field input{
+        border:0;
+        outline:0;
+        width:100%;
+        font-size:14px;
+      }
+      .icon{
+        width:26px;height:26px;border-radius:10px;
+        background: rgba(79,70,229,.10);
+        border:1px solid rgba(79,70,229,.22);
+      }
+      .seg{
+        display:flex;gap:8px;align-items:center;justify-content:space-between;
+      }
+      .seg .chip{
+        flex:1;
+        border:1px solid rgba(100,116,139,.25);
+        background:#fff;
+        border-radius:12px;
+        padding:10px 12px;
+        font-weight:700;
+        font-size:13px;
+        color:#334155;
+        text-align:center;
+      }
+      .seg .chip.on{
+        border-color: rgba(79,70,229,.35);
+        background: linear-gradient(135deg, rgba(79,70,229,.16), rgba(124,58,237,.14));
+        color:#312e81;
+      }
+      .actions{
+        margin-top:10px;
+        display:flex;
+        gap:10px;
+        justify-content:space-between;
+        flex-wrap:wrap;
+      }
+      .primary{
+        background: linear-gradient(135deg, var(--primary), var(--primary2));
+        color:#fff;
+        border:0;
+        padding:10px 14px;
+        border-radius:14px;
+        font-weight:800;
+        font-size:13px;
+        box-shadow: 0 10px 22px rgba(79,70,229,.28);
+      }
+      .ghost{
+        background:#fff;
+        border:1px solid var(--stroke);
+        color:#334155;
+        padding:10px 14px;
+        border-radius:14px;
+        font-weight:700;
+        font-size:13px;
+      }
+      .rail{
+        margin-top:12px;
+        display:flex;
+        gap:10px;
+        overflow:auto;
+        padding-bottom:8px;
+        -webkit-overflow-scrolling: touch;
+      }
+      .rail::-webkit-scrollbar{height:8px}
+      .rail::-webkit-scrollbar-thumb{background:rgba(100,116,139,.25);border-radius:999px}
+      .cat{
+        min-width:140px;
+        background:#fff;
+        border:1px solid var(--stroke);
+        border-radius:16px;
+        padding:12px;
+      }
+      .cat .k{font-weight:900;letter-spacing:-0.01em}
+      .cat .n{color:var(--muted);font-size:12px;margin-top:4px}
+      .cat.on{
+        border-color: rgba(79,70,229,.35);
+        box-shadow:0 10px 22px rgba(79,70,229,.14);
+      }
+      .note{
+        margin-top:10px;
+        color:var(--muted);
+        font-size:12px;
+        line-height:1.4;
+      }
+      .back{margin-top:14px;font-size:13px}
+      .back a{color:#3730a3;text-decoration:none;font-weight:800}
+      @media (max-width: 740px){
+        .command{grid-template-columns:1fr}
+        .top{align-items:flex-start}
+        .btn{display:none}
+        .rail .cat{min-width:132px}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div class="brand">
+          <h1>SF Bay Event Finder</h1>
+          <p>Option A: compact command bar + category chips rail.</p>
+        </div>
+        <button class="btn">Export</button>
+      </div>
+
+      <div class="panel">
+        <div class="command">
+          <div class="field">
+            <div class="icon"></div>
+            <input placeholder="Search: title, venue, neighborhood, 'ai', 'festival'..." />
+          </div>
+          <div class="field">
+            <div class="icon"></div>
+            <input placeholder="Date" />
+          </div>
+          <div class="field">
+            <div class="icon"></div>
+            <input placeholder="Near" value="SF Bay Area" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <div class="seg" style="min-width:260px;flex:1">
+            <div class="chip on">All (770)</div>
+            <div class="chip">Today</div>
+            <div class="chip">This Week</div>
+          </div>
+          <button class="primary">Fetch Events</button>
+          <button class="ghost">Clear</button>
+        </div>
+
+        <div class="rail" aria-label="Categories (scrollable)">
+          <div class="cat on"><div class="k">Music</div><div class="n">419 events</div></div>
+          <div class="cat"><div class="k">Theatre</div><div class="n">37 events</div></div>
+          <div class="cat"><div class="k">Comedy</div><div class="n">56 events</div></div>
+          <div class="cat"><div class="k">Movies</div><div class="n">16 events</div></div>
+          <div class="cat"><div class="k">Art</div><div class="n">71 events</div></div>
+          <div class="cat"><div class="k">Food</div><div class="n">48 events</div></div>
+          <div class="cat"><div class="k">Tech</div><div class="n">5 events</div></div>
+          <div class="cat"><div class="k">Lectures</div><div class="n">93 events</div></div>
+          <div class="cat"><div class="k">Kids</div><div class="n">25 events</div></div>
+        </div>
+
+        <div class="note">
+          Key idea: remove the big grid of category tiles at the top. Keep a single compact control surface and let the event list be the star.
+        </div>
+      </div>
+
+      <div class="back"><a href="./index.html">← Back to mockups</a></div>
+    </div>
+  </body>
+</html>
+

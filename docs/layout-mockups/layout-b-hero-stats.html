@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Option B - Hero + Stats + Category Rail</title>
+    <style>
+      :root{
+        --bg:#f3f5ff;
+        --card:#ffffffcc;
+        --stroke:#e5e7eb;
+        --ink:#0f172a;
+        --muted:#64748b;
+        --primary:#4f46e5;
+        --primary2:#7c3aed;
+        --good:#059669;
+        --warn:#b45309;
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+        background:
+          radial-gradient(1200px 750px at 10% 8%, #dbeafe 0%, transparent 55%),
+          radial-gradient(900px 620px at 88% 2%, #e9d5ff 0%, transparent 55%),
+          linear-gradient(180deg, var(--bg), #eef2ff);
+        color:var(--ink);
+      }
+      .wrap{max-width:980px;margin:0 auto;padding:22px 14px 48px}
+      .hero{
+        border:1px solid rgba(79,70,229,.18);
+        background: linear-gradient(135deg, rgba(79,70,229,.16), rgba(124,58,237,.10));
+        border-radius:22px;
+        padding:18px;
+        box-shadow:0 18px 50px rgba(15,23,42,.10);
+      }
+      .heroTop{
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap:14px;
+      }
+      .brand h1{margin:0;font-size:22px;letter-spacing:-0.02em}
+      .brand p{margin:6px 0 0;color:#4338ca;font-weight:600;font-size:13px;opacity:.85}
+      .cta{
+        display:flex;
+        gap:10px;
+        flex-wrap:wrap;
+        align-items:center;
+        justify-content:flex-end;
+      }
+      .btnPrimary{
+        background: linear-gradient(135deg, var(--primary), var(--primary2));
+        border:0;
+        color:#fff;
+        padding:10px 14px;
+        border-radius:14px;
+        font-weight:900;
+        font-size:13px;
+        box-shadow: 0 12px 26px rgba(79,70,229,.28);
+      }
+      .btnGhost{
+        background: rgba(255,255,255,.7);
+        border:1px solid rgba(255,255,255,.9);
+        color:#312e81;
+        padding:10px 14px;
+        border-radius:14px;
+        font-weight:800;
+        font-size:13px;
+      }
+      .stats{
+        margin-top:14px;
+        display:grid;
+        grid-template-columns:repeat(3, minmax(0, 1fr));
+        gap:10px;
+      }
+      .stat{
+        background: rgba(255,255,255,.75);
+        border:1px solid rgba(255,255,255,.9);
+        border-radius:16px;
+        padding:12px 12px 10px;
+      }
+      .stat .k{font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+      .stat .v{margin-top:6px;font-size:18px;font-weight:1000;letter-spacing:-0.02em}
+      .stat .s{margin-top:4px;font-size:12px;color:var(--muted)}
+      .panel{
+        margin-top:14px;
+        background:var(--card);
+        border:1px solid var(--stroke);
+        border-radius:20px;
+        padding:14px;
+        box-shadow:0 14px 40px rgba(15,23,42,.10);
+        backdrop-filter: blur(12px);
+      }
+      .row{
+        display:flex;
+        gap:10px;
+        align-items:center;
+        flex-wrap:wrap;
+      }
+      .search{
+        flex:1;
+        min-width:240px;
+        border:1px solid var(--stroke);
+        background:#fff;
+        border-radius:16px;
+        padding:12px;
+        font-size:14px;
+        outline:0;
+      }
+      .pill{
+        border:1px solid rgba(100,116,139,.25);
+        background:#fff;
+        border-radius:999px;
+        padding:10px 12px;
+        font-weight:900;
+        font-size:12px;
+        color:#334155;
+      }
+      .rail{
+        margin-top:12px;
+        display:flex;
+        gap:10px;
+        overflow:auto;
+        padding-bottom:8px;
+        -webkit-overflow-scrolling: touch;
+      }
+      .rail::-webkit-scrollbar{height:8px}
+      .rail::-webkit-scrollbar-thumb{background:rgba(100,116,139,.25);border-radius:999px}
+      .cat{
+        min-width:148px;
+        background:#fff;
+        border:1px solid var(--stroke);
+        border-radius:16px;
+        padding:12px;
+      }
+      .cat .k{font-weight:1000;letter-spacing:-0.01em}
+      .cat .n{color:var(--muted);font-size:12px;margin-top:4px}
+      .cat.on{border-color: rgba(79,70,229,.35);box-shadow:0 10px 22px rgba(79,70,229,.14)}
+      .back{margin-top:14px;font-size:13px}
+      .back a{color:#3730a3;text-decoration:none;font-weight:900}
+      @media (max-width: 740px){
+        .stats{grid-template-columns:1fr}
+        .cta{justify-content:flex-start}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="hero">
+        <div class="heroTop">
+          <div class="brand">
+            <h1>SF Bay Event Finder</h1>
+            <p>Option B: reassurance + freshness first, then search and categories.</p>
+          </div>
+          <div class="cta">
+            <button class="btnPrimary">Fetch Events</button>
+            <button class="btnGhost">Clear</button>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="k">Events</div>
+            <div class="v">1,337</div>
+            <div class="s">Across Ticketmaster + venues</div>
+          </div>
+          <div class="stat">
+            <div class="k">Venues</div>
+            <div class="v">373</div>
+            <div class="s">Scraped cache (DB-backed)</div>
+          </div>
+          <div class="stat">
+            <div class="k">Freshness</div>
+            <div class="v" style="color:var(--good)">4h</div>
+            <div class="s">Last refresh successful</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="row">
+          <input class="search" placeholder="Search: 'ai conference', 'oakland', 'film festival'..." />
+          <span class="pill">All</span>
+          <span class="pill">Today</span>
+          <span class="pill">This Weekend</span>
+        </div>
+
+        <div class="rail" aria-label="Categories (scrollable)">
+          <div class="cat on"><div class="k">All</div><div class="n">770 events</div></div>
+          <div class="cat"><div class="k">Music</div><div class="n">419 events</div></div>
+          <div class="cat"><div class="k">Theatre</div><div class="n">37 events</div></div>
+          <div class="cat"><div class="k">Comedy</div><div class="n">56 events</div></div>
+          <div class="cat"><div class="k">Movies</div><div class="n">16 events</div></div>
+          <div class="cat"><div class="k">Art</div><div class="n">71 events</div></div>
+          <div class="cat"><div class="k">Food</div><div class="n">48 events</div></div>
+          <div class="cat"><div class="k">Tech</div><div class="n">5 events</div></div>
+          <div class="cat"><div class="k">Lectures</div><div class="n">93 events</div></div>
+          <div class="cat"><div class="k">Kids</div><div class="n">25 events</div></div>
+        </div>
+      </div>
+
+      <div class="back"><a href="./index.html">← Back to mockups</a></div>
+    </div>
+  </body>
+</html>
+
