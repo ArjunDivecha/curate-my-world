@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>v2-4 Festival Timetable</title>
+    <style>
+      :root{
+        --bg0:#080c18;--bg1:#0c1328;
+        --ink:#f4f7ff;--muted:#b3bedc;
+        --stroke:rgba(255,255,255,.12);
+        --shadow:0 20px 60px rgba(0,0,0,.45);
+        --r:18px;
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        background:
+          radial-gradient(1100px 760px at 14% 10%, rgba(16,185,129,.14), transparent 60%),
+          radial-gradient(900px 640px at 86% 20%, rgba(244,63,94,.14), transparent 62%),
+          linear-gradient(180deg, var(--bg0), var(--bg1));
+        color:var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      }
+      .wrap{max-width:1180px;margin:0 auto;padding:16px 14px 24px}
+      .top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+      h1{margin:0;font-size:18px;letter-spacing:-.02em}
+      .sub{color:var(--muted);font-size:12px;max-width:78ch;line-height:1.45}
+
+      .panel{
+        border:1px solid var(--stroke);
+        background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+        border-radius:var(--r);
+        box-shadow:var(--shadow);
+        overflow:hidden;
+      }
+      .ph{
+        padding:12px;
+        border-bottom:1px solid rgba(255,255,255,.08);
+        background:rgba(255,255,255,.04);
+        display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;
+      }
+      .ph b{letter-spacing:-.01em}
+      .legend{display:flex;gap:10px;flex-wrap:wrap}
+      .lg{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:12px}
+      .dot{width:10px;height:10px;border-radius:999px}
+
+      .table{
+        display:grid;
+        grid-template-columns: 70px repeat(4, minmax(0, 1fr));
+        min-height:420px;
+      }
+      .time{
+        border-right:1px solid rgba(255,255,255,.08);
+        background:rgba(255,255,255,.03);
+        padding:10px 0;
+      }
+      .t{
+        height:60px;
+        padding:0 10px;
+        display:flex;align-items:flex-start;justify-content:flex-end;
+        font-size:11px;color:rgba(255,255,255,.58);
+      }
+      .lane{
+        position:relative;
+        padding:10px 10px;
+        background:
+          repeating-linear-gradient(
+            to bottom,
+            rgba(255,255,255,.06) 0px,
+            rgba(255,255,255,.06) 1px,
+            transparent 1px,
+            transparent 60px
+          );
+        border-right:1px solid rgba(255,255,255,.06);
+      }
+      .lane:last-child{border-right:0}
+      .lh{
+        position:sticky;top:0;
+        margin:-10px -10px 10px;
+        padding:10px 10px;
+        background:rgba(10,14,30,.86);
+        border-bottom:1px solid rgba(255,255,255,.08);
+        backdrop-filter: blur(10px);
+        font-size:12px;
+        letter-spacing:-.01em;
+      }
+      .ev{
+        position:absolute;left:8px;right:8px;
+        border:1px solid rgba(255,255,255,.14);
+        border-radius:16px;
+        padding:10px 12px;
+        background:rgba(255,255,255,.08);
+        overflow:hidden;
+      }
+      .rail{position:absolute;left:0;top:0;bottom:0;width:10px;border-radius:16px 0 0 16px}
+      .in{margin-left:8px}
+      .ev b{display:block;font-size:13px;letter-spacing:-.01em;line-height:1.2}
+      .ev span{display:block;color:var(--muted);font-size:12px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+      @media (max-width: 980px){
+        .table{grid-template-columns: 1fr}
+        .time{display:none}
+        .lane{border-right:0;border-top:1px solid rgba(255,255,255,.08)}
+        .lh{position:static}
+        .ev{position:relative;left:auto;right:auto;top:auto;height:auto;margin:8px 0}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div>
+          <h1>Festival Timetable (Category Lanes)</h1>
+          <div class="sub">Treat categories like “stages”. Users can scan by time AND category, and overlaps are visually obvious.</div>
+        </div>
+        <div class="sub">Example day: Thu Feb 12</div>
+      </div>
+
+      <section class="panel">
+        <div class="ph">
+          <b>Thu Feb 12</b>
+          <div class="legend" id="legend"></div>
+        </div>
+        <div class="table">
+          <div class="time" id="time"></div>
+          <div class="lane" data-cat="art"><div class="lh">Art</div></div>
+          <div class="lane" data-cat="music"><div class="lh">Music</div></div>
+          <div class="lane" data-cat="theatre"><div class="lh">Theatre</div></div>
+          <div class="lane" data-cat="tech"><div class="lh">Tech</div></div>
+        </div>
+      </section>
+    </div>
+
+    <script src="./shared-data.js"></script>
+    <script>
+      const { CAT, byDay, hhmmToMinutes } = window.CalendarPreviewDataV2;
+      const legend = document.getElementById('legend');
+      const time = document.getElementById('time');
+      const lanes = [...document.querySelectorAll('.lane[data-cat]')];
+
+      ["art","music","theatre","tech"].forEach(k => {
+        const el = document.createElement('div');
+        el.className = 'lg';
+        el.innerHTML = `<span class="dot" style="background:${CAT[k].rail}"></span>${CAT[k].name}`;
+        legend.appendChild(el);
+      });
+
+      // 10:00 -> 22:00
+      const startMin = 10 * 60;
+      const endMin = 22 * 60;
+      const pxPerMin = 60 / 60; // 60px per hour
+
+      for (let h=10; h<=22; h++){
+        const el = document.createElement('div');
+        el.className = 't';
+        const hh = (h % 12) || 12;
+        const ap = h < 12 ? "AM" : "PM";
+        el.textContent = `${hh} ${ap}`;
+        time.appendChild(el);
+      }
+
+      const evs = byDay("Thu").map(e => {
+        const s = hhmmToMinutes(e.start);
+        return { ...e, s, top: (s - startMin) * pxPerMin, height: Math.max(44, e.dur * pxPerMin) };
+      }).filter(e => e.s >= startMin && (e.s + e.dur) <= endMin);
+
+      lanes.forEach(l => {
+        const cat = l.getAttribute('data-cat');
+        const list = evs.filter(e => e.cat === cat);
+        list.forEach(e => {
+          const el = document.createElement('div');
+          el.className = 'ev';
+          el.style.top = `${e.top}px`;
+          el.style.height = `${e.height}px`;
+          el.innerHTML = `
+            <div class="rail" style="background:${CAT[e.cat].rail}"></div>
+            <div class="in">
+              <b>${e.title}</b>
+              <span>${e.start} • ${e.venue}</span>
+            </div>
+          `;
+          l.appendChild(el);
+        });
+        l.style.minHeight = `${(endMin - startMin) * pxPerMin + 20}px`;
+      });
+    </script>
+  </body>
+</html>
+

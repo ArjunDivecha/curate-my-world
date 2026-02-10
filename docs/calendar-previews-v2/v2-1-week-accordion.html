@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>v2-1 Week Accordion</title>
+    <style>
+      :root{
+        --bg0:#080c18;--bg1:#0c1328;
+        --ink:#f4f7ff;--muted:#b3bedc;
+        --stroke:rgba(255,255,255,.12);
+        --shadow:0 20px 60px rgba(0,0,0,.45);
+        --r:18px;
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        background:
+          radial-gradient(1100px 760px at 10% 8%, rgba(142,227,255,.18), transparent 60%),
+          radial-gradient(900px 640px at 86% 18%, rgba(16,185,129,.14), transparent 62%),
+          linear-gradient(180deg, var(--bg0), var(--bg1));
+        color:var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      }
+      .wrap{max-width:980px;margin:0 auto;padding:16px 14px 24px}
+      .top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+      h1{margin:0;font-size:18px;letter-spacing:-.02em}
+      .sub{color:var(--muted);font-size:12px;max-width:70ch;line-height:1.45}
+
+      .panel{
+        border:1px solid var(--stroke);
+        background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+        border-radius:var(--r);
+        box-shadow:var(--shadow);
+        overflow:hidden;
+      }
+      .ph{padding:12px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04)}
+      .ph b{letter-spacing:-.01em}
+      .ph span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+
+      .day{border-top:1px solid rgba(255,255,255,.08)}
+      .day:first-child{border-top:0}
+      .hdr{
+        width:100%;
+        display:flex;align-items:center;justify-content:space-between;gap:10px;
+        background:transparent;
+        border:0;
+        color:var(--ink);
+        padding:12px;
+        cursor:pointer;
+        text-align:left;
+      }
+      .hdr:hover{background:rgba(255,255,255,.04)}
+      .lhs{display:flex;gap:10px;align-items:baseline;min-width:0}
+      .dow{font-size:11px;color:rgba(255,255,255,.60);text-transform:uppercase;letter-spacing:.12em;width:44px}
+      .date{font-weight:850;letter-spacing:-.02em}
+      .count{color:var(--muted);font-size:12px;white-space:nowrap}
+      .chev{color:rgba(255,255,255,.65);font-size:14px}
+
+      .rows{display:none;padding:0 12px 12px}
+      .rows[data-open="1"]{display:grid;gap:8px}
+      .row{
+        border:1px solid rgba(255,255,255,.10);
+        background:rgba(255,255,255,.06);
+        border-radius:16px;
+        padding:10px 12px;
+        display:flex;gap:10px;align-items:flex-start;
+      }
+      .rail{width:10px;border-radius:999px;flex:0 0 auto;height:44px;margin-top:2px}
+      .row b{display:block;font-size:13px;letter-spacing:-.01em}
+      .row span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+      .row .mini{display:flex;gap:8px;align-items:center;margin-top:7px;flex-wrap:wrap}
+      .tag{font-size:11px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);padding:3px 8px;border-radius:999px;color:var(--ink)}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div>
+          <h1>Week Accordion</h1>
+          <div class="sub">The week stays readable even with heavy days: collapse most days, expand the one you’re scanning.</div>
+        </div>
+        <div class="sub">Behavior: click day header expands; remember last opened.</div>
+      </div>
+
+      <section class="panel">
+        <div class="ph">
+          <b>This Week</b>
+          <span>Collapse by default; expand one day for detail.</span>
+        </div>
+        <div id="list"></div>
+      </section>
+    </div>
+
+    <script src="./shared-data.js"></script>
+    <script>
+      const { CAT, WEEK, byDay } = window.CalendarPreviewDataV2;
+      const list = document.getElementById('list');
+      let open = "Thu";
+
+      function render(){
+        list.innerHTML = "";
+        WEEK.forEach(d => {
+          const evs = byDay(d.k);
+          const day = document.createElement('div');
+          day.className = 'day';
+
+          const hdr = document.createElement('button');
+          hdr.className = 'hdr';
+          hdr.innerHTML = `
+            <div class="lhs">
+              <div class="dow">${d.k}</div>
+              <div class="date">Feb ${d.d}</div>
+            </div>
+            <div class="count">${evs.length} events <span class="chev">${open === d.k ? "▾" : "▸"}</span></div>
+          `;
+
+          const rows = document.createElement('div');
+          rows.className = 'rows';
+          rows.dataset.open = (open === d.k) ? "1" : "0";
+
+          if (!evs.length){
+            const empty = document.createElement('div');
+            empty.style.color = 'rgba(255,255,255,.55)';
+            empty.style.fontSize = '12px';
+            empty.style.padding = '10px 2px';
+            empty.textContent = 'No events';
+            rows.appendChild(empty);
+          } else {
+            evs.forEach(ev => {
+              const r = document.createElement('div');
+              r.className = 'row';
+              r.innerHTML = `
+                <div class="rail" style="background:${CAT[ev.cat].rail}"></div>
+                <div style="min-width:0">
+                  <b>${ev.title}</b>
+                  <span>${ev.start} • ${ev.venue}</span>
+                  <div class="mini">
+                    <span class="tag">${CAT[ev.cat].name}</span>
+                    <span class="tag">${Math.round(ev.score)}/10</span>
+                  </div>
+                </div>
+              `;
+              rows.appendChild(r);
+            });
+          }
+
+          hdr.onclick = () => { open = (open === d.k) ? "" : d.k; render(); };
+          day.appendChild(hdr);
+          day.appendChild(rows);
+          list.appendChild(day);
+        });
+      }
+
+      render();
+    </script>
+  </body>
+</html>
+

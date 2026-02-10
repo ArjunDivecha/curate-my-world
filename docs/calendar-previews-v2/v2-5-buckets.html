@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>v2-5 Buckets Timeline</title>
+    <style>
+      :root{
+        --bg0:#080c18;--bg1:#0c1328;
+        --ink:#f4f7ff;--muted:#b3bedc;
+        --stroke:rgba(255,255,255,.12);
+        --shadow:0 20px 60px rgba(0,0,0,.45);
+        --r:18px;
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        background:
+          radial-gradient(1200px 760px at 12% 10%, rgba(236,72,153,.14), transparent 60%),
+          radial-gradient(900px 640px at 86% 24%, rgba(142,227,255,.14), transparent 62%),
+          linear-gradient(180deg, var(--bg0), var(--bg1));
+        color:var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      }
+      .wrap{max-width:1180px;margin:0 auto;padding:16px 14px 24px}
+      .top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+      h1{margin:0;font-size:18px;letter-spacing:-.02em}
+      .sub{color:var(--muted);font-size:12px;max-width:78ch;line-height:1.45}
+
+      .grid{display:grid;grid-template-columns: repeat(3, minmax(0, 1fr));gap:12px}
+      .panel{
+        border:1px solid var(--stroke);
+        background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+        border-radius:var(--r);
+        box-shadow:var(--shadow);
+        overflow:hidden;
+        min-height:420px;
+      }
+      .ph{padding:12px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04)}
+      .ph b{letter-spacing:-.01em}
+      .ph span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+      .list{padding:12px;display:grid;gap:8px}
+      .row{
+        border:1px solid rgba(255,255,255,.10);
+        background:rgba(255,255,255,.06);
+        border-radius:16px;
+        padding:10px 12px;
+        display:flex;gap:10px;align-items:flex-start;
+      }
+      .rail{width:10px;border-radius:999px;flex:0 0 auto;height:44px;margin-top:2px}
+      .row b{display:block;font-size:13px;letter-spacing:-.01em}
+      .row span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+
+      @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div>
+          <h1>“Buckets” Timeline</h1>
+          <div class="sub">This is an event-first calendar UI: instead of a grid, you jump between time buckets (Tonight, Weekend, Next 30) and scan a dense list.</div>
+        </div>
+        <div class="sub">Works especially well on mobile.</div>
+      </div>
+
+      <div class="grid">
+        <section class="panel">
+          <div class="ph"><b>Tonight</b><span>Fast decision mode</span></div>
+          <div class="list" id="t"></div>
+        </section>
+        <section class="panel">
+          <div class="ph"><b>This Weekend</b><span>High volume, browsing</span></div>
+          <div class="list" id="w"></div>
+        </section>
+        <section class="panel">
+          <div class="ph"><b>Next 30 Days</b><span>Planning mode</span></div>
+          <div class="list" id="m"></div>
+        </section>
+      </div>
+    </div>
+
+    <script src="./shared-data.js"></script>
+    <script>
+      const { CAT, byDay } = window.CalendarPreviewDataV2;
+      const t = document.getElementById('t');
+      const w = document.getElementById('w');
+      const m = document.getElementById('m');
+
+      // Totally mocked bucket assignment for the demo.
+      const tonight = byDay("Thu").slice(2, 6);
+      const weekend = [...byDay("Fri"), ...byDay("Sat")].slice(0, 10);
+      const month = [...byDay("Tue"), ...byDay("Wed"), ...byDay("Thu"), ...byDay("Fri"), ...byDay("Sat")].slice(0, 12);
+
+      function row(ev){
+        const el = document.createElement('div');
+        el.className = 'row';
+        el.innerHTML = `
+          <div class="rail" style="background:${CAT[ev.cat].rail}"></div>
+          <div style="min-width:0">
+            <b>${ev.title}</b>
+            <span>${ev.day} ${ev.start} • ${ev.venue} • ${CAT[ev.cat].name}</span>
+          </div>
+        `;
+        return el;
+      }
+
+      tonight.forEach(e => t.appendChild(row(e)));
+      weekend.forEach(e => w.appendChild(row(e)));
+      month.forEach(e => m.appendChild(row(e)));
+    </script>
+  </body>
+</html>
+

@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>v2-2 Bottom Sheet Agenda</title>
+    <style>
+      :root{
+        --bg0:#080c18;--bg1:#0c1328;
+        --ink:#f4f7ff;--muted:#b3bedc;
+        --stroke:rgba(255,255,255,.12);
+        --shadow:0 20px 60px rgba(0,0,0,.45);
+        --r:18px;
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        background:
+          radial-gradient(1200px 760px at 20% 10%, rgba(255,214,165,.18), transparent 60%),
+          radial-gradient(900px 640px at 80% 22%, rgba(59,130,246,.16), transparent 62%),
+          linear-gradient(180deg, var(--bg0), var(--bg1));
+        color:var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      }
+      .wrap{max-width:1000px;margin:0 auto;padding:16px 14px 24px}
+      .top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+      h1{margin:0;font-size:18px;letter-spacing:-.02em}
+      .sub{color:var(--muted);font-size:12px;max-width:70ch;line-height:1.45}
+
+      .frame{
+        border:1px solid var(--stroke);
+        background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+        border-radius:var(--r);
+        box-shadow:var(--shadow);
+        overflow:hidden;
+        position:relative;
+        min-height:520px;
+      }
+      .mini{
+        padding:12px;
+      }
+      .month{
+        display:grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap:8px;
+      }
+      .dow{font-size:11px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.12em;padding:0 2px}
+      .cell{
+        border:1px solid rgba(255,255,255,.10);
+        background:rgba(255,255,255,.05);
+        border-radius:14px;
+        padding:10px 10px;
+        min-height:66px;
+        cursor:pointer;
+      }
+      .cell:hover{background:rgba(255,255,255,.07)}
+      .cell[data-on="1"]{outline:2px solid rgba(142,227,255,.55);background:rgba(142,227,255,.10)}
+      .num{font-weight:850;letter-spacing:-.02em}
+      .dots{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+      .dot{width:10px;height:10px;border-radius:999px;background:rgba(255,255,255,.18)}
+
+      /* Bottom sheet */
+      .sheet{
+        position:absolute;
+        left:0;right:0;bottom:0;
+        height:62%;
+        background:linear-gradient(180deg, rgba(10,14,30,.92), rgba(8,10,22,.94));
+        border-top:1px solid rgba(255,255,255,.14);
+        border-radius:18px 18px 0 0;
+        box-shadow:0 -20px 60px rgba(0,0,0,.55);
+        transform: translateY(46%);
+        transition: transform .18s ease;
+        overflow:hidden;
+      }
+      .sheet[data-open="1"]{transform: translateY(0)}
+      .grab{
+        display:flex;align-items:center;justify-content:center;
+        padding:10px 0 6px;
+      }
+      .bar{width:52px;height:6px;border-radius:999px;background:rgba(255,255,255,.18)}
+      .shHead{
+        padding:6px 12px 10px;
+        display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+      }
+      .shHead b{letter-spacing:-.01em}
+      .shHead span{color:var(--muted);font-size:12px}
+      .rows{
+        padding:0 12px 14px;
+        overflow:auto;
+        height:calc(100% - 56px);
+        display:grid;gap:8px;
+      }
+      .row{
+        border:1px solid rgba(255,255,255,.10);
+        background:rgba(255,255,255,.06);
+        border-radius:16px;
+        padding:10px 12px;
+        display:flex;gap:10px;align-items:flex-start;
+      }
+      .rail{width:10px;border-radius:999px;flex:0 0 auto;height:44px;margin-top:2px}
+      .row b{display:block;font-size:13px;letter-spacing:-.01em}
+      .row span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+      .hint{
+        position:absolute;right:12px;top:12px;
+        border:1px solid rgba(255,255,255,.14);
+        background:rgba(255,255,255,.06);
+        color:rgba(255,255,255,.85);
+        padding:8px 10px;border-radius:12px;
+        font-size:12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div>
+          <h1>Mini Calendar + Bottom Sheet Agenda</h1>
+          <div class="sub">Mobile-first: the calendar is navigation; the sheet contains dense event rows. Tap the grab handle to expand/collapse.</div>
+        </div>
+        <div class="sub">Good when you expect most users on iOS.</div>
+      </div>
+
+      <div class="frame">
+        <div class="hint">Tap a day</div>
+        <div class="mini">
+          <div class="month" id="month"></div>
+        </div>
+        <div class="sheet" id="sheet" data-open="1">
+          <div class="grab" id="grab"><div class="bar"></div></div>
+          <div class="shHead">
+            <b id="sel">Feb 12</b>
+            <span id="cnt">0 events</span>
+          </div>
+          <div class="rows" id="rows"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="./shared-data.js"></script>
+    <script>
+      const { CAT, WEEK, byDay } = window.CalendarPreviewDataV2;
+      const month = document.getElementById('month');
+      const sheet = document.getElementById('sheet');
+      const grab = document.getElementById('grab');
+      const sel = document.getElementById('sel');
+      const cnt = document.getElementById('cnt');
+      const rows = document.getElementById('rows');
+
+      const dows = WEEK.map(x => x.k);
+      dows.forEach(k => {
+        const el = document.createElement('div');
+        el.className = 'dow';
+        el.textContent = k;
+        month.appendChild(el);
+      });
+
+      const counts = new Map();
+      for (const w of WEEK) counts.set(w.d, byDay(w.k).length);
+
+      let selected = 12;
+      function renderRows(dayNum){
+        const w = WEEK.find(x => x.d === dayNum);
+        const evs = w ? byDay(w.k) : [];
+        sel.textContent = `Feb ${dayNum}`;
+        cnt.textContent = `${evs.length} events`;
+        rows.innerHTML = "";
+        if (!evs.length){
+          const e = document.createElement('div');
+          e.style.color = 'rgba(255,255,255,.55)';
+          e.style.fontSize = '12px';
+          e.style.padding = '10px 2px';
+          e.textContent = 'No events';
+          rows.appendChild(e);
+          return;
+        }
+        evs.forEach(ev => {
+          const r = document.createElement('div');
+          r.className = 'row';
+          r.innerHTML = `
+            <div class="rail" style="background:${CAT[ev.cat].rail}"></div>
+            <div style="min-width:0">
+              <b>${ev.title}</b>
+              <span>${ev.start} • ${ev.venue} • ${CAT[ev.cat].name} • ${Math.round(ev.score)}/10</span>
+            </div>
+          `;
+          rows.appendChild(r);
+        });
+      }
+
+      for (let i=1;i<=28;i++){
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        const c = counts.get(i) || 0;
+        cell.dataset.on = (i === selected) ? "1" : "0";
+        cell.innerHTML = `<div class="num">${i}</div><div class="dots"></div>`;
+        const dots = cell.querySelector('.dots');
+        for (let j=0;j<Math.min(5,c);j++){
+          const d = document.createElement('div');
+          d.className = 'dot';
+          d.style.background = j === 0 ? 'rgba(142,227,255,.75)' : 'rgba(255,255,255,.18)';
+          dots.appendChild(d);
+        }
+        cell.onclick = () => {
+          selected = i;
+          [...month.querySelectorAll('.cell')].forEach(n => n.dataset.on = "0");
+          cell.dataset.on = "1";
+          renderRows(i);
+          sheet.dataset.open = "1";
+        };
+        month.appendChild(cell);
+      }
+
+      grab.onclick = () => { sheet.dataset.open = (sheet.dataset.open === "1") ? "0" : "1"; };
+      renderRows(selected);
+    </script>
+  </body>
+</html>
+

@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Calendar Layout Previews v2 (5)</title>
+    <style>
+      :root{
+        --bg0:#080c18;
+        --bg1:#0c1328;
+        --ink:#f4f7ff;
+        --muted:#aeb9da;
+        --card:rgba(255,255,255,.06);
+        --stroke:rgba(255,255,255,.12);
+        --shadow: 0 20px 60px rgba(0,0,0,.45);
+        --r: 20px;
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        color:var(--ink);
+        background:
+          radial-gradient(1000px 700px at 12% 10%, rgba(142,227,255,.22), transparent 58%),
+          radial-gradient(900px 600px at 84% 18%, rgba(255,214,165,.18), transparent 62%),
+          radial-gradient(1000px 760px at 44% 92%, rgba(124,58,237,.16), transparent 62%),
+          linear-gradient(180deg, var(--bg0), var(--bg1));
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      }
+      .wrap{max-width:1200px;margin:0 auto;padding:26px 18px 46px}
+      header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+      h1{margin:0;font-size:clamp(22px, 3.2vw, 34px);letter-spacing:-.02em}
+      .sub{color:var(--muted);font-size:14px;max-width:80ch;line-height:1.45;margin-top:8px}
+      .tags{display:flex;gap:10px;flex-wrap:wrap}
+      .tag{
+        border:1px solid var(--stroke);
+        background:rgba(255,255,255,.06);
+        padding:8px 10px;border-radius:999px;
+        font-size:12px;color:var(--muted);
+        backdrop-filter: blur(10px);
+      }
+      .grid{
+        display:grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap:14px;
+        margin-top:16px;
+      }
+      @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
+      .card{
+        border:1px solid var(--stroke);
+        background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+        border-radius:var(--r);
+        box-shadow:var(--shadow);
+        overflow:hidden;
+      }
+      .head{
+        padding:12px 14px;
+        display:flex;align-items:center;justify-content:space-between;gap:12px;
+        background:rgba(255,255,255,.04);
+        border-bottom:1px solid rgba(255,255,255,.08);
+      }
+      .name{min-width:0}
+      .name b{display:block;font-size:14px;letter-spacing:-.01em}
+      .name span{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+      .open{
+        color:var(--ink);
+        background:rgba(142,227,255,.14);
+        border:1px solid rgba(142,227,255,.35);
+        padding:8px 10px;border-radius:12px;
+        font-size:12px;text-decoration:none;
+      }
+      .open:hover{background:rgba(142,227,255,.22)}
+      iframe{width:100%;height:380px;border:0;display:block;background:#fff}
+      footer{margin-top:16px;color:var(--muted);font-size:12px;line-height:1.5}
+      code{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10);padding:2px 6px;border-radius:8px;color:var(--ink)}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <h1>Calendar Layout Previews v2</h1>
+          <div class="sub">
+            New set of more “designed” ideas: bottom-sheet agenda, heatmap density, festival timetable lanes, and a week “accordion” that stays readable.
+          </div>
+        </div>
+        <div class="tags">
+          <div class="tag">Idea: bottom sheet + mini calendar</div>
+          <div class="tag">Idea: heatmap density + drawer</div>
+          <div class="tag">Idea: festival timetable lanes</div>
+        </div>
+      </header>
+
+      <div class="grid">
+        <section class="card">
+          <div class="head">
+            <div class="name">
+              <b>1) Week Accordion (Readable Under Heavy Load)</b>
+              <span>Each day collapses/expands; keeps the week visible.</span>
+            </div>
+            <a class="open" href="./v2-1-week-accordion.html" target="_blank" rel="noopener noreferrer">Open</a>
+          </div>
+          <iframe src="./v2-1-week-accordion.html" title="v2-1"></iframe>
+        </section>
+
+        <section class="card">
+          <div class="head">
+            <div class="name">
+              <b>2) Mini Calendar + Bottom Sheet Agenda</b>
+              <span>Mobile-first: calendar is nav; details live in sheet.</span>
+            </div>
+            <a class="open" href="./v2-2-bottom-sheet.html" target="_blank" rel="noopener noreferrer">Open</a>
+          </div>
+          <iframe src="./v2-2-bottom-sheet.html" title="v2-2"></iframe>
+        </section>
+
+        <section class="card">
+          <div class="head">
+            <div class="name">
+              <b>3) Density Heatmap + Right Drawer</b>
+              <span>Find “busy days” instantly; click to open the day’s list.</span>
+            </div>
+            <a class="open" href="./v2-3-heatmap-drawer.html" target="_blank" rel="noopener noreferrer">Open</a>
+          </div>
+          <iframe src="./v2-3-heatmap-drawer.html" title="v2-3"></iframe>
+        </section>
+
+        <section class="card">
+          <div class="head">
+            <div class="name">
+              <b>4) Festival Timetable (Category Lanes)</b>
+              <span>Like a multi-stage festival schedule; great for overlaps.</span>
+            </div>
+            <a class="open" href="./v2-4-festival-timetable.html" target="_blank" rel="noopener noreferrer">Open</a>
+          </div>
+          <iframe src="./v2-4-festival-timetable.html" title="v2-4"></iframe>
+        </section>
+
+        <section class="card" style="grid-column: 1 / -1;">
+          <div class="head">
+            <div class="name">
+              <b>5) “Buckets” Timeline (Tonight, Weekend, Next 30)</b>
+              <span>Not a grid; a fast event-first calendar UI.</span>
+            </div>
+            <a class="open" href="./v2-5-buckets.html" target="_blank" rel="noopener noreferrer">Open</a>
+          </div>
+          <iframe src="./v2-5-buckets.html" title="v2-5"></iframe>
+        </section>
+      </div>
+
+      <footer>
+        Files live in <code>docs/calendar-previews-v2/</code>.
+      </footer>
+    </div>
+  </body>
+</html>
+
