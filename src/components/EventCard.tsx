@@ -18,10 +18,8 @@ const getSourceBadgeStyle = (source: string): string => {
     exa: 'bg-purple-100 text-purple-700 border-purple-300',
     exa_fast: 'bg-purple-100 text-purple-700 border-purple-300',
     ticketmaster: 'bg-red-100 text-red-700 border-red-300',
-    pplx: 'bg-orange-100 text-orange-700 border-orange-300',
-    pplx_search: 'bg-orange-100 text-orange-700 border-orange-300',
-    perplexity: 'bg-amber-100 text-amber-700 border-amber-300',
-    perplexity_api: 'bg-amber-100 text-amber-700 border-amber-300',
+    venue_scraper: 'bg-green-100 text-green-700 border-green-300',
+    whitelist: 'bg-blue-100 text-blue-700 border-blue-300',
   };
   return styles[source?.toLowerCase()] || 'bg-gray-100 text-gray-700 border-gray-300';
 };
@@ -29,15 +27,9 @@ const getSourceBadgeStyle = (source: string): string => {
 // Source label helper
 const getSourceLabel = (source: string): string => {
   const labels: Record<string, string> = {
-    whitelist: '⭐ Whitelist',
-    serper: 'Serper',
-    exa: 'EXA',
-    exa_fast: 'EXA',
     ticketmaster: 'Ticketmaster',
-    pplx: 'PPLX',
-    pplx_search: 'PPLX',
-    perplexity: 'Perplexity',
-    perplexity_api: 'Perplexity',
+    venue_scraper: 'Venue Scraper',
+    whitelist: '⭐ Whitelist',
   };
   return labels[source?.toLowerCase()] || source;
 };

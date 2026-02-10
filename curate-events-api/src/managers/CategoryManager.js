@@ -4,8 +4,8 @@
  * =============================================================================
  * 
  * DESCRIPTION:
- * Category and prompt configuration manager for optimized Perplexity queries.
- * Based on proven patterns from test-direct-perplexity.js that return 30+ events.
+ * Category configuration manager for event categorization and normalization.
+ * Central source of truth for category definitions and aliases.
  * 
  * FEATURES:
  * - Category-specific prompt templates

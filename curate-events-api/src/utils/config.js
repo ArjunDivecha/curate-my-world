@@ -38,13 +38,7 @@ export const config = {
   host: process.env.HOST || (nodeEnv === 'production' ? '0.0.0.0' : '127.0.0.1'),
   
   // API keys - ALL from environment variables
-  perplexityApiKey: process.env.PERPLEXITY_API_KEY || process.env.PPLX_API_KEY,
   anthropicApiKey: process.env.ANTHROPIC_API_KEY,
-  apyfluxApiKey: process.env.APYFLUX_API_KEY,
-  apyfluxAppId: process.env.APYFLUX_APP_ID,
-  apyfluxClientId: process.env.APYFLUX_CLIENT_ID,
-  exaApiKey: process.env.EXA_API_KEY,
-  serperApiKey: process.env.SERPER_API_KEY,
   ticketmasterConsumerKey: process.env.TICKETMASTER_CONSUMER_KEY,
   ticketmasterConsumerSecret: process.env.TICKETMASTER_CONSUMER_SECRET,
   googleMapsApiKey: process.env.GOOGLE_MAPS_PLATFORM_API_KEY || process.env.GOOGLE_MAPS_API_KEY,
@@ -90,20 +84,7 @@ export const config = {
 
   // Source toggles (defaults)
   sources: {
-    // Disable external paid providers by default; can be overridden per-request
-    // Also disable Perplexity by default when measuring alternatives
-    disablePerplexityByDefault: true,
-    disableTicketmasterByDefault: false,
-    disablePplxSearchByDefault: false
-  },
-  
-  // Perplexity API defaults
-  perplexity: {
-    model: 'sonar-reasoning',
-    maxTokens: 16000,  // Increased to get more events like direct Perplexity testing
-    temperature: 0.1,
-    retryAttempts: 2,
-    retryDelay: 1000 // ms
+    disableTicketmasterByDefault: false
   },
   
   // Venue scraper configuration

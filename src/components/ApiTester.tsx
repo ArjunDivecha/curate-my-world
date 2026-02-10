@@ -45,12 +45,10 @@ export const ApiTester: React.FC = () => {
   const { toast } = useToast();
 
   const apiSources = [
-    { value: '', label: 'All Sources (Default)', description: 'Perplexity LLM, Exa, Serper, Ticketmaster, and PPLX' },
-    { value: 'perplexity', label: 'Perplexity Only', description: 'AI-powered event discovery' },
-    { value: 'exa', label: 'Exa Only', description: 'Web search for events' },
-    { value: 'serper', label: 'Serper Only', description: 'Google search results' },
+    { value: '', label: 'All Sources (Default)', description: 'Ticketmaster + Venue Scraper' },
     { value: 'ticketmaster', label: 'Ticketmaster Only', description: 'Official event tickets and venues' },
-    { value: 'compare', label: 'Compare Sources', description: 'Side-by-side comparison of sources' },
+    { value: 'venue_scraper', label: 'Venue Scraper Only', description: 'Local venue calendars' },
+    { value: 'whitelist', label: 'Whitelist Only', description: 'Legacy whitelist search' },
     { value: 'all-categories', label: 'All Categories', description: 'Fetch all event categories' }
   ];
 
@@ -60,22 +58,11 @@ export const ApiTester: React.FC = () => {
   ];
 
   const getDefaultPrompt = (source: string, category: string): string => {
-    const prompts: Record<string, string> = {
-      'perplexity': `Find ${category} events in San Francisco, CA for 2025. Include event name, date, time, location, and description.`,
-      'exa': `Web search for ${category} events in San Francisco, CA 2025. Find event websites and details.`,
-      'serper': `Google search: "${category} events San Francisco CA 2025" - find event listings and information.`
-    };
-    return prompts[source] || `Find ${category} events in San Francisco, CA for 2025`;
+    return `Find ${category} events in San Francisco Bay Area for 2025. Include event name, date, time, location, and description.`;
   };
 
   const getExistingPrompt = (source: string, category: string): string => {
-    // These are the actual prompts used by the backend
-    const existingPrompts: Record<string, string> = {
-      'perplexity': `You are an expert event curator for the San Francisco Bay Area. Find ${category} events happening in San Francisco, CA and surrounding Bay Area cities within the next 3 months. Focus on high-quality, engaging events that would appeal to tech professionals and creative individuals. Include specific details like venue names, exact dates/times, ticket prices, and event URLs when available. Prioritize events that are unique, educational, or networking-focused.`,
-      'exa': `Search the web for ${category} events in San Francisco Bay Area happening in the next 3 months. Find official event pages, registration links, and detailed event information from reliable sources like Eventbrite, Meetup, Facebook Events, and venue websites.`,
-      'serper': `Find ${category} events in San Francisco Bay Area for the next 3 months. Search for: "${category} events San Francisco Bay Area 2025" including Eventbrite, Meetup, Facebook Events, and official venue listings.`
-    };
-    return existingPrompts[source] || `Find ${category} events in San Francisco Bay Area for the next 3 months. Focus on high-quality events with specific venue details, dates, times, and registration information.`;
+    return `Find ${category} events in San Francisco Bay Area for the next 3 months. Focus on high-quality events with specific venue details, dates, times, and registration information.`;
   };
 
   const callApi = async () => {

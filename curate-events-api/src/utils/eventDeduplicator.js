@@ -5,7 +5,7 @@
  * 
  * DESCRIPTION:
  * Event deduplication utility for combining events from multiple sources
- * (Perplexity AI, Apyflux, etc.) while removing duplicates.
+ * (Ticketmaster, Venue Scraper, etc.) while removing duplicates.
  * 
  * FEATURES:
  * - Fuzzy matching for venue names and event titles
@@ -27,9 +27,9 @@ export class EventDeduplicator {
   constructor() {
     // Source priority (higher number = higher priority)
     this.sourcePriority = {
-      'apyflux_api': 10,       // Structured API data has highest priority
-      'predicthq_api': 9,      // PredictHQ structured data
-      'perplexity_api': 8,     // AI-parsed data from web search
+      'ticketmaster': 10,      // Structured API data has highest priority
+      'venue_scraper': 8,      // Scraped venue calendar data
+      'whitelist': 5,          // Legacy whitelist search
       'manual': 5              // Manual entry
     };
     

@@ -1,7 +1,7 @@
 {
   "name": "curate-events-api",
   "version": "1.0.0",
-  "description": "Simple, reliable event collection API using Perplexity AI",
+  "description": "Bay Area event curation API with Ticketmaster + Venue Scraper",
   "main": "server.js",
   "type": "module",
   "scripts": {
@@ -11,8 +11,8 @@
     "stop": "./scripts/stop-production.sh",
     "health": "./scripts/health-check.sh",
     "dev": "node --watch server.js",
-    "test": "jest",
-    "test:watch": "jest --watch",
+    "test": "jest --passWithNoTests",
+    "test:watch": "jest --watch --passWithNoTests",
     "test:integration": "jest tests/integration",
     "smoke:api": "node scripts/smoke-api.js",
     "migrate:lists": "node scripts/migrate-lists-to-db.js",

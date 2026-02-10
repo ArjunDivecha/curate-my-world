@@ -830,7 +830,7 @@ export const Dashboard = () => {
             <Calendar className="w-16 h-16 mx-auto text-gray-400 mb-4" />
             <h3 className="text-xl font-semibold mb-2 text-gray-700">No Events Yet</h3>
             <p className="text-gray-500 mb-6">
-              Click "Fetch Events" to discover amazing events using our Perplexity AI integration
+              Click "Fetch Events" to discover amazing Bay Area events from Ticketmaster and local venues
             </p>
           </div>
         )}

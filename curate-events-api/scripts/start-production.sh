@@ -23,7 +23,8 @@ NC='\033[0m' # No Color
 
 # Configuration
 NODE_ENV=${NODE_ENV:-production}
-API_DIR="/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Working/Curate-My-World/curate-events-api"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+API_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 LOG_DIR="$API_DIR/logs"
 PID_FILE="$API_DIR/curate-events-api.pid"
 
@@ -50,7 +51,7 @@ if [ -f "$API_DIR/.env" ]; then
 fi
 
 # Check for required environment variables
-required_vars=("PERPLEXITY_API_KEY")
+required_vars=("TICKETMASTER_CONSUMER_KEY")
 missing_vars=()
 
 for var in "${required_vars[@]}"; do
@@ -67,9 +68,9 @@ if [ ${#missing_vars[@]} -ne 0 ]; then
   exit 1
 fi
 
-# Check if API key format is valid
-if [[ ! $PERPLEXITY_API_KEY =~ ^pplx- ]]; then
-  echo -e "${YELLOW}⚠️  Warning: Perplexity API key format may be invalid${NC}"
+# Warn if optional keys are missing
+if [ -z "$ANTHROPIC_API_KEY" ]; then
+  echo -e "${YELLOW}⚠️  Warning: ANTHROPIC_API_KEY not set (venue scraper will not work)${NC}"
 fi
 
 # Check if already running
