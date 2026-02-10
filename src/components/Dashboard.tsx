@@ -810,11 +810,12 @@ export const Dashboard = () => {
               {/* Categories (two-row rail) */}
               <div className="mt-4 grid grid-rows-2 grid-flow-col auto-cols-max gap-2 overflow-x-auto pb-1">
                 <Button
-                  variant={activeCategory === null ? 'default' : 'outline'}
                   size="sm"
                   className={cn(
-                    "rounded-full",
-                    activeCategory === null ? "bg-gradient-primary text-white" : ""
+                    "rounded-full border",
+                    activeCategory === null
+                      ? "bg-slate-900 text-white border-slate-900 shadow-sm"
+                      : "bg-white text-slate-800 border-slate-200 hover:bg-slate-50"
                   )}
                   onClick={() => handleCategoryFilter(null)}
                 >
@@ -824,16 +825,24 @@ export const Dashboard = () => {
                   const categoryKey = mapCategoryToBackend(category);
                   const stats = categoryStats[categoryKey] || { count: 0 };
                   const selected = activeCategory === categoryKey;
+                  const colors = getCategoryColor(categoryKey);
                   return (
                     <Button
                       key={category}
-                      variant={selected ? 'default' : 'outline'}
                       size="sm"
-                      className={cn("rounded-full", selected ? "bg-gradient-primary text-white" : "")}
+                      className={cn(
+                        "rounded-full border transition",
+                        colors.background,
+                        colors.border,
+                        colors.text,
+                        colors.hover,
+                        selected ? "border-2 shadow-sm" : ""
+                      )}
                       onClick={() => handleCategoryFilter(categoryKey)}
                       title={`${category}: ${stats.count} events`}
                     >
-                      {category} ({stats.count})
+                      <span className="font-semibold">{category}</span>
+                      <span className={cn("ml-1", colors.accent)}>({stats.count})</span>
                     </Button>
                   );
                 })}
