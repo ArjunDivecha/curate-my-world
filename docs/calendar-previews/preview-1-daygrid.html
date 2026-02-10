@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Preview 1: DayGrid Week + More Popover</title>
+    <style>
+      :root{
+        --bg:#0b1020;
+        --paper:#0f1836;
+        --ink:#f2f6ff;
+        --muted:#aab6da;
+        --stroke:rgba(255,255,255,.12);
+        --shadow: 0 20px 50px rgba(0,0,0,.45);
+        --r: 18px;
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        background:
+          radial-gradient(1200px 700px at 18% 0%, rgba(142,227,255,.18), transparent 55%),
+          radial-gradient(900px 650px at 86% 22%, rgba(255,214,165,.14), transparent 60%),
+          linear-gradient(180deg, #0b1020, #0c1226);
+        color:var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      }
+      .wrap{max-width:1100px;margin:0 auto;padding:16px 14px 24px}
+      .top{
+        display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+        margin-bottom:12px;
+      }
+      .brand{
+        display:flex;flex-direction:column;gap:2px;
+      }
+      .brand b{letter-spacing:-.02em}
+      .brand span{color:var(--muted);font-size:12px}
+      .chips{display:flex;gap:8px;flex-wrap:wrap}
+      .chip{
+        border:1px solid var(--stroke);
+        background:rgba(255,255,255,.06);
+        padding:7px 10px;border-radius:999px;
+        font-size:12px;color:var(--muted);
+      }
+      .grid{
+        border:1px solid var(--stroke);
+        background:rgba(255,255,255,.05);
+        border-radius:var(--r);
+        box-shadow:var(--shadow);
+        overflow:hidden;
+      }
+      .hdr{
+        display:grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        background:rgba(255,255,255,.04);
+        border-bottom:1px solid rgba(255,255,255,.08);
+      }
+      .hcell{
+        padding:10px 10px;
+        border-right:1px solid rgba(255,255,255,.06);
+      }
+      .hcell:last-child{border-right:0}
+      .hcell .d{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+      .hcell .n{font-size:18px;font-weight:700;letter-spacing:-.02em}
+      .body{
+        display:grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        min-height:320px;
+      }
+      .day{
+        padding:8px 8px 10px;
+        border-right:1px solid rgba(255,255,255,.06);
+      }
+      .day:last-child{border-right:0}
+      .stack{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+      .pill{
+        display:flex;align-items:center;gap:8px;
+        padding:7px 8px;
+        border-radius:12px;
+        border:1px solid rgba(255,255,255,.10);
+        background:rgba(255,255,255,.07);
+        cursor:default;
+        position:relative;
+      }
+      .dot{width:10px;height:10px;border-radius:999px;flex:0 0 auto}
+      .txt{min-width:0}
+      .t{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .m{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .more{
+        margin-top:2px;
+        padding:7px 8px;
+        border-radius:12px;
+        border:1px dashed rgba(255,255,255,.22);
+        background:rgba(255,255,255,.04);
+        color:var(--ink);
+        font-size:12px;
+        cursor:pointer;
+      }
+      .popover{
+        position:fixed;inset:0;display:none;
+        background:rgba(0,0,0,.55);
+        align-items:center;justify-content:center;
+        z-index:9;
+      }
+      .panel{
+        width:min(720px, 92vw);
+        max-height:min(76vh, 740px);
+        overflow:hidden;
+        border-radius:18px;
+        border:1px solid rgba(255,255,255,.18);
+        background:linear-gradient(180deg, rgba(18,26,56,.96), rgba(12,18,38,.96));
+        box-shadow:var(--shadow);
+      }
+      .panelHead{
+        padding:12px 14px;
+        display:flex;align-items:center;justify-content:space-between;gap:10px;
+        border-bottom:1px solid rgba(255,255,255,.10);
+      }
+      .panelHead b{letter-spacing:-.02em}
+      .close{
+        border:1px solid rgba(255,255,255,.16);
+        background:rgba(255,255,255,.06);
+        color:var(--ink);
+        padding:8px 10px;border-radius:12px;
+        cursor:pointer;
+      }
+      .list{
+        padding:12px 14px;
+        overflow:auto;
+        max-height:calc(min(76vh, 740px) - 52px);
+        display:grid;gap:10px;
+      }
+      .row{
+        border:1px solid rgba(255,255,255,.12);
+        background:rgba(255,255,255,.06);
+        border-radius:16px;
+        padding:10px 12px;
+        display:flex;gap:10px;align-items:flex-start;
+      }
+      .rail{width:10px;border-radius:999px;flex:0 0 auto;height:44px;margin-top:2px}
+      .row b{display:block;font-size:13px;letter-spacing:-.01em}
+      .row span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+
+      @media (max-width: 760px){
+        .hdr,.body{grid-template-columns: 1fr}
+        .hcell{display:flex;align-items:baseline;gap:10px}
+        .hcell .d{width:44px}
+        .day{border-right:0;border-top:1px solid rgba(255,255,255,.06)}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div class="brand">
+          <b>DayGrid Week</b>
+          <span>Stable grid; overflow collapses into “+ more” per day.</span>
+        </div>
+        <div class="chips">
+          <div class="chip">Hover: quick details</div>
+          <div class="chip">Click “+ more”: popover list</div>
+          <div class="chip">Mobile: collapses to day stacks</div>
+        </div>
+      </div>
+
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <div class="popover" id="pop">
+      <div class="panel">
+        <div class="panelHead">
+          <b id="popTitle">More events</b>
+          <button class="close" id="popClose">Close</button>
+        </div>
+        <div class="list" id="popList"></div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { CAT, WEEK, byDay } from './shared-data.js';
+
+      const grid = document.getElementById('grid');
+      const pop = document.getElementById('pop');
+      const popTitle = document.getElementById('popTitle');
+      const popList = document.getElementById('popList');
+      const popClose = document.getElementById('popClose');
+
+      const MAX = 3;
+
+      function pill(e){
+        const el = document.createElement('div');
+        el.className = 'pill';
+        el.innerHTML = `
+          <div class="dot" style="background:${CAT[e.cat].rail}"></div>
+          <div class="txt">
+            <div class="t">${e.title}</div>
+            <div class="m">${e.start} • ${e.venue}</div>
+          </div>
+        `;
+        el.title = `${CAT[e.cat].name} · ${e.start} · ${e.venue}\n${e.title}`;
+        return el;
+      }
+
+      function moreBtn(n, day){
+        const b = document.createElement('button');
+        b.className = 'more';
+        b.textContent = `+ ${n} more`;
+        b.addEventListener('click', () => openPopover(day));
+        return b;
+      }
+
+      function openPopover(day){
+        const evs = byDay(day);
+        popTitle.textContent = `${day} ${WEEK.find(x => x.k===day).d} · ${evs.length} events`;
+        popList.innerHTML = '';
+        evs.forEach(e => {
+          const row = document.createElement('div');
+          row.className = 'row';
+          row.innerHTML = `
+            <div class="rail" style="background:${CAT[e.cat].rail}"></div>
+            <div>
+              <b>${e.title}</b>
+              <span>${e.start} • ${e.venue} • ${CAT[e.cat].name} • Score ${Math.round(e.score)}/10</span>
+            </div>
+          `;
+          popList.appendChild(row);
+        });
+        pop.style.display = 'flex';
+      }
+
+      popClose.addEventListener('click', () => pop.style.display = 'none');
+      pop.addEventListener('click', (e) => { if (e.target === pop) pop.style.display = 'none'; });
+
+      // Build grid
+      const hdr = document.createElement('div');
+      hdr.className = 'hdr';
+      WEEK.forEach(d => {
+        const c = document.createElement('div');
+        c.className = 'hcell';
+        c.innerHTML = `<div class="d">${d.k}</div><div class="n">${d.d}</div>`;
+        hdr.appendChild(c);
+      });
+
+      const body = document.createElement('div');
+      body.className = 'body';
+      WEEK.forEach(d => {
+        const day = document.createElement('div');
+        day.className = 'day';
+        const evs = byDay(d.k);
+        const stack = document.createElement('div');
+        stack.className = 'stack';
+        evs.slice(0, MAX).forEach(e => stack.appendChild(pill(e)));
+        if (evs.length > MAX) stack.appendChild(moreBtn(evs.length - MAX, d.k));
+        if (evs.length === 0){
+          const empty = document.createElement('div');
+          empty.style.color = 'rgba(255,255,255,.45)';
+          empty.style.fontSize = '12px';
+          empty.style.padding = '16px 8px';
+          empty.textContent = 'No events';
+          stack.appendChild(empty);
+        }
+        day.appendChild(stack);
+        body.appendChild(day);
+      });
+
+      grid.appendChild(hdr);
+      grid.appendChild(body);
+    </script>
+  </body>
+</html>
+

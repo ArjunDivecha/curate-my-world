@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Preview 3: Month Grid + Agenda Panel</title>
+    <style>
+      :root{
+        --bg0:#0b1020;
+        --bg1:#0c1226;
+        --ink:#f4f7ff;
+        --muted:#b4bfdc;
+        --stroke:rgba(255,255,255,.12);
+        --card:rgba(255,255,255,.06);
+        --shadow: 0 20px 60px rgba(0,0,0,.45);
+        --r: 18px;
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        background:
+          radial-gradient(1100px 700px at 70% 0%, rgba(59,130,246,.18), transparent 58%),
+          radial-gradient(1200px 760px at 18% 40%, rgba(245,158,11,.13), transparent 60%),
+          linear-gradient(180deg, var(--bg0), var(--bg1));
+        color:var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      }
+      .wrap{max-width:1150px;margin:0 auto;padding:16px 14px 24px}
+      .top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+      h1{margin:0;font-size:18px;letter-spacing:-.02em}
+      .sub{color:var(--muted);font-size:12px}
+
+      .layout{display:grid;grid-template-columns: 1.05fr .95fr; gap:12px}
+      .panel{
+        border:1px solid var(--stroke);
+        background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+        border-radius:var(--r);
+        box-shadow:var(--shadow);
+        overflow:hidden;
+      }
+      .ph{padding:12px 12px 10px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04)}
+      .ph b{letter-spacing:-.01em}
+      .ph span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+
+      .month{
+        padding:12px;
+        display:grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap:8px;
+      }
+      .dow{
+        font-size:11px;color:rgba(255,255,255,.55);
+        text-transform:uppercase;letter-spacing:.12em;
+        padding:0 2px;
+      }
+      .cell{
+        border:1px solid rgba(255,255,255,.10);
+        background:rgba(255,255,255,.05);
+        border-radius:14px;
+        padding:10px 10px;
+        min-height:78px;
+        cursor:pointer;
+        position:relative;
+      }
+      .cell:hover{background:rgba(255,255,255,.07)}
+      .cell[data-on="1"]{outline:2px solid rgba(142,227,255,.55);background:rgba(142,227,255,.10)}
+      .num{font-weight:800;letter-spacing:-.02em}
+      .count{margin-top:6px;font-size:12px;color:rgba(255,255,255,.70)}
+      .bar{height:8px;border-radius:999px;margin-top:8px;background:rgba(255,255,255,.10);overflow:hidden}
+      .fill{height:100%;border-radius:999px;background:linear-gradient(90deg, rgba(142,227,255,.9), rgba(255,214,165,.9))}
+
+      .agenda{padding:12px;display:flex;flex-direction:column;gap:10px}
+      .row{
+        border:1px solid rgba(255,255,255,.10);
+        background:rgba(255,255,255,.06);
+        border-radius:16px;
+        padding:10px 12px;
+        display:flex;gap:10px;align-items:flex-start;
+      }
+      .rail{width:10px;border-radius:999px;flex:0 0 auto;height:44px;margin-top:2px}
+      .row b{display:block;font-size:13px;letter-spacing:-.01em}
+      .row span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+      .empty{color:rgba(255,255,255,.55);font-size:12px;padding:10px 2px}
+
+      @media (max-width: 980px){
+        .layout{grid-template-columns:1fr}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div>
+          <h1>Month Grid + Agenda Panel</h1>
+          <div class="sub">Month stays readable because it only shows counts; details live in the agenda panel.</div>
+        </div>
+        <div class="sub">Tip: on mobile, this becomes a single “agenda” list with a mini month at the top.</div>
+      </div>
+
+      <div class="layout">
+        <section class="panel">
+          <div class="ph">
+            <b>February 2026</b>
+            <span>Tap a day to load the right-side agenda.</span>
+          </div>
+          <div class="month" id="month"></div>
+        </section>
+
+        <section class="panel">
+          <div class="ph">
+            <b id="selTitle">Pick a day</b>
+            <span id="selSub">We’ll show the day’s events here.</span>
+          </div>
+          <div class="agenda" id="agenda"></div>
+        </section>
+      </div>
+    </div>
+
+    <script type="module">
+      import { CAT, WEEK, byDay } from './shared-data.js';
+
+      const month = document.getElementById('month');
+      const agenda = document.getElementById('agenda');
+      const selTitle = document.getElementById('selTitle');
+      const selSub = document.getElementById('selSub');
+
+      const dows = WEEK.map(x => x.k);
+      dows.forEach(k => {
+        const el = document.createElement('div');
+        el.className = 'dow';
+        el.textContent = k;
+        month.appendChild(el);
+      });
+
+      // Fake month where our sample week sits on Feb 8-14.
+      const days = [];
+      for (let i=1;i<=28;i++){
+        days.push({ num:i, key: dows[(i+5)%7] }); // arbitrary weekday mapping for the mock
+      }
+
+      const counts = new Map();
+      for (const w of WEEK){
+        counts.set(w.d, byDay(w.k).length);
+      }
+
+      let selected = 10;
+
+      function renderAgenda(dayNum){
+        selTitle.textContent = `Feb ${dayNum}`;
+        const w = WEEK.find(x => x.d === dayNum);
+        const evs = w ? byDay(w.k) : [];
+        selSub.textContent = `${evs.length} events`;
+        agenda.innerHTML = "";
+        if (!evs.length){
+          const e = document.createElement('div');
+          e.className = 'empty';
+          e.textContent = 'No events';
+          agenda.appendChild(e);
+          return;
+        }
+        evs.forEach(ev => {
+          const row = document.createElement('div');
+          row.className = 'row';
+          row.innerHTML = `
+            <div class="rail" style="background:${CAT[ev.cat].rail}"></div>
+            <div style="min-width:0">
+              <b>${ev.title}</b>
+              <span>${ev.start} • ${ev.venue} • ${CAT[ev.cat].name} • Score ${Math.round(ev.score)}/10</span>
+            </div>
+          `;
+          agenda.appendChild(row);
+        });
+      }
+
+      function renderMonth(){
+        // remove existing day cells (keep the dow headers)
+        [...month.querySelectorAll('.cell')].forEach(n => n.remove());
+        days.forEach(d => {
+          const el = document.createElement('div');
+          el.className = 'cell';
+          const c = counts.get(d.num) || 0;
+          const fill = Math.min(100, c * 14);
+          el.dataset.on = (d.num === selected) ? "1" : "0";
+          el.innerHTML = `
+            <div class="num">${d.num}</div>
+            <div class="count">${c ? `${c} events` : ' '}</div>
+            <div class="bar"><div class="fill" style="width:${fill}%"></div></div>
+          `;
+          el.onclick = () => {
+            selected = d.num;
+            renderMonth();
+            renderAgenda(d.num);
+          };
+          month.appendChild(el);
+        });
+      }
+
+      renderMonth();
+      renderAgenda(selected);
+    </script>
+  </body>
+</html>
+

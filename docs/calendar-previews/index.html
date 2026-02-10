@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Calendar Layout Previews (5)</title>
+    <style>
+      :root{
+        --bg0:#0b1020;
+        --bg1:#0c1226;
+        --ink:#f4f7ff;
+        --muted:#aeb9da;
+        --card:rgba(255,255,255,.06);
+        --card2:rgba(255,255,255,.10);
+        --stroke:rgba(255,255,255,.12);
+        --accent:#8ee3ff;
+        --accent2:#ffd6a5;
+        --shadow: 0 20px 60px rgba(0,0,0,.45);
+        --r: 20px;
+      }
+
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{
+        margin:0;
+        color:var(--ink);
+        background:
+          radial-gradient(1200px 700px at 15% 10%, rgba(142,227,255,.22), transparent 55%),
+          radial-gradient(900px 600px at 80% 18%, rgba(255,214,165,.18), transparent 60%),
+          radial-gradient(1100px 760px at 45% 92%, rgba(173,255,222,.16), transparent 58%),
+          linear-gradient(180deg, var(--bg0), var(--bg1));
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      }
+
+      .wrap{max-width:1200px;margin:0 auto;padding:28px 18px 52px}
+      header{
+        display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;
+        margin-bottom:18px;
+      }
+      .title{
+        display:flex;flex-direction:column;gap:8px;
+      }
+      h1{
+        margin:0;
+        font-size:clamp(22px, 3.2vw, 34px);
+        letter-spacing:-.02em;
+      }
+      .sub{
+        color:var(--muted);
+        font-size:14px;
+        line-height:1.4;
+        max-width:72ch;
+      }
+      .pillrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+      .pill{
+        border:1px solid var(--stroke);
+        background:rgba(255,255,255,.06);
+        padding:8px 10px;border-radius:999px;
+        color:var(--muted);
+        font-size:12px;
+        backdrop-filter: blur(10px);
+      }
+      .pill strong{color:var(--ink);font-weight:650}
+
+      .grid{
+        display:grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap:14px;
+        margin-top:14px;
+      }
+
+      @media (max-width: 980px){
+        .grid{grid-template-columns:1fr}
+      }
+
+      .card{
+        border:1px solid var(--stroke);
+        background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+        border-radius:var(--r);
+        box-shadow:var(--shadow);
+        overflow:hidden;
+      }
+      .cardHead{
+        padding:12px 14px;
+        display:flex;align-items:center;justify-content:space-between;gap:12px;
+        background:rgba(255,255,255,.04);
+        border-bottom:1px solid rgba(255,255,255,.08);
+      }
+      .name{
+        display:flex;flex-direction:column;gap:3px;min-width:0;
+      }
+      .name b{font-size:14px;letter-spacing:-.01em}
+      .name span{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .open{
+        color:var(--ink);
+        background:rgba(142,227,255,.14);
+        border:1px solid rgba(142,227,255,.35);
+        padding:8px 10px;border-radius:12px;
+        font-size:12px;text-decoration:none;
+      }
+      .open:hover{background:rgba(142,227,255,.22)}
+      iframe{
+        width:100%;
+        height:380px;
+        border:0;
+        display:block;
+        background:#fff;
+      }
+      footer{
+        margin-top:18px;
+        color:var(--muted);
+        font-size:12px;
+        line-height:1.5;
+      }
+      code{
+        background:rgba(255,255,255,.08);
+        border:1px solid rgba(255,255,255,.10);
+        padding:2px 6px;border-radius:8px;
+        color:var(--ink);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="title">
+          <h1>Calendar View Layout Previews</h1>
+          <div class="sub">
+            Five different ways to show many events per day without turning the week grid into an unreadable wall.
+            These are lightweight HTML mockups (not tied to the app code).
+          </div>
+        </div>
+        <div class="pillrow">
+          <div class="pill"><strong>Hover</strong>: preview card</div>
+          <div class="pill"><strong>Overflow</strong>: “+ more”/drawer patterns</div>
+          <div class="pill"><strong>Mobile</strong>: collapses to agenda</div>
+        </div>
+      </header>
+
+      <div class="grid">
+        <section class="card">
+          <div class="cardHead">
+            <div class="name">
+              <b>1) DayGrid Week + “+ more” Popover</b>
+              <span>FullCalendar-style overflow: stable grid, popover lists hidden events.</span>
+            </div>
+            <a class="open" href="./preview-1-daygrid.html" target="_blank" rel="noopener noreferrer">Open</a>
+          </div>
+          <iframe src="./preview-1-daygrid.html" title="Preview 1"></iframe>
+        </section>
+
+        <section class="card">
+          <div class="cardHead">
+            <div class="name">
+              <b>2) Week Columns + Compact “Rail” Cards</b>
+              <span>Stacked mini-cards with category color rails; hover preview panel.</span>
+            </div>
+            <a class="open" href="./preview-2-week-rail.html" target="_blank" rel="noopener noreferrer">Open</a>
+          </div>
+          <iframe src="./preview-2-week-rail.html" title="Preview 2"></iframe>
+        </section>
+
+        <section class="card">
+          <div class="cardHead">
+            <div class="name">
+              <b>3) Month Grid + Right-Side Agenda</b>
+              <span>Month shows counts; picking a day reveals dense agenda on the side.</span>
+            </div>
+            <a class="open" href="./preview-3-month-agenda.html" target="_blank" rel="noopener noreferrer">Open</a>
+          </div>
+          <iframe src="./preview-3-month-agenda.html" title="Preview 3"></iframe>
+        </section>
+
+        <section class="card">
+          <div class="cardHead">
+            <div class="name">
+              <b>4) Schedule View (Grouped List)</b>
+              <span>Outlook “Schedule View” vibes: fastest scanning for lots of events.</span>
+            </div>
+            <a class="open" href="./preview-4-schedule.html" target="_blank" rel="noopener noreferrer">Open</a>
+          </div>
+          <iframe src="./preview-4-schedule.html" title="Preview 4"></iframe>
+        </section>
+
+        <section class="card" style="grid-column: 1 / -1;">
+          <div class="cardHead">
+            <div class="name">
+              <b>5) Day Timeline + Lanes</b>
+              <span>Time-first: good when you care about overlaps; still supports many events via lanes.</span>
+            </div>
+            <a class="open" href="./preview-5-timeline.html" target="_blank" rel="noopener noreferrer">Open</a>
+          </div>
+          <iframe src="./preview-5-timeline.html" title="Preview 5"></iframe>
+        </section>
+      </div>
+
+      <footer>
+        Files live in <code>docs/calendar-previews/</code>. If you want one of these implemented in-app, tell me which number and what you want to keep (overflow behavior, hover preview, click behavior, mobile collapse).
+      </footer>
+    </div>
+  </body>
+</html>
+

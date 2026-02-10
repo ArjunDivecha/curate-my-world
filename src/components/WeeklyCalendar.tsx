@@ -54,6 +54,7 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventToggleSaved, o
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [hoveringEventId, setHoveringEventId] = useState<string | null>(null);
   const [showPreviewForEventId, setShowPreviewForEventId] = useState<string | null>(null);
+  const [previewPos, setPreviewPos] = useState<null | { top: number; left: number }>(null);
   const [contextMenu, setContextMenu] = useState<null | { x: number; y: number; eventId: string }>(null);
 
   // Debug logging
@@ -64,6 +65,7 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventToggleSaved, o
   });
 
   const previewTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverAnchorRef = React.useRef<null | { eventId: string; rect: DOMRect }>(null);
   const API_BASE = getApiBaseUrl();
 
   const eventsById = useMemo(() => {
@@ -80,6 +82,24 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventToggleSaved, o
     if (!hoveringEventId) return;
 
     previewTimerRef.current = setTimeout(() => {
+      const anchor = hoverAnchorRef.current;
+      if (!anchor || anchor.eventId !== hoveringEventId) return;
+      // Compute a non-modal preview position near the hovered event.
+      const margin = 12;
+      const panelW = 440;
+      const panelH = 620;
+
+      let left = anchor.rect.right + margin;
+      if (left + panelW > window.innerWidth - margin) {
+        left = Math.max(margin, anchor.rect.left - panelW - margin);
+      }
+
+      let top = anchor.rect.top;
+      if (top + panelH > window.innerHeight - margin) {
+        top = Math.max(margin, window.innerHeight - panelH - margin);
+      }
+
+      setPreviewPos({ top, left });
       setShowPreviewForEventId(hoveringEventId);
     }, 300);
 
@@ -92,10 +112,23 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventToggleSaved, o
   }, [hoveringEventId]);
 
   useEffect(() => {
+    const onResize = () => {
+      // Avoid stale position on resize/orientation changes.
+      setShowPreviewForEventId(null);
+      setPreviewPos(null);
+      setHoveringEventId(null);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
     const onDocClick = () => setContextMenu(null);
     const onEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setShowPreviewForEventId(null);
+        setPreviewPos(null);
+        setHoveringEventId(null);
         setContextMenu(null);
       }
     };
@@ -198,6 +231,8 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventToggleSaved, o
     if (!url) return;
     // Close preview if open; clicking should navigate
     setShowPreviewForEventId(null);
+    setPreviewPos(null);
+    setHoveringEventId(null);
     setContextMenu(null);
     window.open(url, "_blank", "noopener,noreferrer");
   };
@@ -308,16 +343,24 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventToggleSaved, o
                       return (
                         <div
                           key={event.id}
+                          data-calendar-event-id={event.id}
                           onClick={() => openEvent(event)}
                           onContextMenu={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
                             setContextMenu({ x: e.clientX, y: e.clientY, eventId: event.id });
                           }}
-                          onMouseEnter={() => setHoveringEventId(event.id)}
-                          onMouseLeave={() => {
+                          onMouseEnter={(e) => {
+                            hoverAnchorRef.current = { eventId: event.id, rect: (e.currentTarget as HTMLElement).getBoundingClientRect() };
+                            setHoveringEventId(event.id);
+                          }}
+                          onMouseLeave={(e) => {
+                            const relatedTarget = e.relatedTarget as HTMLElement | null;
+                            // If moving into the preview panel, keep hover "active" so the panel doesn't flicker.
+                            if (relatedTarget?.closest(".calendar-preview-popup")) return;
                             setHoveringEventId(null);
                             setShowPreviewForEventId(null);
+                            setPreviewPos(null);
                           }}
                           className={`border-l-4 pl-3 py-2 cursor-pointer hover:bg-muted/50 rounded-r transition-all duration-200 ${getRelevanceColor(event.personalRelevanceScore)} ${saved ? 'ring-1 ring-primary/30' : ''}`}
                           title="Click to open • Right-click to save/unsave • Hover to preview"
@@ -407,46 +450,48 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventToggleSaved, o
         );
       })()}
 
-      {/* Hover preview modal */}
-      {showPreviewForEventId && (() => {
+      {/* Hover preview panel (non-modal) */}
+      {showPreviewForEventId && previewPos && (() => {
         const ev = eventsById.get(showPreviewForEventId);
         if (!ev) return null;
         const src = getPreviewSrc(ev);
         if (!src) return null;
         return (
           <div
-            className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/60"
-            onClick={() => setShowPreviewForEventId(null)}
+            className="calendar-preview-popup fixed z-[9998] rounded-xl shadow-2xl border-2 border-gray-200 bg-white overflow-hidden"
+            style={{ top: previewPos.top, left: previewPos.left, width: 440, height: 620 }}
+            onMouseLeave={(e) => {
+              const relatedTarget = e.relatedTarget as HTMLElement | null;
+              // If moving back to the originating event, do not close.
+              if (relatedTarget?.closest(`[data-calendar-event-id="${showPreviewForEventId}"]`)) return;
+              setShowPreviewForEventId(null);
+              setPreviewPos(null);
+              setHoveringEventId(null);
+            }}
           >
-            <div
-              className="bg-white rounded-xl shadow-2xl max-w-5xl max-h-[85vh] w-[95vw] overflow-hidden border-2 border-gray-200"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="p-4 border-b bg-gradient-to-r from-blue-50 to-purple-50">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Eye className="w-5 h-5 text-blue-600" />
-                    <h3 className="font-semibold text-lg truncate text-gray-800">{cleanHtmlText(ev.title)}</h3>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowPreviewForEventId(null)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    ✕
-                  </Button>
+            <div className="p-3 border-b bg-gradient-to-r from-blue-50 to-purple-50">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Eye className="w-4 h-4 text-blue-600" />
+                  <h3 className="font-semibold text-sm truncate text-gray-800">{cleanHtmlText(ev.title)}</h3>
                 </div>
-                <p className="text-sm text-gray-600 mt-1 truncate">{ev.eventUrl || ev.ticketUrl}</p>
-                <p className="text-xs text-gray-500 mt-1">Click an event to open it. Right-click to save/unsave.</p>
+                <button
+                  className="text-gray-500 hover:text-gray-700 text-sm px-2 py-1 rounded"
+                  onClick={() => {
+                    setShowPreviewForEventId(null);
+                    setPreviewPos(null);
+                    setHoveringEventId(null);
+                  }}
+                  aria-label="Close preview"
+                >
+                  ✕
+                </button>
               </div>
-              <div className="h-[70vh] bg-gray-50">
-                <iframe
-                  src={src}
-                  className="w-full h-full border-0"
-                  title={`Preview of ${ev.title}`}
-                />
-              </div>
+              <p className="text-[11px] text-gray-600 mt-1 truncate">{ev.eventUrl || ev.ticketUrl}</p>
+              <p className="text-[10px] text-gray-500 mt-1">Click event to open. Right-click to save/unsave.</p>
+            </div>
+            <div className="h-[calc(620px-52px)] bg-gray-50">
+              <iframe src={src} className="w-full h-full border-0" title={`Preview of ${ev.title}`} />
             </div>
           </div>
         );

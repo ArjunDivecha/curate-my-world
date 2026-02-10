@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Preview 2: Week Columns + Compact Rail Cards</title>
+    <style>
+      :root{
+        --bg0:#0b1020;
+        --bg1:#0c1226;
+        --paper:rgba(255,255,255,.06);
+        --paper2:rgba(255,255,255,.08);
+        --ink:#f4f7ff;
+        --muted:#b1bcdc;
+        --stroke:rgba(255,255,255,.12);
+        --shadow: 0 20px 60px rgba(0,0,0,.45);
+        --r: 18px;
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        background:
+          radial-gradient(1200px 760px at 22% 10%, rgba(173,255,222,.14), transparent 60%),
+          radial-gradient(1000px 680px at 76% 18%, rgba(124,58,237,.16), transparent 62%),
+          linear-gradient(180deg, var(--bg0), var(--bg1));
+        color:var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      }
+      .wrap{max-width:1180px;margin:0 auto;padding:16px 14px 24px}
+      .top{
+        display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;
+        margin-bottom:12px;
+      }
+      h1{margin:0;font-size:18px;letter-spacing:-.02em}
+      .sub{color:var(--muted);font-size:12px}
+      .filters{display:flex;gap:8px;flex-wrap:wrap}
+      .btn{
+        border:1px solid var(--stroke);
+        background:rgba(255,255,255,.06);
+        color:var(--ink);
+        padding:7px 10px;border-radius:999px;
+        font-size:12px;
+        cursor:pointer;
+      }
+      .btn[data-on="1"]{background:rgba(173,255,222,.14);border-color:rgba(173,255,222,.35)}
+
+      .grid{
+        display:grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap:10px;
+      }
+      .col{
+        border:1px solid var(--stroke);
+        background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+        border-radius:var(--r);
+        box-shadow:var(--shadow);
+        overflow:hidden;
+        min-height:360px;
+      }
+      .head{
+        padding:10px 10px 8px;
+        border-bottom:1px solid rgba(255,255,255,.08);
+        background:rgba(255,255,255,.04);
+      }
+      .head .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+      .head .d{font-size:18px;font-weight:750;letter-spacing:-.02em}
+      .stack{padding:10px;display:flex;flex-direction:column;gap:8px}
+
+      .card{
+        border:1px solid rgba(255,255,255,.10);
+        background:rgba(255,255,255,.06);
+        border-radius:16px;
+        padding:9px 10px;
+        display:flex;gap:10px;align-items:flex-start;
+        cursor:default;
+        position:relative;
+      }
+      .rail{width:10px;border-radius:999px;flex:0 0 auto;height:44px;margin-top:1px}
+      .main{min-width:0}
+      .t{font-size:12px;font-weight:780;letter-spacing:-.01em;line-height:1.2;max-height:2.4em;overflow:hidden}
+      .m{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .meta{display:flex;gap:8px;align-items:center;margin-top:6px}
+      .tag{
+        font-size:11px;
+        border:1px solid rgba(255,255,255,.12);
+        background:rgba(255,255,255,.06);
+        padding:3px 8px;border-radius:999px;
+        color:var(--ink);
+      }
+
+      .preview{
+        position:fixed;
+        z-index:10;
+        width:min(420px, 92vw);
+        height:280px;
+        border-radius:18px;
+        border:1px solid rgba(255,255,255,.18);
+        background:linear-gradient(180deg, rgba(18,26,56,.96), rgba(12,18,38,.96));
+        box-shadow:var(--shadow);
+        display:none;
+        overflow:hidden;
+      }
+      .previewHead{
+        padding:10px 12px;
+        border-bottom:1px solid rgba(255,255,255,.10);
+        display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
+      }
+      .previewHead b{font-size:13px;letter-spacing:-.01em;line-height:1.2}
+      .previewHead span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+      .x{
+        border:1px solid rgba(255,255,255,.16);
+        background:rgba(255,255,255,.06);
+        color:var(--ink);
+        padding:6px 9px;border-radius:12px;
+        cursor:pointer;
+        font-size:12px;
+        flex:0 0 auto;
+      }
+      .previewBody{
+        padding:12px;
+        color:var(--muted);
+        font-size:12px;
+        line-height:1.45;
+      }
+      .previewBody .row{display:flex;gap:8px;align-items:center;margin-top:8px}
+      .dot{width:10px;height:10px;border-radius:999px}
+
+      @media (max-width: 980px){
+        .grid{grid-template-columns: 1fr}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div>
+          <h1>Week Columns + Rail Cards</h1>
+          <div class="sub">Dense per-day stacks, without losing readability. Hover shows preview card (non-modal).</div>
+        </div>
+        <div class="filters" id="filters"></div>
+      </div>
+
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <div class="preview" id="preview">
+      <div class="previewHead">
+        <div style="min-width:0">
+          <b id="pTitle">Title</b>
+          <span id="pMeta">meta</span>
+        </div>
+        <button class="x" id="pClose">Close</button>
+      </div>
+      <div class="previewBody" id="pBody"></div>
+    </div>
+
+    <script type="module">
+      import { CAT, WEEK, byDay } from './shared-data.js';
+
+      const grid = document.getElementById('grid');
+      const filters = document.getElementById('filters');
+      const preview = document.getElementById('preview');
+      const pTitle = document.getElementById('pTitle');
+      const pMeta = document.getElementById('pMeta');
+      const pBody = document.getElementById('pBody');
+      const pClose = document.getElementById('pClose');
+
+      let active = "all";
+
+      function renderFilters(){
+        filters.innerHTML = "";
+        const all = document.createElement('button');
+        all.className = 'btn';
+        all.textContent = 'All';
+        all.dataset.on = active === "all" ? "1" : "0";
+        all.onclick = () => { active = "all"; closePreview(); render(); };
+        filters.appendChild(all);
+
+        Object.keys(CAT).forEach(k => {
+          const b = document.createElement('button');
+          b.className = 'btn';
+          b.textContent = CAT[k].name;
+          b.dataset.on = active === k ? "1" : "0";
+          b.onclick = () => { active = k; closePreview(); render(); };
+          filters.appendChild(b);
+        });
+      }
+
+      let hoverTimer = null;
+      let currentHover = null;
+
+      function closePreview(){
+        preview.style.display = 'none';
+        currentHover = null;
+      }
+
+      function openPreview(event, anchorRect){
+        pTitle.textContent = event.title;
+        pMeta.textContent = `${event.day} ${event.start} • ${event.venue} • ${CAT[event.cat].name} • Score ${Math.round(event.score)}/10`;
+        pBody.innerHTML = `
+          <div class="row"><span class="dot" style="background:${CAT[event.cat].rail}"></span><b style="color:var(--ink)">Quick read</b></div>
+          <div>Use a hover preview like this when you want details, but don’t want to “open a modal” for every event.</div>
+          <div class="row"><span class="dot" style="background:rgba(255,255,255,.25)"></span><b style="color:var(--ink)">Overflow</b></div>
+          <div>This pattern pairs well with “+ more” per day, or a day drawer on click.</div>
+        `;
+
+        const margin = 12;
+        const w = Math.min(420, window.innerWidth - margin*2);
+        const h = 280;
+        let left = anchorRect.right + margin;
+        if (left + w > window.innerWidth - margin) left = Math.max(margin, anchorRect.left - w - margin);
+        let top = Math.max(margin, Math.min(anchorRect.top, window.innerHeight - h - margin));
+
+        preview.style.width = w + "px";
+        preview.style.height = h + "px";
+        preview.style.left = left + "px";
+        preview.style.top = top + "px";
+        preview.style.display = 'block';
+      }
+
+      pClose.onclick = closePreview;
+      window.addEventListener('resize', closePreview);
+      document.addEventListener('keydown', (e) => { if (e.key === "Escape") closePreview(); });
+
+      function card(e){
+        const el = document.createElement('div');
+        el.className = 'card';
+        el.innerHTML = `
+          <div class="rail" style="background:${CAT[e.cat].rail}"></div>
+          <div class="main">
+            <div class="t">${e.title}</div>
+            <div class="m">${e.start} • ${e.venue}</div>
+            <div class="meta">
+              <span class="tag">${Math.round(e.score)}/10</span>
+              <span class="tag" style="background:${CAT[e.cat].tint};border-color:rgba(255,255,255,.10)">${CAT[e.cat].name}</span>
+            </div>
+          </div>
+        `;
+        el.onmouseenter = () => {
+          const rect = el.getBoundingClientRect();
+          currentHover = e.id;
+          if (hoverTimer) clearTimeout(hoverTimer);
+          hoverTimer = setTimeout(() => {
+            if (currentHover === e.id) openPreview(e, rect);
+          }, 280);
+        };
+        el.onmouseleave = (evt) => {
+          const rt = evt.relatedTarget;
+          if (rt && rt.closest && rt.closest('#preview')) return;
+          currentHover = null;
+          if (hoverTimer) clearTimeout(hoverTimer);
+          closePreview();
+        };
+        return el;
+      }
+
+      preview.onmouseleave = (evt) => {
+        const rt = evt.relatedTarget;
+        if (rt && rt.closest && rt.closest('.card')) return;
+        closePreview();
+      };
+
+      function render(){
+        renderFilters();
+        grid.innerHTML = "";
+        WEEK.forEach(d => {
+          const col = document.createElement('div');
+          col.className = 'col';
+          const head = document.createElement('div');
+          head.className = 'head';
+          head.innerHTML = `<div class="k">${d.k}</div><div class="d">${d.d}</div>`;
+          const stack = document.createElement('div');
+          stack.className = 'stack';
+          let evs = byDay(d.k);
+          if (active !== "all") evs = evs.filter(e => e.cat === active);
+          if (!evs.length){
+            const empty = document.createElement('div');
+            empty.style.color = 'rgba(255,255,255,.45)';
+            empty.style.fontSize = '12px';
+            empty.style.padding = '14px 10px';
+            empty.textContent = 'No events';
+            stack.appendChild(empty);
+          } else {
+            evs.slice(0, 6).forEach(e => stack.appendChild(card(e)));
+            if (evs.length > 6){
+              const tail = document.createElement('div');
+              tail.style.color = 'rgba(255,255,255,.65)';
+              tail.style.fontSize = '12px';
+              tail.style.padding = '6px 4px 10px';
+              tail.textContent = `+ ${evs.length - 6} more…`;
+              stack.appendChild(tail);
+            }
+          }
+          col.appendChild(head);
+          col.appendChild(stack);
+          grid.appendChild(col);
+        });
+      }
+
+      render();
+    </script>
+  </body>
+</html>
+

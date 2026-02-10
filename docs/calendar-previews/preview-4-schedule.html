@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Preview 4: Schedule View</title>
+    <style>
+      :root{
+        --bg0:#0b1020;
+        --bg1:#0c1226;
+        --ink:#f4f7ff;
+        --muted:#b5c0de;
+        --stroke:rgba(255,255,255,.12);
+        --shadow: 0 20px 60px rgba(0,0,0,.45);
+        --r: 18px;
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        background:
+          radial-gradient(1100px 700px at 10% 10%, rgba(236,72,153,.14), transparent 60%),
+          radial-gradient(900px 700px at 78% 20%, rgba(16,185,129,.12), transparent 62%),
+          linear-gradient(180deg, var(--bg0), var(--bg1));
+        color:var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      }
+      .wrap{max-width:980px;margin:0 auto;padding:16px 14px 24px}
+      .top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+      h1{margin:0;font-size:18px;letter-spacing:-.02em}
+      .sub{color:var(--muted);font-size:12px}
+
+      .panel{
+        border:1px solid var(--stroke);
+        background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+        border-radius:var(--r);
+        box-shadow:var(--shadow);
+        overflow:hidden;
+      }
+      .ph{
+        padding:12px 12px 10px;
+        border-bottom:1px solid rgba(255,255,255,.08);
+        background:rgba(255,255,255,.04);
+      }
+      .ph b{letter-spacing:-.01em}
+      .ph span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+
+      .list{padding:10px 12px;display:grid;gap:14px}
+      .day{
+        border:1px solid rgba(255,255,255,.10);
+        background:rgba(255,255,255,.05);
+        border-radius:18px;
+        overflow:hidden;
+      }
+      .dh{
+        padding:10px 12px;
+        display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+        background:rgba(255,255,255,.04);
+        border-bottom:1px solid rgba(255,255,255,.08);
+      }
+      .dh b{letter-spacing:-.01em}
+      .dh span{color:var(--muted);font-size:12px}
+      .rows{padding:10px 10px 12px;display:grid;gap:8px}
+      .row{
+        border:1px solid rgba(255,255,255,.10);
+        background:rgba(255,255,255,.06);
+        border-radius:16px;
+        padding:10px 12px;
+        display:flex;gap:10px;align-items:flex-start;
+      }
+      .rail{width:10px;border-radius:999px;flex:0 0 auto;height:44px;margin-top:2px}
+      .row b{display:block;font-size:13px;letter-spacing:-.01em}
+      .row span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+      .row .mini{display:flex;gap:8px;align-items:center;margin-top:7px;flex-wrap:wrap}
+      .tag{
+        font-size:11px;
+        border:1px solid rgba(255,255,255,.12);
+        background:rgba(255,255,255,.06);
+        padding:3px 8px;border-radius:999px;
+        color:var(--ink);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div>
+          <h1>Schedule View (Grouped List)</h1>
+          <div class="sub">When you have hundreds of events, this is the fastest way to scan (and it’s naturally mobile-friendly).</div>
+        </div>
+        <div class="sub">Pattern: day header + dense rows + optional filters/search.</div>
+      </div>
+
+      <section class="panel">
+        <div class="ph">
+          <b>This Week</b>
+          <span>Each day expands vertically. No cramped “cell height” constraints.</span>
+        </div>
+        <div class="list" id="list"></div>
+      </section>
+    </div>
+
+    <script type="module">
+      import { CAT, WEEK, byDay } from './shared-data.js';
+      const list = document.getElementById('list');
+
+      WEEK.forEach(d => {
+        const evs = byDay(d.k);
+        const day = document.createElement('div');
+        day.className = 'day';
+        day.innerHTML = `
+          <div class="dh">
+            <b>${d.k} Feb ${d.d}</b>
+            <span>${evs.length} events</span>
+          </div>
+          <div class="rows"></div>
+        `;
+        const rows = day.querySelector('.rows');
+        if (!evs.length){
+          const empty = document.createElement('div');
+          empty.style.color = 'rgba(255,255,255,.55)';
+          empty.style.fontSize = '12px';
+          empty.style.padding = '10px 2px';
+          empty.textContent = 'No events';
+          rows.appendChild(empty);
+        } else {
+          evs.forEach(ev => {
+            const r = document.createElement('div');
+            r.className = 'row';
+            r.innerHTML = `
+              <div class="rail" style="background:${CAT[ev.cat].rail}"></div>
+              <div style="min-width:0">
+                <b>${ev.title}</b>
+                <span>${ev.start} • ${ev.venue}</span>
+                <div class="mini">
+                  <span class="tag">${CAT[ev.cat].name}</span>
+                  <span class="tag">${Math.round(ev.score)}/10</span>
+                </div>
+              </div>
+            `;
+            rows.appendChild(r);
+          });
+        }
+        list.appendChild(day);
+      });
+    </script>
+  </body>
+</html>
+
