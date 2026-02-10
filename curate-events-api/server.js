@@ -194,8 +194,7 @@ const server = app.listen(config.port, config.host, () => {
     host: config.host,
     environment: config.nodeEnv,
     cors: config.corsOrigins,
-    rateLimiting: config.rateLimiting.enabled,
-    perplexityModel: config.perplexity.model
+    rateLimiting: config.rateLimiting.enabled
   });
   
   console.log(`
@@ -203,7 +202,7 @@ const server = app.listen(config.port, config.host, () => {
 ================================
 🚀 Server running on: http://${config.host}:${config.port}
 🌍 Environment: ${config.nodeEnv}
-🔑 Perplexity API: ${config.perplexityApiKey ? '✅ Configured' : '❌ Missing'}
+🔑 Anthropic API: ${config.anthropicApiKey ? '✅ Configured' : '❌ Missing'}
 🛡️  CORS Origins: ${JSON.stringify(config.corsOrigins)}
 📊 Health Check: http://${config.host}:${config.port}/api/health
 🔍 Deep Health: http://${config.host}:${config.port}/api/health/deep
