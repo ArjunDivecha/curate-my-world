@@ -11,9 +11,8 @@ import { EventCard } from "./EventCard";
 import { WeeklyCalendar } from "./WeeklyCalendar";
 import { Header } from "./Header";
 import { FetchEventsButton, type ProviderStatSummary } from "./FetchEventsButton";
-import SuggestedCategories from './SuggestedCategories';
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Brain, Eye, EyeOff, Cpu, Mic2, BookOpen, Baby, RefreshCw } from "lucide-react";
+import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Cpu, Mic2, BookOpen, Baby, RefreshCw } from "lucide-react";
 import { getCategoryColor } from "@/utils/categoryColors";
 import { API_BASE_URL } from "@/utils/apiConfig";
 import { cn } from "@/lib/utils";
@@ -90,7 +89,6 @@ export const Dashboard = () => {
   const [categoryStats, setCategoryStats] = useState<any>({});
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [transformedEventsByCategory, setTransformedEventsByCategory] = useState<any>({});
-  const [showSuggestions, setShowSuggestions] = useState<boolean>(false); // Toggle for "Suggested for You"
   // Control which tab is visible to guarantee UI reflects filtered events
   const [activeTab, setActiveTab] = useState<'calendar' | 'grid'>('grid');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -437,10 +435,7 @@ export const Dashboard = () => {
         aiCurationStatus="complete"
       />
 
-      <main className={cn(
-        "container mx-auto p-4 sm:p-6 lg:p-8",
-        showSuggestions ? "lg:mr-80" : null
-      )}>
+      <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         <div className="max-w-5xl mx-auto bg-white/90 backdrop-blur-lg p-6 sm:p-10 rounded-2xl shadow-2xl">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2 text-center">Curate Your Event Feed</h2>
           <p className="text-gray-500 mb-10 text-center">Select your interests and we'll handle the rest.</p>
@@ -616,19 +611,6 @@ export const Dashboard = () => {
                 }}
                 className="btn-primary w-full lg:w-auto flex items-center justify-center space-x-2 text-white font-bold py-4 px-8 rounded-full transition hover:transform hover:-translate-y-0.5 hover:shadow-lg"
               />
-              
-              {/* Toggle Suggestions Button */}
-              <Button
-                onClick={() => setShowSuggestions(!showSuggestions)}
-                variant="outline"
-                size="sm"
-                className="flex items-center space-x-2"
-                title={showSuggestions ? "Hide AI Suggestions" : "Show AI Suggestions"}
-              >
-                {showSuggestions ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                <Brain className="w-4 h-4" />
-                <span>{showSuggestions ? "Hide" : "Show"} Suggestions</span>
-              </Button>
               
               {/* Clear All Button */}
               <Button
@@ -835,36 +817,6 @@ export const Dashboard = () => {
           </div>
         )}
       </main>
-      
-      {/* Suggested Categories Sidebar - Fixed Position (Conditional) */}
-      {showSuggestions && (
-        <>
-          {/* Mobile backdrop for the suggestions panel */}
-          <div
-            className="fixed inset-0 z-10 bg-black/30 lg:hidden"
-            onClick={() => setShowSuggestions(false)}
-          />
-          <SuggestedCategories
-            onClose={() => setShowSuggestions(false)}
-            onCategoryClick={(category) => {
-              console.log('🎯 Suggested category clicked:', category);
-              console.log('🗂️ Available transformed categories:', Object.keys(transformedEventsByCategory));
-              console.log('📊 Transformed events per category:', Object.entries(transformedEventsByCategory).map(([key, events]) => `${key}: ${events.length}`));
-              handleCategoryFilter(category);
-            }}
-            onEventClick={(eventId) => {
-              console.log('📅 Suggested event clicked:', eventId);
-              // Find and highlight the event in the main view
-              const event = events.find(e => e.id === eventId);
-              if (event) {
-                // Scroll to event or show details
-                console.log('Found event:', event.title);
-              }
-            }}
-            eventsByCategory={transformedEventsByCategory}
-          />
-        </>
-      )}
     </div>
   );
 };
