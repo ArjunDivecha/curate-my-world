@@ -120,8 +120,9 @@
       </section>
     </div>
 
-    <script type="module">
-      import { CAT, byDay, hhmmToMinutes } from './shared-data.js';
+    <script src="./shared-data.js"></script>
+    <script>
+      const { CAT, byDay, hhmmToMinutes } = window.CalendarPreviewData;
       const hours = document.getElementById('hours');
       const lane = document.getElementById('lane');
 
@@ -171,4 +172,3 @@
     </script>
   </body>
 </html>
-

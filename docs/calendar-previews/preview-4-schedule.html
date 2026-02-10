@@ -99,8 +99,9 @@
       </section>
     </div>
 
-    <script type="module">
-      import { CAT, WEEK, byDay } from './shared-data.js';
+    <script src="./shared-data.js"></script>
+    <script>
+      const { CAT, WEEK, byDay } = window.CalendarPreviewData;
       const list = document.getElementById('list');
 
       WEEK.forEach(d => {
@@ -145,4 +146,3 @@
     </script>
   </body>
 </html>
-

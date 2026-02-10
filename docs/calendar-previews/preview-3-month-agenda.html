@@ -116,8 +116,9 @@
       </div>
     </div>
 
-    <script type="module">
-      import { CAT, WEEK, byDay } from './shared-data.js';
+    <script src="./shared-data.js"></script>
+    <script>
+      const { CAT, WEEK, byDay } = window.CalendarPreviewData;
 
       const month = document.getElementById('month');
       const agenda = document.getElementById('agenda');
@@ -200,4 +201,3 @@
     </script>
   </body>
 </html>
-
