@@ -8,11 +8,12 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { EventCard } from "./EventCard";
-import { WeeklyCalendar } from "./WeeklyCalendar";
+import { DayTimetable } from "./DayTimetable";
+import { WeekDayGrid } from "./WeekDayGrid";
 import { Header } from "./Header";
 import { FetchEventsButton, type ProviderStatSummary } from "./FetchEventsButton";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Cpu, Mic2, BookOpen, Baby, RefreshCw } from "lucide-react";
+import { Calendar, Grid3X3, CalendarDays, Clock, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Cpu, Mic2, BookOpen, Baby, RefreshCw } from "lucide-react";
 import { getCategoryColor } from "@/utils/categoryColors";
 import { API_BASE_URL } from "@/utils/apiConfig";
 import { cn } from "@/lib/utils";
@@ -90,7 +91,7 @@ export const Dashboard = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [transformedEventsByCategory, setTransformedEventsByCategory] = useState<any>({});
   // Control which tab is visible to guarantee UI reflects filtered events
-  const [activeTab, setActiveTab] = useState<'calendar' | 'grid'>('grid');
+  const [activeTab, setActiveTab] = useState<'events' | 'day' | 'week'>('events');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedProviders, setSelectedProviders] = useState<Record<string, boolean>>(defaultProviderSelection);
   const [providerDetails, setProviderDetails] = useState<ProviderStatSummary[]>([]);
@@ -292,7 +293,7 @@ export const Dashboard = () => {
       const allEvents = Object.values(data.buckets).flat();
       setEvents(allEvents);
       setActiveCategory(null);
-      setActiveTab('grid');
+      setActiveTab('events');
       console.log('♻️ Restored events from cache:', allEvents.length);
     } catch (err) {
       console.error('Cache restore failed', err);
@@ -310,7 +311,7 @@ export const Dashboard = () => {
       // Show all TRANSFORMED events from all categories
       const allTransformedEvents = Object.values(transformedEventsByCategory).flat();
       console.log('🌐 Showing all events, total count:', allTransformedEvents.length);
-      setActiveTab('grid');
+      setActiveTab('events');
     } else {
       // Handle category consolidation - combine related categories
       let categoryEvents: any[] = [];
@@ -329,7 +330,7 @@ export const Dashboard = () => {
         console.log(`🔍 Category '${category}' events:`, categoryEvents.slice(0, 2).map(e => e.title));
       }
       
-      setActiveTab('grid');
+      setActiveTab('events');
     }
   };
 
@@ -339,7 +340,7 @@ export const Dashboard = () => {
     setSelectedDate(date);
     setDatePreset(null);
     setDateQuery('');
-    setActiveTab('grid'); // Switch to grid view to show the filtered events
+    setActiveTab('events'); // Switch to event view to show the filtered events
     
     toast({
       title: "Date Selected",
@@ -349,9 +350,9 @@ export const Dashboard = () => {
 
   // Removed auto scroll-to-top on category change per user request
 
-  // Compute displayed events from source-of-truth buckets to avoid any state overrides
-  const displayedEvents = React.useMemo(() => {
-    // Derive strictly from buckets + activeCategory
+  // Base dataset for Day/Week/Event views (category + datePreset + search).
+  // Note: selectedDate is intentionally NOT applied here, so Day/Week views remain usable.
+  const calendarEvents = React.useMemo(() => {
     if (!Object.keys(transformedEventsByCategory).length) return [] as any[];
 
     let events: any[] = [];
@@ -366,23 +367,8 @@ export const Dashboard = () => {
       events = transformedEventsByCategory[activeCategory] || [];
     }
 
-    // Apply date filter if selected
-    if (selectedDate) {
-      const targetDateString = selectedDate.toDateString();
-      events = events.filter(event => {
-        try {
-          if (!event.startDate) return false;
-          const eventDate = new Date(event.startDate);
-          if (isNaN(eventDate.getTime())) return false;
-          return eventDate.toDateString() === targetDateString;
-        } catch {
-          return false;
-        }
-      });
-    }
-
-    // Apply preset date range filter (mutually exclusive with selectedDate)
-    if (!selectedDate && datePreset) {
+    // Apply preset date range filter
+    if (datePreset) {
       const now = new Date();
       const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       let end: Date | null = null;
@@ -455,7 +441,26 @@ export const Dashboard = () => {
     }
 
     return events;
-  }, [activeCategory, transformedEventsByCategory, selectedDate, datePreset, searchQuery]);
+  }, [activeCategory, transformedEventsByCategory, datePreset, searchQuery]);
+
+  // Event View dataset (calendarEvents + optional selectedDate).
+  const eventsForEventView = React.useMemo(() => {
+    let events = calendarEvents;
+    if (selectedDate) {
+      const targetDateString = selectedDate.toDateString();
+      events = events.filter((event: any) => {
+        try {
+          if (!event.startDate) return false;
+          const eventDate = new Date(event.startDate);
+          if (isNaN(eventDate.getTime())) return false;
+          return eventDate.toDateString() === targetDateString;
+        } catch {
+          return false;
+        }
+      });
+    }
+    return events;
+  }, [calendarEvents, selectedDate]);
 
   const applyTypedDate = useCallback(() => {
     const raw = dateQuery.trim();
@@ -492,12 +497,12 @@ export const Dashboard = () => {
 
     setSelectedDate(parsed);
     setDatePreset(null);
-    setActiveTab('grid');
+    setActiveTab('events');
   }, [dateQuery, toast]);
 
   useEffect(() => {
-    console.log('🧭 Active category:', activeCategory, ' | displayedEvents:', displayedEvents.length, ' | buckets:', Object.keys(transformedEventsByCategory));
-  }, [activeCategory, displayedEvents, transformedEventsByCategory]);
+    console.log('🧭 Active category:', activeCategory, ' | eventsForEventView:', eventsForEventView.length, ' | buckets:', Object.keys(transformedEventsByCategory));
+  }, [activeCategory, eventsForEventView, transformedEventsByCategory]);
 
   // Determine if any events are loaded at all (independent of active filters)
   const hasAnyEvents = React.useMemo(() => {
@@ -534,7 +539,7 @@ export const Dashboard = () => {
         onOpenPreferences={() => {}}
         onNavigate={setCurrentPage}
         currentPage={currentPage}
-        totalEvents={displayedEvents.length}
+        totalEvents={eventsForEventView.length}
         aiCurationStatus="complete"
       />
 
@@ -873,51 +878,71 @@ export const Dashboard = () => {
         {/* Main Content - Show calendar/grid once any events are loaded */}
         {hasAnyEvents && (
           <div className="mt-12">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'calendar' | 'grid')} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2 bg-transparent shadow-none border-0 gap-2">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'events' | 'day' | 'week')} className="space-y-6">
+              <TabsList className="grid w-full grid-cols-3 bg-transparent shadow-none border-0 gap-2">
                 <TabsTrigger
-                  value="calendar"
-                  className="flex items-center gap-2 bg-blue-50 text-blue-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-                >
-                  <Calendar className="w-4 h-4" />
-                  Calendar View
-                </TabsTrigger>
-                <TabsTrigger
-                  value="grid"
+                  value="events"
                   className="flex items-center gap-2 bg-purple-50 text-purple-700 data-[state=active]:bg-purple-600 data-[state=active]:text-white"
                 >
                   <Grid3X3 className="w-4 h-4" />
                   Event View
                 </TabsTrigger>
+                <TabsTrigger
+                  value="day"
+                  className="flex items-center gap-2 bg-blue-50 text-blue-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
+                  <Clock className="w-4 h-4" />
+                  Day View
+                </TabsTrigger>
+                <TabsTrigger
+                  value="week"
+                  className="flex items-center gap-2 bg-emerald-50 text-emerald-700 data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Week View
+                </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="calendar" className="space-y-6">
-                <WeeklyCalendar
-                  // Show the full set of currently displayed events in calendar view
-                  events={displayedEvents}
-                  // Still pass savedEvents so we can highlight saved items
+              <TabsContent value="day" className="space-y-6">
+                <DayTimetable
+                  events={calendarEvents}
                   savedEvents={savedEvents}
-                  activeCategory={activeCategory}
                   onEventToggleSaved={(eventId) => {
                     const event = events.find(e => e.id === eventId);
-                    if (event) {
-                      const isSaved = savedEvents.find(savedEvent => savedEvent.id === eventId);
-                      if (isSaved) {
-                        // Show confirmation for deletion
-                        if (confirm(`Remove "${event.title}" from your saved events?`)) {
-                          handleRemoveFromCalendar(eventId);
-                        }
-                      } else {
-                        // Save the event
-                        handleSaveToCalendar(eventId);
+                    if (!event) return;
+                    const isSaved = savedEvents.find(savedEvent => savedEvent.id === eventId);
+                    if (isSaved) {
+                      if (confirm(`Remove "${event.title}" from your saved events?`)) {
+                        handleRemoveFromCalendar(eventId);
                       }
+                      return;
                     }
+                    handleSaveToCalendar(eventId);
+                  }}
+                />
+              </TabsContent>
+
+              <TabsContent value="week" className="space-y-6">
+                <WeekDayGrid
+                  events={calendarEvents}
+                  savedEvents={savedEvents}
+                  onEventToggleSaved={(eventId) => {
+                    const event = events.find(e => e.id === eventId);
+                    if (!event) return;
+                    const isSaved = savedEvents.find(savedEvent => savedEvent.id === eventId);
+                    if (isSaved) {
+                      if (confirm(`Remove "${event.title}" from your saved events?`)) {
+                        handleRemoveFromCalendar(eventId);
+                      }
+                      return;
+                    }
+                    handleSaveToCalendar(eventId);
                   }}
                   onDateClick={handleDateClick}
                 />
               </TabsContent>
 
-              <TabsContent key={`${activeCategory ?? 'all'}-${selectedDate?.toISOString() ?? 'no-date'}`} value="grid" className="space-y-6">
+              <TabsContent key={`${activeCategory ?? 'all'}-${selectedDate?.toISOString() ?? 'no-date'}`} value="events" className="space-y-6">
                 {/* Filter Status Display */}
                 {(activeCategory || selectedDate || searchQuery.trim()) && (
                   <div className="bg-muted/50 rounded-lg p-4 mb-6 border">
@@ -939,7 +964,7 @@ export const Dashboard = () => {
                             Date: {selectedDate.toLocaleDateString()}
                           </Badge>
                         )}
-                        <span className="text-xs text-muted-foreground">({displayedEvents.length} results)</span>
+                        <span className="text-xs text-muted-foreground">({eventsForEventView.length} results)</span>
                       </div>
                       <Button
                         variant="outline"
@@ -956,14 +981,14 @@ export const Dashboard = () => {
                   </div>
                 )}
                 
-                {displayedEvents.length === 0 ? (
+                {eventsForEventView.length === 0 ? (
                   <div className="text-center text-muted-foreground py-12 border rounded-lg">
                     No events match your current filters.
                     <div className="mt-2 text-xs">Try a different date or clear filters.</div>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                    {displayedEvents.map(event => (
+                    {eventsForEventView.map(event => (
                       <EventCard
                         key={`${event.id}-${activeCategory ?? 'all'}-${selectedDate?.toISOString() ?? 'no-date'}`}
                         event={event}
