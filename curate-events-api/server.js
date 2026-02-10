@@ -2,7 +2,7 @@
  * server.js
  * 
  * Main Express server for the Curate Events API
- * Simple, reliable event collection using proven Perplexity patterns
+ * Bay Area event curation API with Ticketmaster + Venue Scraper
  */
 
 import express from 'express';
@@ -14,7 +14,6 @@ import { config, validateConfig } from './src/utils/config.js';
 import { createLogger, logRequest, logResponse, logError } from './src/utils/logger.js';
 import healthRoutes from './src/routes/health.js';
 import eventsRoutes from './src/routes/events.js';
-import personalizationRoutes from './src/routes/personalization.js';
 import rulesRoutes from './src/routes/rules.js';
 import previewRoutes from './src/routes/preview.js';
 import listsRoutes from './src/routes/lists.js';
@@ -94,7 +93,6 @@ if (config.rateLimiting.enabled) {
 // API routes
 app.use('/api/health', healthRoutes);
 app.use('/api/events', eventsRoutes);
-app.use('/api/personalization', personalizationRoutes);
 app.use('/api/rules', rulesRoutes);
 app.use('/api/preview', (req, res, next) => { logger.info('Preview route hit pre-router'); next(); }, previewRoutes);
 app.use('/api/lists', listsRoutes);
@@ -113,14 +111,14 @@ app.get('/api', (req, res) => {
   res.json({
     name: 'Curate Events API',
     version: '1.0.0',
-    description: 'Simple, reliable event collection using Perplexity AI',
+    description: 'Bay Area event curation with Ticketmaster + Venue Scraper',
     endpoints: {
       health: '/api/health',
       healthDeep: '/api/health/deep',
       events: '/api/events/:category/combined',
       eventsByCategory: '/api/events/:category/compare',
-      personalization: '/api/personalization/curate',
-      feedback: '/api/personalization/feedback'
+      rules: '/api/rules',
+      lists: '/api/lists'
     },
     documentation: 'https://github.com/ArjunDivecha/curate-my-world'
   });
