@@ -3680,7 +3680,7 @@
       "city": "San Francisco",
       "state": "CA",
       "events": [],
-      "lastScraped": "2026-02-09T21:25:55.266Z",
+      "lastScraped": "2026-02-10T00:40:37.124Z",
       "status": "error",
       "error": "Jina HTTP 422: Unprocessable Entity",
       "eventCount": 0,
@@ -4475,7 +4475,7 @@
       "city": "San Francisco",
       "state": "CA",
       "events": [],
-      "lastScraped": "2026-02-09T21:28:15.045Z",
+      "lastScraped": "2026-02-10T00:40:38.209Z",
       "status": "error",
       "error": "Jina HTTP 400: Bad Request",
       "eventCount": 0,
@@ -5925,7 +5925,7 @@
       "city": "San Carlos",
       "state": "CA",
       "events": [],
-      "lastScraped": "2026-02-09T21:30:43.992Z",
+      "lastScraped": "2026-02-10T00:40:40.324Z",
       "status": "error",
       "error": "Jina HTTP 400: Bad Request",
       "eventCount": 0,
@@ -25657,16 +25657,74 @@
   },
   "totalEvents": 1337,
   "metadata": {
-    "totalVenues": 375,
-    "scrapeStarted": "2026-02-09T21:14:54.977Z",
-    "scrapeCompleted": "2026-02-09T22:28:17.438Z",
-    "stats": {
-      "success": 363,
-      "failed": 12,
-      "skipped": 0,
-      "totalEvents": 1337,
-      "thisRunEvents": 1343,
-      "previousTotalEvents": 804
-    }
+    "totalVenues": 12,
+    "scrapeStarted": "2026-02-10T00:40:36.448Z",
+    "scrapeCompleted": null
+  },
+  "ai-camp.org": {
+    "status": "error",
+    "error": "New venue - needs scraping",
+    "lastUpdated": "2026-02-09T16:40:30.003569",
+    "events": []
+  },
+  "meetup.com": {
+    "status": "error",
+    "error": "New venue - needs scraping",
+    "lastUpdated": "2026-02-09T16:40:30.003579",
+    "events": []
+  },
+  "hai.stanford.edu": {
+    "status": "error",
+    "error": "New venue - needs scraping",
+    "lastUpdated": "2026-02-09T16:40:30.003581",
+    "events": []
+  },
+  "bair.berkeley.edu": {
+    "status": "error",
+    "error": "New venue - needs scraping",
+    "lastUpdated": "2026-02-09T16:40:30.003582",
+    "events": []
+  },
+  "eecs.berkeley.edu": {
+    "status": "error",
+    "error": "New venue - needs scraping",
+    "lastUpdated": "2026-02-09T16:40:30.003583",
+    "events": []
+  },
+  "cs.stanford.edu": {
+    "status": "error",
+    "error": "New venue - needs scraping",
+    "lastUpdated": "2026-02-09T16:40:30.003583",
+    "events": []
+  },
+  "bakarinstitute.ucsf.edu": {
+    "status": "error",
+    "error": "New venue - needs scraping",
+    "lastUpdated": "2026-02-09T16:40:30.003584",
+    "events": []
+  },
+  "hackerdojo.org": {
+    "status": "error",
+    "error": "New venue - needs scraping",
+    "lastUpdated": "2026-02-09T16:40:30.003585",
+    "events": []
+  },
+  "noisebridge.net": {
+    "status": "error",
+    "error": "New venue - needs scraping",
+    "lastUpdated": "2026-02-09T16:40:30.003586",
+    "events": []
+  },
+  "grayarea.org": {
+    "status": "error",
+    "error": "New venue - needs scraping",
+    "lastUpdated": "2026-02-09T16:40:30.003587",
+    "events": []
+  },
+  "archive.org": {
+    "status": "error",
+    "error": "New venue - needs scraping",
+    "lastUpdated": "2026-02-09T16:40:30.003588",
+    "events": []
   }
 }
