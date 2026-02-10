@@ -184,9 +184,9 @@ export const PreferencesModal = ({ isOpen, onClose, preferences, onSave }: Prefe
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {defaultCategories.map(category => (
                   <div key={category} className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <Label className="text-sm">{category}</Label>
-                      <Badge variant="outline">
+                    <div className="flex items-center gap-3 w-full">
+                      <Label className="text-sm flex-1 whitespace-normal">{category}</Label>
+                      <Badge variant="outline" className="shrink-0">
                         {localPreferences.interests.categories[category] || 0}/10
                       </Badge>
                     </div>
