@@ -124,6 +124,120 @@ function ensureProviderStats(map, providerKey, selected) {
   return map[providerKey];
 }
 
+// ---------------------------------------------------------------------------
+// Background refresh: re-computes all-categories and writes to Postgres.
+// Called (a) when a stale cache is served, and (b) on a 6h interval.
+// Guard prevents overlapping refreshes.
+// ---------------------------------------------------------------------------
+let _bgRefreshInProgress = false;
+
+async function triggerBackgroundAllCategoriesRefresh(requestKey, opts) {
+  if (_bgRefreshInProgress) {
+    logger.info('Background all-categories refresh already in progress, skipping');
+    return;
+  }
+  _bgRefreshInProgress = true;
+  logger.info('Starting background all-categories refresh', { requestKey: requestKey.slice(0, 80) });
+
+  try {
+    const { location, date_range, eventLimit, selectedProviders,
+            includeTicketmaster, includeVenueScraper, includeWhitelist } = opts;
+
+    const supportedCategories = categoryManager.getSupportedCategories()
+      .filter(cat => ['music','theatre','comedy','movies','art','food','tech','lectures','kids'].includes(cat.name))
+      .map(cat => cat.name);
+
+    const categoryPromises = supportedCategories.map(async (category) => {
+      const providerPromises = [];
+      const enqueue = (key, fn) => providerPromises.push(
+        fn().then(v => ({ key, status: 'fulfilled', value: v }))
+            .catch(e => ({ key, status: 'rejected', reason: e }))
+      );
+      if (includeTicketmaster) {
+        enqueue('ticketmaster', () => ticketmasterClient.searchEvents({ category, location, limit: eventLimit })
+          .then(r => ({ success: r.success||false, events: r.events||[], count: r.events?.length||0, source:'ticketmaster', cost:0 })));
+      }
+      if (includeVenueScraper) {
+        enqueue('venue_scraper', () => venueScraperClient.searchEvents({ category, location, limit: eventLimit })
+          .then(r => ({ success: r.success||false, events: r.events||[], count: r.events?.length||0, source:'venue_scraper', cost:0 })));
+      }
+      const settled = await Promise.all(providerPromises);
+      const providerResults = {};
+      settled.forEach(r => { providerResults[r.key] = r.status === 'fulfilled' ? r.value : { success:false, events:[], count:0, source:r.key }; });
+      const eventLists = Object.values(providerResults).filter(v => v && Array.isArray(v.events) && v.events.length > 0);
+      const dedupResult = deduplicator.deduplicateEvents(eventLists);
+      const rulesFiltered = applyRulesFilter(dedupResult.uniqueEvents);
+      const blFiltered = filterBlacklistedEvents(rulesFiltered);
+      const { validEvents } = filterValidEvents(blFiltered, { requireDate: true, requireVenue: false });
+      const locFiltered = locationFilter.filterEventsByLocation(validEvents, location, { radiusKm: 50, allowBayArea: true, strictMode: false });
+      const pastResult = dateFilter.filterPastEvents(locFiltered);
+      const dateResult = dateFilter.filterEventsByDateRange(pastResult.filteredEvents, date_range || 'next 30 days');
+      const catFiltered = dateResult.filteredEvents.filter(ev => {
+        const c = (ev.category||'').toLowerCase();
+        return !c || normalizeCategory(c) === category;
+      });
+      return { category, events: catFiltered, count: catFiltered.length };
+    });
+
+    const results = await Promise.all(categoryPromises);
+    const eventsByCategory = {};
+    const categoryStats = {};
+    let totalEvents = 0;
+    results.forEach(({ category, events, count }) => {
+      eventsByCategory[category] = events;
+      categoryStats[category] = { count };
+      totalEvents += count;
+    });
+
+    const response = {
+      success: true, eventsByCategory, categoryStats, totalEvents,
+      categories: supportedCategories, providerStats: {}, providerDetails: [],
+      processingTime: 0, backgroundRefreshing: false,
+      metadata: { location, dateRange: date_range || 'next 30 days', limitPerCategory: eventLimit,
+        categoriesFetched: supportedCategories.length,
+        requestId: `bg_refresh_${Date.now()}_${Math.random().toString(36).substr(2,9)}` }
+    };
+
+    await writeAllCategoriesCache(requestKey, response);
+    logger.info('Background all-categories refresh complete', { totalEvents });
+  } catch (error) {
+    logger.error('Background all-categories refresh failed', { error: error.message });
+  } finally {
+    _bgRefreshInProgress = false;
+  }
+}
+
+// Auto-refresh: run every 6 hours to keep the default cache warm.
+// Uses the same default params as the frontend (SF, 30 days, TM+venue_scraper).
+function startAllCategoriesRefreshScheduler() {
+  const REFRESH_INTERVAL_MS = 6 * 60 * 60 * 1000;
+  const defaultProviders = new Set(Object.entries(PROVIDER_DEFAULTS).filter(([,v])=>v).map(([k])=>k));
+  const defaultLimit = Math.min(500, config.api.maxLimit); // match frontend's limit=500
+  const requestKey = JSON.stringify({
+    location: 'San Francisco, CA',
+    date_range: 'next 30 days',
+    limit: defaultLimit,
+    providers: Array.from(defaultProviders).sort()
+  });
+
+  const refresh = () => {
+    triggerBackgroundAllCategoriesRefresh(requestKey, {
+      location: 'San Francisco, CA', date_range: 'next 30 days',
+      eventLimit: defaultLimit, selectedProviders: defaultProviders,
+      includeTicketmaster: true, includeVenueScraper: true, includeWhitelist: false
+    });
+  };
+
+  // First refresh 30s after startup (let the server settle)
+  setTimeout(refresh, 30_000);
+  // Then every 6 hours
+  setInterval(refresh, REFRESH_INTERVAL_MS);
+  logger.info('All-categories refresh scheduler started', { intervalHours: REFRESH_INTERVAL_MS / 3600000 });
+}
+
+// Start the scheduler
+startAllCategoriesRefreshScheduler();
+
 /**
  * GET /api/events/all-categories
  * Main endpoint: Three-layer architecture
@@ -152,8 +266,10 @@ router.get('/all-categories', async (req, res) => {
   const includeVenueScraper = selectedProviders.has('venue_scraper');
   const includeWhitelist = selectedProviders.has('whitelist');
 
-  // Postgres-backed cache (survives restarts/deploys, 6h TTL)
-  const DB_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+  // Postgres-backed cache: ALWAYS serve cached data if it exists.
+  // This endpoint NEVER makes live TM API calls.
+  // The background scheduler (30s after startup + every 6h) handles all live fetching.
+  const STALE_THRESHOLD_MS = 6 * 60 * 60 * 1000; // 6h — triggers background refresh
   const requestKey = JSON.stringify({
     location,
     date_range: date_range || 'next 30 days',
@@ -163,346 +279,76 @@ router.get('/all-categories', async (req, res) => {
 
   try {
     const dbCached = await readAllCategoriesCache(requestKey);
-    if (dbCached && (Date.now() - dbCached.updatedAt) < DB_CACHE_TTL_MS) {
+    if (dbCached) {
       const ageMs = Date.now() - dbCached.updatedAt;
       const duration = Date.now() - startTime;
+      const isStale = ageMs > STALE_THRESHOLD_MS;
       logger.info('Serving DB-cached all-categories response', {
-        location, eventLimit, ageMs, duration: `${duration}ms`
+        location, eventLimit, ageMs, stale: isStale, duration: `${duration}ms`
       });
       res.json({
         ...dbCached.payload,
         metadata: {
           ...(dbCached.payload.metadata || {}),
           dbCache: true,
-          dbCacheAgeMs: ageMs
+          dbCacheAgeMs: ageMs,
+          stale: isStale
         }
       });
       logResponse(logger, res, 'allCategoriesEvents-dbCached', duration, {
         totalEvents: dbCached.payload.totalEvents || 0
       });
+      // If stale, trigger background refresh (non-blocking)
+      if (isStale) {
+        triggerBackgroundAllCategoriesRefresh(requestKey, {
+          location, date_range, eventLimit, selectedProviders,
+          includeTicketmaster, includeVenueScraper, includeWhitelist
+        });
+      }
       return;
     }
   } catch (dbErr) {
-    logger.warn('DB cache lookup failed, proceeding to live fetch', { error: dbErr.message });
+    logger.warn('DB cache lookup failed', { error: dbErr.message });
   }
 
-  try {
-    const supportedCategories = categoryManager.getSupportedCategories()
-      .filter(cat => [
-        'music', 'theatre', 'comedy', 'movies', 'art',
-        'food', 'tech', 'lectures', 'kids'
-      ].includes(cat.name))
-      .map(cat => cat.name);
+  // No cache available yet — return empty response.
+  // The background scheduler (runs 30s after startup, then every 6h) will
+  // populate the cache.  Fetch Events NEVER makes live TM API calls.
+  const duration = Date.now() - startTime;
+  logger.info('No cached data available yet; returning empty response', { location, duration: `${duration}ms` });
 
-    logger.info('Fetching events from Ticketmaster + Venue Scraper', {
-      categories: supportedCategories,
+  const supportedCategories = categoryManager.getSupportedCategories()
+    .filter(cat => ['music','theatre','comedy','movies','art','food','tech','lectures','kids'].includes(cat.name))
+    .map(cat => cat.name);
+
+  const emptyByCategory = {};
+  const emptyStats = {};
+  supportedCategories.forEach(cat => {
+    emptyByCategory[cat] = [];
+    emptyStats[cat] = { count: 0 };
+  });
+
+  res.json({
+    success: true,
+    eventsByCategory: emptyByCategory,
+    categoryStats: emptyStats,
+    totalEvents: 0,
+    categories: supportedCategories,
+    providerStats: {},
+    providerDetails: [],
+    processingTime: duration,
+    backgroundRefreshing: true,
+    metadata: {
       location,
-      eventLimitPerCategory: eventLimit,
-      providers: Array.from(selectedProviders)
-    });
-
-    // Fetch events for all categories in parallel
-    const categoryPromises = supportedCategories.map(async (category) => {
-      try {
-        const providerResults = {};
-        const providerPromises = [];
-
-        const enqueueProvider = (key, factory) => {
-          providerPromises.push(
-            factory()
-              .then(value => ({ key, status: 'fulfilled', value }))
-              .catch(error => ({ key, status: 'rejected', reason: error }))
-          );
-        };
-
-        // Layer 1: Ticketmaster (backbone)
-        if (includeTicketmaster) {
-          enqueueProvider('ticketmaster', async () => {
-            const result = await ticketmasterClient.searchEvents({
-              category,
-              location,
-              limit: eventLimit
-            });
-            return {
-              success: result.success || false,
-              events: result.events || [],
-              count: result.events?.length || 0,
-              processingTime: result.processingTime || 0,
-              source: 'ticketmaster',
-              cost: 0
-            };
-          });
-        }
-
-        // Layer 2: Venue Calendar Scraper (gap filler)
-        if (includeVenueScraper) {
-          enqueueProvider('venue_scraper', async () => {
-            const result = await venueScraperClient.searchEvents({
-              category,
-              location,
-              limit: eventLimit
-            });
-            return {
-              success: result.success || false,
-              events: result.events || [],
-              count: result.events?.length || 0,
-              processingTime: result.processingTime || 0,
-              source: 'venue_scraper',
-              cost: 0
-            };
-          });
-        }
-
-        // Legacy: Whitelist (disabled by default)
-        if (includeWhitelist) {
-          enqueueProvider('whitelist', async () => {
-            const result = await whitelistClient.searchEvents(category, location, { limit: eventLimit });
-            return {
-              success: true,
-              events: result.events || [],
-              count: result.events?.length || 0,
-              processingTime: result.stats?.processingTime || 0,
-              source: 'whitelist',
-              cost: 0
-            };
-          });
-        }
-
-        const settled = await Promise.all(providerPromises);
-        settled.forEach(result => {
-          const { key, status } = result;
-          if (status === 'fulfilled') {
-            providerResults[key] = result.value;
-          } else {
-            providerResults[key] = {
-              success: false,
-              events: [],
-              count: 0,
-              source: key,
-              error: result.reason?.message || String(result.reason)
-            };
-          }
-        });
-
-        // Collect event lists for deduplication
-        const eventLists = [];
-        Object.entries(providerResults).forEach(([key, value]) => {
-          if (!value || !Array.isArray(value.events)) return;
-          const providerKey = mapSourceToProvider(value.source || key);
-          if (!selectedProviders.has(providerKey)) return;
-          if (value.events.length === 0) return;
-          eventLists.push(value);
-        });
-
-        // Deduplicate events for this category
-        const deduplicationResult = deduplicator.deduplicateEvents(eventLists);
-        const dedupStats = deduplicator.getDeduplicationStats(eventLists, deduplicationResult);
-
-        // Apply whitelist/blacklist rules filter
-        const rulesFilteredEvents = applyRulesFilter(deduplicationResult.uniqueEvents);
-
-        // Apply XLSX blacklist filtering
-        const blacklistFilteredEvents = filterBlacklistedEvents(rulesFilteredEvents);
-
-        // Layer 3: Event Validation Gate
-        const { validEvents: validatedEvents } = filterValidEvents(blacklistFilteredEvents, {
-          requireDate: true,
-          requireVenue: false
-        });
-
-        // Apply location filtering (was missing from /all-categories before!)
-        const locationFilteredEvents = locationFilter.filterEventsByLocation(
-          validatedEvents,
-          location,
-          { radiusKm: 50, allowBayArea: true, strictMode: false }
-        );
-
-        // Filter out past events
-        const pastFilterResult = dateFilter.filterPastEvents(locationFilteredEvents);
-
-        // Apply date range filtering
-        const dateFilterResult = dateFilter.filterEventsByDateRange(
-          pastFilterResult.filteredEvents,
-          date_range || 'next 30 days'
-        );
-
-        // Filter by normalized category — ensures events land in the correct bucket
-        // Uses centralised normalizeCategory() so "theater" → "theatre", "film" → "movies", etc.
-        const categoryFilteredEvents = dateFilterResult.filteredEvents.filter(event => {
-          const eventCat = (event.category || '').toLowerCase();
-          if (!eventCat) return true; // No category — keep in requested bucket
-          const normalized = normalizeCategory(eventCat);
-          return normalized === category;
-        });
-
-        const sourceStats = {};
-        Object.entries(providerResults).forEach(([key, value]) => {
-          if (!value) return;
-          const mappedKey = value.source || key;
-          sourceStats[mappedKey] = {
-            count: value.count || 0,
-            processingTime: value.processingTime || 0,
-            error: value.error,
-            cost: value.cost || 0
-          };
-        });
-
-        return {
-          category,
-          success: true,
-          events: categoryFilteredEvents,
-          count: categoryFilteredEvents.length,
-          sourceStats,
-          providerAttribution: dedupStats?.sourceBreakdown || null,
-          totals: dedupStats ? { totalOriginal: dedupStats.totalOriginal, totalUnique: dedupStats.totalUnique } : null
-        };
-
-      } catch (error) {
-        logger.error(`Error fetching events for category ${category}`, {
-          error: error.message,
-          category
-        });
-        return {
-          category,
-          success: false,
-          error: error.message,
-          events: [],
-          count: 0
-        };
-      }
-    });
-
-    const categoryResults = await Promise.all(categoryPromises);
-    const duration = Date.now() - startTime;
-
-    // Organize results by category
-    const eventsByCategory = {};
-    const categoryStats = {};
-    const providerStatsMap = {};
-    let totalEvents = 0;
-
-    categoryResults.forEach(result => {
-      eventsByCategory[result.category] = result.events || [];
-      categoryStats[result.category] = {
-        count: result.count || 0,
-        success: result.success,
-        error: result.error || null,
-        sourceStats: result.sourceStats || null,
-        providerAttribution: result.providerAttribution || null,
-        totals: result.totals || null
-      };
-      totalEvents += result.count || 0;
-
-      if (result.sourceStats) {
-        Object.entries(result.sourceStats).forEach(([rawProviderKey, stats = {}]) => {
-          const providerKey = mapSourceToProvider(rawProviderKey);
-          const entry = ensureProviderStats(providerStatsMap, providerKey, selectedProviders);
-          entry.originalCount += stats.count || 0;
-          entry.processingTime = Math.max(entry.processingTime || 0, stats.processingTime || 0);
-          entry.cost += stats.cost || 0;
-          if ((stats.count || 0) > 0) entry.success = true;
-        });
-      }
-
-      if (result.providerAttribution) {
-        Object.entries(result.providerAttribution).forEach(([provider, stats]) => {
-          const providerKey = mapSourceToProvider(provider);
-          const entry = ensureProviderStats(providerStatsMap, providerKey, selectedProviders);
-          entry.survivedCount += stats.survivedCount || 0;
-        });
-      }
-    });
-
-    // Finalize provider stats
-    PROVIDER_ORDER.forEach(providerKey => {
-      const entry = ensureProviderStats(providerStatsMap, providerKey, selectedProviders);
-      entry.survivedCount = entry.survivedCount || 0;
-      entry.originalCount = entry.originalCount || 0;
-      entry.duplicatesRemoved = Math.max(0, entry.originalCount - entry.survivedCount);
-      entry.success = entry.success || entry.survivedCount > 0;
-      entry.enabled = entry.requested && selectedProviders.has(providerKey);
-      entry.processingTime = Math.max(0, Math.round(entry.processingTime || 0));
-      entry.cost = Number((entry.cost || 0).toFixed(3));
-    });
-
-    const providerDetails = PROVIDER_ORDER.map(providerKey => {
-      const stats = ensureProviderStats(providerStatsMap, providerKey, selectedProviders);
-      return {
-        provider: providerKey,
-        label: stats.label,
-        requested: stats.requested,
-        enabled: stats.enabled,
-        success: stats.success,
-        originalCount: stats.originalCount,
-        survivedCount: stats.survivedCount,
-        duplicatesRemoved: stats.duplicatesRemoved,
-        processingTime: stats.processingTime,
-        cost: stats.cost
-      };
-    });
-
-    logger.info('All categories fetch completed', {
-      totalEvents,
-      categories: supportedCategories.length,
-      duration: `${duration}ms`,
-      providers: Array.from(selectedProviders)
-    });
-
-    // Check if venue scraper is refreshing in the background
-    const venueHealth = await venueScraperClient.getHealthStatus();
-    const backgroundRefreshing = venueHealth.backgroundRefreshing || false;
-
-    const response = {
-      success: true,
-      eventsByCategory,
-      categoryStats,
-      totalEvents,
-      categories: supportedCategories,
-      providerStats: providerStatsMap,
-      providerDetails,
-      processingTime: duration,
-      backgroundRefreshing,
-      metadata: {
-        location,
-        dateRange: date_range || 'next 30 days',
-        limitPerCategory: eventLimit,
-        categoriesFetched: supportedCategories.length,
-        requestId: `all_categories_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      }
-    };
-
-    // Persist to Postgres so the cache survives restarts/deploys
-    writeAllCategoriesCache(requestKey, response).catch(err => {
-      logger.warn('Failed to persist all-categories cache to DB', { error: err.message });
-    });
-
-    res.json(response);
-    logResponse(logger, res, 'allCategoriesEvents', duration, {
-      totalEvents,
-      categoriesFetched: supportedCategories.length
-    });
-
-  } catch (error) {
-    const duration = Date.now() - startTime;
-
-    logger.error('All categories events error', {
-      error: error.message,
-      location,
-      processingTime: `${duration}ms`
-    });
-
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      eventsByCategory: {},
-      categoryStats: {},
-      totalEvents: 0,
-      categories: [],
-      processingTime: duration
-    });
-
-    logResponse(logger, res, 'allCategoriesEvents', duration, { error: error.message });
-  }
+      dateRange: date_range || 'next 30 days',
+      limitPerCategory: eventLimit,
+      categoriesFetched: supportedCategories.length,
+      dbCache: false,
+      message: 'Cache is being built. Events will appear shortly after the first background refresh completes (~30s after server start).',
+      requestId: `all_categories_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    }
+  });
+  logResponse(logger, res, 'allCategoriesEvents-empty', duration, { totalEvents: 0 });
 });
 
 /**
