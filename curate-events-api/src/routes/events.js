@@ -36,6 +36,7 @@ import { eventCache } from '../utils/cache.js';
 import { filterEvents as applyRulesFilter } from '../utils/rulesFilter.js';
 import { filterBlacklistedEvents } from '../utils/listManager.js';
 import { normalizeCategory, SUPPORTED_CATEGORIES } from '../utils/categoryMapping.js';
+import { readAllCategoriesCache, writeAllCategoriesCache } from '../utils/venueCacheDb.js';
 
 const router = express.Router();
 const logger = createLogger('EventsRoute');
@@ -150,6 +151,40 @@ router.get('/all-categories', async (req, res) => {
   const includeTicketmaster = selectedProviders.has('ticketmaster');
   const includeVenueScraper = selectedProviders.has('venue_scraper');
   const includeWhitelist = selectedProviders.has('whitelist');
+
+  // Postgres-backed cache (survives restarts/deploys, 6h TTL)
+  const DB_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+  const requestKey = JSON.stringify({
+    location,
+    date_range: date_range || 'next 30 days',
+    limit: eventLimit,
+    providers: Array.from(selectedProviders).sort()
+  });
+
+  try {
+    const dbCached = await readAllCategoriesCache(requestKey);
+    if (dbCached && (Date.now() - dbCached.updatedAt) < DB_CACHE_TTL_MS) {
+      const ageMs = Date.now() - dbCached.updatedAt;
+      const duration = Date.now() - startTime;
+      logger.info('Serving DB-cached all-categories response', {
+        location, eventLimit, ageMs, duration: `${duration}ms`
+      });
+      res.json({
+        ...dbCached.payload,
+        metadata: {
+          ...(dbCached.payload.metadata || {}),
+          dbCache: true,
+          dbCacheAgeMs: ageMs
+        }
+      });
+      logResponse(logger, res, 'allCategoriesEvents-dbCached', duration, {
+        totalEvents: dbCached.payload.totalEvents || 0
+      });
+      return;
+    }
+  } catch (dbErr) {
+    logger.warn('DB cache lookup failed, proceeding to live fetch', { error: dbErr.message });
+  }
 
   try {
     const supportedCategories = categoryManager.getSupportedCategories()
@@ -435,6 +470,11 @@ router.get('/all-categories', async (req, res) => {
         requestId: `all_categories_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       }
     };
+
+    // Persist to Postgres so the cache survives restarts/deploys
+    writeAllCategoriesCache(requestKey, response).catch(err => {
+      logger.warn('Failed to persist all-categories cache to DB', { error: err.message });
+    });
 
     res.json(response);
     logResponse(logger, res, 'allCategoriesEvents', duration, {
