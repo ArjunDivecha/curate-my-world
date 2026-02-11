@@ -53,10 +53,17 @@ npm run stop               # Clean shutdown
 ### Three-Layer Event Pipeline
 
 ```
-Frontend → Backend API → Layer 1: Ticketmaster (backbone)
-                       → Layer 2: Venue Scraper (cache reader)
-                       → Layer 3: Event Validator (quality gate)
+Frontend → Backend API → Postgres cache (instant read)
+                         ↑ populated by background scheduler every 6h
+                         ↑ scheduler uses: Layer 1 + Layer 2 + Layer 3
+
+Background scheduler → Layer 1: Ticketmaster (backbone)
+                     → Layer 2: Venue Scraper (cache reader)
+                     → Layer 3: Event Validator (quality gate)
+                     → writes result to Postgres
 ```
+
+The `/all-categories` endpoint **never** makes live TM API calls. It always reads from a Postgres-backed cache that is refreshed by a background scheduler (30s after startup + every 6h).
 
 All events pass through: **dedup → rules filter → blacklist → eventValidator → locationFilter → dateFilter → categoryFilter**
 
@@ -88,7 +95,8 @@ Key rules:
 ### Backend
 | File | Purpose |
 |------|---------|
-| `curate-events-api/src/routes/events.js` | Main API routes — three-layer pipeline |
+| `curate-events-api/src/routes/events.js` | Main API routes — cache-first + background scheduler |
+| `curate-events-api/src/utils/venueCacheDb.js` | Postgres helpers: venue cache + all-categories response cache |
 | `curate-events-api/src/utils/categoryMapping.js` | Category normalization (single source of truth) |
 | `curate-events-api/src/clients/TicketmasterClient.js` | Ticketmaster Discovery API client |
 | `curate-events-api/src/clients/VenueScraperClient.js` | Cache reader + stale-while-revalidate |
@@ -179,7 +187,7 @@ Provider fetch → dedup → rules filter → blacklist → eventValidator → l
 | Issue | Fix |
 |-------|-----|
 | Port conflicts | `npm run port:cleanup` |
-| No events showing | Check `curl http://127.0.0.1:8765/api/health/deep` |
+| No events showing | Wait ~30s after deploy for background scheduler to populate cache, then check `/api/health/deep` |
 | Venue scraper empty | Run `npm run scrape:venues` to populate cache |
 | Events in wrong category | Check `normalizeCategory()` in categoryMapping.js |
 | Valid events filtered out | Check `eventValidator.js` listing URL patterns |

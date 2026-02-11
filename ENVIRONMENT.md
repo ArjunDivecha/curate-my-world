@@ -40,6 +40,8 @@ Venue cache/refresh controls:
 - `VENUE_DAILY_REFRESH_HOUR` (default `6`)
 - `VENUE_DAILY_REFRESH_MINUTE` (default `0`)
 
+Note: The all-categories response cache (`all_categories_response_cache` Postgres table) is refreshed automatically by a background scheduler every 6 hours (+ 30s after startup). No env var configuration needed — it runs whenever `DATABASE_URL` is set.
+
 ## Current Cloud Values (Live)
 
 - Frontend URL: `https://squirtle-eta.vercel.app`

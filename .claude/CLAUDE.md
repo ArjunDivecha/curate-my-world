@@ -13,11 +13,13 @@
 - **Data files**: Venue registry and event cache in `/data/`
 - **Configuration**: API keys in `curate-events-api/.env` (NOT in git)
 
-### Architecture (v2.0 — Feb 2026)
-Three-layer event pipeline:
+### Architecture (v2.1 — Feb 2026)
+Three-layer event pipeline with Postgres-backed cache:
 1. **Ticketmaster API** (backbone) — ~1,600+ structured Bay Area events
 2. **Venue Calendar Scraper** (gap filler) — 286 venues, ~800+ cached events
 3. **Event Validator** (quality gate) — rejects listing pages, bad data, out-of-area
+
+**Caching**: `/all-categories` endpoint never makes live TM calls. A background scheduler (30s after startup + every 6h) pre-computes the response and writes to Postgres. Fetch Events always reads from cache (instant).
 
 **Removed providers**: Perplexity, Exa, Apyflux, SerpAPI, Serper, Super-Hybrid
 
@@ -71,9 +73,9 @@ npm run port:cleanup           # Free ports 8765/8766
 - Test changes before committing
 
 ### Event Pipeline (events.js)
-All events flow through:
+The `/all-categories` endpoint reads from Postgres cache only. The background scheduler computes the cache using:
 ```
-Provider fetch → dedup → rules filter → blacklist → eventValidator → locationFilter → dateFilter → categoryFilter
+Provider fetch → dedup → rules filter → blacklist → eventValidator → locationFilter → dateFilter → categoryFilter → write to Postgres
 ```
 
 ---

@@ -30,15 +30,24 @@ Important: Railway `staging` is currently the live backend environment. Railway 
   - Block event
   - Block site/domain
 - Persists data in cloud when DB configured:
+  - All-categories response cache in Postgres (auto-refreshed every 6h)
   - List storage in Postgres (`LIST_STORAGE_MODE=db`)
   - Venue cache persistence in Postgres when `DATABASE_URL` is set
 
-## Background Refresh Behavior
+## Background Refresh & Caching
 
-Venue data is served stale-while-revalidate:
-- If cache is stale, API can trigger a background scrape (unless disabled)
-- API continues serving last good cache if refresh fails
-- Daily scheduled scrape can run (default 6:00 AM Pacific) when enabled/configured
+### All-Categories Response Cache (Postgres-backed)
+The `/all-categories` endpoint **never** makes live Ticketmaster API calls during a user request. Instead:
+- A background scheduler pre-computes the full all-categories response and writes it to Postgres (`all_categories_response_cache` table)
+- **30 seconds after server startup**: first refresh runs automatically
+- **Every 6 hours**: scheduler refreshes the cache
+- **Fetch Events button**: always reads from Postgres cache (instant, single DB read)
+- If cache is >6h old (e.g. a scheduled refresh failed), it still serves the stale data and triggers a non-blocking background refresh
+- If no cache exists yet (first ~30s after a fresh deploy), returns empty response with `backgroundRefreshing: true`
+
+### Venue Scraper Cache
+- Daily scheduled scrape at 6:00 AM Pacific writes venue data to Postgres
+- Stale-while-revalidate: API serves last good cache if refresh fails
 - Inspect status at: `GET /api/events/refresh-status`
 
 ## Providers: Active vs Removed

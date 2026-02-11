@@ -36,13 +36,19 @@ Default local URL: `http://127.0.0.1:8765`
 - `LIST_STORAGE_MODE=db` (recommended in cloud)
 - `FRONTEND_URL=https://squirtle-eta.vercel.app` (CORS in production)
 
-## Venue Cache and Refresh
+## Caching & Background Refresh
 
+### All-Categories Response Cache
+- The `/all-categories` endpoint **never** makes live TM API calls
+- A background scheduler pre-computes the full response and writes to Postgres (`all_categories_response_cache` table)
+- Schedule: 30s after startup, then every 6 hours
+- If stale (>6h), serves cached data instantly and triggers non-blocking background refresh
+- Postgres table managed by `venueCacheDb.js`
+
+### Venue Scraper Cache
 - Storage mode:
   - file: `data/venue-events-cache.json`
   - db: Postgres table via `DATABASE_URL`
-- Background refresh:
-  - API may trigger stale cache refresh in background
 - Daily scheduler:
   - Configured by `VENUE_DAILY_REFRESH_*`
   - Typical production setting: 6:00 AM PT
