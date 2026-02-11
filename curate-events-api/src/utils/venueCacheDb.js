@@ -76,14 +76,6 @@ async function ensureSchema(pool) {
           ON venue_scrape_runs (started_at DESC)
       `);
 
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS all_categories_response_cache (
-          id TEXT PRIMARY KEY,
-          payload JSONB NOT NULL,
-          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-      `);
-
       return true;
     } catch (error) {
       logger.warn('Failed to ensure venue cache DB schema; DB mode disabled', { error: error.message });
@@ -258,52 +250,6 @@ export async function releaseVenueScrapeLock() {
     return true;
   } catch (error) {
     logger.warn('Failed to release venue scrape lock', { error: error.message });
-    return false;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// All-categories response cache (Postgres-backed, survives restarts/deploys)
-// ---------------------------------------------------------------------------
-
-export async function readAllCategoriesCache(requestKey) {
-  const pool = await getPool();
-  if (!pool) return null;
-  const ok = await ensureSchema(pool);
-  if (!ok) return null;
-
-  try {
-    const result = await pool.query(
-      `SELECT payload, updated_at FROM all_categories_response_cache WHERE id = $1`,
-      [requestKey]
-    );
-    if (!result.rows?.length) return null;
-    const row = result.rows[0];
-    return { payload: row.payload, updatedAt: new Date(row.updated_at).getTime() };
-  } catch (error) {
-    logger.warn('Failed to read all-categories cache from DB', { error: error.message });
-    return null;
-  }
-}
-
-export async function writeAllCategoriesCache(requestKey, payload) {
-  const pool = await getPool();
-  if (!pool) return false;
-  const ok = await ensureSchema(pool);
-  if (!ok) return false;
-
-  try {
-    await pool.query(
-      `
-      INSERT INTO all_categories_response_cache (id, payload, updated_at)
-      VALUES ($1, $2, NOW())
-      ON CONFLICT (id) DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()
-      `,
-      [requestKey, payload]
-    );
-    return true;
-  } catch (error) {
-    logger.warn('Failed to write all-categories cache to DB', { error: error.message });
     return false;
   }
 }

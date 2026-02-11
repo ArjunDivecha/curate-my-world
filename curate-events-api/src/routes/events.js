@@ -36,7 +36,6 @@ import { eventCache } from '../utils/cache.js';
 import { filterEvents as applyRulesFilter } from '../utils/rulesFilter.js';
 import { filterBlacklistedEvents } from '../utils/listManager.js';
 import { normalizeCategory, SUPPORTED_CATEGORIES } from '../utils/categoryMapping.js';
-import { readAllCategoriesCache, writeAllCategoriesCache } from '../utils/venueCacheDb.js';
 
 const router = express.Router();
 const logger = createLogger('EventsRoute');
@@ -80,12 +79,6 @@ const PROVIDER_ORDER = [
   'venue_scraper',
   'whitelist'
 ];
-
-// Coalesce identical all-categories requests so repeated clicks do not spawn parallel heavy jobs.
-const allCategoriesInFlight = new Map();
-const allCategoriesResponseCache = new Map();
-const ALL_CATEGORIES_CACHE_TTL_MS = 60 * 1000;
-const DB_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours — survives restarts/deploys
 
 function mapSourceToProvider(source) {
   return SOURCE_PROVIDER_MAP[source] || source || 'unknown';
@@ -158,112 +151,7 @@ router.get('/all-categories', async (req, res) => {
   const includeVenueScraper = selectedProviders.has('venue_scraper');
   const includeWhitelist = selectedProviders.has('whitelist');
 
-  const requestKey = JSON.stringify({
-    location,
-    date_range: date_range || 'next 30 days',
-    limit: eventLimit,
-    providers: Array.from(selectedProviders).sort()
-  });
-
-  const cached = allCategoriesResponseCache.get(requestKey);
-  if (cached && (Date.now() - cached.timestamp) < ALL_CATEGORIES_CACHE_TTL_MS) {
-    const duration = Date.now() - startTime;
-    logger.info('Serving cached all-categories response', {
-      location,
-      eventLimit,
-      ageMs: Date.now() - cached.timestamp,
-      duration: `${duration}ms`
-    });
-    res.json({
-      ...cached.payload,
-      metadata: {
-        ...(cached.payload.metadata || {}),
-        responseCache: true,
-        cacheAgeMs: Date.now() - cached.timestamp
-      }
-    });
-    logResponse(logger, res, 'allCategoriesEvents-cached', duration, {
-      totalEvents: cached.payload.totalEvents || 0
-    });
-    return;
-  }
-
-  // Layer 2 cache: Postgres (survives restarts/deploys, 6h TTL)
   try {
-    const dbCached = await readAllCategoriesCache(requestKey);
-    if (dbCached && (Date.now() - dbCached.updatedAt) < DB_CACHE_TTL_MS) {
-      const ageMs = Date.now() - dbCached.updatedAt;
-      const duration = Date.now() - startTime;
-      logger.info('Serving DB-cached all-categories response', {
-        location,
-        eventLimit,
-        ageMs,
-        duration: `${duration}ms`
-      });
-      // Also populate in-memory cache so subsequent requests within 60s skip the DB query
-      allCategoriesResponseCache.set(requestKey, {
-        timestamp: Date.now(),
-        payload: dbCached.payload
-      });
-      res.json({
-        ...dbCached.payload,
-        metadata: {
-          ...(dbCached.payload.metadata || {}),
-          dbCache: true,
-          dbCacheAgeMs: ageMs
-        }
-      });
-      logResponse(logger, res, 'allCategoriesEvents-dbCached', duration, {
-        totalEvents: dbCached.payload.totalEvents || 0
-      });
-      return;
-    }
-  } catch (dbErr) {
-    logger.warn('DB cache lookup failed, proceeding to live fetch', { error: dbErr.message });
-  }
-
-  if (allCategoriesInFlight.has(requestKey)) {
-    logger.warn('Coalescing duplicate all-categories request', {
-      location,
-      eventLimit,
-      providers: Array.from(selectedProviders)
-    });
-    try {
-      const { response: sharedResponse } = await allCategoriesInFlight.get(requestKey);
-      const duration = Date.now() - startTime;
-      res.json({
-        ...sharedResponse,
-        metadata: {
-          ...(sharedResponse.metadata || {}),
-          coalesced: true
-        }
-      });
-      logResponse(logger, res, 'allCategoriesEvents-coalesced', duration, {
-        totalEvents: sharedResponse.totalEvents || 0
-      });
-      return;
-    } catch (error) {
-      const duration = Date.now() - startTime;
-      logger.error('Coalesced all-categories request failed', {
-        error: error.message,
-        location,
-        processingTime: `${duration}ms`
-      });
-      res.status(500).json({
-        success: false,
-        error: error.message,
-        eventsByCategory: {},
-        categoryStats: {},
-        totalEvents: 0,
-        categories: [],
-        processingTime: duration
-      });
-      logResponse(logger, res, 'allCategoriesEvents-coalesced', duration, { error: error.message });
-      return;
-    }
-  }
-
-  const computePromise = (async () => {
     const supportedCategories = categoryManager.getSupportedCategories()
       .filter(cat => [
         'music', 'theatre', 'comedy', 'movies', 'art',
@@ -547,26 +435,13 @@ router.get('/all-categories', async (req, res) => {
         requestId: `all_categories_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       }
     };
-    return { response, duration, categoriesFetched: supportedCategories.length };
-  })();
 
-  allCategoriesInFlight.set(requestKey, computePromise);
-
-  try {
-    const { response, duration, categoriesFetched } = await computePromise;
-    allCategoriesResponseCache.set(requestKey, {
-      timestamp: Date.now(),
-      payload: response
-    });
-    // Persist to Postgres so the cache survives restarts/deploys
-    writeAllCategoriesCache(requestKey, response).catch(err => {
-      logger.warn('Failed to persist all-categories cache to DB', { error: err.message });
-    });
     res.json(response);
     logResponse(logger, res, 'allCategoriesEvents', duration, {
-      totalEvents: response.totalEvents,
-      categoriesFetched
+      totalEvents,
+      categoriesFetched: supportedCategories.length
     });
+
   } catch (error) {
     const duration = Date.now() - startTime;
 
@@ -587,8 +462,6 @@ router.get('/all-categories', async (req, res) => {
     });
 
     logResponse(logger, res, 'allCategoriesEvents', duration, { error: error.message });
-  } finally {
-    allCategoriesInFlight.delete(requestKey);
   }
 });
 
