@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn, cleanHtmlText } from "@/lib/utils";
 import { getCategoryColor } from "@/utils/categoryColors";
 import { CalendarDays, Clock, BookmarkCheck, ExternalLink } from "lucide-react";
-import { sameLocalDay } from "@/lib/dateViewRanges";
+import { parseEventDateLocalAware, sameLocalDay } from "@/lib/dateViewRanges";
 
 interface Event {
   id: string;
@@ -47,8 +47,8 @@ const laneKeyForEvent = (event: Event) => {
 const formatTime = (dateString: string) => {
   try {
     if (!dateString) return "Time TBD";
-    const parsed = new Date(dateString);
-    if (isNaN(parsed.getTime())) return "Time TBD";
+    const parsed = parseEventDateLocalAware(dateString);
+    if (!parsed || isNaN(parsed.getTime())) return "Time TBD";
     return parsed.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
   } catch {
     return "Time TBD";
@@ -80,8 +80,8 @@ export const WeekendSplitView = ({
 
     for (const event of events) {
       if (!event.startDate) continue;
-      const date = new Date(event.startDate);
-      if (isNaN(date.getTime())) continue;
+      const date = parseEventDateLocalAware(event.startDate);
+      if (!date || isNaN(date.getTime())) continue;
 
       if (sameLocalDay(date, friday)) {
         if (date.getHours() >= 17) fridayEvents.push(event);

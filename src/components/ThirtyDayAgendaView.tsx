@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn, cleanHtmlText } from "@/lib/utils";
+import { parseEventDateLocalAware } from "@/lib/dateViewRanges";
 import { getCategoryColor } from "@/utils/categoryColors";
 import { CalendarDays, Clock, BookmarkCheck, ExternalLink } from "lucide-react";
 
@@ -34,8 +35,8 @@ const startOfLocalDay = (date: Date) =>
 const formatTime = (dateString: string) => {
   try {
     if (!dateString) return "Time TBD";
-    const parsed = new Date(dateString);
-    if (isNaN(parsed.getTime())) return "Time TBD";
+    const parsed = parseEventDateLocalAware(dateString);
+    if (!parsed || isNaN(parsed.getTime())) return "Time TBD";
     return parsed.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
   } catch {
     return "Time TBD";
@@ -73,8 +74,8 @@ export const ThirtyDayAgendaView = ({
     const map = new Map<string, { date: Date; events: Event[] }>();
     for (const event of events) {
       if (!event.startDate) continue;
-      const parsed = new Date(event.startDate);
-      if (isNaN(parsed.getTime())) continue;
+      const parsed = parseEventDateLocalAware(event.startDate);
+      if (!parsed || isNaN(parsed.getTime())) continue;
       const day = startOfLocalDay(parsed);
       const key = day.toDateString();
       if (!map.has(key)) map.set(key, { date: day, events: [] });

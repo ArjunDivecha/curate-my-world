@@ -435,6 +435,15 @@ export const Dashboard = () => {
   }, [calendarEvents, selectedDate]);
 
   const weekendRange = React.useMemo(() => getWeekendRange(new Date()), [datePreset]);
+  const nextSevenDays = React.useMemo(() => {
+    if (datePreset !== 'week') return undefined;
+    const start = startOfLocalDay(new Date());
+    return Array.from({ length: 7 }, (_, index) => {
+      const day = new Date(start);
+      day.setDate(start.getDate() + index);
+      return day;
+    });
+  }, [datePreset]);
   const showDayTimetableInDateView = datePreset === 'today' || !!selectedDate;
   const showWeekendSplitInDateView = datePreset === 'weekend';
   const showThirtyDayAgendaInDateView = datePreset === '30d';
@@ -444,7 +453,7 @@ export const Dashboard = () => {
       : datePreset === 'today'
         ? 'Today'
       : datePreset === 'week'
-        ? 'This Week'
+        ? 'Next 7 Days'
         : datePreset === 'weekend'
           ? 'This Weekend (Fri Evening + Sat + Sun)'
           : datePreset === '30d'
@@ -630,7 +639,7 @@ export const Dashboard = () => {
                       setActiveTab('date');
                     }}
                   >
-                    This Week
+                    Next 7 Days
                   </Button>
                   <Button
                     variant="outline"
@@ -878,7 +887,7 @@ export const Dashboard = () => {
                 })}
               </div>
 
-              <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   type="button"
                   variant="outline"
@@ -993,6 +1002,7 @@ export const Dashboard = () => {
                     events={calendarEvents}
                     savedEvents={savedEvents}
                     title={dateViewTitle}
+                    fixedDates={nextSevenDays}
                     onEventToggleSaved={(eventId) => {
                       const event = events.find(e => e.id === eventId);
                       if (!event) return;

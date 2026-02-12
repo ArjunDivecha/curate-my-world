@@ -26,6 +26,10 @@ import { getTicketmasterClassification, isTicketmasterSupported } from '../utils
 const logger = createLogger('TicketmasterClient');
 const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
+function toIsoSeconds(date) {
+  return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
 function parseTicketmasterLocalDateTime(localDate, localTime) {
   if (!localDate || typeof localDate !== 'string') return null;
 
@@ -91,13 +95,21 @@ export class TicketmasterClient {
 
     try {
       const url = new URL(`${this.baseUrl}/events.json`);
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const endOfWindow = new Date(startOfToday);
+      endOfWindow.setDate(endOfWindow.getDate() + 30);
+      endOfWindow.setHours(23, 59, 59, 0);
       const params = new URLSearchParams({
         'apikey': this.consumerKey,
         'latlong': `${coordinates.lat},${coordinates.lng}`,
         'radius': '50',
         'unit': 'miles',
         'size': Math.min(200, limit).toString(),
-        'sort': 'date,asc'
+        'sort': 'date,asc',
+        // Include full local day so late-evening refreshes still keep today's events.
+        'startDateTime': toIsoSeconds(startOfToday),
+        'endDateTime': toIsoSeconds(endOfWindow)
       });
 
       // Add category filters if specified

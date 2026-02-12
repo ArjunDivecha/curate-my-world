@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { cleanHtmlText } from "@/lib/utils";
 import { getCategoryColor } from "@/utils/categoryColors";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock, BookmarkCheck, ExternalLink } from "lucide-react";
+import { parseEventDateLocalAware } from "@/lib/dateViewRanges";
 
 interface Event {
   id: string;
@@ -28,6 +29,7 @@ interface WeekDayGridProps {
   onEventToggleSaved: (eventId: string) => void;
   onDateClick?: (date: Date) => void;
   title?: string;
+  fixedDates?: Date[];
 }
 
 const startOfLocalDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -50,8 +52,8 @@ const getWeekDates = (anchor: Date) => {
 const formatTime = (dateString: string) => {
   try {
     if (!dateString) return "Time TBD";
-    const d = new Date(dateString);
-    if (isNaN(d.getTime())) return "Time TBD";
+    const d = parseEventDateLocalAware(dateString);
+    if (!d || isNaN(d.getTime())) return "Time TBD";
     return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
   } catch {
     return "Time TBD";
@@ -79,11 +81,27 @@ const laneKeyForEvent = (event: Event) => {
   return (event.categories?.[0] || "music").toLowerCase();
 };
 
-export const WeekDayGrid = ({ events, savedEvents = [], onEventToggleSaved, onDateClick, title = "Week View" }: WeekDayGridProps) => {
+export const WeekDayGrid = ({
+  events,
+  savedEvents = [],
+  onEventToggleSaved,
+  onDateClick,
+  title = "Week View",
+  fixedDates,
+}: WeekDayGridProps) => {
   const [currentWeek, setCurrentWeek] = useState(() => startOfLocalDay(new Date()));
   const [moreDate, setMoreDate] = useState<Date | null>(null);
 
-  const weekDates = useMemo(() => getWeekDates(currentWeek), [currentWeek]);
+  const normalizedFixedDates = useMemo(() => {
+    if (!Array.isArray(fixedDates) || fixedDates.length === 0) return null;
+    return fixedDates.slice(0, 7).map((d) => startOfLocalDay(d));
+  }, [fixedDates]);
+  const usesFixedDates = !!normalizedFixedDates && normalizedFixedDates.length > 0;
+
+  const weekDates = useMemo(
+    () => (usesFixedDates ? (normalizedFixedDates as Date[]) : getWeekDates(currentWeek)),
+    [usesFixedDates, normalizedFixedDates, currentWeek]
+  );
 
   const isEventSaved = (eventId: string) => savedEvents.some((e) => e.id === eventId);
 
@@ -92,8 +110,8 @@ export const WeekDayGrid = ({ events, savedEvents = [], onEventToggleSaved, onDa
     return events
       .filter((e) => {
         if (!e.startDate) return false;
-        const d = new Date(e.startDate);
-        if (isNaN(d.getTime())) return false;
+        const d = parseEventDateLocalAware(e.startDate);
+        if (!d || isNaN(d.getTime())) return false;
         return sameLocalDay(d, day);
       })
       .sort((a, b) => String(a.startDate).localeCompare(String(b.startDate)));
@@ -102,6 +120,7 @@ export const WeekDayGrid = ({ events, savedEvents = [], onEventToggleSaved, onDa
   const moreEvents = useMemo(() => (moreDate ? eventsForDate(moreDate) : []), [moreDate, events]);
 
   const navigate = (dir: "prev" | "next") => {
+    if (usesFixedDates) return;
     const d = new Date(currentWeek);
     d.setDate(d.getDate() + (dir === "next" ? 7 : -7));
     setCurrentWeek(startOfLocalDay(d));
@@ -125,13 +144,17 @@ export const WeekDayGrid = ({ events, savedEvents = [], onEventToggleSaved, onDa
               <span className="text-sm text-muted-foreground font-normal">({events.length} events)</span>
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => navigate("prev")} aria-label="Previous week">
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
+              {!usesFixedDates && (
+                <Button variant="outline" size="sm" onClick={() => navigate("prev")} aria-label="Previous week">
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+              )}
               <span className="text-sm font-medium px-2 sm:px-4">{weekLabel}</span>
-              <Button variant="outline" size="sm" onClick={() => navigate("next")} aria-label="Next week">
-                <ChevronRight className="w-4 h-4" />
-              </Button>
+              {!usesFixedDates && (
+                <Button variant="outline" size="sm" onClick={() => navigate("next")} aria-label="Next week">
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -141,19 +164,34 @@ export const WeekDayGrid = ({ events, savedEvents = [], onEventToggleSaved, onDa
         {weekDates.map((date) => {
           const dayEvents = eventsForDate(date);
           const isToday = date.toDateString() === new Date().toDateString();
+          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
           const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
           return (
-            <Card key={date.toISOString()} className={cn("overflow-hidden", isToday ? "ring-2 ring-primary" : "")}>
+            <Card
+              key={date.toISOString()}
+              className={cn(
+                "overflow-hidden",
+                isToday ? "ring-2 ring-primary" : "",
+                isWeekend ? "bg-amber-50/45 border-amber-100" : ""
+              )}
+            >
               <CardHeader className="pb-2">
                 <button
                   type="button"
-                  className="w-full text-left rounded-lg px-2 py-2 hover:bg-muted/40 transition"
+                  className={cn(
+                    "w-full text-left rounded-lg px-2 py-2 transition",
+                    isWeekend ? "hover:bg-amber-100/40" : "hover:bg-muted/40"
+                  )}
                   onClick={() => onDateClick?.(date)}
                   title="Click to open this day in Event View"
                 >
-                  <div className="text-[11px] text-muted-foreground uppercase tracking-wide">{dayName}</div>
+                  <div className={cn("text-[11px] uppercase tracking-wide", isWeekend ? "text-amber-700/80" : "text-muted-foreground")}>
+                    {dayName}
+                  </div>
                   <div className={cn("text-lg font-semibold leading-tight", isToday ? "text-primary" : "text-foreground")}>{date.getDate()}</div>
-                  <div className="text-[11px] text-muted-foreground">{dayEvents.length ? `${dayEvents.length} events` : "No events"}</div>
+                  <div className={cn("text-[11px]", isWeekend ? "text-amber-700/75" : "text-muted-foreground")}>
+                    {dayEvents.length ? `${dayEvents.length} events` : "No events"}
+                  </div>
                 </button>
               </CardHeader>
               <CardContent className="pt-0 pb-3">
@@ -166,9 +204,10 @@ export const WeekDayGrid = ({ events, savedEvents = [], onEventToggleSaved, onDa
                       <div
                         key={event.id}
                         className={cn(
-                          "flex items-start gap-2 rounded-xl border px-2 py-2 bg-white/60",
+                          "flex items-start gap-2 rounded-xl border px-2 py-2",
+                          isWeekend ? "bg-amber-50/75 hover:bg-amber-100/60" : "bg-white/60 hover:bg-white",
                           colors.border,
-                          "hover:bg-white transition cursor-pointer"
+                          "transition cursor-pointer"
                         )}
                         onClick={() => openEventUrl(event)}
                         title="Click to open event"
