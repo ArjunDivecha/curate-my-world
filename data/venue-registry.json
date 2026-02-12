@@ -389,14 +389,14 @@
     "geocoded_at": "2026-01-16T19:45:56.578832Z"
   },
   {
-    "name": "About Us - BATS Improv",
-    "website": "https://www.improv.org/about-us/",
+    "name": "BATS Improv (Bayfront Theatre)",
+    "website": "https://improv.org/",
     "domain": "improv.org",
     "description": "Shortform: (usually on Fridays)\n\nfun and fast-paced improvised theatre, filled with scenes, songs, games, and lots of audience participation and suggestions.\n\n[Read more about Improv \u00bb] \n\nLongform: (u",
-    "category": "comedy",
+    "category": "theatre",
     "city": "San Francisco",
     "state": "CA",
-    "calendar_url": "https://improv.org/events",
+    "calendar_url": "https://improv.org/shows/",
     "source": "exa_discovery",
     "discovered_at": "2026-01-16T18:12:11.399Z",
     "lat": 37.8065143,
@@ -404,11 +404,11 @@
     "geocoded_at": "2026-01-16T19:46:02.320741Z"
   },
   {
-    "name": "BATS Improv: Shows 2025",
-    "website": "https://fortmason.org/event/bats-improv-shows-2025/",
+    "name": "Fort Mason Center Events",
+    "website": "https://fortmason.org/events/",
     "domain": "fortmason.org",
-    "description": "Comedy Performance\n\n# BATS Improv: Shows 2025\n\nNov 22nd Through Dec 31st\n\nPresented By\n\nBATS Improv\n\nNov 22nd Through Dec 31st\n\nExplore the world of improv with Fort Mason Center For Arts & Culture re",
-    "category": "comedy",
+    "description": "Fort Mason Center event listings",
+    "category": "art",
     "city": "San Francisco",
     "state": "CA",
     "calendar_url": "https://fortmason.org/events",
@@ -497,14 +497,14 @@
     "discovered_at": "2026-01-16T18:12:09.854Z"
   },
   {
-    "name": "Endgamesimprov",
-    "website": "https://www.endgamesimprov.com/delclose/static.php",
+    "name": "Endgames Improv",
+    "website": "https://endgamesimprov.com/shows/",
     "domain": "endgamesimprov.com",
     "description": "# Activities List\n\n[-/+] \n\n[Sep 9th, 2025 at 10:00pm - Sep 9th, 2025 at 7:00pm] \n\nClass Day\n\n[Advanced Scene Work] \n\nETC South - Room B\n\nTeacher\n\nTu, Whitney\n\nTeacher\n\nWalsh, Jeff\n\n[-/+] \n\n[Sep 9th, 2",
     "category": "comedy",
     "city": "San Francisco",
     "state": "CA",
-    "calendar_url": "https://endgamesimprov.com/events",
+    "calendar_url": "https://endgamesimprov.com/shows/",
     "source": "exa_discovery",
     "discovered_at": "2026-01-16T18:12:11.399Z"
   },
@@ -627,7 +627,7 @@
     "category": "comedy",
     "city": "San Francisco",
     "state": "CA",
-    "calendar_url": "https://cttcomedy.com/events",
+    "calendar_url": "https://tickets.cttcomedy.com/events",
     "source": "exa_discovery",
     "discovered_at": "2026-01-16T18:12:09.854Z"
   },
@@ -4923,5 +4923,49 @@
     "state": "CA",
     "website": "https://archive.org",
     "calendar_url": "https://archive.org/about/events.php"
+  },
+  {
+    "name": "Mr. Mahjong's",
+    "domain": "mrmahjongs.com",
+    "category": "comedy",
+    "city": "San Francisco",
+    "state": "CA",
+    "website": "https://mrmahjongs.com",
+    "calendar_url": "https://www.mrmahjongs.com/event-list",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-02-12T08:40:40.739944+00:00"
+  },
+  {
+    "name": "Sports Basement Presidio",
+    "domain": "shop.sportsbasement.com",
+    "category": "comedy",
+    "city": "San Francisco",
+    "state": "CA",
+    "website": "https://shop.sportsbasement.com",
+    "calendar_url": "https://shop.sportsbasement.com/pages/calendar",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-02-12T08:40:41.163194+00:00"
+  },
+  {
+    "name": "The Radical Reading Room",
+    "domain": "theradicalreadingroom.org",
+    "category": "comedy",
+    "city": "San Francisco",
+    "state": "CA",
+    "website": "https://theradicalreadingroom.org",
+    "calendar_url": "https://theradicalreadingroom.org/calendar",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-02-12T08:40:41.542204+00:00"
+  },
+  {
+    "name": "Pa'ina Restaurant & Lounge",
+    "domain": "painasf.com",
+    "category": "comedy",
+    "city": "San Francisco",
+    "state": "CA",
+    "website": "https://painasf.com",
+    "calendar_url": "https://painasf.com/",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-02-12T08:40:42.151286+00:00"
   }
 ]

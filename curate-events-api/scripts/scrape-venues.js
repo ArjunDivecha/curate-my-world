@@ -118,6 +118,319 @@ async function fetchViaJina(calendarUrl) {
   }
 }
 
+function isIcsFeedUrl(url) {
+  const normalized = String(url || '').toLowerCase();
+  return normalized.endsWith('.ics') || normalized.includes('.ics?') || /[?&]ical=1(?:&|$)/.test(normalized);
+}
+
+async function fetchRawText(url) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'text/calendar,text/plain;q=0.9,*/*;q=0.8',
+        'User-Agent': 'CurateMyWorld/1.0'
+      },
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.text();
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
+
+function decodeIcsText(value) {
+  return String(value || '')
+    .replace(/\\n/gi, ' ')
+    .replace(/\\,/g, ',')
+    .replace(/\\;/g, ';')
+    .replace(/\\\\/g, '\\')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&apos;|&#039;/gi, '\'')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function unfoldIcsLines(icsText) {
+  const lines = String(icsText || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  const unfolded = [];
+
+  for (const line of lines) {
+    if ((line.startsWith(' ') || line.startsWith('\t')) && unfolded.length) {
+      unfolded[unfolded.length - 1] += line.slice(1);
+    } else {
+      unfolded.push(line);
+    }
+  }
+
+  return unfolded;
+}
+
+function parseIcsDate(value, { isEnd = false } = {}) {
+  const raw = String(value || '').trim();
+
+  // Date only (YYYYMMDD); DTEND is exclusive in ICS, so subtract one day.
+  const dateOnly = raw.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (dateOnly) {
+    const [, y, m, d] = dateOnly;
+    if (!isEnd) return `${y}-${m}-${d}T00:00:00`;
+
+    const dt = new Date(Number(y), Number(m) - 1, Number(d));
+    dt.setDate(dt.getDate() - 1);
+    const yy = dt.getFullYear();
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const dd = String(dt.getDate()).padStart(2, '0');
+    return `${yy}-${mm}-${dd}T23:59:59`;
+  }
+
+  // Date-time (YYYYMMDDTHHMMSS or YYYYMMDDTHHMM)
+  const dateTime = raw.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})?Z?$/);
+  if (dateTime) {
+    const [, y, m, d, hh, mm, ss] = dateTime;
+    return `${y}-${m}-${d}T${hh}:${mm}:${ss || '00'}`;
+  }
+
+  return null;
+}
+
+function extractCityFromLocation(location, fallbackCity = null) {
+  const text = String(location || '');
+  if (!text) return fallbackCity || null;
+
+  const cityMatch = text.match(
+    /\b(San Francisco|Oakland|Berkeley|San Jose|Palo Alto|Mountain View|Sunnyvale|Santa Clara|Redwood City|San Mateo|Sausalito|Mill Valley|San Rafael|Fremont|Alameda)\b/i
+  );
+  if (cityMatch) {
+    const city = cityMatch[1].toLowerCase();
+    return city
+      .split(' ')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  }
+
+  return fallbackCity || null;
+}
+
+function categorizeIcsEvent({ summary, description, categories, fallbackCategory }) {
+  const text = `${summary || ''} ${description || ''} ${categories || ''}`.toLowerCase();
+
+  if (/(stand-up|stand up|comedy|improv|laugh)/.test(text)) return 'comedy';
+  if (/(concert|music|musical|jazz|dj)/.test(text)) return 'music';
+  if (/(film|movie|cinema)/.test(text)) return 'movies';
+  if (/(food|culinary|wine|farmers market|night market)/.test(text)) return 'food';
+  if (/(lecture|talk|panel|conference|tour|workshop|class|literary)/.test(text)) return 'lectures';
+  if (/(theater|theatre|ballet|dance|performance|opera)/.test(text)) return 'theatre';
+  if (/(tech|startup|developer|software|ai|hackathon)/.test(text)) return 'tech';
+  if (/(kids|children|family)/.test(text)) return 'kids';
+  if (/(art|exhibit|gallery|visual|photography|fort mason art)/.test(text)) return 'art';
+
+  return fallbackCategory || 'all';
+}
+
+function canonicalizeIcsEventUrl(url) {
+  const input = String(url || '').trim();
+  if (!input) return null;
+
+  try {
+    const parsed = new URL(input);
+    parsed.hash = '';
+    parsed.search = '';
+    // The Events Calendar recurring instances commonly append /YYYY-MM-DD[/N]/.
+    parsed.pathname = parsed.pathname.replace(/\/\d{4}-\d{2}-\d{2}(?:\/\d+)?\/?$/, '/');
+    return parsed.toString();
+  } catch {
+    return input.replace(/\/\d{4}-\d{2}-\d{2}(?:\/\d+)?\/?$/, '/');
+  }
+}
+
+function parseIcsEvents(icsText, { fallbackCategory = 'all', fallbackCity = null } = {}) {
+  const lines = unfoldIcsLines(icsText);
+  const parsed = [];
+  let current = null;
+
+  for (const line of lines) {
+    if (line === 'BEGIN:VEVENT') {
+      current = {};
+      continue;
+    }
+    if (line === 'END:VEVENT') {
+      if (current) parsed.push(current);
+      current = null;
+      continue;
+    }
+    if (!current) continue;
+
+    const idx = line.indexOf(':');
+    if (idx < 0) continue;
+
+    const left = line.slice(0, idx);
+    const value = line.slice(idx + 1);
+    const [nameRaw] = left.split(';');
+    const name = nameRaw.toUpperCase();
+
+    if (name === 'SUMMARY') current.title = decodeIcsText(value);
+    if (name === 'DESCRIPTION') current.description = decodeIcsText(value);
+    if (name === 'URL') current.eventUrl = value.trim();
+    if (name === 'LOCATION') current.location = decodeIcsText(value);
+    if (name === 'CATEGORIES') current.categories = decodeIcsText(value);
+    if (name === 'STATUS') current.status = String(value || '').trim().toUpperCase();
+    if (name === 'DTSTART') current.startDate = parseIcsDate(value, { isEnd: false });
+    if (name === 'DTEND') current.endDate = parseIcsDate(value, { isEnd: true });
+  }
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const deduped = new Map();
+
+  for (const event of parsed) {
+    if (!event.title || !event.startDate) continue;
+    if (event.status === 'CANCELLED') continue;
+
+    const eventDate = new Date(event.startDate);
+    if (Number.isNaN(eventDate.getTime()) || eventDate < startOfToday) continue;
+
+    const normalized = {
+      title: event.title,
+      startDate: event.startDate,
+      endDate: event.endDate || null,
+      description: event.description || '',
+      category: categorizeIcsEvent({
+        summary: event.title,
+        description: event.description,
+        categories: event.categories,
+        fallbackCategory
+      }),
+      price: null,
+      eventUrl: canonicalizeIcsEventUrl(event.eventUrl),
+      city: extractCityFromLocation(event.location, fallbackCity)
+    };
+
+    // ICS feeds often repeat occurrences with the same URL; keep earliest upcoming.
+    const key = normalized.eventUrl || `${normalized.title}|${normalized.startDate}`;
+    const existing = deduped.get(key);
+    if (!existing || new Date(normalized.startDate) < new Date(existing.startDate)) {
+      deduped.set(key, normalized);
+    }
+  }
+
+  return Array.from(deduped.values()).sort((a, b) => {
+    const aTime = new Date(a.startDate).getTime();
+    const bTime = new Date(b.startDate).getTime();
+    return aTime - bTime;
+  });
+}
+
+function escapeRegex(value) {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function normalizeEventUrl(url) {
+  const input = String(url || '').trim();
+  if (!input) return '';
+  try {
+    const parsed = new URL(input);
+    parsed.hash = '';
+    parsed.search = '';
+    return parsed.toString().replace(/\/+$/, '/');
+  } catch {
+    return input.replace(/[?#].*$/, '').replace(/\/+$/, '/');
+  }
+}
+
+function extractEventUrlsFromMarkdown(markdown, domain) {
+  if (!markdown || !domain) return [];
+  const escapedDomain = escapeRegex(domain.replace(/^www\./i, ''));
+  const pattern = new RegExp(`https?:\\/\\/(?:www\\.)?${escapedDomain}\\/event\\/[^\\s)\\]]+`, 'gi');
+  const urls = new Set();
+
+  let match;
+  while ((match = pattern.exec(markdown)) !== null) {
+    const cleaned = match[0].replace(/[),.;]+$/, '').trim();
+    if (cleaned) urls.add(cleaned);
+  }
+
+  return Array.from(urls);
+}
+
+function inferStartDateFromEventUrl(url) {
+  const dateMatch = String(url || '').match(/\/(\d{4})-(\d{2})-(\d{2})(?:\/\d+)?\/?$/);
+  if (!dateMatch) return null;
+  const [, y, m, d] = dateMatch;
+  return `${y}-${m}-${d}T19:00:00`;
+}
+
+function titleFromEventUrl(url) {
+  try {
+    const pathname = new URL(url).pathname.replace(/\/+$/, '');
+    const parts = pathname.split('/').filter(Boolean);
+    if (!parts.length) return 'Event';
+
+    // /event/<slug>/<optional-date>/<optional-instance>
+    let slug = parts[parts.length - 1];
+    if (/^\d+$/.test(slug) || /^\d{4}-\d{2}-\d{2}$/.test(slug)) {
+      slug = parts[parts.length - 2] || slug;
+    }
+    if (slug === 'event' && parts.length >= 2) slug = parts[parts.length - 2];
+    slug = slug.replace(/^\d{4}-\d{2}-\d{2}$/, '');
+    if (!slug) return 'Event';
+
+    return slug
+      .split('-')
+      .filter(Boolean)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  } catch {
+    return 'Event';
+  }
+}
+
+function addFallbackEventsFromCalendarUrls(events, markdown, venue) {
+  const discoveredUrls = extractEventUrlsFromMarkdown(markdown, venue.domain);
+  if (!discoveredUrls.length) return events;
+
+  const existing = new Set(
+    events
+      .map(event => normalizeEventUrl(event?.eventUrl))
+      .filter(Boolean)
+  );
+
+  const additions = [];
+  for (const url of discoveredUrls) {
+    const normalizedUrl = normalizeEventUrl(url);
+    if (!normalizedUrl || existing.has(normalizedUrl)) continue;
+
+    // Guardrail: only synthesize when the URL contains a concrete occurrence date.
+    const startDate = inferStartDateFromEventUrl(normalizedUrl);
+    if (!startDate) continue;
+
+    additions.push({
+      title: titleFromEventUrl(normalizedUrl),
+      startDate,
+      endDate: null,
+      description: 'Discovered from calendar listing URL; details inferred from link.',
+      category: venue.category || 'all',
+      price: null,
+      eventUrl: normalizedUrl,
+      city: venue.city || null
+    });
+    existing.add(normalizedUrl);
+  }
+
+  return additions.length ? [...events, ...additions] : events;
+}
+
 /**
  * Extract events from markdown using Claude Haiku
  */
@@ -302,40 +615,80 @@ async function main() {
       console.log(`${progress} Scraping: ${venue.name} (${venue.calendar_url})`);
 
       try {
-        // Fetch via Jina Reader
-        const markdown = await fetchViaJina(venue.calendar_url);
+        let events = [];
 
-        if (!markdown || markdown.length < 100) {
-          console.log(`  Skipped: too little content (${markdown?.length || 0} chars)`);
-          skippedCount++;
+        if (isIcsFeedUrl(venue.calendar_url)) {
+          const icsText = await fetchRawText(venue.calendar_url);
+          if (!icsText || icsText.length < 100) {
+            console.log(`  Skipped: too little ICS content (${icsText?.length || 0} chars)`);
+            skippedCount++;
 
-          // Preserve previously-scraped events if we have them (avoid clobbering cache on transient failures).
-          const prev = cache.venues?.[venue.domain] || {};
-          const preservedEvents = Array.isArray(prev?.events) ? prev.events : [];
+            // Preserve previously-scraped events if we have them (avoid clobbering cache on transient failures).
+            const prev = cache.venues?.[venue.domain] || {};
+            const preservedEvents = Array.isArray(prev?.events) ? prev.events : [];
 
-          cache.venues[venue.domain] = {
-            venueName: venue.name,
-            domain: venue.domain,
-            category: venue.category,
-            city: venue.city,
-            state: venue.state,
-            events: preservedEvents,
-            lastScraped: new Date().toISOString(),
-            status: preservedEvents.length > 0 ? 'empty_page_preserved' : 'empty_page',
-            eventCount: preservedEvents.length
-          };
-          await persistCache(cache, { writeDb: dbLockAcquired });
-          await sleep(JINA_DELAY_MS);
-          continue;
+            cache.venues[venue.domain] = {
+              venueName: venue.name,
+              domain: venue.domain,
+              category: venue.category,
+              city: venue.city,
+              state: venue.state,
+              events: preservedEvents,
+              lastScraped: new Date().toISOString(),
+              status: preservedEvents.length > 0 ? 'empty_page_preserved' : 'empty_page',
+              eventCount: preservedEvents.length
+            };
+            await persistCache(cache, { writeDb: dbLockAcquired });
+            await sleep(JINA_DELAY_MS);
+            continue;
+          }
+
+          events = parseIcsEvents(icsText, {
+            fallbackCategory: venue.category || 'all',
+            fallbackCity: venue.city || null
+          });
+          console.log(`  Parsed ${events.length} events from ICS feed`);
+        } else {
+          // Fetch via Jina Reader
+          const markdown = await fetchViaJina(venue.calendar_url);
+
+          if (!markdown || markdown.length < 100) {
+            console.log(`  Skipped: too little content (${markdown?.length || 0} chars)`);
+            skippedCount++;
+
+            // Preserve previously-scraped events if we have them (avoid clobbering cache on transient failures).
+            const prev = cache.venues?.[venue.domain] || {};
+            const preservedEvents = Array.isArray(prev?.events) ? prev.events : [];
+
+            cache.venues[venue.domain] = {
+              venueName: venue.name,
+              domain: venue.domain,
+              category: venue.category,
+              city: venue.city,
+              state: venue.state,
+              events: preservedEvents,
+              lastScraped: new Date().toISOString(),
+              status: preservedEvents.length > 0 ? 'empty_page_preserved' : 'empty_page',
+              eventCount: preservedEvents.length
+            };
+            await persistCache(cache, { writeDb: dbLockAcquired });
+            await sleep(JINA_DELAY_MS);
+            continue;
+          }
+
+          // Extract events with Haiku
+          const extractedEvents = await extractEventsWithHaiku(
+            anthropic,
+            venue.name,
+            venue.category || 'general',
+            markdown
+          );
+          events = addFallbackEventsFromCalendarUrls(extractedEvents, markdown, venue);
+          const addedByUrlScan = events.length - extractedEvents.length;
+          if (addedByUrlScan > 0) {
+            console.log(`  Added ${addedByUrlScan} events from calendar URL scan`);
+          }
         }
-
-        // Extract events with Haiku
-        const events = await extractEventsWithHaiku(
-          anthropic,
-          venue.name,
-          venue.category || 'general',
-          markdown
-        );
 
         // Stamp each event with venue metadata
         const stampedEvents = events.map((event, idx) => ({

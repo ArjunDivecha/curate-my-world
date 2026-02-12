@@ -98,19 +98,23 @@ export class DateFilter {
       };
     }
     
-    if (normalized.includes('this week') || normalized.includes('next 7 days')) {
-      return {
-        startDate: startOfToday,
-        endDate: endOfDay(7)
-      };
-    }
-    
     if (normalized.includes('this weekend')) {
       const zonedNow = getZonedParts(now, this.timeZone);
-      const daysUntilSaturday = (6 - zonedNow.weekday + 7) % 7;
-      const saturday = getZonedDateTime({
+      const weekday = zonedNow.weekday;
+
+      // "This weekend" = Friday through Sunday in the events timezone.
+      // If it's already Fri/Sat/Sun, use the current weekend window.
+      // Otherwise, use the upcoming Fri-Sun window.
+      const startOffset = weekday >= 5 || weekday === 0
+        ? 0
+        : (5 - weekday);
+      const endOffset = weekday >= 5 || weekday === 0
+        ? ((7 - weekday) % 7)
+        : (7 - weekday);
+
+      const weekendStart = getZonedDateTime({
         baseDate: now,
-        dayOffset: daysUntilSaturday,
+        dayOffset: startOffset,
         hour: 0,
         minute: 0,
         second: 0,
@@ -118,8 +122,15 @@ export class DateFilter {
       });
       
       return {
-        startDate: saturday,
-        endDate: endOfDay(daysUntilSaturday + 1)
+        startDate: weekendStart,
+        endDate: endOfDay(endOffset)
+      };
+    }
+
+    if (normalized.includes('this week') || normalized.includes('next 7 days')) {
+      return {
+        startDate: startOfToday,
+        endDate: endOfDay(7)
       };
     }
     
