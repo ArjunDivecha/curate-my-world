@@ -247,8 +247,9 @@ startAllCategoriesRefreshScheduler();
  */
 router.get('/all-categories', async (req, res) => {
   const startTime = Date.now();
-  const { location = 'San Francisco, CA', date_range, limit } = req.query;
+  const { location = 'San Francisco, CA', date_range, limit, refresh } = req.query;
   const eventLimit = Math.min(parseInt(limit) || 15, config.api.maxLimit);
+  const forceRefresh = String(refresh || '').toLowerCase() === '1' || String(refresh || '').toLowerCase() === 'true';
 
   logRequest(logger, req, 'allCategoriesEvents', { location, date_range, limit });
 
@@ -283,23 +284,26 @@ router.get('/all-categories', async (req, res) => {
       const ageMs = Date.now() - dbCached.updatedAt;
       const duration = Date.now() - startTime;
       const isStale = ageMs > STALE_THRESHOLD_MS;
+      const shouldRefresh = isStale || forceRefresh;
       logger.info('Serving DB-cached all-categories response', {
-        location, eventLimit, ageMs, stale: isStale, duration: `${duration}ms`
+        location, eventLimit, ageMs, stale: isStale, forceRefresh, duration: `${duration}ms`
       });
       res.json({
         ...dbCached.payload,
+        backgroundRefreshing: shouldRefresh || _bgRefreshInProgress || !!dbCached.payload?.backgroundRefreshing,
         metadata: {
           ...(dbCached.payload.metadata || {}),
           dbCache: true,
           dbCacheAgeMs: ageMs,
-          stale: isStale
+          stale: isStale,
+          forceRefreshRequested: forceRefresh
         }
       });
       logResponse(logger, res, 'allCategoriesEvents-dbCached', duration, {
         totalEvents: dbCached.payload.totalEvents || 0
       });
-      // If stale, trigger background refresh (non-blocking)
-      if (isStale) {
+      // Trigger background refresh (non-blocking) for stale cache or explicit refresh requests.
+      if (shouldRefresh) {
         triggerBackgroundAllCategoriesRefresh(requestKey, {
           location, date_range, eventLimit, selectedProviders,
           includeTicketmaster, includeVenueScraper, includeWhitelist
@@ -358,8 +362,9 @@ router.get('/all-categories', async (req, res) => {
  */
 router.get('/refresh-status', async (req, res) => {
   const health = await venueScraperClient.getHealthStatus();
+  const refreshingAllCategories = _bgRefreshInProgress;
   res.json({
-    refreshing: health.backgroundRefreshing || false,
+    refreshing: (health.backgroundRefreshing || false) || refreshingAllCategories,
     lastUpdated: health.lastUpdated || null,
     ageHours: health.ageHours,
     isStale: health.isStale || false,
@@ -369,7 +374,8 @@ router.get('/refresh-status', async (req, res) => {
     latestRunStatus: health.latestRunStatus || null,
     storageMode: health.storageMode || null,
     venueCount: typeof health.venueCount === 'number' ? health.venueCount : null,
-    totalEvents: typeof health.totalEvents === 'number' ? health.totalEvents : null
+    totalEvents: typeof health.totalEvents === 'number' ? health.totalEvents : null,
+    allCategoriesRefreshing: refreshingAllCategories
   });
 });
 

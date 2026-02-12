@@ -1,6 +1,7 @@
 export const startOfLocalDay = (date: Date) =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate());
 const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})(?!T)/;
+const MIDNIGHT_Z_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})T00:00:00(?:\.000)?Z$/;
 
 export const parseEventDateLocalAware = (
   value: string | Date | null | undefined
@@ -16,6 +17,15 @@ export const parseEventDateLocalAware = (
       const month = Number(match[2]);
       const day = Number(match[3]);
       // Noon local avoids date-only timezone shifts.
+      return new Date(year, month - 1, day, 12, 0, 0, 0);
+    }
+    const midnightMatch = value.match(MIDNIGHT_Z_DATE_RE);
+    if (midnightMatch) {
+      const year = Number(midnightMatch[1]);
+      const month = Number(midnightMatch[2]);
+      const day = Number(midnightMatch[3]);
+      // Historical transformed cache may encode date-only values this way.
+      // Treat as intended local calendar date.
       return new Date(year, month - 1, day, 12, 0, 0, 0);
     }
   }

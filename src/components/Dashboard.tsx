@@ -81,7 +81,7 @@ const defaultProviderSelection: Record<string, boolean> = {
 
 export const Dashboard = () => {
   // Simple local cache to survive refresh/hot-reload
-  const LOCAL_EVENTS_CACHE_KEY = 'cmw_events_cache_v3';
+  const LOCAL_EVENTS_CACHE_KEY = 'cmw_events_cache_v4';
   const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -878,7 +878,7 @@ export const Dashboard = () => {
                 })}
               </div>
 
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   type="button"
                   variant="outline"
