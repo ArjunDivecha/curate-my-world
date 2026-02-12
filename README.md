@@ -41,8 +41,9 @@ The `/all-categories` endpoint **never** makes live Ticketmaster API calls durin
 - A background scheduler pre-computes the full all-categories response and writes it to Postgres (`all_categories_response_cache` table)
 - **Daily at 6:00 AM Pacific (`America/Los_Angeles`)**: scheduler refreshes the cache
 - **Fetch Events button**: always reads from Postgres cache (instant, single DB read)
-- If cache is >24h old (e.g. a scheduled refresh failed), it still serves the stale data and triggers a non-blocking background refresh
-- If no cache exists yet, returns empty response with `backgroundRefreshing: true` and triggers a background build
+- If cache is >24h old, it still serves stale cached data by default (no write-on-read)
+- Request-time refresh is opt-in via `refresh=true` on `/api/events/all-categories`
+- If no cache exists yet, returns empty response; daily scheduler (or explicit `refresh=true`) builds it
 
 ### Venue Scraper Cache
 - Daily scheduled scrape at 6:00 AM Pacific writes venue data to Postgres

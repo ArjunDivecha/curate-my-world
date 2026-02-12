@@ -127,7 +127,7 @@ function ensureProviderStats(map, providerKey, selected) {
 // ---------------------------------------------------------------------------
 // Background refresh: re-computes all-categories and writes to Postgres.
 // Called (a) on daily schedule (6:00 AM America/Los_Angeles),
-// (b) when a stale cache is served, and (c) when no cache exists yet.
+// and (b) when explicitly requested via `refresh=1|true`.
 // Guard prevents overlapping refreshes.
 // ---------------------------------------------------------------------------
 let _bgRefreshInProgress = false;
@@ -366,7 +366,7 @@ router.get('/all-categories', async (req, res) => {
   // Postgres-backed cache: ALWAYS serve cached data if it exists.
   // This endpoint NEVER makes live TM API calls.
   // A daily scheduler refreshes this cache at 6:00 AM America/Los_Angeles.
-  // If cache becomes stale (>24h), request-time fallback triggers a non-blocking refresh.
+  // Request-time refresh is opt-in only via `refresh=1|true`.
   const requestKey = JSON.stringify({
     location,
     date_range: date_range || 'next 30 days',
@@ -380,7 +380,7 @@ router.get('/all-categories', async (req, res) => {
       const ageMs = Date.now() - dbCached.updatedAt;
       const duration = Date.now() - startTime;
       const isStale = ageMs > ALL_CATEGORIES_CACHE_STALE_THRESHOLD_MS;
-      const shouldRefresh = isStale || forceRefresh;
+      const shouldRefresh = forceRefresh;
       logger.info('Serving DB-cached all-categories response', {
         location, eventLimit, ageMs, stale: isStale, forceRefresh, duration: `${duration}ms`
       });
@@ -398,7 +398,7 @@ router.get('/all-categories', async (req, res) => {
       logResponse(logger, res, 'allCategoriesEvents-dbCached', duration, {
         totalEvents: dbCached.payload.totalEvents || 0
       });
-      // Trigger background refresh (non-blocking) for stale cache or explicit refresh requests.
+      // Trigger background refresh (non-blocking) only when explicitly requested.
       if (shouldRefresh) {
         triggerBackgroundAllCategoriesRefresh(requestKey, {
           location, date_range, eventLimit, selectedProviders,
@@ -412,9 +412,15 @@ router.get('/all-categories', async (req, res) => {
   }
 
   // No cache available yet — return empty response.
-  // Trigger a non-blocking background build so the next request can serve data.
+  // Request-time build is opt-in only via `refresh=1|true`.
   // Fetch Events NEVER makes live TM API calls.
   const duration = Date.now() - startTime;
+  const shouldRefresh = forceRefresh;
+  const nextScheduledRefreshUtc = new Date(getNextRunTimestampMs({
+    timeZone: ALL_CATEGORIES_REFRESH_TIMEZONE,
+    hour: ALL_CATEGORIES_REFRESH_HOUR,
+    minute: ALL_CATEGORIES_REFRESH_MINUTE
+  })).toISOString();
   logger.info('No cached data available yet; returning empty response', { location, duration: `${duration}ms` });
 
   const supportedCategories = categoryManager.getSupportedCategories()
@@ -437,22 +443,28 @@ router.get('/all-categories', async (req, res) => {
     providerStats: {},
     providerDetails: [],
     processingTime: duration,
-    backgroundRefreshing: true,
+    backgroundRefreshing: shouldRefresh || _bgRefreshInProgress,
     metadata: {
       location,
       dateRange: date_range || 'next 30 days',
       limitPerCategory: eventLimit,
       categoriesFetched: supportedCategories.length,
       dbCache: false,
-      message: 'Cache is being built. A background refresh has been triggered; events will appear shortly.',
+      forceRefreshRequested: forceRefresh,
+      nextScheduledRefreshUtc,
+      message: shouldRefresh
+        ? 'Cache is being built now due to explicit refresh request.'
+        : 'No cache is available yet. Automatic build runs on the daily 6:00 AM Pacific schedule; pass refresh=true to build now.',
       requestId: `all_categories_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     }
   });
   logResponse(logger, res, 'allCategoriesEvents-empty', duration, { totalEvents: 0 });
-  triggerBackgroundAllCategoriesRefresh(requestKey, {
-    location, date_range, eventLimit, selectedProviders,
-    includeTicketmaster, includeVenueScraper, includeWhitelist
-  });
+  if (shouldRefresh) {
+    triggerBackgroundAllCategoriesRefresh(requestKey, {
+      location, date_range, eventLimit, selectedProviders,
+      includeTicketmaster, includeVenueScraper, includeWhitelist
+    });
+  }
 });
 
 /**

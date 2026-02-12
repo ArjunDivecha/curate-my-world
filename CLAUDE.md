@@ -63,7 +63,7 @@ Background scheduler → Layer 1: Ticketmaster (backbone)
                      → writes result to Postgres
 ```
 
-The `/all-categories` endpoint **never** makes live TM API calls. It always reads from a Postgres-backed cache that is refreshed by a background scheduler daily at 6:00 AM PT (`America/Los_Angeles`), with request-time fallback refresh if cache age exceeds 24 hours.
+The `/all-categories` endpoint **never** makes live TM API calls. It always reads from a Postgres-backed cache that is refreshed by a background scheduler daily at 6:00 AM PT (`America/Los_Angeles`). Request-time refresh is opt-in via `refresh=true` (no write-on-read by default).
 
 All events pass through: **dedup → rules filter → blacklist → eventValidator → locationFilter → dateFilter → categoryFilter**
 

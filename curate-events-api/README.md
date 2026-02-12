@@ -42,8 +42,9 @@ Default local URL: `http://127.0.0.1:8765`
 - The `/all-categories` endpoint **never** makes live TM API calls
 - A background scheduler pre-computes the full response and writes to Postgres (`all_categories_response_cache` table)
 - Schedule: daily at 6:00 AM Pacific (`America/Los_Angeles`)
-- If stale (>24h), serves cached data instantly and triggers non-blocking background refresh
-- If no cache exists yet, returns empty response and triggers non-blocking background build
+- If stale (>24h), serves cached data without mutating cache on read
+- Request-time refresh is opt-in via `refresh=true`
+- If no cache exists yet, returns empty response; cache can be built by daily scheduler or explicit `refresh=true`
 - Postgres table managed by `venueCacheDb.js`
 
 ### Venue Scraper Cache
