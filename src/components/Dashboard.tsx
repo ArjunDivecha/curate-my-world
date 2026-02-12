@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { EventCard } from "./EventCard";
 import { DayTimetable } from "./DayTimetable";
 import { WeekDayGrid } from "./WeekDayGrid";
+import { WeekendSplitView } from "./WeekendSplitView";
+import { ThirtyDayAgendaView } from "./ThirtyDayAgendaView";
 import { Header } from "./Header";
 import { FetchEventsButton, type ProviderStatSummary } from "./FetchEventsButton";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +19,7 @@ import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, C
 import { getCategoryColor } from "@/utils/categoryColors";
 import { API_BASE_URL } from "@/utils/apiConfig";
 import { cn } from "@/lib/utils";
+import { getWeekendRange } from "@/lib/dateViewRanges";
 
 interface Preferences {
   interests: {
@@ -383,35 +386,19 @@ export const Dashboard = () => {
         end = new Date(start);
         end.setDate(end.getDate() + 30);
       } else if (datePreset === 'weekend') {
-        // Next Saturday 00:00 through Monday 00:00
-        const day = start.getDay(); // 0 Sun ... 6 Sat
-        const daysUntilSat = (6 - day + 7) % 7;
-        const sat = new Date(start);
-        sat.setDate(sat.getDate() + daysUntilSat);
-        const mon = new Date(sat);
-        mon.setDate(mon.getDate() + 2);
-        // If today is Sat/Sun, treat "this weekend" as current weekend
-        if (day === 6) {
-          end = new Date(start);
-          end.setDate(end.getDate() + 2);
-        } else if (day === 0) {
-          const monday = new Date(start);
-          monday.setDate(monday.getDate() + 1);
-          end = monday;
-        } else {
-          // upcoming weekend
-          events = events.filter(event => {
-            try {
-              if (!event.startDate) return false;
-              const d = new Date(event.startDate);
-              if (isNaN(d.getTime())) return false;
-              return d >= sat && d < mon;
-            } catch {
-              return false;
-            }
-          });
-          end = null;
-        }
+        // Weekend = Friday 5:00 PM through Monday 12:00 AM.
+        const { windowStart, windowEnd } = getWeekendRange(start);
+        events = events.filter(event => {
+          try {
+            if (!event.startDate) return false;
+            const d = new Date(event.startDate);
+            if (isNaN(d.getTime())) return false;
+            return d >= windowStart && d < windowEnd;
+          } catch {
+            return false;
+          }
+        });
+        end = null;
       }
 
       if (end) {
@@ -462,14 +449,19 @@ export const Dashboard = () => {
     return events;
   }, [calendarEvents, selectedDate]);
 
-  const showDayTimetableInDateView = datePreset === 'today';
+  const weekendRange = React.useMemo(() => getWeekendRange(new Date()), [datePreset]);
+  const showDayTimetableInDateView = datePreset === 'today' || !!selectedDate;
+  const showWeekendSplitInDateView = datePreset === 'weekend';
+  const showThirtyDayAgendaInDateView = datePreset === '30d';
   const dateViewPresetLabel =
-    datePreset === 'today'
-      ? 'Today'
+    selectedDate
+      ? selectedDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })
+      : datePreset === 'today'
+        ? 'Today'
       : datePreset === 'week'
         ? 'This Week'
         : datePreset === 'weekend'
-          ? 'This Weekend'
+          ? 'This Weekend (Fri Evening + Sat + Sun)'
           : datePreset === '30d'
             ? 'Next 30 Days'
             : 'Calendar';
@@ -510,7 +502,7 @@ export const Dashboard = () => {
 
     setSelectedDate(parsed);
     setDatePreset(null);
-    setActiveTab('events');
+    setActiveTab('date');
   }, [dateQuery, toast]);
 
   useEffect(() => {
@@ -637,6 +629,7 @@ export const Dashboard = () => {
                       setDatePreset('today');
                       setSelectedDate(null);
                       setDateQuery('');
+                      setActiveTab('date');
                     }}
                   >
                     Today
@@ -649,6 +642,7 @@ export const Dashboard = () => {
                       setDatePreset('week');
                       setSelectedDate(null);
                       setDateQuery('');
+                      setActiveTab('date');
                     }}
                   >
                     This Week
@@ -661,6 +655,7 @@ export const Dashboard = () => {
                       setDatePreset('weekend');
                       setSelectedDate(null);
                       setDateQuery('');
+                      setActiveTab('date');
                     }}
                   >
                     This Weekend
@@ -673,6 +668,7 @@ export const Dashboard = () => {
                       setDatePreset('30d');
                       setSelectedDate(null);
                       setDateQuery('');
+                      setActiveTab('date');
                     }}
                   >
                     Next 30 Days
@@ -912,10 +908,54 @@ export const Dashboard = () => {
               <TabsContent value="date" className="space-y-6">
                 {showDayTimetableInDateView ? (
                   <DayTimetable
-                    key={`date-day-${datePreset ?? 'none'}`}
+                    key={`date-day-${datePreset ?? 'none'}-${selectedDate?.toISOString() ?? 'no-date'}`}
+                    events={calendarEvents}
+                    savedEvents={savedEvents}
+                    initialSelectedDay={selectedDate}
+                    title={dateViewTitle}
+                    onEventToggleSaved={(eventId) => {
+                      const event = events.find(e => e.id === eventId);
+                      if (!event) return;
+                      const isSaved = savedEvents.find(savedEvent => savedEvent.id === eventId);
+                      if (isSaved) {
+                        if (confirm(`Remove "${event.title}" from your saved events?`)) {
+                          handleRemoveFromCalendar(eventId);
+                        }
+                        return;
+                      }
+                      handleSaveToCalendar(eventId);
+                    }}
+                  />
+                ) : showWeekendSplitInDateView ? (
+                  <WeekendSplitView
+                    key={`date-weekend-${weekendRange.friday.toISOString()}`}
                     events={calendarEvents}
                     savedEvents={savedEvents}
                     title={dateViewTitle}
+                    friday={weekendRange.friday}
+                    saturday={weekendRange.saturday}
+                    sunday={weekendRange.sunday}
+                    onDateClick={handleDateClick}
+                    onEventToggleSaved={(eventId) => {
+                      const event = events.find(e => e.id === eventId);
+                      if (!event) return;
+                      const isSaved = savedEvents.find(savedEvent => savedEvent.id === eventId);
+                      if (isSaved) {
+                        if (confirm(`Remove "${event.title}" from your saved events?`)) {
+                          handleRemoveFromCalendar(eventId);
+                        }
+                        return;
+                      }
+                      handleSaveToCalendar(eventId);
+                    }}
+                  />
+                ) : showThirtyDayAgendaInDateView ? (
+                  <ThirtyDayAgendaView
+                    key={`date-30d-${datePreset ?? 'none'}`}
+                    events={calendarEvents}
+                    savedEvents={savedEvents}
+                    title={dateViewTitle}
+                    onDateClick={handleDateClick}
                     onEventToggleSaved={(eventId) => {
                       const event = events.find(e => e.id === eventId);
                       if (!event) return;

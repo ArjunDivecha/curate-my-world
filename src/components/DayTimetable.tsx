@@ -25,6 +25,7 @@ interface DayTimetableProps {
   savedEvents?: Event[];
   onEventToggleSaved: (eventId: string) => void;
   title?: string;
+  initialSelectedDay?: Date | null;
 }
 
 const startOfLocalDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -77,8 +78,18 @@ const laneLabel: Record<string, string> = {
 
 const LANE_ORDER = ["music", "theatre", "comedy", "movies", "art", "food", "tech", "lectures", "kids"];
 
-export const DayTimetable = ({ events, savedEvents = [], onEventToggleSaved, title = "Day View" }: DayTimetableProps) => {
-  const [selectedDay, setSelectedDay] = useState(() => startOfLocalDay(new Date()));
+export const DayTimetable = ({
+  events,
+  savedEvents = [],
+  onEventToggleSaved,
+  title = "Day View",
+  initialSelectedDay = null,
+}: DayTimetableProps) => {
+  const [selectedDay, setSelectedDay] = useState(() =>
+    initialSelectedDay && !isNaN(initialSelectedDay.getTime())
+      ? startOfLocalDay(initialSelectedDay)
+      : startOfLocalDay(new Date())
+  );
 
   const isEventSaved = (eventId: string) => savedEvents.some((e) => e.id === eventId);
 
@@ -94,12 +105,24 @@ export const DayTimetable = ({ events, savedEvents = [], onEventToggleSaved, tit
     // Ensure "today" is present even if empty.
     const today = startOfLocalDay(new Date());
     set.set(today.toDateString(), today);
+    if (initialSelectedDay && !isNaN(initialSelectedDay.getTime())) {
+      const initial = startOfLocalDay(initialSelectedDay);
+      set.set(initial.toDateString(), initial);
+    }
 
     const arr = Array.from(set.values()).sort((a, b) => a.getTime() - b.getTime());
     // Limit to a reasonable horizon to keep the scroller usable.
     const maxItems = 90;
-    return arr.slice(0, maxItems);
-  }, [events]);
+    const limited = arr.slice(0, maxItems);
+    if (initialSelectedDay && !isNaN(initialSelectedDay.getTime())) {
+      const initial = startOfLocalDay(initialSelectedDay);
+      if (!limited.some((d) => sameLocalDay(d, initial))) {
+        limited.push(initial);
+        limited.sort((a, b) => a.getTime() - b.getTime());
+      }
+    }
+    return limited;
+  }, [events, initialSelectedDay]);
 
   // If the currently selected day isn't in the available list anymore (filters changed), fall back to today.
   React.useEffect(() => {
@@ -107,6 +130,11 @@ export const DayTimetable = ({ events, savedEvents = [], onEventToggleSaved, tit
     if (!exists) setSelectedDay(startOfLocalDay(new Date()));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [availableDates.map((d) => d.toDateString()).join("|")]);
+
+  React.useEffect(() => {
+    if (!initialSelectedDay || isNaN(initialSelectedDay.getTime())) return;
+    setSelectedDay(startOfLocalDay(initialSelectedDay));
+  }, [initialSelectedDay]);
 
   const dayEvents = useMemo(() => {
     return events
