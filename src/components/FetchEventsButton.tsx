@@ -117,8 +117,8 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
       params.set('location', location);
       params.set('date_range', 'next 30 days');
       params.set('limit', '500');
-      // Force a background refresh cycle so stale all-categories cache doesn't stay stuck.
-      params.set('refresh', '1');
+      // Use cached all-categories data by default for stable UX.
+      // A background refresh may still be triggered server-side when cache is stale.
       if (aiInstructions) {
         params.set('custom_prompt', aiInstructions);
       }
