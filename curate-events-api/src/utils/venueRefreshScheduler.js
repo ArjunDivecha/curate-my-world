@@ -123,13 +123,22 @@ function spawnVenueScrape() {
 }
 
 export function startVenueRefreshScheduler() {
+  const hasDatabaseUrl = !!process.env.DATABASE_URL;
+  const hasAnthropicKey = !!process.env.ANTHROPIC_API_KEY;
+  const defaultEnabled = (process.env.NODE_ENV === 'production' && hasDatabaseUrl && hasAnthropicKey);
   const enabled = parseBooleanEnv(process.env.VENUE_DAILY_REFRESH_ENABLED, {
     // Default: enabled in production only when DB + Anthropic key exist.
-    defaultValue: (process.env.NODE_ENV === 'production' && !!process.env.DATABASE_URL && !!process.env.ANTHROPIC_API_KEY),
+    defaultValue: defaultEnabled,
   });
 
   if (!enabled) {
-    logger.info('Daily venue refresh scheduler disabled');
+    logger.info('Daily venue refresh scheduler disabled', {
+      nodeEnv: process.env.NODE_ENV || null,
+      explicitEnv: process.env.VENUE_DAILY_REFRESH_ENABLED ?? null,
+      defaultEnabled,
+      hasDatabaseUrl,
+      hasAnthropicKey
+    });
     return;
   }
 

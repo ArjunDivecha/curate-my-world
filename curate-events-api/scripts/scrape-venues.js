@@ -62,6 +62,12 @@ const CACHE_PATH = path.join(DATA_DIR, 'venue-events-cache.json');
 const JINA_READER_BASE = 'https://r.jina.ai';
 const JINA_DELAY_MS = 1000; // 1 second between Jina calls
 const MAX_MARKDOWN_LENGTH = 15000; // Truncate long pages to save tokens
+const TRIBE_FEED_OVERRIDES = {
+  'fortmason.org': 'https://fortmason.org/wp-json/tribe/events/v1/events'
+};
+const TRIBE_LOOKAHEAD_DAYS = 180;
+const TRIBE_PER_PAGE = 100;
+const TRIBE_MAX_PAGES = 8;
 
 // Get API key
 function getAnthropicKey() {
@@ -163,6 +169,38 @@ function decodeIcsText(value) {
     .trim();
 }
 
+function decodeHtmlEntities(value) {
+  return String(value || '')
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => {
+      const code = parseInt(hex, 16);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : '';
+    })
+    .replace(/&#([0-9]+);/g, (_, dec) => {
+      const code = parseInt(dec, 10);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : '';
+    })
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&apos;|&#039;/gi, '\'')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&mdash;/gi, '-')
+    .replace(/&ndash;/gi, '-')
+    .replace(/&rsquo;|&lsquo;/gi, '\'')
+    .replace(/&rdquo;|&ldquo;/gi, '"')
+    .replace(/&hellip;/gi, '...')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>');
+}
+
+function stripHtml(value) {
+  return String(value || '')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function unfoldIcsLines(icsText) {
   const lines = String(icsText || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
   const unfolded = [];
@@ -232,7 +270,7 @@ function categorizeIcsEvent({ summary, description, categories, fallbackCategory
   if (/(food|culinary|wine|farmers market|night market)/.test(text)) return 'food';
   if (/(lecture|talk|panel|conference|tour|workshop|class|literary)/.test(text)) return 'lectures';
   if (/(theater|theatre|ballet|dance|performance|opera)/.test(text)) return 'theatre';
-  if (/(tech|startup|developer|software|ai|hackathon)/.test(text)) return 'tech';
+  if (/(tech|startup|developer|software|hackathon|artificial intelligence|\bai\b)/.test(text)) return 'tech';
   if (/(kids|children|family)/.test(text)) return 'kids';
   if (/(art|exhibit|gallery|visual|photography|fort mason art)/.test(text)) return 'art';
 
@@ -347,6 +385,147 @@ function normalizeEventUrl(url) {
   } catch {
     return input.replace(/[?#].*$/, '').replace(/\/+$/, '/');
   }
+}
+
+function parseSqlDateTime(value) {
+  const text = String(value || '').trim();
+  if (!text) return null;
+  // "YYYY-MM-DD HH:mm:ss" -> "YYYY-MM-DDTHH:mm:ss"
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(text)) {
+    return text.replace(' ', 'T');
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return `${text}T00:00:00`;
+  }
+  const parsed = new Date(text);
+  if (Number.isNaN(parsed.getTime())) return null;
+  const iso = parsed.toISOString();
+  return iso.slice(0, 19);
+}
+
+function getDomainFiltersFromArgs(args) {
+  return args
+    .filter(arg => arg.startsWith('--domain='))
+    .flatMap(arg => arg.slice('--domain='.length).split(','))
+    .map(v => v.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function buildTribeFeedUrl(venue) {
+  const domain = String(venue?.domain || '').toLowerCase();
+  if (TRIBE_FEED_OVERRIDES[domain]) return TRIBE_FEED_OVERRIDES[domain];
+
+  const calendarUrl = String(venue?.calendar_url || '');
+  if (/\/wp-json\/tribe\/events\/v1\/events/i.test(calendarUrl)) {
+    return calendarUrl;
+  }
+
+  return null;
+}
+
+async function fetchTribeEvents(venue) {
+  const feedUrl = buildTribeFeedUrl(venue);
+  if (!feedUrl) return [];
+
+  const startDate = new Date();
+  const endDate = new Date();
+  endDate.setDate(endDate.getDate() + TRIBE_LOOKAHEAD_DAYS);
+  const toDateString = (date) => date.toISOString().slice(0, 10);
+  const start = toDateString(startDate);
+  const end = toDateString(endDate);
+
+  const deduped = new Map();
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  for (let page = 1; page <= TRIBE_MAX_PAGES; page++) {
+    const url = new URL(feedUrl);
+    url.searchParams.set('status', 'publish');
+    url.searchParams.set('start_date', start);
+    url.searchParams.set('end_date', end);
+    url.searchParams.set('per_page', String(TRIBE_PER_PAGE));
+    url.searchParams.set('page', String(page));
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    let response;
+    try {
+      response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'CurateMyWorld/1.0'
+        },
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (!response.ok) {
+      throw new Error(`Tribe HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const payload = await response.json();
+    const items = Array.isArray(payload?.events) ? payload.events : [];
+    if (!items.length) break;
+
+    for (const item of items) {
+      if (item?.status && String(item.status).toLowerCase() !== 'publish') continue;
+      if (item?.hide_from_listings) continue;
+
+      const title = decodeHtmlEntities(item?.title || '').trim();
+      const startDateTime = parseSqlDateTime(item?.start_date || item?.utc_start_date);
+      const endDateTime = parseSqlDateTime(item?.end_date || item?.utc_end_date);
+      const eventUrl = normalizeEventUrl(item?.url || '');
+      if (!title || !startDateTime) continue;
+
+      const startDateObj = new Date(startDateTime);
+      if (Number.isNaN(startDateObj.getTime()) || startDateObj < startOfToday) continue;
+
+      const categoryNames = (Array.isArray(item?.categories) ? item.categories : [])
+        .map(cat => decodeHtmlEntities(cat?.name || ''))
+        .filter(Boolean)
+        .join(' ');
+
+      const descriptionSource = stripHtml(item?.excerpt || item?.description || '');
+      const description = decodeHtmlEntities(descriptionSource).slice(0, 500);
+
+      const normalized = {
+        title,
+        startDate: startDateTime,
+        endDate: endDateTime,
+        description,
+        category: categorizeIcsEvent({
+          summary: title,
+          description,
+          categories: categoryNames,
+          fallbackCategory: venue.category || 'all'
+        }),
+        price: item?.cost ? decodeHtmlEntities(String(item.cost).trim()) : null,
+        eventUrl: eventUrl || null,
+        city: venue.city || null
+      };
+
+      const key = normalized.eventUrl
+        ? canonicalizeIcsEventUrl(normalized.eventUrl)
+        : `${normalized.title}|${normalized.startDate}`;
+
+      const existing = deduped.get(key);
+      if (!existing || new Date(normalized.startDate) < new Date(existing.startDate)) {
+        deduped.set(key, normalized);
+      }
+    }
+
+    const totalPages = Number(payload?.total_pages);
+    if (Number.isFinite(totalPages) && page >= totalPages) break;
+  }
+
+  return Array.from(deduped.values()).sort((a, b) => {
+    const aTime = new Date(a.startDate).getTime();
+    const bTime = new Date(b.startDate).getTime();
+    return aTime - bTime;
+  });
 }
 
 function extractEventUrlsFromMarkdown(markdown, domain) {
@@ -525,6 +704,9 @@ async function persistCache(cache, { writeDb } = {}) {
 async function main() {
   console.log('=== Venue Calendar Scraper ===');
   console.log(`Started: ${new Date().toISOString()}`);
+  if (process.argv.length > 2) {
+    console.log(`CLI args: ${process.argv.slice(2).join(' ')}`);
+  }
 
   const writeDb =
     process.argv.includes('--write-db') ||
@@ -580,6 +762,13 @@ async function main() {
     let scrapableVenues = venues.filter(v => v.calendar_url && v.calendar_url.startsWith('http'));
     console.log(`${scrapableVenues.length} venues have scrapable calendar URLs`);
 
+    const domainFilters = getDomainFiltersFromArgs(process.argv);
+    if (domainFilters.length > 0) {
+      const domainSet = new Set(domainFilters);
+      scrapableVenues = scrapableVenues.filter(v => domainSet.has(String(v.domain || '').toLowerCase()));
+      console.log(`--domain filter active: ${scrapableVenues.length} venue(s) matched`);
+    }
+
     // Load existing cache for incremental update
     const cache = loadExistingCache();
     const previousLastUpdated = cache.lastUpdated || null;
@@ -597,11 +786,26 @@ async function main() {
       console.log(`--retry-failed: retrying ${scrapableVenues.length} previously failed venues`);
     }
 
-    cache.metadata = {
-      totalVenues: scrapableVenues.length,
-      scrapeStarted: new Date().toISOString(),
-      scrapeCompleted: null
-    };
+    const isPartialRun = retryFailed || domainFilters.length > 0;
+    const runStartedAt = new Date().toISOString();
+    if (!cache.metadata || typeof cache.metadata !== 'object') {
+      cache.metadata = {};
+    }
+    if (!isPartialRun) {
+      cache.metadata.totalVenues = scrapableVenues.length;
+      cache.metadata.scrapeStarted = runStartedAt;
+      cache.metadata.scrapeCompleted = null;
+      cache.metadata.runScope = 'full';
+    } else {
+      cache.metadata.lastPartialRun = {
+        startedAt: runStartedAt,
+        totalVenues: scrapableVenues.length,
+        retryFailed,
+        domainFilters
+      };
+      cache.metadata.runScope = 'partial';
+      console.log('Partial run detected; global cache freshness timestamp will not be updated.');
+    }
 
     let totalEvents = 0;
     let successCount = 0;
@@ -649,44 +853,50 @@ async function main() {
           });
           console.log(`  Parsed ${events.length} events from ICS feed`);
         } else {
+          const tribeEvents = await fetchTribeEvents(venue);
+          if (tribeEvents.length > 0) {
+            events = tribeEvents;
+            console.log(`  Parsed ${events.length} events from Tribe JSON feed`);
+          } else {
           // Fetch via Jina Reader
-          const markdown = await fetchViaJina(venue.calendar_url);
+            const markdown = await fetchViaJina(venue.calendar_url);
 
-          if (!markdown || markdown.length < 100) {
-            console.log(`  Skipped: too little content (${markdown?.length || 0} chars)`);
-            skippedCount++;
+            if (!markdown || markdown.length < 100) {
+              console.log(`  Skipped: too little content (${markdown?.length || 0} chars)`);
+              skippedCount++;
 
-            // Preserve previously-scraped events if we have them (avoid clobbering cache on transient failures).
-            const prev = cache.venues?.[venue.domain] || {};
-            const preservedEvents = Array.isArray(prev?.events) ? prev.events : [];
+              // Preserve previously-scraped events if we have them (avoid clobbering cache on transient failures).
+              const prev = cache.venues?.[venue.domain] || {};
+              const preservedEvents = Array.isArray(prev?.events) ? prev.events : [];
 
-            cache.venues[venue.domain] = {
-              venueName: venue.name,
-              domain: venue.domain,
-              category: venue.category,
-              city: venue.city,
-              state: venue.state,
-              events: preservedEvents,
-              lastScraped: new Date().toISOString(),
-              status: preservedEvents.length > 0 ? 'empty_page_preserved' : 'empty_page',
-              eventCount: preservedEvents.length
-            };
-            await persistCache(cache, { writeDb: dbLockAcquired });
-            await sleep(JINA_DELAY_MS);
-            continue;
-          }
+              cache.venues[venue.domain] = {
+                venueName: venue.name,
+                domain: venue.domain,
+                category: venue.category,
+                city: venue.city,
+                state: venue.state,
+                events: preservedEvents,
+                lastScraped: new Date().toISOString(),
+                status: preservedEvents.length > 0 ? 'empty_page_preserved' : 'empty_page',
+                eventCount: preservedEvents.length
+              };
+              await persistCache(cache, { writeDb: dbLockAcquired });
+              await sleep(JINA_DELAY_MS);
+              continue;
+            }
 
-          // Extract events with Haiku
-          const extractedEvents = await extractEventsWithHaiku(
-            anthropic,
-            venue.name,
-            venue.category || 'general',
-            markdown
-          );
-          events = addFallbackEventsFromCalendarUrls(extractedEvents, markdown, venue);
-          const addedByUrlScan = events.length - extractedEvents.length;
-          if (addedByUrlScan > 0) {
-            console.log(`  Added ${addedByUrlScan} events from calendar URL scan`);
+            // Extract events with Haiku
+            const extractedEvents = await extractEventsWithHaiku(
+              anthropic,
+              venue.name,
+              venue.category || 'general',
+              markdown
+            );
+            events = addFallbackEventsFromCalendarUrls(extractedEvents, markdown, venue);
+            const addedByUrlScan = events.length - extractedEvents.length;
+            if (addedByUrlScan > 0) {
+              console.log(`  Added ${addedByUrlScan} events from calendar URL scan`);
+            }
           }
         }
 
@@ -761,13 +971,12 @@ async function main() {
     // Only bump cache freshness if we actually fetched something successfully.
     // If the run was a systemic failure (0 successes), keep the previous lastUpdated so the API can
     // retry later and we don't pretend the cache is "fresh but empty".
-    if (runSucceeded) {
+    if (runSucceeded && !isPartialRun) {
       cache.lastUpdated = new Date().toISOString();
     } else {
       cache.lastUpdated = previousLastUpdated;
     }
-    cache.metadata.scrapeCompleted = new Date().toISOString();
-    cache.metadata.stats = {
+    const runStats = {
       success: successCount,
       failed: failCount,
       skipped: skippedCount,
@@ -775,13 +984,23 @@ async function main() {
       thisRunEvents: totalEvents,
       previousTotalEvents
     };
+    if (!isPartialRun) {
+      cache.metadata.scrapeCompleted = new Date().toISOString();
+      cache.metadata.stats = runStats;
+    } else {
+      cache.metadata.lastPartialRun = {
+        ...(cache.metadata.lastPartialRun || {}),
+        completedAt: new Date().toISOString(),
+        stats: runStats
+      };
+    }
     await persistCache(cache, { writeDb: dbLockAcquired });
 
     if (scrapeRunId) {
       await completeVenueScrapeRun(scrapeRunId, {
         status: runSucceeded ? 'success' : 'error',
         error: runSucceeded ? null : 'No venues scraped successfully (cache preserved; lastUpdated not bumped)',
-        stats: { ...cache.metadata.stats, totalVenues: scrapableVenues.length },
+        stats: { ...runStats, totalVenues: scrapableVenues.length, runScope: isPartialRun ? 'partial' : 'full' },
         cacheLastUpdated: cache.lastUpdated
       });
       scrapeRunCompleted = true;
