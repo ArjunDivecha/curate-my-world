@@ -727,7 +727,7 @@
     "category": "comedy",
     "city": "San Francisco",
     "state": "CA",
-    "calendar_url": "https://yoshis.com/events",
+    "calendar_url": "https://yoshis.com/events/buy-tickets",
     "source": "exa_discovery",
     "discovered_at": "2026-01-16T18:12:13.590Z",
     "lat": 37.796226,
@@ -3963,7 +3963,7 @@
     "city": "San Francisco",
     "state": "CA",
     "website": "https://billgrahamcivic.com",
-    "calendar_url": "https://billgrahamcivic.com/events/steve-aoki-260220",
+    "calendar_url": "https://billgrahamcivic.com/event-listing/",
     "source": "manual_add_strict",
     "discovered_at": "2026-02-09T21:03:08.505648+00:00"
   },
@@ -4062,7 +4062,7 @@
     "city": "San Jose",
     "state": "CA",
     "website": "https://cltc.org",
-    "calendar_url": "https://cltc.org/event/dial-m/",
+    "calendar_url": "https://cltc.org/current-events/",
     "source": "manual_add_strict",
     "discovered_at": "2026-02-09T21:03:34.211584+00:00"
   },
@@ -4502,7 +4502,7 @@
     "city": "San Francisco",
     "state": "CA",
     "website": "https://palaceoffinearts.org",
-    "calendar_url": "https://www.palaceoffinearts.org/event/modi",
+    "calendar_url": "https://www.palaceoffinearts.org/all-events",
     "source": "manual_add_strict",
     "discovered_at": "2026-02-09T21:03:59.902313+00:00"
   },
@@ -4601,7 +4601,7 @@
     "city": "San Jose",
     "state": "CA",
     "website": "https://shotgunplayers.org",
-    "calendar_url": "https://shotgunplayers.org/box-office/accessibility-programs",
+    "calendar_url": "https://shotgunplayers.org/tickets/",
     "source": "manual_add_strict",
     "discovered_at": "2026-02-09T21:04:07.114131+00:00"
   },
@@ -4667,7 +4667,7 @@
     "city": "Mountain View",
     "state": "CA",
     "website": "https://theatreworks.org",
-    "calendar_url": "https://theatreworks.org/information/plan-your-visit/accessibility/",
+    "calendar_url": "https://theatreworks.org/mainstage/",
     "source": "manual_add_strict",
     "discovered_at": "2026-02-09T21:04:10.917610+00:00"
   },
