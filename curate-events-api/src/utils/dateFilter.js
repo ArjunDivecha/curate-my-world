@@ -20,6 +20,7 @@
  */
 
 import { createLogger } from './logger.js';
+import { getEventsTimeZone, getStartOfZonedDay, getZonedDateTime, getZonedParts } from './timeZoneDate.js';
 
 const logger = createLogger('DateFilter');
 const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})(?!T)/;
@@ -49,6 +50,7 @@ function parseDateLocalAware(value) {
 export class DateFilter {
   constructor() {
     this.logger = logger;
+    this.timeZone = getEventsTimeZone();
   }
 
   /**
@@ -58,103 +60,101 @@ export class DateFilter {
    */
   parseDateRange(dateRange) {
     const now = new Date();
-    now.setHours(0, 0, 0, 0); // Start of today
+    const startOfToday = getStartOfZonedDay(now, this.timeZone);
+    const endOfDay = (dayOffset = 0) => {
+      const end = getZonedDateTime({
+        baseDate: now,
+        dayOffset,
+        hour: 23,
+        minute: 59,
+        second: 59,
+        timeZone: this.timeZone
+      });
+      end.setMilliseconds(999);
+      return end;
+    };
     
     const normalized = (dateRange || 'next 30 days').toLowerCase().trim();
     
     if (normalized.includes('today')) {
-      const endOfToday = new Date(now);
-      endOfToday.setHours(23, 59, 59, 999);
       return {
-        startDate: now,
-        endDate: endOfToday
+        startDate: startOfToday,
+        endDate: endOfDay(0)
       };
     }
     
     if (normalized.includes('tomorrow')) {
-      const tomorrow = new Date(now);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const endOfTomorrow = new Date(tomorrow);
-      endOfTomorrow.setHours(23, 59, 59, 999);
+      const tomorrowStart = getZonedDateTime({
+        baseDate: now,
+        dayOffset: 1,
+        hour: 0,
+        minute: 0,
+        second: 0,
+        timeZone: this.timeZone
+      });
       return {
-        startDate: tomorrow,
-        endDate: endOfTomorrow
+        startDate: tomorrowStart,
+        endDate: endOfDay(1)
       };
     }
     
     if (normalized.includes('this week') || normalized.includes('next 7 days')) {
-      const weekEnd = new Date(now);
-      weekEnd.setDate(weekEnd.getDate() + 7);
-      weekEnd.setHours(23, 59, 59, 999);
       return {
-        startDate: now,
-        endDate: weekEnd
+        startDate: startOfToday,
+        endDate: endOfDay(7)
       };
     }
     
     if (normalized.includes('this weekend')) {
-      // Find next Saturday
-      const daysUntilSaturday = (6 - now.getDay() + 7) % 7;
-      const saturday = new Date(now);
-      saturday.setDate(saturday.getDate() + daysUntilSaturday);
-      
-      const sunday = new Date(saturday);
-      sunday.setDate(sunday.getDate() + 1);
-      sunday.setHours(23, 59, 59, 999);
+      const zonedNow = getZonedParts(now, this.timeZone);
+      const daysUntilSaturday = (6 - zonedNow.weekday + 7) % 7;
+      const saturday = getZonedDateTime({
+        baseDate: now,
+        dayOffset: daysUntilSaturday,
+        hour: 0,
+        minute: 0,
+        second: 0,
+        timeZone: this.timeZone
+      });
       
       return {
         startDate: saturday,
-        endDate: sunday
+        endDate: endOfDay(daysUntilSaturday + 1)
       };
     }
     
     if (normalized.includes('next 14 days')) {
-      const twoWeeksEnd = new Date(now);
-      twoWeeksEnd.setDate(twoWeeksEnd.getDate() + 14);
-      twoWeeksEnd.setHours(23, 59, 59, 999);
       return {
-        startDate: now,
-        endDate: twoWeeksEnd
+        startDate: startOfToday,
+        endDate: endOfDay(14)
       };
     }
     
     if (normalized.includes('next 30 days') || normalized.includes('next month')) {
-      const monthEnd = new Date(now);
-      monthEnd.setDate(monthEnd.getDate() + 29); // 29 days + today = 30 days total
-      monthEnd.setHours(23, 59, 59, 999);
       return {
-        startDate: now,
-        endDate: monthEnd
+        startDate: startOfToday,
+        endDate: endOfDay(29) // 29 days + today = 30 days total
       };
     }
     
     if (normalized.includes('next 60 days')) {
-      const twoMonthsEnd = new Date(now);
-      twoMonthsEnd.setDate(twoMonthsEnd.getDate() + 60);
-      twoMonthsEnd.setHours(23, 59, 59, 999);
       return {
-        startDate: now,
-        endDate: twoMonthsEnd
+        startDate: startOfToday,
+        endDate: endOfDay(60)
       };
     }
     
     if (normalized.includes('next 90 days')) {
-      const threeMonthsEnd = new Date(now);
-      threeMonthsEnd.setDate(threeMonthsEnd.getDate() + 90);
-      threeMonthsEnd.setHours(23, 59, 59, 999);
       return {
-        startDate: now,
-        endDate: threeMonthsEnd
+        startDate: startOfToday,
+        endDate: endOfDay(90)
       };
     }
     
     // Default: next 30 days
-    const defaultEnd = new Date(now);
-    defaultEnd.setDate(defaultEnd.getDate() + 29); // 29 days + today = 30 days total
-    defaultEnd.setHours(23, 59, 59, 999);
     return {
-      startDate: now,
-      endDate: defaultEnd
+      startDate: startOfToday,
+      endDate: endOfDay(29) // 29 days + today = 30 days total
     };
   }
 
@@ -206,9 +206,7 @@ export class DateFilter {
         return false; // Invalid date = keep event (benefit of the doubt)
       }
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Start of today
-      
+      const today = getStartOfZonedDay(new Date(), this.timeZone);
       return date < today;
     } catch (error) {
       return false; // Error = keep event

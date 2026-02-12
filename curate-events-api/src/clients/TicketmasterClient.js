@@ -22,9 +22,11 @@
 import config from '../utils/config.js';
 import { createLogger } from '../utils/logger.js';
 import { getTicketmasterClassification, isTicketmasterSupported } from '../utils/categoryMapping.js';
+import { getEventsTimeZone, getStartOfZonedDay, getZonedDateTime } from '../utils/timeZoneDate.js';
 
 const logger = createLogger('TicketmasterClient');
 const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const EVENTS_TIME_ZONE = getEventsTimeZone();
 
 function toIsoSeconds(date) {
   return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -95,11 +97,15 @@ export class TicketmasterClient {
 
     try {
       const url = new URL(`${this.baseUrl}/events.json`);
-      const startOfToday = new Date();
-      startOfToday.setHours(0, 0, 0, 0);
-      const endOfWindow = new Date(startOfToday);
-      endOfWindow.setDate(endOfWindow.getDate() + 30);
-      endOfWindow.setHours(23, 59, 59, 0);
+      const startOfToday = getStartOfZonedDay(new Date(), EVENTS_TIME_ZONE);
+      const endOfWindow = getZonedDateTime({
+        baseDate: new Date(),
+        dayOffset: 30,
+        hour: 23,
+        minute: 59,
+        second: 59,
+        timeZone: EVENTS_TIME_ZONE
+      });
       const params = new URLSearchParams({
         'apikey': this.consumerKey,
         'latlong': `${coordinates.lat},${coordinates.lng}`,
@@ -213,8 +219,7 @@ export class TicketmasterClient {
         
         // Filter out past events (only if we have a valid date)
         if (hasValidDate) {
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
+          const today = getStartOfZonedDay(new Date(), EVENTS_TIME_ZONE);
           if (eventDate < today) {
             logger.debug('Skipping past Ticketmaster event', {
               title: ticketmasterEvent.name?.substring(0, 50),

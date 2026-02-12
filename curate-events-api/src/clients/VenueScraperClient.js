@@ -25,6 +25,7 @@ import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { createLogger } from '../utils/logger.js';
 import { normalizeCategory } from '../utils/categoryMapping.js';
+import { getEventsTimeZone, getStartOfZonedDay } from '../utils/timeZoneDate.js';
 import {
   getLatestVenueScrapeRun,
   readVenueCacheFromDb,
@@ -40,6 +41,7 @@ const DEFAULT_CACHE_PATH = path.resolve(__dirname, '../../../data/venue-events-c
 const SCRAPER_SCRIPT = path.resolve(__dirname, '../../scripts/scrape-venues.js');
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})(?!T)/;
+const EVENTS_TIME_ZONE = getEventsTimeZone();
 
 function parseDateLocalAware(value) {
   if (!value) return null;
@@ -166,8 +168,7 @@ export class VenueScraperClient {
     const cache = await this._loadCache();
     if (!cache || !cache.venues) return [];
 
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
+    const now = getStartOfZonedDay(new Date(), EVENTS_TIME_ZONE);
     const events = [];
 
     for (const venueData of Object.values(cache.venues)) {
