@@ -38,6 +38,7 @@ export class EventDeduplicator {
       title: 0.8,      // 80% similarity for titles
       venue: 0.85,     // 85% similarity for venues  
       date: 24,        // Within 24 hours
+      venueMismatchCutoff: 0.35, // If venues are clearly different, don't dedupe
       overall: 0.75    // 75% overall similarity to consider duplicate
     };
   }
@@ -152,20 +153,33 @@ export class EventDeduplicator {
   calculateSimilarity(event1, event2) {
     let totalScore = 0;
     let weights = 0;
+    const normalizedTitle1 = this.normalizeString(event1.title || '');
+    const normalizedTitle2 = this.normalizeString(event2.title || '');
+    const normalizedVenue1 = this.normalizeString(event1.venue || '');
+    const normalizedVenue2 = this.normalizeString(event2.venue || '');
+    const normalizedLocation1 = this.normalizeString(event1.location || '');
+    const normalizedLocation2 = this.normalizeString(event2.location || '');
 
     // Title similarity (weight: 3)
     const titleSim = this.calculateStringSimilarity(
-      this.normalizeString(event1.title || ''),
-      this.normalizeString(event2.title || '')
+      normalizedTitle1,
+      normalizedTitle2
     );
     totalScore += titleSim * 3;
     weights += 3;
 
     // Venue similarity (weight: 2)
     const venueSim = this.calculateStringSimilarity(
-      this.normalizeString(event1.venue || ''),
-      this.normalizeString(event2.venue || '')
+      normalizedVenue1,
+      normalizedVenue2
     );
+
+    // Keep clearly different venues as separate events even if title/date match.
+    // This prevents multi-venue museum systems from collapsing distinct venues.
+    if (normalizedVenue1 && normalizedVenue2 && venueSim < this.thresholds.venueMismatchCutoff) {
+      return 0;
+    }
+
     totalScore += venueSim * 2;
     weights += 2;
 
@@ -176,8 +190,8 @@ export class EventDeduplicator {
 
     // Location similarity (weight: 1)
     const locationSim = this.calculateStringSimilarity(
-      this.normalizeString(event1.location || ''),
-      this.normalizeString(event2.location || '')
+      normalizedLocation1,
+      normalizedLocation2
     );
     totalScore += locationSim * 1;
     weights += 1;

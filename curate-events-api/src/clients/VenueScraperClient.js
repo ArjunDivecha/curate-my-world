@@ -183,13 +183,14 @@ export class VenueScraperClient {
         // Filter by category if specified
         if (category && category !== 'all') {
           const eventCat = (event.category || '').toLowerCase();
-          const targetCat = category.toLowerCase();
+          const targetCat = normalizeCategory(category.toLowerCase());
           // Match on normalized event category; fall back to venue's default only if event has no category
           if (eventCat) {
             if (eventCat !== targetCat) continue;
           } else {
             // No event category — use venue default
-            if ((venueData.category || '').toLowerCase() !== targetCat) continue;
+            const venueCat = normalizeCategory((venueData.category || '').toLowerCase());
+            if (venueCat !== targetCat) continue;
           }
         }
 
@@ -255,7 +256,10 @@ export class VenueScraperClient {
    */
   async _maybeRefreshInBackground() {
     const refreshMode = (process.env.VENUE_BACKGROUND_REFRESH || '').toLowerCase().trim();
-    if (refreshMode === 'disabled' || refreshMode === 'off' || refreshMode === 'false' || refreshMode === '0') {
+    const requestTimeRefreshEnabled = ['1', 'true', 'yes', 'on', 'enabled', 'enable'].includes(refreshMode);
+    // Default behavior: do NOT trigger scrapes on read. Daily scheduler is the source of truth.
+    // Set VENUE_BACKGROUND_REFRESH=true only for explicit stale-while-revalidate behavior.
+    if (!requestTimeRefreshEnabled) {
       return;
     }
 
@@ -321,12 +325,13 @@ export class VenueScraperClient {
    */
   async searchEvents({ category, location, limit = 50 }) {
     const startTime = Date.now();
+    const normalizedCategory = category ? normalizeCategory(String(category)) : category;
 
     // Check staleness and kick off background refresh if needed (non-blocking)
     void this._maybeRefreshInBackground();
 
     try {
-      const allEvents = await this._getAllEvents(category);
+      const allEvents = await this._getAllEvents(normalizedCategory);
 
       // Apply limit
       const limitedEvents = allEvents.slice(0, limit);
@@ -334,7 +339,7 @@ export class VenueScraperClient {
       const processingTime = Date.now() - startTime;
 
       logger.info('Venue scraper cache read', {
-        category,
+        category: normalizedCategory,
         totalCached: allEvents.length,
         returned: limitedEvents.length,
         processingTime: `${processingTime}ms`,
@@ -352,7 +357,7 @@ export class VenueScraperClient {
       };
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      logger.error('Venue scraper search error', { error: error.message, category });
+      logger.error('Venue scraper search error', { error: error.message, category: normalizedCategory });
       return {
         success: false,
         error: error.message,
