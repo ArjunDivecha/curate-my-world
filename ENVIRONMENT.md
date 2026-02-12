@@ -40,7 +40,7 @@ Venue cache/refresh controls:
 - `VENUE_DAILY_REFRESH_HOUR` (default `6`)
 - `VENUE_DAILY_REFRESH_MINUTE` (default `0`)
 
-Note: The all-categories response cache (`all_categories_response_cache` Postgres table) is refreshed automatically by a background scheduler every 6 hours (+ 30s after startup). No env var configuration needed — it runs whenever `DATABASE_URL` is set.
+Note: The all-categories response cache (`all_categories_response_cache` Postgres table) is refreshed automatically by a background scheduler daily at 6:00 AM Pacific (`America/Los_Angeles`). If cache age exceeds 24h, request-time fallback triggers a non-blocking refresh. No env var configuration needed — it runs whenever `DATABASE_URL` is set.
 
 ## Current Cloud Values (Live)
 

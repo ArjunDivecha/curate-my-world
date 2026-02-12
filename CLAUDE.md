@@ -54,7 +54,7 @@ npm run stop               # Clean shutdown
 
 ```
 Frontend → Backend API → Postgres cache (instant read)
-                         ↑ populated by background scheduler every 6h
+                         ↑ populated by background scheduler daily at 6:00 AM PT
                          ↑ scheduler uses: Layer 1 + Layer 2 + Layer 3
 
 Background scheduler → Layer 1: Ticketmaster (backbone)
@@ -63,7 +63,7 @@ Background scheduler → Layer 1: Ticketmaster (backbone)
                      → writes result to Postgres
 ```
 
-The `/all-categories` endpoint **never** makes live TM API calls. It always reads from a Postgres-backed cache that is refreshed by a background scheduler (30s after startup + every 6h).
+The `/all-categories` endpoint **never** makes live TM API calls. It always reads from a Postgres-backed cache that is refreshed by a background scheduler daily at 6:00 AM PT (`America/Los_Angeles`), with request-time fallback refresh if cache age exceeds 24 hours.
 
 All events pass through: **dedup → rules filter → blacklist → eventValidator → locationFilter → dateFilter → categoryFilter**
 

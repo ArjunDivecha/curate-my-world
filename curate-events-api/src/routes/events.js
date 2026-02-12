@@ -126,10 +126,84 @@ function ensureProviderStats(map, providerKey, selected) {
 
 // ---------------------------------------------------------------------------
 // Background refresh: re-computes all-categories and writes to Postgres.
-// Called (a) when a stale cache is served, and (b) on a 6h interval.
+// Called (a) on daily schedule (6:00 AM America/Los_Angeles),
+// (b) when a stale cache is served, and (c) when no cache exists yet.
 // Guard prevents overlapping refreshes.
 // ---------------------------------------------------------------------------
 let _bgRefreshInProgress = false;
+const ALL_CATEGORIES_REFRESH_TIMEZONE = 'America/Los_Angeles';
+const ALL_CATEGORIES_REFRESH_HOUR = 6;
+const ALL_CATEGORIES_REFRESH_MINUTE = 0;
+const ALL_CATEGORIES_CACHE_STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
+
+function getZonedParts(date, timeZone) {
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+  const parts = dtf.formatToParts(date);
+  const map = {};
+  for (const part of parts) {
+    if (part.type === 'literal') continue;
+    map[part.type] = part.value;
+  }
+  return {
+    year: Number(map.year),
+    month: Number(map.month),
+    day: Number(map.day),
+    hour: Number(map.hour),
+    minute: Number(map.minute),
+    second: Number(map.second),
+  };
+}
+
+function getTimeZoneOffsetMs(date, timeZone) {
+  const parts = getZonedParts(date, timeZone);
+  const asUTC = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+  return asUTC - date.getTime();
+}
+
+function zonedTimeToUtcMs({ year, month, day, hour, minute, second }, timeZone) {
+  const wallClockAsUTC = Date.UTC(year, month - 1, day, hour, minute, second);
+  let offset = getTimeZoneOffsetMs(new Date(wallClockAsUTC), timeZone);
+  let utc = wallClockAsUTC - offset;
+  offset = getTimeZoneOffsetMs(new Date(utc), timeZone);
+  utc = wallClockAsUTC - offset;
+  return utc;
+}
+
+function getNextRunTimestampMs({ timeZone, hour, minute }) {
+  const now = new Date();
+  const zonedNow = getZonedParts(now, timeZone);
+
+  const target = {
+    year: zonedNow.year,
+    month: zonedNow.month,
+    day: zonedNow.day,
+    hour,
+    minute,
+    second: 0,
+  };
+
+  const passedToday =
+    zonedNow.hour > hour ||
+    (zonedNow.hour === hour && (
+      zonedNow.minute > minute ||
+      (zonedNow.minute === minute && (zonedNow.second || 0) > 0)
+    ));
+
+  if (passedToday) {
+    return zonedTimeToUtcMs({ ...target, day: target.day + 1 }, timeZone);
+  }
+
+  return zonedTimeToUtcMs(target, timeZone);
+}
 
 async function triggerBackgroundAllCategoriesRefresh(requestKey, opts) {
   if (_bgRefreshInProgress) {
@@ -207,10 +281,9 @@ async function triggerBackgroundAllCategoriesRefresh(requestKey, opts) {
   }
 }
 
-// Auto-refresh: run every 6 hours to keep the default cache warm.
+// Auto-refresh: run daily at 6:00 AM America/Los_Angeles.
 // Uses the same default params as the frontend (SF, 30 days, TM+venue_scraper).
 function startAllCategoriesRefreshScheduler() {
-  const REFRESH_INTERVAL_MS = 6 * 60 * 60 * 1000;
   const defaultProviders = new Set(Object.entries(PROVIDER_DEFAULTS).filter(([,v])=>v).map(([k])=>k));
   const defaultLimit = Math.min(500, config.api.maxLimit); // match frontend's limit=500
   const requestKey = JSON.stringify({
@@ -228,11 +301,34 @@ function startAllCategoriesRefreshScheduler() {
     });
   };
 
-  // First refresh 30s after startup (let the server settle)
-  setTimeout(refresh, 30_000);
-  // Then every 6 hours
-  setInterval(refresh, REFRESH_INTERVAL_MS);
-  logger.info('All-categories refresh scheduler started', { intervalHours: REFRESH_INTERVAL_MS / 3600000 });
+  const scheduleNext = () => {
+    const nextMs = getNextRunTimestampMs({
+      timeZone: ALL_CATEGORIES_REFRESH_TIMEZONE,
+      hour: ALL_CATEGORIES_REFRESH_HOUR,
+      minute: ALL_CATEGORIES_REFRESH_MINUTE
+    });
+    const delayMs = Math.max(0, nextMs - Date.now());
+
+    logger.info('Next all-categories refresh scheduled', {
+      timeZone: ALL_CATEGORIES_REFRESH_TIMEZONE,
+      hour: ALL_CATEGORIES_REFRESH_HOUR,
+      minute: ALL_CATEGORIES_REFRESH_MINUTE,
+      nextRunUtc: new Date(nextMs).toISOString(),
+      delayMinutes: Math.round(delayMs / 60000),
+    });
+
+    setTimeout(() => {
+      refresh();
+      scheduleNext();
+    }, delayMs);
+  };
+
+  logger.info('All-categories daily refresh scheduler started', {
+    timeZone: ALL_CATEGORIES_REFRESH_TIMEZONE,
+    hour: ALL_CATEGORIES_REFRESH_HOUR,
+    minute: ALL_CATEGORIES_REFRESH_MINUTE
+  });
+  scheduleNext();
 }
 
 // Start the scheduler
@@ -269,8 +365,8 @@ router.get('/all-categories', async (req, res) => {
 
   // Postgres-backed cache: ALWAYS serve cached data if it exists.
   // This endpoint NEVER makes live TM API calls.
-  // The background scheduler (30s after startup + every 6h) handles all live fetching.
-  const STALE_THRESHOLD_MS = 6 * 60 * 60 * 1000; // 6h — triggers background refresh
+  // A daily scheduler refreshes this cache at 6:00 AM America/Los_Angeles.
+  // If cache becomes stale (>24h), request-time fallback triggers a non-blocking refresh.
   const requestKey = JSON.stringify({
     location,
     date_range: date_range || 'next 30 days',
@@ -283,7 +379,7 @@ router.get('/all-categories', async (req, res) => {
     if (dbCached) {
       const ageMs = Date.now() - dbCached.updatedAt;
       const duration = Date.now() - startTime;
-      const isStale = ageMs > STALE_THRESHOLD_MS;
+      const isStale = ageMs > ALL_CATEGORIES_CACHE_STALE_THRESHOLD_MS;
       const shouldRefresh = isStale || forceRefresh;
       logger.info('Serving DB-cached all-categories response', {
         location, eventLimit, ageMs, stale: isStale, forceRefresh, duration: `${duration}ms`
@@ -316,8 +412,8 @@ router.get('/all-categories', async (req, res) => {
   }
 
   // No cache available yet — return empty response.
-  // The background scheduler (runs 30s after startup, then every 6h) will
-  // populate the cache.  Fetch Events NEVER makes live TM API calls.
+  // Trigger a non-blocking background build so the next request can serve data.
+  // Fetch Events NEVER makes live TM API calls.
   const duration = Date.now() - startTime;
   logger.info('No cached data available yet; returning empty response', { location, duration: `${duration}ms` });
 
@@ -348,11 +444,15 @@ router.get('/all-categories', async (req, res) => {
       limitPerCategory: eventLimit,
       categoriesFetched: supportedCategories.length,
       dbCache: false,
-      message: 'Cache is being built. Events will appear shortly after the first background refresh completes (~30s after server start).',
+      message: 'Cache is being built. A background refresh has been triggered; events will appear shortly.',
       requestId: `all_categories_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     }
   });
   logResponse(logger, res, 'allCategoriesEvents-empty', duration, { totalEvents: 0 });
+  triggerBackgroundAllCategoriesRefresh(requestKey, {
+    location, date_range, eventLimit, selectedProviders,
+    includeTicketmaster, includeVenueScraper, includeWhitelist
+  });
 });
 
 /**
