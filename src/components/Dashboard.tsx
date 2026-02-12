@@ -526,11 +526,68 @@ export const Dashboard = () => {
   };
 
 
-  // Calculate total event count for the "All" category
-  const totalEventCount = Object.values(categoryStats).reduce((acc: number, cur: unknown) => {
-    const stat = cur as { count?: number };
-    return acc + (stat?.count || 0);
-  }, 0);
+  const filteredCategoryCounts = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    const todayStart = startOfLocalDay(new Date());
+    const selectedDay = selectedDate ? startOfLocalDay(selectedDate) : null;
+    const weekendWindow = datePreset === 'weekend' ? getWeekendRange(todayStart) : null;
+    const normalizedSearch = searchQuery.toLowerCase().trim();
+
+    const matchesDateFilter = (event: any) => {
+      if (selectedDay) {
+        const d = parseEventDateLocalAware(event.startDate);
+        return !!d && sameLocalDay(d, selectedDay);
+      }
+
+      if (!datePreset) return true;
+
+      const d = parseEventDateLocalAware(event.startDate);
+      if (!d) return false;
+
+      if (datePreset === 'today') {
+        return sameLocalDay(d, todayStart);
+      }
+
+      if (datePreset === 'week') {
+        const end = new Date(todayStart);
+        end.setDate(end.getDate() + 7);
+        const eventDay = startOfLocalDay(d);
+        return eventDay >= todayStart && eventDay < end;
+      }
+
+      if (datePreset === '30d') {
+        const end = new Date(todayStart);
+        end.setDate(end.getDate() + 30);
+        const eventDay = startOfLocalDay(d);
+        return eventDay >= todayStart && eventDay < end;
+      }
+
+      if (datePreset === 'weekend' && weekendWindow) {
+        return d >= weekendWindow.windowStart && d < weekendWindow.windowEnd;
+      }
+
+      return true;
+    };
+
+    const matchesSearchFilter = (event: any) => {
+      if (!normalizedSearch) return true;
+      const title = (event.title || '').toLowerCase();
+      const desc = (event.description || '').toLowerCase();
+      const venue = (event.venue?.name || '').toLowerCase();
+      const address = (event.venue?.address || '').toLowerCase();
+      return title.includes(normalizedSearch) || desc.includes(normalizedSearch) || venue.includes(normalizedSearch) || address.includes(normalizedSearch);
+    };
+
+    Object.entries(transformedEventsByCategory).forEach(([rawCategory, categoryEvents]) => {
+      const canonicalCategory = rawCategory === 'technology' ? 'tech' : rawCategory;
+      const matchedCount = (categoryEvents as any[]).filter((event) => matchesDateFilter(event) && matchesSearchFilter(event)).length;
+      counts[canonicalCategory] = (counts[canonicalCategory] || 0) + matchedCount;
+    });
+
+    return counts;
+  }, [transformedEventsByCategory, datePreset, selectedDate, searchQuery]);
+
+  const totalEventCount = Object.values(filteredCategoryCounts).reduce((sum, count) => sum + count, 0);
 
   return (
     <div className="min-h-screen">
@@ -854,7 +911,7 @@ export const Dashboard = () => {
                 </Button>
                 {Object.keys(categoryIcons).map((category) => {
                   const categoryKey = mapCategoryToBackend(category);
-                  const stats = categoryStats[categoryKey] || { count: 0 };
+                  const count = filteredCategoryCounts[categoryKey] || 0;
                   const selected = activeCategory === categoryKey;
                   const colors = getCategoryColor(categoryKey);
                   const Icon = categoryIcons[category];
@@ -871,7 +928,7 @@ export const Dashboard = () => {
                         selected ? "border-2 shadow-sm" : ""
                       )}
                       onClick={() => handleCategoryFilter(categoryKey)}
-                      title={`${category}: ${stats.count} events`}
+                      title={`${category}: ${count} events`}
                     >
                       <span className={cn("inline-flex h-9 w-9 items-center justify-center rounded-xl border", colors.border, "bg-white/50")}>
                         <Icon className={cn("h-6 w-6", colors.accent)} />
@@ -879,7 +936,7 @@ export const Dashboard = () => {
                       <span className="text-left leading-tight">
                         <span className="block font-semibold">{category}</span>
                         <span className={cn("block text-xs", colors.accent)}>
-                          {stats.count} events
+                          {count} events
                         </span>
                       </span>
                     </Button>

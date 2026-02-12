@@ -137,7 +137,7 @@ export const ThirtyDayAgendaView = ({
                   return (
                     <div
                       key={event.id}
-                      className={cn("rounded-xl border bg-white/85 px-3 py-2 hover:bg-white transition", colors.border)}
+                      className={cn("rounded-xl border px-3 py-2 transition", colors.background, colors.border, colors.text, colors.hover)}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <button
@@ -146,8 +146,8 @@ export const ThirtyDayAgendaView = ({
                           onClick={() => openEventUrl(event)}
                           title="Open event details"
                         >
-                          <div className="text-sm font-semibold text-foreground truncate">{cleanHtmlText(event.title)}</div>
-                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <div className={cn("text-sm font-semibold truncate", colors.text)}>{cleanHtmlText(event.title)}</div>
+                          <div className={cn("mt-1 flex flex-wrap items-center gap-2 text-xs", colors.accent)}>
                             <span className="inline-flex items-center gap-1">
                               <Clock className="h-3 w-3" />
                               {formatTime(event.startDate)}
@@ -160,7 +160,7 @@ export const ThirtyDayAgendaView = ({
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="h-8 px-2"
+                            className={cn("h-8 px-2 bg-white/70 border-white/70 hover:bg-white", colors.text)}
                             onClick={() => openEventUrl(event)}
                             title="Open event page"
                           >
@@ -170,7 +170,7 @@ export const ThirtyDayAgendaView = ({
                             type="button"
                             variant="outline"
                             size="sm"
-                            className={cn("h-8 px-2", saved ? "border-primary/40" : "")}
+                            className={cn("h-8 px-2 bg-white/70 border-white/70 hover:bg-white", colors.text, saved ? "border-primary/40" : "")}
                             onClick={() => onEventToggleSaved(event.id)}
                             title={saved ? "Unsave" : "Save"}
                           >

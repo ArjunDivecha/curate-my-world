@@ -205,8 +205,11 @@ export const WeekDayGrid = ({
                         key={event.id}
                         className={cn(
                           "flex items-start gap-2 rounded-xl border px-2 py-2",
-                          isWeekend ? "bg-amber-50/75 hover:bg-amber-100/60" : "bg-white/60 hover:bg-white",
+                          colors.background,
                           colors.border,
+                          colors.text,
+                          colors.hover,
+                          isWeekend ? "ring-1 ring-amber-200/60" : "",
                           "transition cursor-pointer"
                         )}
                         onClick={() => openEventUrl(event)}
@@ -214,8 +217,8 @@ export const WeekDayGrid = ({
                       >
                         <span className={cn("mt-1 inline-block h-2 w-2 rounded-full bg-current", colors.accent)} />
                         <div className="min-w-0 flex-1">
-                          <div className="text-xs font-semibold text-foreground truncate">{cleanHtmlText(event.title)}</div>
-                          <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <div className={cn("text-xs font-semibold truncate", colors.text)}>{cleanHtmlText(event.title)}</div>
+                          <div className={cn("mt-1 flex items-center gap-1 text-[11px]", colors.accent)}>
                             <Clock className="h-3 w-3" />
                             <span>{formatTime(event.startDate)}</span>
                           </div>
@@ -271,11 +274,11 @@ export const WeekDayGrid = ({
               const catKey = laneKeyForEvent(event);
               const colors = getCategoryColor(catKey);
               return (
-                <div key={event.id} className={cn("rounded-xl border p-3 bg-white", colors.border)}>
+                <div key={event.id} className={cn("rounded-xl border p-3", colors.background, colors.border, colors.text)}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="font-semibold text-sm truncate">{cleanHtmlText(event.title)}</div>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <div className={cn("font-semibold text-sm truncate", colors.text)}>{cleanHtmlText(event.title)}</div>
+                      <div className={cn("mt-1 flex flex-wrap items-center gap-2 text-xs", colors.accent)}>
                         <span className="inline-flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {formatTime(event.startDate)}

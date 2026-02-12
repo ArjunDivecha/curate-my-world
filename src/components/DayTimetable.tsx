@@ -78,6 +78,126 @@ const laneLabel: Record<string, string> = {
 };
 
 const LANE_ORDER = ["music", "theatre", "comedy", "movies", "art", "food", "tech", "lectures", "kids"];
+const MAX_VISIBLE_OVERLAP_COLUMNS = 3;
+
+interface LaneLayoutEvent {
+  event: Event;
+  top: number;
+  height: number;
+  columnIndex: number;
+  columnsInGroup: number;
+}
+
+interface LaneOverflowMarker {
+  id: string;
+  top: number;
+  hiddenEvents: number;
+}
+
+const computeLaneLayout = (
+  laneEvents: Event[],
+  timelineStartMin: number,
+  pxPerMin: number
+): { events: LaneLayoutEvent[]; overflowMarkers: LaneOverflowMarker[] } => {
+  const prepared = laneEvents
+    .map((event) => {
+      const start = parseEventDateLocalAware(event.startDate);
+      if (!start) return null;
+      const startMin = minutesOfDay(start);
+      let endMin = startMin + 60;
+      if (event.endDate) {
+        const en = parseEventDateLocalAware(event.endDate);
+        if (en) {
+          const maybe = minutesOfDay(en);
+          if (maybe > startMin) endMin = maybe;
+        }
+      }
+      return { event, startMin, endMin };
+    })
+    .filter((item): item is { event: Event; startMin: number; endMin: number } => !!item)
+    .sort((a, b) => (a.startMin - b.startMin) || (a.endMin - b.endMin));
+
+  const laidOut: LaneLayoutEvent[] = [];
+  const overflowMarkers: LaneOverflowMarker[] = [];
+
+  let groupItems: typeof prepared = [];
+  let groupEndMin = -1;
+  let groupStartMin = -1;
+
+  const flushGroup = (groupIndex: number) => {
+    if (!groupItems.length) return;
+
+    const columnEndMins: number[] = [];
+    const groupEventIndices: number[] = [];
+
+    for (const item of groupItems) {
+      let columnIndex = columnEndMins.findIndex((endMin) => endMin <= item.startMin);
+      if (columnIndex === -1) {
+        columnIndex = columnEndMins.length;
+        columnEndMins.push(item.endMin);
+      } else {
+        columnEndMins[columnIndex] = item.endMin;
+      }
+
+      const top = (item.startMin - timelineStartMin) * pxPerMin;
+      const height = Math.max(44, (item.endMin - item.startMin) * pxPerMin);
+      laidOut.push({
+        event: item.event,
+        top,
+        height,
+        columnIndex,
+        columnsInGroup: 1,
+      });
+      groupEventIndices.push(laidOut.length - 1);
+    }
+
+    const columnsInGroup = Math.max(1, columnEndMins.length);
+    for (const idx of groupEventIndices) {
+      laidOut[idx].columnsInGroup = columnsInGroup;
+    }
+
+    if (columnsInGroup > MAX_VISIBLE_OVERLAP_COLUMNS) {
+      const hiddenEvents = groupEventIndices.reduce((count, idx) => (
+        laidOut[idx].columnIndex >= MAX_VISIBLE_OVERLAP_COLUMNS ? count + 1 : count
+      ), 0);
+
+      if (hiddenEvents > 0) {
+        overflowMarkers.push({
+          id: `group-${groupIndex}`,
+          top: Math.max(0, (groupStartMin - timelineStartMin) * pxPerMin + 4),
+          hiddenEvents,
+        });
+      }
+    }
+
+    groupItems = [];
+    groupEndMin = -1;
+    groupStartMin = -1;
+  };
+
+  let groupIndex = 0;
+  for (const item of prepared) {
+    if (!groupItems.length) {
+      groupItems.push(item);
+      groupStartMin = item.startMin;
+      groupEndMin = item.endMin;
+      continue;
+    }
+
+    if (item.startMin < groupEndMin) {
+      groupItems.push(item);
+      groupEndMin = Math.max(groupEndMin, item.endMin);
+    } else {
+      flushGroup(groupIndex++);
+      groupItems.push(item);
+      groupStartMin = item.startMin;
+      groupEndMin = item.endMin;
+    }
+  }
+  flushGroup(groupIndex);
+
+  return { events: laidOut, overflowMarkers };
+};
 
 export const DayTimetable = ({
   events,
@@ -208,6 +328,17 @@ export const DayTimetable = ({
     return map;
   }, [dayEvents]);
 
+  const laneLayouts = useMemo(() => {
+    const map = new Map<string, { events: LaneLayoutEvent[]; overflowMarkers: LaneOverflowMarker[] }>();
+    for (const lane of lanes) {
+      map.set(
+        lane.key,
+        computeLaneLayout(eventsByLane.get(lane.key) || [], timeRange.startMin, PX_PER_MIN)
+      );
+    }
+    return map;
+  }, [lanes, eventsByLane, timeRange.startMin]);
+
   return (
     <div className="space-y-4">
       <Card>
@@ -297,7 +428,7 @@ export const DayTimetable = ({
               <div className="flex min-w-max">
                 {lanes.map((lane) => {
                   const colors = getCategoryColor(lane.key);
-                  const laneEvents = eventsByLane.get(lane.key) || [];
+                  const laneLayout = laneLayouts.get(lane.key) || { events: [], overflowMarkers: [] };
                   return (
                     <div key={lane.key} className="w-[260px] sm:w-[300px] border-r last:border-r-0">
                       <div className={cn("h-12 border-b bg-white/80 px-3 flex items-center justify-between")}>
@@ -317,31 +448,25 @@ export const DayTimetable = ({
                           return <div key={m} style={{ top }} className="absolute left-0 right-0 h-px bg-slate-200/60" />;
                         })}
 
-                        {laneEvents.map((event) => {
-                          const start = parseEventDateLocalAware(event.startDate);
-                          if (!start) return null;
-                          const startMin = minutesOfDay(start);
-                          let endMin = startMin + 60;
-                          if (event.endDate) {
-                            const en = parseEventDateLocalAware(event.endDate);
-                            if (en) {
-                              const maybe = minutesOfDay(en);
-                              if (maybe > startMin) endMin = maybe;
-                            }
-                          }
-                          const top = (startMin - timeRange.startMin) * PX_PER_MIN;
-                          const height = Math.max(44, (endMin - startMin) * PX_PER_MIN);
+                        {laneLayout.events.map((layoutEvent) => {
+                          const { event, top, height, columnIndex, columnsInGroup } = layoutEvent;
+                          const visibleColumns = Math.min(columnsInGroup, MAX_VISIBLE_OVERLAP_COLUMNS);
+                          if (columnIndex >= visibleColumns) return null;
+                          const columnWidthPct = 100 / visibleColumns;
+                          const left = `calc(${columnIndex * columnWidthPct}% + 4px)`;
+                          const width = `calc(${columnWidthPct}% - 6px)`;
                           const saved = isEventSaved(event.id);
+                          const compactCard = visibleColumns >= 3;
 
                           return (
                             <div
                               key={event.id}
                               className={cn(
-                                "absolute left-2 right-2 rounded-xl border shadow-sm cursor-pointer overflow-hidden",
+                                "absolute rounded-xl border shadow-sm cursor-pointer overflow-hidden",
                                 colors.border,
                                 colors.background
                               )}
-                              style={{ top, height }}
+                              style={{ top, height, left, width, zIndex: 20 + columnIndex }}
                               onClick={() => openEventUrl(event)}
                               title="Tap to open event"
                             >
@@ -349,8 +474,10 @@ export const DayTimetable = ({
                               <div className="pl-4 pr-2 py-2">
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="min-w-0">
-                                    <div className="text-xs font-semibold text-foreground line-clamp-2">{cleanHtmlText(event.title)}</div>
-                                    <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                                    <div className={cn("text-xs font-semibold", compactCard ? "line-clamp-1" : "line-clamp-2", colors.text)}>
+                                      {cleanHtmlText(event.title)}
+                                    </div>
+                                    <div className={cn("mt-1 flex items-center gap-1 text-[11px]", colors.accent)}>
                                       <Clock className="h-3 w-3" />
                                       <span>{fmtTime(event.startDate)}</span>
                                     </div>
@@ -359,6 +486,8 @@ export const DayTimetable = ({
                                     type="button"
                                     className={cn(
                                       "shrink-0 rounded-lg border bg-white/70 hover:bg-white px-2 py-1 text-[11px]",
+                                      compactCard ? "px-1.5 py-0.5 text-[10px]" : "",
+                                      colors.text,
                                       saved ? "border-primary/40" : "border-slate-200"
                                     )}
                                     onClick={(e) => {
@@ -372,11 +501,21 @@ export const DayTimetable = ({
                                   </button>
                                 </div>
 
-                                <div className="mt-1 text-[11px] text-muted-foreground truncate">{event.venue?.name}</div>
+                                {(!compactCard || height >= 72) && (
+                                  <div className={cn("mt-1 text-[11px] truncate", colors.accent)}>{event.venue?.name}</div>
+                                )}
                               </div>
                             </div>
                           );
                         })}
+
+                        {laneLayout.overflowMarkers.map((marker) => (
+                          <div key={marker.id} className="absolute right-2 z-40" style={{ top: marker.top }}>
+                            <Badge className="bg-slate-900/85 text-white border-slate-700 text-[10px] px-1.5 py-0.5">
+                              +{marker.hiddenEvents} overlaps
+                            </Badge>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   );
