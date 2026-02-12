@@ -1,8 +1,8 @@
 /**
  * Daily venue scrape scheduler (6:00am America/Los_Angeles).
  *
- * This runs inside the API process and spawns the existing scraper script as a
- * detached child process that writes results to Postgres (`--write-db`).
+ * This runs inside the API process and spawns the daily orchestrator script,
+ * which executes scrape + retry + all-categories refresh + reporting.
  *
  * It is a pragmatic alternative to configuring a separate Railway cron/worker.
  * The scraper itself uses a Postgres advisory lock, so even if multiple app
@@ -23,7 +23,7 @@ const DEFAULT_TIMEZONE = 'America/Los_Angeles';
 const DEFAULT_HOUR = 6;
 const DEFAULT_MINUTE = 0;
 
-const SCRAPER_SCRIPT = path.resolve(__dirname, '../../scripts/scrape-venues.js');
+const DAILY_UPDATE_SCRIPT = path.resolve(__dirname, '../../scripts/run-daily-update.js');
 
 function parseBooleanEnv(value, { defaultValue } = {}) {
   if (value === undefined || value === null || value === '') return defaultValue;
@@ -81,7 +81,7 @@ function getNextRunTimestampMs({ timeZone, hour, minute }) {
   const now = new Date();
   const zonedNow = getZonedParts(now, timeZone);
 
-  let target = {
+  const targetToday = {
     year: zonedNow.year,
     month: zonedNow.month,
     day: zonedNow.day,
@@ -89,36 +89,32 @@ function getNextRunTimestampMs({ timeZone, hour, minute }) {
     minute,
     second: 0,
   };
-
-  // If we've already passed today's scheduled time in the target time zone, schedule tomorrow.
-  const passedToday =
-    zonedNow.hour > hour ||
-    (zonedNow.hour === hour && (
-      zonedNow.minute > minute ||
-      (zonedNow.minute === minute && (zonedNow.second || 0) > 0)
-    ));
-  if (passedToday) {
-    const tomorrowUTC = zonedTimeToUtcMs(
-      { ...target, day: target.day + 1 },
-      timeZone
-    );
-    return tomorrowUTC;
+  const nextTodayMs = zonedTimeToUtcMs(targetToday, timeZone);
+  if (nextTodayMs <= now.getTime()) {
+    return zonedTimeToUtcMs({ ...targetToday, day: targetToday.day + 1 }, timeZone);
   }
-
-  return zonedTimeToUtcMs(target, timeZone);
+  return nextTodayMs;
 }
 
-function spawnVenueScrape() {
+function spawnDailyUpdate() {
   try {
-    const child = spawn('node', [SCRAPER_SCRIPT, '--write-db'], {
+    const child = spawn('node', [DAILY_UPDATE_SCRIPT], {
       stdio: 'ignore',
-      detached: true,
       env: { ...process.env }
     });
-    child.unref();
-    logger.info('Scheduled venue scrape triggered', { script: SCRAPER_SCRIPT });
+    logger.info('Scheduled daily update triggered', { script: DAILY_UPDATE_SCRIPT, pid: child.pid || null });
+    child.on('exit', (code) => {
+      if (code === 0) {
+        logger.info('Scheduled daily update completed successfully');
+      } else {
+        logger.error('Scheduled daily update failed', { exitCode: code });
+      }
+    });
+    child.on('error', (error) => {
+      logger.error('Scheduled daily update spawn error', { error: error.message });
+    });
   } catch (error) {
-    logger.error('Failed to spawn scheduled venue scrape', { error: error.message });
+    logger.error('Failed to spawn scheduled daily update', { error: error.message });
   }
 }
 
@@ -132,7 +128,7 @@ export function startVenueRefreshScheduler() {
   });
 
   if (!enabled) {
-    logger.info('Daily venue refresh scheduler disabled', {
+    logger.info('Daily update scheduler disabled', {
       nodeEnv: process.env.NODE_ENV || null,
       explicitEnv: process.env.VENUE_DAILY_REFRESH_ENABLED ?? null,
       defaultEnabled,
@@ -147,7 +143,7 @@ export function startVenueRefreshScheduler() {
   const minute = Number(process.env.VENUE_DAILY_REFRESH_MINUTE ?? DEFAULT_MINUTE);
 
   if (!Number.isFinite(hour) || hour < 0 || hour > 23 || !Number.isFinite(minute) || minute < 0 || minute > 59) {
-    logger.warn('Invalid daily refresh schedule; scheduler disabled', { hour, minute, timeZone });
+    logger.warn('Invalid daily update schedule; scheduler disabled', { hour, minute, timeZone });
     return;
   }
 
@@ -155,7 +151,7 @@ export function startVenueRefreshScheduler() {
     const nextMs = getNextRunTimestampMs({ timeZone, hour, minute });
     const delayMs = Math.max(0, nextMs - Date.now());
 
-    logger.info('Next daily venue scrape scheduled', {
+    logger.info('Next daily update scheduled', {
       timeZone,
       hour,
       minute,
@@ -164,7 +160,7 @@ export function startVenueRefreshScheduler() {
     });
 
     setTimeout(() => {
-      spawnVenueScrape();
+      spawnDailyUpdate();
       scheduleNext();
     }, delayMs);
   };

@@ -126,8 +126,7 @@ function ensureProviderStats(map, providerKey, selected) {
 
 // ---------------------------------------------------------------------------
 // Background refresh: re-computes all-categories and writes to Postgres.
-// Called (a) on daily schedule (6:00 AM America/Los_Angeles),
-// and (b) when explicitly requested via `refresh=1|true`.
+// Called by the daily orchestrator and when explicitly requested via `refresh=1|true`.
 // Guard prevents overlapping refreshes.
 // ---------------------------------------------------------------------------
 let _bgRefreshInProgress = false;
@@ -182,7 +181,7 @@ function getNextRunTimestampMs({ timeZone, hour, minute }) {
   const now = new Date();
   const zonedNow = getZonedParts(now, timeZone);
 
-  const target = {
+  const targetToday = {
     year: zonedNow.year,
     month: zonedNow.month,
     day: zonedNow.day,
@@ -190,22 +189,14 @@ function getNextRunTimestampMs({ timeZone, hour, minute }) {
     minute,
     second: 0,
   };
-
-  const passedToday =
-    zonedNow.hour > hour ||
-    (zonedNow.hour === hour && (
-      zonedNow.minute > minute ||
-      (zonedNow.minute === minute && (zonedNow.second || 0) > 0)
-    ));
-
-  if (passedToday) {
-    return zonedTimeToUtcMs({ ...target, day: target.day + 1 }, timeZone);
+  const nextTodayMs = zonedTimeToUtcMs(targetToday, timeZone);
+  if (nextTodayMs <= now.getTime()) {
+    return zonedTimeToUtcMs({ ...targetToday, day: targetToday.day + 1 }, timeZone);
   }
-
-  return zonedTimeToUtcMs(target, timeZone);
+  return nextTodayMs;
 }
 
-async function triggerBackgroundAllCategoriesRefresh(requestKey, opts) {
+export async function triggerBackgroundAllCategoriesRefresh(requestKey, opts) {
   if (_bgRefreshInProgress) {
     logger.info('Background all-categories refresh already in progress, skipping');
     return;
@@ -281,9 +272,7 @@ async function triggerBackgroundAllCategoriesRefresh(requestKey, opts) {
   }
 }
 
-// Auto-refresh: run daily at 6:00 AM America/Los_Angeles.
-// Uses the same default params as the frontend (SF, 30 days, TM+venue_scraper).
-function startAllCategoriesRefreshScheduler() {
+export function getDefaultAllCategoriesRefreshRequest() {
   const defaultProviders = new Set(Object.entries(PROVIDER_DEFAULTS).filter(([,v])=>v).map(([k])=>k));
   const defaultLimit = Math.min(500, config.api.maxLimit); // match frontend's limit=500
   const requestKey = JSON.stringify({
@@ -293,46 +282,32 @@ function startAllCategoriesRefreshScheduler() {
     providers: Array.from(defaultProviders).sort()
   });
 
-  const refresh = () => {
-    triggerBackgroundAllCategoriesRefresh(requestKey, {
-      location: 'San Francisco, CA', date_range: 'next 30 days',
-      eventLimit: defaultLimit, selectedProviders: defaultProviders,
-      includeTicketmaster: true, includeVenueScraper: true, includeWhitelist: false
-    });
+  return {
+    requestKey,
+    opts: {
+      location: 'San Francisco, CA',
+      date_range: 'next 30 days',
+      eventLimit: defaultLimit,
+      selectedProviders: defaultProviders,
+      includeTicketmaster: true,
+      includeVenueScraper: true,
+      includeWhitelist: false
+    }
   };
-
-  const scheduleNext = () => {
-    const nextMs = getNextRunTimestampMs({
-      timeZone: ALL_CATEGORIES_REFRESH_TIMEZONE,
-      hour: ALL_CATEGORIES_REFRESH_HOUR,
-      minute: ALL_CATEGORIES_REFRESH_MINUTE
-    });
-    const delayMs = Math.max(0, nextMs - Date.now());
-
-    logger.info('Next all-categories refresh scheduled', {
-      timeZone: ALL_CATEGORIES_REFRESH_TIMEZONE,
-      hour: ALL_CATEGORIES_REFRESH_HOUR,
-      minute: ALL_CATEGORIES_REFRESH_MINUTE,
-      nextRunUtc: new Date(nextMs).toISOString(),
-      delayMinutes: Math.round(delayMs / 60000),
-    });
-
-    setTimeout(() => {
-      refresh();
-      scheduleNext();
-    }, delayMs);
-  };
-
-  logger.info('All-categories daily refresh scheduler started', {
-    timeZone: ALL_CATEGORIES_REFRESH_TIMEZONE,
-    hour: ALL_CATEGORIES_REFRESH_HOUR,
-    minute: ALL_CATEGORIES_REFRESH_MINUTE
-  });
-  scheduleNext();
 }
 
-// Start the scheduler
-startAllCategoriesRefreshScheduler();
+export async function refreshDefaultAllCategoriesCache({ reason = 'manual' } = {}) {
+  const { requestKey, opts } = getDefaultAllCategoriesRefreshRequest();
+  logger.info('Refreshing default all-categories cache', { reason });
+  await triggerBackgroundAllCategoriesRefresh(requestKey, opts);
+  const dbCached = await readAllCategoriesCache(requestKey);
+  return {
+    success: !!dbCached,
+    requestKey,
+    updatedAt: dbCached?.updatedAt || null,
+    totalEvents: dbCached?.payload?.totalEvents || 0
+  };
+}
 
 /**
  * GET /api/events/all-categories
@@ -365,7 +340,7 @@ router.get('/all-categories', async (req, res) => {
 
   // Postgres-backed cache: ALWAYS serve cached data if it exists.
   // This endpoint NEVER makes live TM API calls.
-  // A daily scheduler refreshes this cache at 6:00 AM America/Los_Angeles.
+  // A daily orchestrated update refreshes this cache at 6:00 AM America/Los_Angeles.
   // Request-time refresh is opt-in only via `refresh=1|true`.
   const requestKey = JSON.stringify({
     location,
@@ -454,7 +429,7 @@ router.get('/all-categories', async (req, res) => {
       nextScheduledRefreshUtc,
       message: shouldRefresh
         ? 'Cache is being built now due to explicit refresh request.'
-        : 'No cache is available yet. Automatic build runs on the daily 6:00 AM Pacific schedule; pass refresh=true to build now.',
+        : 'No cache is available yet. Automatic build runs in the daily 6:00 AM Pacific orchestrated update; pass refresh=true to build now.',
       requestId: `all_categories_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     }
   });

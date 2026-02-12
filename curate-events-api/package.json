@@ -21,7 +21,8 @@
     "scrape:venues": "node scripts/scrape-venues.js",
     "scrape:retry": "node scripts/scrape-venues.js --retry-failed",
     "scrape:venues:db": "node scripts/scrape-venues.js --write-db",
-    "scrape:retry:db": "node scripts/scrape-venues.js --retry-failed --write-db"
+    "scrape:retry:db": "node scripts/scrape-venues.js --retry-failed --write-db --allow-partial-db-write --run-type=daily_retry",
+    "daily:update": "node scripts/run-daily-update.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

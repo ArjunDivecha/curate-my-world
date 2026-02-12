@@ -175,18 +175,16 @@ export class VenueScraperClient {
       if (!venueData.events || !Array.isArray(venueData.events)) continue;
 
       for (const event of venueData.events) {
-        // Normalize event category using central mapping (e.g. "theater" → "theatre")
-        if (event.category) {
-          event.category = normalizeCategory(event.category);
-        }
+        // Normalize without mutating the cached object.
+        const eventCat = event.category ? normalizeCategory(event.category) : '';
 
         // Filter by category if specified
         if (category && category !== 'all') {
-          const eventCat = (event.category || '').toLowerCase();
+          const normalizedEventCat = eventCat.toLowerCase();
           const targetCat = normalizeCategory(category.toLowerCase());
           // Match on normalized event category; fall back to venue's default only if event has no category
-          if (eventCat) {
-            if (eventCat !== targetCat) continue;
+          if (normalizedEventCat) {
+            if (normalizedEventCat !== targetCat) continue;
           } else {
             // No event category — use venue default
             const venueCat = normalizeCategory((venueData.category || '').toLowerCase());

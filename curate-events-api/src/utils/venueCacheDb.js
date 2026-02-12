@@ -15,6 +15,7 @@ const SCRAPE_LOCK_KEY = 923_442_911; // arbitrary constant for pg advisory lock
 
 let poolPromise = null;
 let schemaEnsuredPromise = null;
+let scrapeLockClient = null;
 
 async function getPool() {
   if (poolPromise) return poolPromise;
@@ -82,6 +83,24 @@ async function ensureSchema(pool) {
           payload JSONB NOT NULL,
           updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
+      `);
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS daily_update_runs (
+          id BIGSERIAL PRIMARY KEY,
+          status TEXT NOT NULL,
+          started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          completed_at TIMESTAMPTZ,
+          error TEXT,
+          summary JSONB,
+          report_markdown TEXT,
+          report_path TEXT
+        )
+      `);
+
+      await pool.query(`
+        CREATE INDEX IF NOT EXISTS daily_update_runs_started_at_idx
+          ON daily_update_runs (started_at DESC)
       `);
 
       return true;
@@ -238,27 +257,114 @@ export async function tryAcquireVenueScrapeLock() {
   if (!pool) return { ok: false, reason: 'no_pool' };
   const ok = await ensureSchema(pool);
   if (!ok) return { ok: false, reason: 'schema' };
+  if (scrapeLockClient) return { ok: false, reason: 'locked' };
 
+  let client = null;
   try {
-    const result = await pool.query(`SELECT pg_try_advisory_lock($1) AS locked`, [SCRAPE_LOCK_KEY]);
+    client = await pool.connect();
+    const result = await client.query(`SELECT pg_try_advisory_lock($1) AS locked`, [SCRAPE_LOCK_KEY]);
     const locked = !!result.rows?.[0]?.locked;
-    return locked ? { ok: true } : { ok: false, reason: 'locked' };
+    if (!locked) {
+      client.release();
+      return { ok: false, reason: 'locked' };
+    }
+    scrapeLockClient = client;
+    return { ok: true };
   } catch (error) {
+    if (client && !scrapeLockClient) {
+      try { client.release(); } catch {}
+    }
+    if (scrapeLockClient) {
+      try { scrapeLockClient.release(); } catch {}
+      scrapeLockClient = null;
+    }
     logger.warn('Failed to acquire venue scrape lock', { error: error.message });
     return { ok: false, reason: 'error' };
   }
 }
 
 export async function releaseVenueScrapeLock() {
-  const pool = await getPool();
-  if (!pool) return false;
+  if (!scrapeLockClient) return false;
 
   try {
-    await pool.query(`SELECT pg_advisory_unlock($1)`, [SCRAPE_LOCK_KEY]);
+    await scrapeLockClient.query(`SELECT pg_advisory_unlock($1)`, [SCRAPE_LOCK_KEY]);
+    scrapeLockClient.release();
+    scrapeLockClient = null;
     return true;
   } catch (error) {
+    try { scrapeLockClient.release(); } catch {}
+    scrapeLockClient = null;
     logger.warn('Failed to release venue scrape lock', { error: error.message });
     return false;
+  }
+}
+
+export async function insertDailyUpdateRun() {
+  const pool = await getPool();
+  if (!pool) return null;
+  const ok = await ensureSchema(pool);
+  if (!ok) return null;
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO daily_update_runs (status, started_at) VALUES ('running', NOW()) RETURNING id`
+    );
+    return result.rows?.[0]?.id ?? null;
+  } catch (error) {
+    logger.warn('Failed to insert daily update run', { error: error.message });
+    return null;
+  }
+}
+
+export async function completeDailyUpdateRun(runId, { status, error, summary, reportMarkdown, reportPath } = {}) {
+  const pool = await getPool();
+  if (!pool) return false;
+  const ok = await ensureSchema(pool);
+  if (!ok) return false;
+  if (!runId) return false;
+
+  try {
+    await pool.query(
+      `
+      UPDATE daily_update_runs
+      SET
+        status = $2,
+        completed_at = NOW(),
+        error = $3,
+        summary = $4,
+        report_markdown = $5,
+        report_path = $6
+      WHERE id = $1
+      `,
+      [runId, status || 'success', error || null, summary || null, reportMarkdown || null, reportPath || null]
+    );
+    return true;
+  } catch (error2) {
+    logger.warn('Failed to complete daily update run', { error: error2.message });
+    return false;
+  }
+}
+
+export async function getLatestDailyUpdateRun() {
+  const pool = await getPool();
+  if (!pool) return null;
+  const ok = await ensureSchema(pool);
+  if (!ok) return null;
+
+  try {
+    const result = await pool.query(
+      `
+      SELECT id, status, started_at, completed_at, error, summary, report_path
+      FROM daily_update_runs
+      ORDER BY started_at DESC
+      LIMIT 1
+      `
+    );
+    if (!result.rows?.length) return null;
+    return result.rows[0] || null;
+  } catch (error) {
+    logger.warn('Failed to query latest daily update run', { error: error.message });
+    return null;
   }
 }
 

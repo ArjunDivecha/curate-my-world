@@ -11,6 +11,7 @@ import { config } from '../utils/config.js';
 import TicketmasterClient from '../clients/TicketmasterClient.js';
 import { VenueScraperClient } from '../clients/VenueScraperClient.js';
 import { getListStats } from '../utils/listManager.js';
+import { getLatestDailyUpdateRun } from '../utils/venueCacheDb.js';
 
 const router = express.Router();
 const logger = createLogger('HealthRoute');
@@ -82,13 +83,21 @@ async function handleHealth(req, res, { checkApi } = {}) {
       ]);
 
       const venueScraperHealth = await venueScraperClient.getHealthStatus();
+      const latestDailyUpdateRun = await getLatestDailyUpdateRun();
 
       providerStatus = {
         ticketmaster: ticketmasterResult.status === 'fulfilled' ? ticketmasterResult.value : {
           available: false,
           error: ticketmasterResult.reason?.message || 'Unknown error'
         },
-        venue_scraper: venueScraperHealth
+        venue_scraper: venueScraperHealth,
+        daily_update: latestDailyUpdateRun ? {
+          status: latestDailyUpdateRun.status,
+          startedAt: latestDailyUpdateRun.started_at,
+          completedAt: latestDailyUpdateRun.completed_at,
+          error: latestDailyUpdateRun.error,
+          reportPath: latestDailyUpdateRun.report_path
+        } : null
       };
 
       // Degrade overall status if venue cache is stale

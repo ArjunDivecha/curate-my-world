@@ -41,6 +41,7 @@ import dotenv from 'dotenv';
 import {
   completeVenueScrapeRun,
   insertVenueScrapeRun,
+  readVenueCacheFromDb,
   releaseVenueScrapeLock,
   tryAcquireVenueScrapeLock,
   upsertVenueCacheToDb,
@@ -237,6 +238,17 @@ function parseIcsDate(value, { isEnd = false } = {}) {
   const dateTime = raw.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})?Z?$/);
   if (dateTime) {
     const [, y, m, d, hh, mm, ss] = dateTime;
+    if (raw.endsWith('Z')) {
+      const utc = new Date(Date.UTC(
+        Number(y),
+        Number(m) - 1,
+        Number(d),
+        Number(hh),
+        Number(mm),
+        Number(ss || '0')
+      ));
+      return utc.toISOString().slice(0, 19) + 'Z';
+    }
     return `${y}-${m}-${d}T${hh}:${mm}:${ss || '00'}`;
   }
 
@@ -355,12 +367,9 @@ function parseIcsEvents(icsText, { fallbackCategory = 'all', fallbackCity = null
       city: extractCityFromLocation(event.location, fallbackCity)
     };
 
-    // ICS feeds often repeat occurrences with the same URL; keep earliest upcoming.
-    const key = normalized.eventUrl || `${normalized.title}|${normalized.startDate}`;
-    const existing = deduped.get(key);
-    if (!existing || new Date(normalized.startDate) < new Date(existing.startDate)) {
-      deduped.set(key, normalized);
-    }
+    // Keep each occurrence date for recurring events.
+    const key = `${normalized.title}|${normalized.startDate}`;
+    deduped.set(key, normalized);
   }
 
   return Array.from(deduped.values()).sort((a, b) => {
@@ -409,6 +418,17 @@ function getDomainFiltersFromArgs(args) {
     .flatMap(arg => arg.slice('--domain='.length).split(','))
     .map(v => v.trim().toLowerCase())
     .filter(Boolean);
+}
+
+function getRunTypeFromArgs(args) {
+  const value = args
+    .find(arg => arg.startsWith('--run-type='))
+    ?.slice('--run-type='.length)
+    .trim()
+    .toLowerCase();
+  if (!value) return null;
+  if (['daily_full', 'daily_retry', 'manual_full', 'manual_partial'].includes(value)) return value;
+  return 'unknown';
 }
 
 function buildTribeFeedUrl(venue) {
@@ -507,14 +527,8 @@ async function fetchTribeEvents(venue) {
         city: venue.city || null
       };
 
-      const key = normalized.eventUrl
-        ? canonicalizeIcsEventUrl(normalized.eventUrl)
-        : `${normalized.title}|${normalized.startDate}`;
-
-      const existing = deduped.get(key);
-      if (!existing || new Date(normalized.startDate) < new Date(existing.startDate)) {
-        deduped.set(key, normalized);
-      }
+      const key = `${normalized.title}|${normalized.startDate}`;
+      deduped.set(key, normalized);
     }
 
     const totalPages = Number(payload?.total_pages);
@@ -667,7 +681,16 @@ ${calendarMarkdown}`
 /**
  * Load existing cache for incremental updates
  */
-function loadExistingCache() {
+async function loadExistingCache({ preferDb = false } = {}) {
+  if (preferDb) {
+    try {
+      const dbCache = await readVenueCacheFromDb();
+      if (dbCache && typeof dbCache === 'object') {
+        return dbCache;
+      }
+    } catch {}
+  }
+
   try {
     if (fs.existsSync(CACHE_PATH)) {
       const raw = fs.readFileSync(CACHE_PATH, 'utf-8');
@@ -712,6 +735,9 @@ async function main() {
     process.argv.includes('--write-db') ||
     (process.env.VENUE_CACHE_STORAGE_MODE || '').toLowerCase().trim() === 'db' ||
     (process.env.NODE_ENV === 'production' && !!process.env.DATABASE_URL);
+  const allowPartialDbWrite = process.argv.includes('--allow-partial-db-write');
+  const runType = getRunTypeFromArgs(process.argv);
+  const strictDbPersistence = (runType || '').startsWith('daily_');
 
   let dbLockAcquired = false;
   let scrapeRunId = null;
@@ -722,7 +748,11 @@ async function main() {
     if (!lock.ok) {
       if (lock.reason === 'locked') {
         console.log('Another venue scrape is already running (DB lock held). Exiting.');
+        process.exitCode = 2;
         return;
+      }
+      if (strictDbPersistence) {
+        throw new Error(`DB lock unavailable in strict mode (${lock.reason || 'unknown'})`);
       }
       console.log('DB lock unavailable; continuing without DB persistence.');
     } else {
@@ -769,8 +799,8 @@ async function main() {
       console.log(`--domain filter active: ${scrapableVenues.length} venue(s) matched`);
     }
 
-    // Load existing cache for incremental update
-    const cache = loadExistingCache();
+    // Load existing cache for incremental update. In DB mode, DB is source of truth.
+    const cache = await loadExistingCache({ preferDb: writeDb });
     const previousLastUpdated = cache.lastUpdated || null;
     const previousTotalEvents = Number.isFinite(Number(cache.totalEvents)) ? Number(cache.totalEvents) : 0;
 
@@ -787,7 +817,12 @@ async function main() {
     }
 
     const isPartialRun = retryFailed || domainFilters.length > 0;
+    const writeDbForThisRun = dbLockAcquired && (!isPartialRun || allowPartialDbWrite);
     const runStartedAt = new Date().toISOString();
+    console.log(`Run type: ${runType || (isPartialRun ? 'manual_partial' : 'manual_full')}`);
+    if (isPartialRun && dbLockAcquired && !allowPartialDbWrite) {
+      console.log('Partial run detected: DB persistence disabled unless --allow-partial-db-write is provided.');
+    }
     if (!cache.metadata || typeof cache.metadata !== 'object') {
       cache.metadata = {};
     }
@@ -796,12 +831,14 @@ async function main() {
       cache.metadata.scrapeStarted = runStartedAt;
       cache.metadata.scrapeCompleted = null;
       cache.metadata.runScope = 'full';
+      cache.metadata.runType = runType || 'manual_full';
     } else {
       cache.metadata.lastPartialRun = {
         startedAt: runStartedAt,
         totalVenues: scrapableVenues.length,
         retryFailed,
-        domainFilters
+        domainFilters,
+        runType: runType || 'manual_partial'
       };
       cache.metadata.runScope = 'partial';
       console.log('Partial run detected; global cache freshness timestamp will not be updated.');
@@ -815,6 +852,7 @@ async function main() {
     for (let i = 0; i < scrapableVenues.length; i++) {
       const venue = scrapableVenues[i];
       const progress = `[${i + 1}/${scrapableVenues.length}]`;
+      const attemptedAt = new Date().toISOString();
 
       console.log(`${progress} Scraping: ${venue.name} (${venue.calendar_url})`);
 
@@ -830,6 +868,7 @@ async function main() {
             // Preserve previously-scraped events if we have them (avoid clobbering cache on transient failures).
             const prev = cache.venues?.[venue.domain] || {};
             const preservedEvents = Array.isArray(prev?.events) ? prev.events : [];
+            const priorFreshAt = prev.dataFreshAt || prev.lastScraped || null;
 
             cache.venues[venue.domain] = {
               venueName: venue.name,
@@ -838,11 +877,13 @@ async function main() {
               city: venue.city,
               state: venue.state,
               events: preservedEvents,
-              lastScraped: new Date().toISOString(),
+              lastAttemptedAt: attemptedAt,
+              lastScraped: priorFreshAt,
+              dataFreshAt: priorFreshAt,
               status: preservedEvents.length > 0 ? 'empty_page_preserved' : 'empty_page',
               eventCount: preservedEvents.length
             };
-            await persistCache(cache, { writeDb: dbLockAcquired });
+            await persistCache(cache, { writeDb: writeDbForThisRun });
             await sleep(JINA_DELAY_MS);
             continue;
           }
@@ -868,6 +909,7 @@ async function main() {
               // Preserve previously-scraped events if we have them (avoid clobbering cache on transient failures).
               const prev = cache.venues?.[venue.domain] || {};
               const preservedEvents = Array.isArray(prev?.events) ? prev.events : [];
+              const priorFreshAt = prev.dataFreshAt || prev.lastScraped || null;
 
               cache.venues[venue.domain] = {
                 venueName: venue.name,
@@ -876,11 +918,13 @@ async function main() {
                 city: venue.city,
                 state: venue.state,
                 events: preservedEvents,
-                lastScraped: new Date().toISOString(),
+                lastAttemptedAt: attemptedAt,
+                lastScraped: priorFreshAt,
+                dataFreshAt: priorFreshAt,
                 status: preservedEvents.length > 0 ? 'empty_page_preserved' : 'empty_page',
                 eventCount: preservedEvents.length
               };
-              await persistCache(cache, { writeDb: dbLockAcquired });
+              await persistCache(cache, { writeDb: writeDbForThisRun });
               await sleep(JINA_DELAY_MS);
               continue;
             }
@@ -908,7 +952,7 @@ async function main() {
           venueDomain: venue.domain,
           location: [venue.city, venue.state].filter(Boolean).join(', ') || 'Bay Area, CA',
           source: 'venue_scraper',
-          scrapedAt: new Date().toISOString()
+          scrapedAt: attemptedAt
         }));
 
         cache.venues[venue.domain] = {
@@ -918,7 +962,9 @@ async function main() {
           city: venue.city,
           state: venue.state,
           events: stampedEvents,
-          lastScraped: new Date().toISOString(),
+          lastAttemptedAt: attemptedAt,
+          lastScraped: attemptedAt,
+          dataFreshAt: attemptedAt,
           status: 'success',
           eventCount: stampedEvents.length
         };
@@ -928,7 +974,7 @@ async function main() {
         console.log(`  Found ${stampedEvents.length} events`);
 
         // Save incrementally
-        await persistCache(cache, { writeDb: dbLockAcquired });
+        await persistCache(cache, { writeDb: writeDbForThisRun });
 
       } catch (error) {
         console.error(`  ERROR: ${error.message}`);
@@ -937,6 +983,7 @@ async function main() {
         // Preserve previously-scraped events if we have them (avoid wiping cache on systemic failures).
         const prev = cache.venues?.[venue.domain] || {};
         const preservedEvents = Array.isArray(prev?.events) ? prev.events : [];
+        const priorFreshAt = prev.dataFreshAt || prev.lastScraped || null;
 
         cache.venues[venue.domain] = {
           venueName: venue.name,
@@ -945,13 +992,15 @@ async function main() {
           city: venue.city,
           state: venue.state,
           events: preservedEvents,
-          lastScraped: new Date().toISOString(),
+          lastAttemptedAt: attemptedAt,
+          lastScraped: priorFreshAt,
+          dataFreshAt: priorFreshAt,
           status: 'error',
           error: error.message,
           eventCount: preservedEvents.length,
           preservedEvents: preservedEvents.length
         };
-        await persistCache(cache, { writeDb: dbLockAcquired });
+        await persistCache(cache, { writeDb: writeDbForThisRun });
       }
 
       // Rate limit between Jina calls
@@ -994,7 +1043,7 @@ async function main() {
         stats: runStats
       };
     }
-    await persistCache(cache, { writeDb: dbLockAcquired });
+    await persistCache(cache, { writeDb: writeDbForThisRun });
 
     if (scrapeRunId) {
       await completeVenueScrapeRun(scrapeRunId, {
