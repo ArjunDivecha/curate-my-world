@@ -1,5 +1,27 @@
 export const startOfLocalDay = (date: Date) =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate());
+const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})(?!T)/;
+
+export const parseEventDateLocalAware = (
+  value: string | Date | null | undefined
+) => {
+  if (!value) return null;
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? null : value;
+  }
+  if (typeof value === "string") {
+    const match = value.match(DATE_ONLY_RE);
+    if (match) {
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      // Noon local avoids date-only timezone shifts.
+      return new Date(year, month - 1, day, 12, 0, 0, 0);
+    }
+  }
+  const parsed = new Date(value);
+  return isNaN(parsed.getTime()) ? null : parsed;
+};
 
 const addDays = (date: Date, days: number) => {
   const next = new Date(date);

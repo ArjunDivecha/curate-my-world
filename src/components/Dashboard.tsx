@@ -18,7 +18,7 @@ import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, C
 import { getCategoryColor } from "@/utils/categoryColors";
 import { API_BASE_URL } from "@/utils/apiConfig";
 import { cn } from "@/lib/utils";
-import { getWeekendRange } from "@/lib/dateViewRanges";
+import { getWeekendRange, parseEventDateLocalAware, sameLocalDay, startOfLocalDay } from "@/lib/dateViewRanges";
 
 interface Preferences {
   interests: {
@@ -371,45 +371,37 @@ export const Dashboard = () => {
 
     // Apply preset date range filter
     if (datePreset) {
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      let end: Date | null = null;
+      const start = startOfLocalDay(new Date());
 
       if (datePreset === 'today') {
-        end = new Date(start);
-        end.setDate(end.getDate() + 1);
+        events = events.filter(event => {
+          const d = parseEventDateLocalAware(event.startDate);
+          return !!d && sameLocalDay(d, start);
+        });
       } else if (datePreset === 'week') {
-        end = new Date(start);
+        const end = new Date(start);
         end.setDate(end.getDate() + 7);
+        events = events.filter(event => {
+          const d = parseEventDateLocalAware(event.startDate);
+          if (!d) return false;
+          const eventDay = startOfLocalDay(d);
+          return eventDay >= start && eventDay < end;
+        });
       } else if (datePreset === '30d') {
-        end = new Date(start);
+        const end = new Date(start);
         end.setDate(end.getDate() + 30);
+        events = events.filter(event => {
+          const d = parseEventDateLocalAware(event.startDate);
+          if (!d) return false;
+          const eventDay = startOfLocalDay(d);
+          return eventDay >= start && eventDay < end;
+        });
       } else if (datePreset === 'weekend') {
         // Weekend = Friday 5:00 PM through Monday 12:00 AM.
         const { windowStart, windowEnd } = getWeekendRange(start);
         events = events.filter(event => {
-          try {
-            if (!event.startDate) return false;
-            const d = new Date(event.startDate);
-            if (isNaN(d.getTime())) return false;
-            return d >= windowStart && d < windowEnd;
-          } catch {
-            return false;
-          }
-        });
-        end = null;
-      }
-
-      if (end) {
-        events = events.filter(event => {
-          try {
-            if (!event.startDate) return false;
-            const d = new Date(event.startDate);
-            if (isNaN(d.getTime())) return false;
-            return d >= start && d < end!;
-          } catch {
-            return false;
-          }
+          const d = parseEventDateLocalAware(event.startDate);
+          return !!d && d >= windowStart && d < windowEnd;
         });
       }
     }
@@ -433,16 +425,10 @@ export const Dashboard = () => {
   const eventsForEventView = React.useMemo(() => {
     let events = calendarEvents;
     if (selectedDate) {
-      const targetDateString = selectedDate.toDateString();
+      const targetDay = startOfLocalDay(selectedDate);
       events = events.filter((event: any) => {
-        try {
-          if (!event.startDate) return false;
-          const eventDate = new Date(event.startDate);
-          if (isNaN(eventDate.getTime())) return false;
-          return eventDate.toDateString() === targetDateString;
-        } catch {
-          return false;
-        }
+        const eventDate = parseEventDateLocalAware(event.startDate);
+        return !!eventDate && sameLocalDay(eventDate, targetDay);
       });
     }
     return events;
@@ -832,37 +818,6 @@ export const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={cn(
-                    "h-11 font-semibold",
-                    activeTab === 'events'
-                      ? "bg-purple-600 text-white border-purple-600 hover:bg-purple-700 hover:text-white"
-                      : "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
-                  )}
-                  onClick={() => setActiveTab('events')}
-                >
-                  <Grid3X3 className="w-4 h-4 mr-2" />
-                  Event View
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={cn(
-                    "h-11 font-semibold",
-                    activeTab === 'date'
-                      ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700 hover:text-white"
-                      : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                  )}
-                  onClick={() => setActiveTab('date')}
-                >
-                  <CalendarDays className="w-4 h-4 mr-2" />
-                  Date View
-                </Button>
-              </div>
-
               {/* Categories */}
               <div className="mt-4 w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                 <Button
@@ -870,17 +825,20 @@ export const Dashboard = () => {
                   className={cn(
                     "w-full rounded-2xl border whitespace-nowrap justify-start gap-3 h-14",
                     activeCategory === null
-                      ? "bg-slate-900 text-white border-slate-900 shadow-sm"
-                      : "bg-white text-slate-800 border-slate-200 hover:bg-slate-50"
+                      ? "bg-gradient-to-r from-rose-100 via-amber-100 to-sky-100 text-slate-700 border-slate-200 shadow-[0_3px_0_0_rgba(148,163,184,0.35),0_10px_20px_rgba(148,163,184,0.18)]"
+                      : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                   )}
                   onClick={() => handleCategoryFilter(null)}
                 >
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
+                  <span className={cn(
+                    "inline-flex h-9 w-9 items-center justify-center rounded-xl border",
+                    activeCategory === null ? "bg-white/70 border-white/80" : "bg-white border-slate-200"
+                  )}>
                     <Search className="h-5 w-5" />
                   </span>
                   <span className="text-left leading-tight">
                     <span className="block font-semibold">All</span>
-                    <span className={cn("block text-xs", activeCategory === null ? "text-white/80" : "text-slate-500")}>
+                    <span className={cn("block text-xs", activeCategory === null ? "text-slate-500" : "text-slate-500")}>
                       {totalEventCount} events
                     </span>
                   </span>
@@ -918,6 +876,41 @@ export const Dashboard = () => {
                     </Button>
                   );
                 })}
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "h-12 rounded-2xl font-semibold border transition-all duration-150",
+                    "shadow-[0_3px_0_0_rgba(148,163,184,0.35),0_10px_20px_rgba(148,163,184,0.18)]",
+                    "active:translate-y-[1px] active:shadow-[0_2px_0_0_rgba(148,163,184,0.35),0_6px_12px_rgba(148,163,184,0.14)]",
+                    activeTab === 'events'
+                      ? "bg-violet-200/80 text-violet-900 border-violet-300 hover:bg-violet-200"
+                      : "bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100"
+                  )}
+                  onClick={() => setActiveTab('events')}
+                >
+                  <Grid3X3 className="w-4 h-4 mr-2" />
+                  Event View
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "h-12 rounded-2xl font-semibold border transition-all duration-150",
+                    "shadow-[0_3px_0_0_rgba(148,163,184,0.35),0_10px_20px_rgba(148,163,184,0.18)]",
+                    "active:translate-y-[1px] active:shadow-[0_2px_0_0_rgba(148,163,184,0.35),0_6px_12px_rgba(148,163,184,0.14)]",
+                    activeTab === 'date'
+                      ? "bg-emerald-200/80 text-emerald-900 border-emerald-300 hover:bg-emerald-200"
+                      : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                  )}
+                  onClick={() => setActiveTab('date')}
+                >
+                  <CalendarDays className="w-4 h-4 mr-2" />
+                  Date View
+                </Button>
               </div>
             </div>
           </div>

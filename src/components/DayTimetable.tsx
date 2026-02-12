@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn, cleanHtmlText } from "@/lib/utils";
+import { parseEventDateLocalAware } from "@/lib/dateViewRanges";
 import { getCategoryColor } from "@/utils/categoryColors";
 import { CalendarDays, Clock, BookmarkCheck } from "lucide-react";
 
@@ -40,8 +41,8 @@ const minutesOfDay = (d: Date) => d.getHours() * 60 + d.getMinutes();
 const fmtTime = (dateString: string) => {
   try {
     if (!dateString) return "Time TBD";
-    const d = new Date(dateString);
-    if (isNaN(d.getTime())) return "Time TBD";
+    const d = parseEventDateLocalAware(dateString);
+    if (!d) return "Time TBD";
     return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
   } catch {
     return "Time TBD";
@@ -97,8 +98,8 @@ export const DayTimetable = ({
     const set = new Map<string, Date>();
     for (const e of events) {
       if (!e.startDate) continue;
-      const d = new Date(e.startDate);
-      if (isNaN(d.getTime())) continue;
+      const d = parseEventDateLocalAware(e.startDate);
+      if (!d) continue;
       const day = startOfLocalDay(d);
       set.set(day.toDateString(), day);
     }
@@ -140,8 +141,8 @@ export const DayTimetable = ({
     return events
       .filter((e) => {
         if (!e.startDate) return false;
-        const d = new Date(e.startDate);
-        if (isNaN(d.getTime())) return false;
+        const d = parseEventDateLocalAware(e.startDate);
+        if (!d) return false;
         return sameLocalDay(d, selectedDay);
       })
       .sort((a, b) => String(a.startDate).localeCompare(String(b.startDate)));
@@ -165,13 +166,13 @@ export const DayTimetable = ({
     let latest = 0;
 
     for (const e of dayEvents) {
-      const s = new Date(e.startDate);
-      if (isNaN(s.getTime())) continue;
+      const s = parseEventDateLocalAware(e.startDate);
+      if (!s) continue;
       const startMin = minutesOfDay(s);
       let endMin = startMin + 60;
       if (e.endDate) {
-        const en = new Date(e.endDate);
-        if (!isNaN(en.getTime())) {
+        const en = parseEventDateLocalAware(e.endDate);
+        if (en) {
           const maybe = minutesOfDay(en);
           if (maybe > startMin) endMin = maybe;
         }
@@ -317,13 +318,13 @@ export const DayTimetable = ({
                         })}
 
                         {laneEvents.map((event) => {
-                          const start = new Date(event.startDate);
-                          if (isNaN(start.getTime())) return null;
+                          const start = parseEventDateLocalAware(event.startDate);
+                          if (!start) return null;
                           const startMin = minutesOfDay(start);
                           let endMin = startMin + 60;
                           if (event.endDate) {
-                            const en = new Date(event.endDate);
-                            if (!isNaN(en.getTime())) {
+                            const en = parseEventDateLocalAware(event.endDate);
+                            if (en) {
                               const maybe = minutesOfDay(en);
                               if (maybe > startMin) endMin = maybe;
                             }
