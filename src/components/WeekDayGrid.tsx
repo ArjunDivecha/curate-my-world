@@ -27,6 +27,7 @@ interface WeekDayGridProps {
   savedEvents?: Event[];
   onEventToggleSaved: (eventId: string) => void;
   onDateClick?: (date: Date) => void;
+  title?: string;
 }
 
 const startOfLocalDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -78,7 +79,7 @@ const laneKeyForEvent = (event: Event) => {
   return (event.categories?.[0] || "music").toLowerCase();
 };
 
-export const WeekDayGrid = ({ events, savedEvents = [], onEventToggleSaved, onDateClick }: WeekDayGridProps) => {
+export const WeekDayGrid = ({ events, savedEvents = [], onEventToggleSaved, onDateClick, title = "Week View" }: WeekDayGridProps) => {
   const [currentWeek, setCurrentWeek] = useState(() => startOfLocalDay(new Date()));
   const [moreDate, setMoreDate] = useState<Date | null>(null);
 
@@ -120,7 +121,7 @@ export const WeekDayGrid = ({ events, savedEvents = [], onEventToggleSaved, onDa
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <CardTitle className="flex items-center gap-2">
               <CalendarDays className="w-5 h-5 text-primary" />
-              Week View
+              {title}
               <span className="text-sm text-muted-foreground font-normal">({events.length} events)</span>
             </CardTitle>
             <div className="flex items-center gap-2">

@@ -24,6 +24,7 @@ interface DayTimetableProps {
   events: Event[];
   savedEvents?: Event[];
   onEventToggleSaved: (eventId: string) => void;
+  title?: string;
 }
 
 const startOfLocalDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -76,7 +77,7 @@ const laneLabel: Record<string, string> = {
 
 const LANE_ORDER = ["music", "theatre", "comedy", "movies", "art", "food", "tech", "lectures", "kids"];
 
-export const DayTimetable = ({ events, savedEvents = [], onEventToggleSaved }: DayTimetableProps) => {
+export const DayTimetable = ({ events, savedEvents = [], onEventToggleSaved, title = "Day View" }: DayTimetableProps) => {
   const [selectedDay, setSelectedDay] = useState(() => startOfLocalDay(new Date()));
 
   const isEventSaved = (eventId: string) => savedEvents.some((e) => e.id === eventId);
@@ -185,7 +186,7 @@ export const DayTimetable = ({ events, savedEvents = [], onEventToggleSaved }: D
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <CardTitle className="flex items-center gap-2">
               <CalendarDays className="w-5 h-5 text-primary" />
-              Day View
+              {title}
               <span className="text-sm text-muted-foreground font-normal">
                 ({dayEvents.length} events on {selectedDay.toLocaleDateString()})
               </span>

@@ -13,7 +13,7 @@ import { WeekDayGrid } from "./WeekDayGrid";
 import { Header } from "./Header";
 import { FetchEventsButton, type ProviderStatSummary } from "./FetchEventsButton";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Grid3X3, CalendarDays, Clock, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Cpu, Mic2, BookOpen, Baby, RefreshCw } from "lucide-react";
+import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Cpu, Mic2, BookOpen, Baby, RefreshCw } from "lucide-react";
 import { getCategoryColor } from "@/utils/categoryColors";
 import { API_BASE_URL } from "@/utils/apiConfig";
 import { cn } from "@/lib/utils";
@@ -91,7 +91,7 @@ export const Dashboard = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [transformedEventsByCategory, setTransformedEventsByCategory] = useState<any>({});
   // Control which tab is visible to guarantee UI reflects filtered events
-  const [activeTab, setActiveTab] = useState<'events' | 'day' | 'week'>('events');
+  const [activeTab, setActiveTab] = useState<'events' | 'date'>('events');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedProviders, setSelectedProviders] = useState<Record<string, boolean>>(defaultProviderSelection);
   const [providerDetails, setProviderDetails] = useState<ProviderStatSummary[]>([]);
@@ -461,6 +461,19 @@ export const Dashboard = () => {
     }
     return events;
   }, [calendarEvents, selectedDate]);
+
+  const showDayTimetableInDateView = datePreset === 'today';
+  const dateViewPresetLabel =
+    datePreset === 'today'
+      ? 'Today'
+      : datePreset === 'week'
+        ? 'This Week'
+        : datePreset === 'weekend'
+          ? 'This Weekend'
+          : datePreset === '30d'
+            ? 'Next 30 Days'
+            : 'Calendar';
+  const dateViewTitle = `Date View - ${dateViewPresetLabel}`;
 
   const applyTypedDate = useCallback(() => {
     const raw = dateQuery.trim();
@@ -878,8 +891,8 @@ export const Dashboard = () => {
         {/* Main Content - Show calendar/grid once any events are loaded */}
         {hasAnyEvents && (
           <div className="mt-12">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'events' | 'day' | 'week')} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3 bg-transparent shadow-none border-0 gap-2">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'events' | 'date')} className="space-y-6">
+              <TabsList className="grid w-full grid-cols-2 bg-transparent shadow-none border-0 gap-2">
                 <TabsTrigger
                   value="events"
                   className="flex items-center gap-2 bg-purple-50 text-purple-700 data-[state=active]:bg-purple-600 data-[state=active]:text-white"
@@ -888,58 +901,55 @@ export const Dashboard = () => {
                   Event View
                 </TabsTrigger>
                 <TabsTrigger
-                  value="day"
-                  className="flex items-center gap-2 bg-blue-50 text-blue-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-                >
-                  <Clock className="w-4 h-4" />
-                  Day View
-                </TabsTrigger>
-                <TabsTrigger
-                  value="week"
+                  value="date"
                   className="flex items-center gap-2 bg-emerald-50 text-emerald-700 data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
                 >
-                  <Calendar className="w-4 h-4" />
-                  Week View
+                  <CalendarDays className="w-4 h-4" />
+                  Date View
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="day" className="space-y-6">
-                <DayTimetable
-                  events={calendarEvents}
-                  savedEvents={savedEvents}
-                  onEventToggleSaved={(eventId) => {
-                    const event = events.find(e => e.id === eventId);
-                    if (!event) return;
-                    const isSaved = savedEvents.find(savedEvent => savedEvent.id === eventId);
-                    if (isSaved) {
-                      if (confirm(`Remove "${event.title}" from your saved events?`)) {
-                        handleRemoveFromCalendar(eventId);
+              <TabsContent value="date" className="space-y-6">
+                {showDayTimetableInDateView ? (
+                  <DayTimetable
+                    key={`date-day-${datePreset ?? 'none'}`}
+                    events={calendarEvents}
+                    savedEvents={savedEvents}
+                    title={dateViewTitle}
+                    onEventToggleSaved={(eventId) => {
+                      const event = events.find(e => e.id === eventId);
+                      if (!event) return;
+                      const isSaved = savedEvents.find(savedEvent => savedEvent.id === eventId);
+                      if (isSaved) {
+                        if (confirm(`Remove "${event.title}" from your saved events?`)) {
+                          handleRemoveFromCalendar(eventId);
+                        }
+                        return;
                       }
-                      return;
-                    }
-                    handleSaveToCalendar(eventId);
-                  }}
-                />
-              </TabsContent>
-
-              <TabsContent value="week" className="space-y-6">
-                <WeekDayGrid
-                  events={calendarEvents}
-                  savedEvents={savedEvents}
-                  onEventToggleSaved={(eventId) => {
-                    const event = events.find(e => e.id === eventId);
-                    if (!event) return;
-                    const isSaved = savedEvents.find(savedEvent => savedEvent.id === eventId);
-                    if (isSaved) {
-                      if (confirm(`Remove "${event.title}" from your saved events?`)) {
-                        handleRemoveFromCalendar(eventId);
+                      handleSaveToCalendar(eventId);
+                    }}
+                  />
+                ) : (
+                  <WeekDayGrid
+                    key={`date-range-${datePreset ?? 'none'}`}
+                    events={calendarEvents}
+                    savedEvents={savedEvents}
+                    title={dateViewTitle}
+                    onEventToggleSaved={(eventId) => {
+                      const event = events.find(e => e.id === eventId);
+                      if (!event) return;
+                      const isSaved = savedEvents.find(savedEvent => savedEvent.id === eventId);
+                      if (isSaved) {
+                        if (confirm(`Remove "${event.title}" from your saved events?`)) {
+                          handleRemoveFromCalendar(eventId);
+                        }
+                        return;
                       }
-                      return;
-                    }
-                    handleSaveToCalendar(eventId);
-                  }}
-                  onDateClick={handleDateClick}
-                />
+                      handleSaveToCalendar(eventId);
+                    }}
+                    onDateClick={handleDateClick}
+                  />
+                )}
               </TabsContent>
 
               <TabsContent key={`${activeCategory ?? 'all'}-${selectedDate?.toISOString() ?? 'no-date'}`} value="events" className="space-y-6">
