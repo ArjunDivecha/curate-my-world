@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -727,6 +726,18 @@ export const Dashboard = () => {
                           const iso = dateStr.toISOString();
                           return iso;
                         }
+                        if (typeof dateStr === 'string') {
+                          const dateOnlyMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})(?!T)/);
+                          if (dateOnlyMatch) {
+                            const year = Number(dateOnlyMatch[1]);
+                            const month = Number(dateOnlyMatch[2]);
+                            const day = Number(dateOnlyMatch[3]);
+                            const localDate = new Date(year, month - 1, day, 12, 0, 0, 0);
+                            if (!isNaN(localDate.getTime())) {
+                              return localDate.toISOString();
+                            }
+                          }
+                        }
                         // Try to parse the date string robustly; if invalid, return empty
                         const parsed = new Date(dateStr);
                         if (isNaN(parsed.getTime())) return '';
@@ -821,6 +832,37 @@ export const Dashboard = () => {
                 </div>
               </div>
 
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "h-11 font-semibold",
+                    activeTab === 'events'
+                      ? "bg-purple-600 text-white border-purple-600 hover:bg-purple-700 hover:text-white"
+                      : "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
+                  )}
+                  onClick={() => setActiveTab('events')}
+                >
+                  <Grid3X3 className="w-4 h-4 mr-2" />
+                  Event View
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "h-11 font-semibold",
+                    activeTab === 'date'
+                      ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700 hover:text-white"
+                      : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                  )}
+                  onClick={() => setActiveTab('date')}
+                >
+                  <CalendarDays className="w-4 h-4 mr-2" />
+                  Date View
+                </Button>
+              </div>
+
               {/* Categories */}
               <div className="mt-4 w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                 <Button
@@ -887,25 +929,8 @@ export const Dashboard = () => {
         {/* Main Content - Show calendar/grid once any events are loaded */}
         {hasAnyEvents && (
           <div className="mt-12">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'events' | 'date')} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2 bg-transparent shadow-none border-0 gap-2">
-                <TabsTrigger
-                  value="events"
-                  className="flex items-center gap-2 bg-purple-50 text-purple-700 data-[state=active]:bg-purple-600 data-[state=active]:text-white"
-                >
-                  <Grid3X3 className="w-4 h-4" />
-                  Event View
-                </TabsTrigger>
-                <TabsTrigger
-                  value="date"
-                  className="flex items-center gap-2 bg-emerald-50 text-emerald-700 data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
-                >
-                  <CalendarDays className="w-4 h-4" />
-                  Date View
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="date" className="space-y-6">
+            {activeTab === 'date' ? (
+              <div className="space-y-6">
                 {showDayTimetableInDateView ? (
                   <DayTimetable
                     key={`date-day-${datePreset ?? 'none'}-${selectedDate?.toISOString() ?? 'no-date'}`}
@@ -990,9 +1015,9 @@ export const Dashboard = () => {
                     onDateClick={handleDateClick}
                   />
                 )}
-              </TabsContent>
-
-              <TabsContent key={`${activeCategory ?? 'all'}-${selectedDate?.toISOString() ?? 'no-date'}`} value="events" className="space-y-6">
+              </div>
+            ) : (
+              <div key={`${activeCategory ?? 'all'}-${selectedDate?.toISOString() ?? 'no-date'}`} className="space-y-6">
                 {/* Filter Status Display */}
                 {(activeCategory || selectedDate || searchQuery.trim()) && (
                   <div className="bg-muted/50 rounded-lg p-4 mb-6 border">
@@ -1047,8 +1072,8 @@ export const Dashboard = () => {
                     ))}
                   </div>
                 )}
-              </TabsContent>
-            </Tabs>
+              </div>
+            )}
           </div>
         )}
 

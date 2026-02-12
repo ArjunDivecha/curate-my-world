@@ -22,6 +22,29 @@
 import { createLogger } from './logger.js';
 
 const logger = createLogger('DateFilter');
+const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})(?!T)/;
+
+function parseDateLocalAware(value) {
+  if (!value) return null;
+
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? null : value;
+  }
+
+  if (typeof value === 'string') {
+    const match = value.match(DATE_ONLY_RE);
+    if (match) {
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      // Noon local time avoids timezone edge-cases while preserving the intended local day.
+      return new Date(year, month - 1, day, 12, 0, 0, 0);
+    }
+  }
+
+  const parsed = new Date(value);
+  return isNaN(parsed.getTime()) ? null : parsed;
+}
 
 export class DateFilter {
   constructor() {
@@ -148,10 +171,10 @@ export class DateFilter {
     }
 
     try {
-      const date = new Date(eventDate);
+      const date = parseDateLocalAware(eventDate);
       
       // Check if date is valid
-      if (isNaN(date.getTime())) {
+      if (!date) {
         return true; // Invalid date = keep event (benefit of the doubt)
       }
 
@@ -177,9 +200,9 @@ export class DateFilter {
     }
 
     try {
-      const date = new Date(eventDate);
+      const date = parseDateLocalAware(eventDate);
       
-      if (isNaN(date.getTime())) {
+      if (!date) {
         return false; // Invalid date = keep event (benefit of the doubt)
       }
 
@@ -383,4 +406,3 @@ export class DateFilter {
 }
 
 export default DateFilter;
-

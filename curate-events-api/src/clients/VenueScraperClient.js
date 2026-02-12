@@ -39,6 +39,23 @@ const __dirname = path.dirname(__filename);
 const DEFAULT_CACHE_PATH = path.resolve(__dirname, '../../../data/venue-events-cache.json');
 const SCRAPER_SCRIPT = path.resolve(__dirname, '../../scripts/scrape-venues.js');
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
+const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})(?!T)/;
+
+function parseDateLocalAware(value) {
+  if (!value) return null;
+  if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+  if (typeof value === 'string') {
+    const match = value.match(DATE_ONLY_RE);
+    if (match) {
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      return new Date(year, month - 1, day, 12, 0, 0, 0);
+    }
+  }
+  const parsed = new Date(value);
+  return isNaN(parsed.getTime()) ? null : parsed;
+}
 
 export class VenueScraperClient {
   constructor(cachePath) {
@@ -177,12 +194,8 @@ export class VenueScraperClient {
 
         // Only include future events
         if (event.startDate) {
-          try {
-            const eventDate = new Date(event.startDate);
-            if (eventDate < now) continue;
-          } catch {
-            // Keep events with unparseable dates
-          }
+          const eventDate = parseDateLocalAware(event.startDate);
+          if (eventDate && eventDate < now) continue;
         }
 
         // Filter out events that are clearly not in the Bay Area based on title

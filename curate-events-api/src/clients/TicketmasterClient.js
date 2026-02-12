@@ -24,6 +24,36 @@ import { createLogger } from '../utils/logger.js';
 import { getTicketmasterClassification, isTicketmasterSupported } from '../utils/categoryMapping.js';
 
 const logger = createLogger('TicketmasterClient');
+const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+function parseTicketmasterLocalDateTime(localDate, localTime) {
+  if (!localDate || typeof localDate !== 'string') return null;
+
+  const dateMatch = localDate.match(DATE_ONLY_RE);
+  if (!dateMatch) return null;
+
+  const year = Number(dateMatch[1]);
+  const month = Number(dateMatch[2]);
+  const day = Number(dateMatch[3]);
+
+  // Build the date in local time to avoid UTC date-only parsing shifts.
+  const date = new Date(year, month - 1, day, 12, 0, 0, 0);
+
+  if (localTime && typeof localTime === 'string') {
+    const [hoursRaw, minutesRaw = '0', secondsRaw = '0'] = localTime.split(':');
+    const hours = Number(hoursRaw);
+    const minutes = Number(minutesRaw);
+    const seconds = Number(secondsRaw);
+    if (Number.isFinite(hours) && Number.isFinite(minutes) && Number.isFinite(seconds)) {
+      date.setHours(hours, minutes, seconds, 0);
+    }
+  } else {
+    // No time provided: keep as all-day-ish event on the intended day.
+    date.setHours(12, 0, 0, 0);
+  }
+
+  return isNaN(date.getTime()) ? null : date;
+}
 
 export class TicketmasterClient {
   constructor() {
@@ -163,22 +193,23 @@ export class TicketmasterClient {
       let hasValidDate = false;
       
       if (localDate) {
-        eventDate = new Date(localDate);
-        if (ticketmasterEvent.dates?.start?.localTime) {
-          const [hours, minutes] = ticketmasterEvent.dates.start.localTime.split(':');
-          eventDate.setHours(parseInt(hours), parseInt(minutes));
+        const parsedLocalDate = parseTicketmasterLocalDateTime(localDate, ticketmasterEvent.dates?.start?.localTime);
+        if (parsedLocalDate) {
+          eventDate = parsedLocalDate;
+          hasValidDate = true;
         }
-        hasValidDate = true;
         
-        // Filter out past events (only if we have a date)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        if (eventDate < today) {
-          logger.debug('Skipping past Ticketmaster event', {
-            title: ticketmasterEvent.name?.substring(0, 50),
-            date: localDate
-          });
-          return null;
+        // Filter out past events (only if we have a valid date)
+        if (hasValidDate) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          if (eventDate < today) {
+            logger.debug('Skipping past Ticketmaster event', {
+              title: ticketmasterEvent.name?.substring(0, 50),
+              date: localDate
+            });
+            return null;
+          }
         }
       } else {
         // No date - default to today (user preference)
