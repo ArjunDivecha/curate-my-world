@@ -295,7 +295,6 @@ export const Dashboard = () => {
       const allEvents = Object.values(data.buckets).flat();
       setEvents(allEvents);
       setActiveCategory(null);
-      setActiveTab('events');
       console.log('♻️ Restored events from cache:', allEvents.length);
     } catch (err) {
       console.error('Cache restore failed', err);
@@ -313,7 +312,6 @@ export const Dashboard = () => {
       // Show all TRANSFORMED events from all categories
       const allTransformedEvents = Object.values(transformedEventsByCategory).flat();
       console.log('🌐 Showing all events, total count:', allTransformedEvents.length);
-      setActiveTab('events');
     } else {
       // Handle category consolidation - combine related categories
       let categoryEvents: any[] = [];
@@ -332,7 +330,6 @@ export const Dashboard = () => {
         console.log(`🔍 Category '${category}' events:`, categoryEvents.slice(0, 2).map(e => e.title));
       }
       
-      setActiveTab('events');
     }
   };
 
@@ -342,7 +339,6 @@ export const Dashboard = () => {
     setSelectedDate(date);
     setDatePreset(null);
     setDateQuery('');
-    setActiveTab('events'); // Switch to event view to show the filtered events
     
     toast({
       title: "Date Selected",
@@ -496,7 +492,6 @@ export const Dashboard = () => {
 
     setSelectedDate(parsed);
     setDatePreset(null);
-    setActiveTab('date');
   }, [dateQuery, toast]);
 
   useEffect(() => {
@@ -680,7 +675,6 @@ export const Dashboard = () => {
                       setDatePreset('today');
                       setSelectedDate(null);
                       setDateQuery('');
-                      setActiveTab('date');
                     }}
                   >
                     Today
@@ -693,7 +687,6 @@ export const Dashboard = () => {
                       setDatePreset('week');
                       setSelectedDate(null);
                       setDateQuery('');
-                      setActiveTab('date');
                     }}
                   >
                     Next 7 Days
@@ -706,7 +699,6 @@ export const Dashboard = () => {
                       setDatePreset('weekend');
                       setSelectedDate(null);
                       setDateQuery('');
-                      setActiveTab('date');
                     }}
                   >
                     This Weekend
@@ -719,7 +711,6 @@ export const Dashboard = () => {
                       setDatePreset('30d');
                       setSelectedDate(null);
                       setDateQuery('');
-                      setActiveTab('date');
                     }}
                   >
                     Next 30 Days
