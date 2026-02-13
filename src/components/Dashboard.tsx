@@ -997,6 +997,7 @@ export const Dashboard = () => {
                     savedEvents={savedEvents}
                     initialSelectedDay={selectedDate}
                     title={dateViewTitle}
+                    renderMode="compact-table"
                     onEventToggleSaved={(eventId) => {
                       const event = events.find(e => e.id === eventId);
                       if (!event) return;

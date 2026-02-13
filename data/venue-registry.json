@@ -4967,5 +4967,22 @@
     "calendar_url": "https://painasf.com/",
     "source": "manual_add_strict",
     "discovered_at": "2026-02-12T08:40:42.151286+00:00"
+  },
+  {
+    "name": "The Back Room",
+    "domain": "backroommusic.com",
+    "category": "music",
+    "city": "Berkeley",
+    "state": "CA",
+    "website": "https://backroommusic.com",
+    "calendar_url": "https://collections.humanitix.com/the-back-room-calendar",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-02-12T22:23:10.536Z",
+    "coordinates": {
+      "lat": 37.8720847,
+      "lng": -122.272083
+    },
+    "lat": 37.8720847,
+    "lng": -122.272083
   }
 ]

@@ -27,6 +27,7 @@ interface DayTimetableProps {
   onEventToggleSaved: (eventId: string) => void;
   title?: string;
   initialSelectedDay?: Date | null;
+  renderMode?: "timetable" | "compact-table";
 }
 
 const startOfLocalDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -205,6 +206,7 @@ export const DayTimetable = ({
   onEventToggleSaved,
   title = "Day View",
   initialSelectedDay = null,
+  renderMode = "timetable",
 }: DayTimetableProps) => {
   const [selectedDay, setSelectedDay] = useState(() =>
     initialSelectedDay && !isNaN(initialSelectedDay.getTime())
@@ -338,6 +340,79 @@ export const DayTimetable = ({
     }
     return map;
   }, [lanes, eventsByLane, timeRange.startMin]);
+
+  if (renderMode === "compact-table") {
+    return (
+      <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarDays className="w-5 h-5 text-primary" />
+              {title}
+              <span className="text-sm text-muted-foreground font-normal">
+                ({dayEvents.length} events on {selectedDay.toLocaleDateString()})
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dayEvents.length === 0 ? (
+              <div className="text-center text-muted-foreground py-10 border rounded-lg bg-white/60">
+                No events on {selectedDay.toLocaleDateString()}.
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 border-b">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-semibold text-slate-700">Time</th>
+                      <th className="text-left px-4 py-3 font-semibold text-slate-700">Event</th>
+                      <th className="text-left px-4 py-3 font-semibold text-slate-700">Category</th>
+                      <th className="text-left px-4 py-3 font-semibold text-slate-700">Venue</th>
+                      <th className="text-left px-4 py-3 font-semibold text-slate-700">Save</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dayEvents.map((event) => {
+                      const saved = isEventSaved(event.id);
+                      const categoryKey = laneKeyForEvent(event);
+                      const category = laneLabel[categoryKey] || (event.categories?.[0] ?? "Other");
+                      return (
+                        <tr key={event.id} className="border-b last:border-b-0 hover:bg-slate-50/70">
+                          <td className="px-4 py-3 whitespace-nowrap text-slate-600">{fmtTime(event.startDate)}</td>
+                          <td className="px-4 py-3 min-w-[220px]">
+                            <button
+                              type="button"
+                              className="text-left font-medium text-slate-900 hover:underline"
+                              onClick={() => openEventUrl(event)}
+                              title="Open event"
+                            >
+                              {cleanHtmlText(event.title)}
+                            </button>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-slate-700">{category}</td>
+                          <td className="px-4 py-3 text-slate-700">{event.venue?.name || "Venue TBD"}</td>
+                          <td className="px-4 py-3">
+                            <Button
+                              type="button"
+                              variant={saved ? "secondary" : "outline"}
+                              size="sm"
+                              onClick={() => onEventToggleSaved(event.id)}
+                            >
+                              {saved ? "Saved" : "Save"}
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
