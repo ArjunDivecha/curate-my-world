@@ -53,6 +53,14 @@ config.json
 # Local caches / generated data (keep out of git)
 data/geocode-cache.json
 data/venue-registry.backup-*.json
+data/__pycache__/
+data/fortmason-audit.json
+data/fortmason-audit.md
+data/scrape-audit-*.json
+data/scrape-audit-*.md
+data/venue-scrape-live-log.md
+missing_venues_report.md
+curate-events-api/data/reports/
 
 # Local-only planning artifacts / scratch
 IMPLEMENTATION_PLAN.md
