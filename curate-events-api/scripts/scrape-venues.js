@@ -275,6 +275,11 @@ function extractCityFromLocation(location, fallbackCity = null) {
 
 function categorizeIcsEvent({ summary, description, categories, fallbackCategory }) {
   const text = `${summary || ''} ${description || ''} ${categories || ''}`.toLowerCase();
+  const likelyNativeAmericanContext = /\b(american indian|native american|indigenous|tribal)\b/.test(text);
+  const desiSignals = /\b(desi|bollywood|bhangra|garba|dandiya|holi|diwali|south asian|punjabi|gujarati|tamil|telugu|hindi|urdu|kathak|bharatanatyam|kollywood|tollywood)\b/.test(text);
+  const indianSignal = /\bindian\b/.test(text);
+
+  if (!likelyNativeAmericanContext && (desiSignals || indianSignal)) return 'desi';
 
   if (/(stand-up|stand up|comedy|improv|laugh)/.test(text)) return 'comedy';
   if (/(concert|music|musical|jazz|dj)/.test(text)) return 'music';
@@ -645,7 +650,7 @@ Return a JSON array of events. Each event must have:
 - "startDate": ISO date string (YYYY-MM-DDTHH:mm:ss). If only a date is given, use 19:00 as default time.
 - "endDate": ISO date string or null
 - "description": string (1-2 sentences)
-- "category": string (one of: music, theatre, comedy, movies, art, food, tech, lectures, kids)
+- "category": string (one of: music, theatre, comedy, movies, art, food, tech, lectures, kids, desi)
 - "price": string or null (e.g. "$25", "$15-$45", "Free")
 - "eventUrl": string or null (direct link to event page)
 - "city": string or null (the city where the event takes place, e.g. "San Francisco", "Oakland", "London", "Istanbul")

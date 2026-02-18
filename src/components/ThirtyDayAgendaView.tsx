@@ -53,7 +53,7 @@ const laneKeyForEvent = (event: Event) => {
   const raw = [event.source, ...(event.categories || [])]
     .filter(Boolean)
     .map((value) => String(value).toLowerCase());
-  const keys = ["music", "theatre", "comedy", "movies", "art", "food", "tech", "lectures", "kids"];
+  const keys = ["music", "theatre", "comedy", "movies", "art", "food", "tech", "lectures", "kids", "desi"];
   for (const key of keys) {
     if (raw.includes(key)) return key;
   }

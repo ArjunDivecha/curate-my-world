@@ -14,7 +14,7 @@ import { ThirtyDayAgendaView } from "./ThirtyDayAgendaView";
 import { Header } from "./Header";
 import { FetchEventsButton, type ProviderStatSummary } from "./FetchEventsButton";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Cpu, Mic2, BookOpen, Baby, RefreshCw } from "lucide-react";
+import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Cpu, Mic2, BookOpen, Baby, Globe, RefreshCw } from "lucide-react";
 import { getCategoryColor } from "@/utils/categoryColors";
 import { API_BASE_URL } from "@/utils/apiConfig";
 import { cn } from "@/lib/utils";
@@ -35,7 +35,7 @@ interface Preferences {
 }
 
 // Default preferences - all categories enabled
-// Current categories: music, theatre, comedy, movies, art, food, tech, lectures, kids
+// Current categories: music, theatre, comedy, movies, art, food, tech, lectures, kids, desi
 const personalizedPreferences: Preferences = {
   interests: {
     categories: {
@@ -47,7 +47,8 @@ const personalizedPreferences: Preferences = {
       'Food': true,
       'Tech': true,
       'Lectures': true,
-      'Kids': true
+      'Kids': true,
+      'Desi': true
     },
     keywords: [
       'concerts', 'live music', 'jazz', 'classical',
@@ -58,7 +59,8 @@ const personalizedPreferences: Preferences = {
       'food festival', 'cooking class', 'wine tasting',
       'tech meetup', 'hackathon', 'startup',
       'author talk', 'lecture', 'book signing',
-      'family', 'kids activities', 'children'
+      'family', 'kids activities', 'children',
+      'desi', 'indian', 'bollywood', 'bhangra', 'garba', 'dandiya', 'holi', 'diwali'
     ]
   },
   location: {
@@ -107,7 +109,7 @@ export const Dashboard = () => {
   const fetchEventsRef = useRef<(() => void) | null>(null);
 
   // Category mapping: Frontend display names to backend API names
-  // Current supported categories: music, theatre, comedy, movies, art, food, tech, lectures, kids
+  // Current supported categories: music, theatre, comedy, movies, art, food, tech, lectures, kids, desi
   const mapCategoryToBackend = (frontendCategory: string): string => {
     const categoryMap: Record<string, string> = {
       'Music': 'music',
@@ -118,7 +120,8 @@ export const Dashboard = () => {
       'Food': 'food',
       'Tech': 'tech',
       'Lectures': 'lectures',
-      'Kids': 'kids'
+      'Kids': 'kids',
+      'Desi': 'desi'
     };
     return categoryMap[frontendCategory] || frontendCategory.toLowerCase();
   };
@@ -517,7 +520,8 @@ export const Dashboard = () => {
     'Food': Coffee,
     'Tech': Cpu,
     'Lectures': BookOpen,
-    'Kids': Baby
+    'Kids': Baby,
+    'Desi': Globe
   };
 
 

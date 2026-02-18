@@ -7,9 +7,9 @@
  * Unified category mapping for all event providers. This is the single source
  * of truth for how our categories map to each provider's classification system.
  * 
- * SUPPORTED CATEGORIES (9 total):
+ * SUPPORTED CATEGORIES (10 total):
  * - Tier 1 (High volume): music, theatre, comedy, movies, art
- * - Tier 2 (Good coverage): food, tech, lectures, kids
+ * - Tier 2 (Good coverage): food, tech, lectures, kids, desi
  * 
  * PROVIDERS:
  * - Ticketmaster: Uses segment IDs and genre IDs
@@ -221,6 +221,31 @@ export const CATEGORY_CONFIG = {
       'redtri.com'
     ],
     keywords: ['family', 'kids', 'children', 'family-friendly', 'all ages', 'parent', 'toddler']
+  },
+
+  desi: {
+    displayName: 'Desi',
+    description: 'Indian and South Asian events in the Bay Area',
+    priority: 'medium',
+    ticketmaster: null, // Scraper-first category
+    searchQueries: [
+      'desi events {location}',
+      'indian events {location}',
+      'bollywood bhangra {location}',
+      'garba dandiya {location}',
+      'south asian cultural events {location}'
+    ],
+    searchDomains: [
+      'events.sulekha.com',
+      'eventmozo.com',
+      'simplydesi.us',
+      'epadosi.com'
+    ],
+    keywords: [
+      'desi', 'indian', 'south asian', 'bollywood', 'bhangra', 'garba', 'dandiya',
+      'holi', 'diwali', 'punjabi', 'gujarati', 'tamil', 'telugu', 'hindi', 'urdu',
+      'kathak', 'bharatanatyam', 'kollywood', 'tollywood'
+    ]
   }
 };
 
@@ -229,7 +254,7 @@ export const CATEGORY_CONFIG = {
  */
 export const SUPPORTED_CATEGORIES = [
   'music', 'theatre', 'comedy', 'movies', 'art',  // Tier 1
-  'food', 'tech', 'lectures', 'kids'               // Tier 2
+  'food', 'tech', 'lectures', 'kids', 'desi'       // Tier 2
 ];
 
 /**
@@ -357,6 +382,26 @@ export function normalizeCategory(category) {
     'culinary': 'food',
     'wine': 'food',
     'dining': 'food',
+    'desi': 'desi',
+    'indian': 'desi',
+    'south asian': 'desi',
+    'south-asian': 'desi',
+    'bollywood': 'desi',
+    'bhangra': 'desi',
+    'garba': 'desi',
+    'dandiya': 'desi',
+    'holi': 'desi',
+    'diwali': 'desi',
+    'punjabi': 'desi',
+    'gujarati': 'desi',
+    'tamil': 'desi',
+    'telugu': 'desi',
+    'hindi': 'desi',
+    'urdu': 'desi',
+    'kathak': 'desi',
+    'bharatanatyam': 'desi',
+    'kollywood': 'desi',
+    'tollywood': 'desi',
     'galleries': 'art',
     'gallery': 'art',
     'museums': 'art',
@@ -400,4 +445,3 @@ export default {
   normalizeCategory,
   getAllCategoryInfo
 };
-

@@ -62,6 +62,19 @@ export class CategoryManager {
         keywords: ['kids', 'family', 'children', 'family-friendly', 'all ages', 'parent', 'toddler', 'youth'],
         priority: 'medium'
       },
+      desi: {
+        aliases: [
+          'indian', 'south asian', 'south-asian', 'bollywood', 'bhangra', 'garba',
+          'dandiya', 'holi', 'diwali', 'punjabi', 'gujarati', 'tamil', 'telugu',
+          'hindi', 'urdu', 'kathak', 'bharatanatyam', 'kollywood', 'tollywood'
+        ],
+        keywords: [
+          'desi', 'indian', 'south asian', 'bollywood', 'bhangra', 'garba', 'dandiya',
+          'holi', 'diwali', 'punjabi', 'gujarati', 'tamil', 'telugu', 'hindi', 'urdu',
+          'kathak', 'bharatanatyam', 'kollywood', 'tollywood'
+        ],
+        priority: 'medium'
+      },
       lectures: {
         aliases: ['talks', 'presentations', 'seminars', 'workshops', 'discussions', 'education'],
         keywords: ['lecture', 'talk', 'presentation', 'seminar', 'workshop', 'discussion', 'speaker', 'author', 'educational'],
@@ -209,6 +222,24 @@ Provide results in JSON format:
     "website": "https://venue-website.com",
     "price_range": "Price information or Free",
     "topic": "Subject or theme"
+  }
+]
+
+Provide actual real events with accurate information.`,
+
+      desi: `Find all Desi/Indian/South Asian events for {location} for the {dateRange}. Include Bollywood and Bhangra parties, cultural festivals, dance nights (Garba/Dandiya), comedy, concerts, and food/cultural celebrations.
+
+Provide results in JSON format:
+[
+  {
+    "title": "Event Title",
+    "venue": "Venue Name",
+    "location": "City, State",
+    "date": "Date range or specific dates",
+    "show_times": ["Time 1", "Time 2"],
+    "website": "https://venue-website.com",
+    "price_range": "Price information or Free",
+    "description": "Brief description"
   }
 ]
 
@@ -492,6 +523,16 @@ Include concrete, verifiable events with URLs and dates.`,
       'movie theaters': 'movies',
       'showtimes': 'movies',
       'screenings': 'movies',
+      'desi': 'desi',
+      'indian': 'desi',
+      'south asian': 'desi',
+      'south-asian': 'desi',
+      'bollywood': 'desi',
+      'bhangra': 'desi',
+      'garba': 'desi',
+      'dandiya': 'desi',
+      'holi': 'desi',
+      'diwali': 'desi',
       // Backward compatibility mappings for replaced categories
       'automotive': 'psychology',
       'data-analysis': 'artificial-intelligence',
@@ -751,6 +792,11 @@ Include concrete, verifiable events with URLs and dates.`,
         // Tech venues
         'convention center', 'expo center', 'tech center', 'innovation hub',
         'startup campus', 'conference center', 'meetup space'
+      ],
+      desi: [
+        // South Asian cultural/event patterns
+        'india community center', 'hindu temple', 'sikh temple', 'gurdwara',
+        'cultural center', 'bollywood night', 'bhangra night', 'garba', 'dandiya'
       ],
       education: [
         // Educational venues

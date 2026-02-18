@@ -208,8 +208,9 @@ export async function triggerBackgroundAllCategoriesRefresh(requestKey, opts) {
     const { location, date_range, eventLimit, selectedProviders,
             includeTicketmaster, includeVenueScraper, includeWhitelist } = opts;
 
+    const supportedCategorySet = new Set(SUPPORTED_CATEGORIES);
     const supportedCategories = categoryManager.getSupportedCategories()
-      .filter(cat => ['music','theatre','comedy','movies','art','food','tech','lectures','kids'].includes(cat.name))
+      .filter(cat => supportedCategorySet.has(cat.name))
       .map(cat => cat.name);
 
     const categoryPromises = supportedCategories.map(async (category) => {
@@ -398,8 +399,9 @@ router.get('/all-categories', async (req, res) => {
   })).toISOString();
   logger.info('No cached data available yet; returning empty response', { location, duration: `${duration}ms` });
 
+  const supportedCategorySet = new Set(SUPPORTED_CATEGORIES);
   const supportedCategories = categoryManager.getSupportedCategories()
-    .filter(cat => ['music','theatre','comedy','movies','art','food','tech','lectures','kids'].includes(cat.name))
+    .filter(cat => supportedCategorySet.has(cat.name))
     .map(cat => cat.name);
 
   const emptyByCategory = {};

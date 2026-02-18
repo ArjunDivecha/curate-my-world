@@ -5006,5 +5006,45 @@
     },
     "lat": 37.8720847,
     "lng": -122.272083
+  },
+  {
+    "name": "Sulekha Bay Area Indian Events",
+    "domain": "events.sulekha.com",
+    "category": "desi",
+    "city": "Bay Area",
+    "state": "CA",
+    "website": "https://events.sulekha.com/",
+    "calendar_url": "https://events.sulekha.com/san-francisco-bay-area",
+    "source": "manual_add_desi"
+  },
+  {
+    "name": "Eventmozo Bay Area Bollywood Events",
+    "domain": "eventmozo.com",
+    "category": "desi",
+    "city": "Bay Area",
+    "state": "CA",
+    "website": "https://eventmozo.com/",
+    "calendar_url": "https://eventmozo.com/Bay_Area/Bollywood",
+    "source": "manual_add_desi"
+  },
+  {
+    "name": "ePadosi Bay Area Indian Events",
+    "domain": "epadosi.com",
+    "category": "desi",
+    "city": "Bay Area",
+    "state": "CA",
+    "website": "https://www.epadosi.com/",
+    "calendar_url": "https://www.epadosi.com/bay-area/indian-events",
+    "source": "manual_add_desi"
+  },
+  {
+    "name": "SimplyDesi Events",
+    "domain": "simplydesi.us",
+    "category": "desi",
+    "city": "Bay Area",
+    "state": "CA",
+    "website": "https://www.simplydesi.us/",
+    "calendar_url": "https://www.simplydesi.us/events",
+    "source": "manual_add_desi"
   }
 ]

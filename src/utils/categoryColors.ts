@@ -74,6 +74,17 @@ export const categoryColors: Record<string, CategoryColor> = {
     hover: 'hover:bg-pink-100'
   },
 
+  // Desi - Saffron (South Asian cultural events)
+  desi: {
+    name: 'Desi',
+    background: 'bg-amber-50',
+    border: 'border-amber-200',
+    text: 'text-amber-900',
+    accent: 'text-amber-700',
+    icon: 'text-amber-600',
+    hover: 'hover:bg-amber-100'
+  },
+
   // Finance - Teal (professional)
   finance: {
     name: 'Finance',
@@ -288,6 +299,22 @@ export const getCategoryColor = (category: string | string[]): CategoryColor => 
     'children': 'kids',
     'family': 'kids',
     'youth': 'kids',
+    'desi': 'desi',
+    'indian': 'desi',
+    'south-asian': 'desi',
+    'south asian': 'desi',
+    'bollywood': 'desi',
+    'bhangra': 'desi',
+    'garba': 'desi',
+    'dandiya': 'desi',
+    'holi': 'desi',
+    'diwali': 'desi',
+    'punjabi': 'desi',
+    'gujarati': 'desi',
+    'tamil': 'desi',
+    'telugu': 'desi',
+    'hindi': 'desi',
+    'urdu': 'desi',
     'gallery': 'art',
     'museum': 'art',
     'painting': 'art',

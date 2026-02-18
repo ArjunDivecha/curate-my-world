@@ -20,8 +20,8 @@ Important: Railway `staging` is currently the live backend environment. Railway 
 - Aggregates events from:
   - Ticketmaster API (structured, high-volume)
   - Venue scraper cache (Jina Reader + Claude Haiku extraction)
-- Normalizes into 9 categories:
-  - Music, Theatre, Comedy, Movies, Art, Food, Tech, Lectures, Kids
+- Normalizes into 10 categories:
+  - Music, Theatre, Comedy, Movies, Art, Food, Tech, Lectures, Kids, Desi
 - Supports search, category filters, date filters/presets, and multiple viewing modes:
   - Event View
   - Day View (category lanes)
