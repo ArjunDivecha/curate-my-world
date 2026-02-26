@@ -1800,16 +1800,17 @@
     "discovered_at": "2026-01-16T18:12:22.668Z"
   },
   {
-    "name": "On View - Film Series - BAMPFA",
-    "website": "https://bampfa.org/on-view/film-series",
+    "name": "BAMPFA (Berkeley Art Museum and Pacific Film Archive)",
+    "website": "https://bampfa.org/",
     "domain": "bampfa.org",
     "description": "On View - Film Series | BAMPFA\n[Skip to main content] \n[**Seasonal Hours: 12/13\u201312/19 BAMPFA Galleries close at 5 PM\u2192**] \n[![ logo]] \nMenu****\n[![ logo]] \n* Visit\n* On View\n* [Calendar] \n* About\n* Sup",
     "category": "movies",
-    "city": "San Francisco",
+    "city": "Berkeley",
     "state": "CA",
-    "calendar_url": "https://bampfa.org/events",
-    "source": "exa_discovery",
+    "calendar_url": "https://bampfa.org/visit/calendar",
+    "source": "manual_vetted_2026-02-26",
     "discovered_at": "2026-01-16T18:12:24.581Z",
+    "last_updated": "2026-02-26T00:00:00Z",
     "lat": 37.8709465,
     "lng": -122.2663989,
     "geocoded_at": "2026-01-16T19:52:47.178113Z"
@@ -2337,16 +2338,17 @@
     "geocoded_at": "2026-01-16T19:54:36.328973Z"
   },
   {
-    "name": "Calperformances",
-    "website": "https://calperformances.org/cal-performances-2025-26-season-calendar-updated-nov-10-2025/",
+    "name": "Cal Performances",
+    "website": "https://calperformances.org/",
     "domain": "calperformances.org",
     "description": "For Immediate Release: April 15, 2025 / updated November 10, 2025\n2025\u20132026 Season Announcement Press Kit \n2025\u20132026 Season Video (YouTube) \n2025\u20132026 Season Brochure (PDF)\n2025\u20132026 Season Brochure (",
     "category": "music",
-    "city": "San Francisco",
+    "city": "Berkeley",
     "state": "CA",
     "calendar_url": "https://calperformances.org/calendar/",
-    "source": "exa_discovery",
-    "discovered_at": "2026-01-16T18:11:58.329Z"
+    "source": "manual_vetted_2026-02-26",
+    "discovered_at": "2026-01-16T18:11:58.329Z",
+    "last_updated": "2026-02-26T00:00:00Z"
   },
   {
     "name": "Concerts & Live Performances in Oakland",

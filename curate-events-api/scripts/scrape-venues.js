@@ -62,7 +62,13 @@ const VENUE_REGISTRY_PATH = path.join(DATA_DIR, 'venue-registry.json');
 const CACHE_PATH = path.join(DATA_DIR, 'venue-events-cache.json');
 const JINA_READER_BASE = 'https://r.jina.ai';
 const JINA_DELAY_MS = 1000; // 1 second between Jina calls
-const MAX_MARKDOWN_LENGTH = 15000; // Truncate long pages to save tokens
+const DEFAULT_MAX_MARKDOWN_LENGTH = 15000; // Truncate long pages to save tokens
+const MARKDOWN_LENGTH_OVERRIDES = {
+  // These calendars front-load navigation and older events; we need deeper context
+  // so the extractor can see current/future occurrences.
+  'bampfa.org': 120000,
+  'calperformances.org': 70000,
+};
 const TRIBE_FEED_OVERRIDES = {
   'fortmason.org': 'https://fortmason.org/wp-json/tribe/events/v1/events'
 };
@@ -93,7 +99,12 @@ function sleep(ms) {
 /**
  * Fetch venue calendar page via Jina Reader
  */
-async function fetchViaJina(calendarUrl) {
+function getMarkdownLimitForVenue(venue) {
+  const domain = String(venue?.domain || '').toLowerCase();
+  return MARKDOWN_LENGTH_OVERRIDES[domain] || DEFAULT_MAX_MARKDOWN_LENGTH;
+}
+
+async function fetchViaJina(calendarUrl, { maxMarkdownLength = DEFAULT_MAX_MARKDOWN_LENGTH } = {}) {
   const jinaUrl = `${JINA_READER_BASE}/${calendarUrl}`;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout (some JS-heavy sites need 30-45s)
@@ -115,8 +126,8 @@ async function fetchViaJina(calendarUrl) {
 
     let markdown = await response.text();
     // Truncate long pages
-    if (markdown.length > MAX_MARKDOWN_LENGTH) {
-      markdown = markdown.substring(0, MAX_MARKDOWN_LENGTH) + '\n\n[... truncated ...]';
+    if (markdown.length > maxMarkdownLength) {
+      markdown = markdown.substring(0, maxMarkdownLength) + '\n\n[... truncated ...]';
     }
     return markdown;
   } catch (error) {
@@ -629,6 +640,84 @@ function addFallbackEventsFromCalendarUrls(events, markdown, venue) {
   return additions.length ? [...events, ...additions] : events;
 }
 
+function safeDecodeUrlParam(value) {
+  if (value === null || value === undefined) return '';
+  try {
+    return decodeURIComponent(String(value).replace(/\+/g, ' ')).trim();
+  } catch {
+    return String(value).trim();
+  }
+}
+
+function parseGoogleCalendarDate(value) {
+  const raw = String(value || '').trim();
+  const dateTime = raw.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})?$/);
+  if (dateTime) {
+    const [, y, m, d, hh, mm, ss] = dateTime;
+    return `${y}-${m}-${d}T${hh}:${mm}:${ss || '00'}`;
+  }
+
+  const dateOnly = raw.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (dateOnly) {
+    const [, y, m, d] = dateOnly;
+    return `${y}-${m}-${d}T19:00:00`;
+  }
+
+  return null;
+}
+
+function extractEventsFromGoogleCalendarLinks(markdown, venue) {
+  if (!markdown) return [];
+
+  const linkPattern = /\[Google Calendar\]\((https?:\/\/calendar\.google\.com\/calendar\/r\/eventedit\?[^)\s]+)\)/gi;
+  const deduped = new Map();
+
+  let match;
+  while ((match = linkPattern.exec(markdown)) !== null) {
+    const calendarLink = match[1];
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(calendarLink);
+    } catch {
+      continue;
+    }
+
+    const title = safeDecodeUrlParam(parsedUrl.searchParams.get('text'));
+    const datesRaw = safeDecodeUrlParam(parsedUrl.searchParams.get('dates'));
+    const detailsRaw = safeDecodeUrlParam(parsedUrl.searchParams.get('details'));
+    const [startRaw, endRaw] = datesRaw.split('/');
+    const startDate = parseGoogleCalendarDate(startRaw);
+    const endDate = parseGoogleCalendarDate(endRaw);
+    if (!title || !startDate) continue;
+
+    let eventUrl = null;
+    const detailsUrlMatch = detailsRaw.match(/https?:\/\/[^\s)]+/i);
+    if (detailsUrlMatch) {
+      eventUrl = normalizeEventUrl(detailsUrlMatch[0]);
+    }
+
+    const key = `${title}|${startDate}`;
+    if (deduped.has(key)) continue;
+
+    deduped.set(key, {
+      title,
+      startDate,
+      endDate,
+      description: detailsRaw || null,
+      category: venue.category || 'all',
+      price: null,
+      eventUrl,
+      city: venue.city || null
+    });
+  }
+
+  return Array.from(deduped.values()).sort((a, b) => {
+    const aTime = new Date(a.startDate).getTime();
+    const bTime = new Date(b.startDate).getTime();
+    return aTime - bTime;
+  });
+}
+
 /**
  * Extract events from markdown using Claude Haiku
  */
@@ -905,7 +994,9 @@ async function main() {
             console.log(`  Parsed ${events.length} events from Tribe JSON feed`);
           } else {
           // Fetch via Jina Reader
-            const markdown = await fetchViaJina(venue.calendar_url);
+            const markdown = await fetchViaJina(venue.calendar_url, {
+              maxMarkdownLength: getMarkdownLimitForVenue(venue)
+            });
 
             if (!markdown || markdown.length < 100) {
               console.log(`  Skipped: too little content (${markdown?.length || 0} chars)`);
@@ -945,6 +1036,13 @@ async function main() {
             const addedByUrlScan = events.length - extractedEvents.length;
             if (addedByUrlScan > 0) {
               console.log(`  Added ${addedByUrlScan} events from calendar URL scan`);
+            }
+            if (events.length === 0) {
+              const calendarLinkEvents = extractEventsFromGoogleCalendarLinks(markdown, venue);
+              if (calendarLinkEvents.length > 0) {
+                events = calendarLinkEvents;
+                console.log(`  Parsed ${events.length} events from Google Calendar link fallback`);
+              }
             }
           }
         }
