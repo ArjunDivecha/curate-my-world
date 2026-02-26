@@ -937,7 +937,7 @@ export const Dashboard = () => {
               </div>
 
               {/* Categories */}
-              <div className="mt-2 w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              <div className="mt-2 w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                 {Object.keys(categoryIcons).map((category) => {
                   const categoryKey = mapCategoryToBackend(category);
                   const count = filteredCategoryCounts[categoryKey] || 0;
