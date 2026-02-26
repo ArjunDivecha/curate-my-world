@@ -16,11 +16,21 @@
 import { createLogger } from './logger.js';
 
 const logger = createLogger('Cache');
+const nodeEnv = process.env.NODE_ENV || 'development';
+
+function parseBooleanEnv(value, defaultValue = false) {
+  if (value === undefined || value === null || value === '') return defaultValue;
+  const normalized = String(value).trim().toLowerCase();
+  if (['1', 'true', 'yes', 'on', 'enabled'].includes(normalized)) return true;
+  if (['0', 'false', 'no', 'off', 'disabled'].includes(normalized)) return false;
+  return defaultValue;
+}
 
 class ResponseCache {
-  constructor(defaultTTL = 300000) { // 5 minutes default
+  constructor(defaultTTL = 300000, { disabled = false } = {}) { // 5 minutes default
     this.cache = new Map();
     this.defaultTTL = defaultTTL;
+    this.disabled = disabled;
     this.stats = {
       hits: 0,
       misses: 0,
@@ -35,7 +45,8 @@ class ResponseCache {
     
     logger.info('Response cache initialized', {
       defaultTTL: `${defaultTTL}ms`,
-      cleanupInterval: '60s'
+      cleanupInterval: '60s',
+      disabled: this.disabled
     });
   }
 
@@ -56,20 +67,41 @@ class ResponseCache {
   }
 
   /**
-   * Get cached response - DISABLED FOR DEVELOPMENT
+   * Get cached response
    */
   get(key) {
-    // Always return null to disable caching during development
-    this.stats.misses++;
-    logger.debug('Cache disabled - always miss', { key });
-    return null;
+    if (this.disabled) {
+      this.stats.misses++;
+      return null;
+    }
+
+    const entry = this.cache.get(key);
+    if (!entry) {
+      this.stats.misses++;
+      return null;
+    }
+
+    if (Date.now() > entry.expiry) {
+      this.cache.delete(key);
+      this.stats.deletes++;
+      this.stats.misses++;
+      return null;
+    }
+
+    this.stats.hits++;
+    return entry.data;
   }
 
   /**
    * Set cached response
    */
   set(key, data, ttl = this.defaultTTL) {
-    const expiry = Date.now() + ttl;
+    if (this.disabled) {
+      return;
+    }
+
+    const safeTTL = Number.isFinite(ttl) && ttl > 0 ? ttl : this.defaultTTL;
+    const expiry = Date.now() + safeTTL;
     
     this.cache.set(key, {
       data,
@@ -81,7 +113,7 @@ class ResponseCache {
     
     logger.debug('Cache set', { 
       key, 
-      ttl: `${ttl}ms`,
+      ttl: `${safeTTL}ms`,
       cacheSize: this.cache.size
     });
   }
@@ -136,7 +168,8 @@ class ResponseCache {
     return {
       ...this.stats,
       hitRate: total > 0 ? (this.stats.hits / total * 100).toFixed(1) + '%' : '0%',
-      size: this.cache.size
+      size: this.cache.size,
+      disabled: this.disabled
     };
   }
 
@@ -152,7 +185,17 @@ class ResponseCache {
   }
 }
 
-// Create global cache instance - DISABLED FOR DEVELOPMENT
-export const eventCache = new ResponseCache(0); // 0 TTL = disabled
+// Defaults:
+// - production: enabled
+// - development: disabled unless EVENT_CACHE_DISABLE_IN_DEV=false
+const disableCacheEverywhere = parseBooleanEnv(process.env.EVENT_CACHE_DISABLE, false);
+const disableCacheInDev = parseBooleanEnv(process.env.EVENT_CACHE_DISABLE_IN_DEV, true);
+const cacheDisabled = disableCacheEverywhere || (nodeEnv === 'development' && disableCacheInDev);
+const configuredDefaultTtlMs = Number(process.env.EVENT_CACHE_DEFAULT_TTL_MS || 300000);
+const defaultTtlMs = Number.isFinite(configuredDefaultTtlMs) && configuredDefaultTtlMs > 0
+  ? configuredDefaultTtlMs
+  : 300000;
+
+export const eventCache = new ResponseCache(defaultTtlMs, { disabled: cacheDisabled });
 
 export default ResponseCache;

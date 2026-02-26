@@ -80,11 +80,16 @@ Health:
 
 - `npm start` - production start
 - `npm run dev` - watch mode
+- `npm run lint` - lint backend source
+- `npm run lint:fix` - lint + auto-fix backend source
 - `npm run scrape:venues` - full venue scrape
 - `npm run scrape:retry` - retry failed venue scrapes
 - `npm run scrape:venues:db` - full scrape with DB write mode
 - `npm run scrape:retry:db` - retry failed with DB write mode
 - `npm run migrate:lists` - migrate local list data to DB
+- `npm run smoke:api` - lightweight API checks against `BASE_URL` (or local default)
+- `npm run load:test` - baseline API load test (autocannon-backed)
+- `npm run load:test:stress` - higher-intensity load profile
 
 ## Production Deployment
 

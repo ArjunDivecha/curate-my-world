@@ -23,6 +23,18 @@ try {
 
 const nodeEnv = process.env.NODE_ENV || 'development';
 
+function parsePositiveNumber(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+const rateLimitWindowMs = parsePositiveNumber(process.env.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000);
+const rateLimitMaxRequests = parsePositiveNumber(process.env.RATE_LIMIT_MAX_REQUESTS, 300);
+const rateLimitSkipPaths = String(process.env.RATE_LIMIT_SKIP_PATHS || '/api/health*,/api/events/refresh-status')
+  .split(',')
+  .map((pathValue) => pathValue.trim())
+  .filter(Boolean);
+
 /**
  * Application configuration
  */
@@ -54,8 +66,9 @@ export const config = {
   // Rate limiting
   rateLimiting: {
     enabled: nodeEnv === 'production',
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 100 // requests per window
+    windowMs: rateLimitWindowMs,
+    maxRequests: rateLimitMaxRequests,
+    skipPaths: rateLimitSkipPaths
   },
   
   // API configuration
@@ -161,8 +174,9 @@ export function getEnvironmentConfig(env = nodeEnv) {
       },
       rateLimiting: {
         enabled: true,
-        windowMs: 15 * 60 * 1000,
-        maxRequests: 100
+        windowMs: config.rateLimiting.windowMs,
+        maxRequests: config.rateLimiting.maxRequests,
+        skipPaths: config.rateLimiting.skipPaths
       }
     },
     

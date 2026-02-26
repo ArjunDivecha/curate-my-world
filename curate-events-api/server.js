@@ -72,10 +72,23 @@ app.use((req, res, next) => {
 // Rate limiting (production only)
 if (config.rateLimiting.enabled) {
   const rateLimit = (await import('express-rate-limit')).default;
+  const rateLimitSkipMatchers = (config.rateLimiting.skipPaths || []).map((pattern) => {
+    const trimmed = String(pattern || '').trim();
+    if (!trimmed) return null;
+    if (trimmed.endsWith('*')) {
+      const prefix = trimmed.slice(0, -1);
+      return (pathValue) => pathValue.startsWith(prefix);
+    }
+    return (pathValue) => pathValue === trimmed;
+  }).filter(Boolean);
   
   app.use(rateLimit({
     windowMs: config.rateLimiting.windowMs,
     max: config.rateLimiting.maxRequests,
+    skip: (req) => {
+      const pathValue = req.path || '';
+      return rateLimitSkipMatchers.some((matcher) => matcher(pathValue));
+    },
     message: {
       error: 'Too many requests from this IP, please try again later.',
       retryAfter: Math.ceil(config.rateLimiting.windowMs / 1000)
@@ -86,7 +99,8 @@ if (config.rateLimiting.enabled) {
   
   logger.info('Rate limiting enabled', {
     windowMs: config.rateLimiting.windowMs,
-    maxRequests: config.rateLimiting.maxRequests
+    maxRequests: config.rateLimiting.maxRequests,
+    skipPaths: config.rateLimiting.skipPaths
   });
 }
 

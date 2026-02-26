@@ -63,13 +63,17 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
   useEffect(() => {
     const unsubscribe = apiHealthChecker.subscribe(setHealthStatus);
     
-    // Start monitoring on component mount
-    apiHealthChecker.startMonitoring(30000); // Check every 30 seconds
+    // Start lightweight monitoring on component mount.
+    // Keep this interval conservative to avoid unnecessary background traffic.
+    apiHealthChecker.startMonitoring(120000); // Check every 2 minutes
     
     // Perform initial health check
     apiHealthChecker.forceCheck();
     
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      apiHealthChecker.stopMonitoring();
+    };
   }, []);
 
   // Expose fetch function to parent via ref for programmatic triggers
