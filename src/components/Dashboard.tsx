@@ -653,55 +653,80 @@ export const Dashboard = () => {
           {/* Compact Control Surface (Option A-inspired) */}
           <div className="mb-10 space-y-5">
             <div className="bg-gray-50 p-5 sm:p-6 rounded-2xl shadow-inner border border-gray-200">
-              <div className="mb-3 flex flex-wrap justify-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(datePreset === 'today' ? 'bg-indigo-50 border-indigo-200' : '')}
-                  onClick={() => {
-                    setDatePreset('today');
-                    setSelectedDate(null);
-                    setDateQuery('');
-                  }}
-                >
-                  Today
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(datePreset === 'week' ? 'bg-indigo-50 border-indigo-200' : '')}
-                  onClick={() => {
-                    setDatePreset('week');
-                    setSelectedDate(null);
-                    setDateQuery('');
-                  }}
-                >
-                  Next 7 Days
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(datePreset === 'weekend' ? 'bg-indigo-50 border-indigo-200' : '')}
-                  onClick={() => {
-                    setDatePreset('weekend');
-                    setSelectedDate(null);
-                    setDateQuery('');
-                  }}
-                >
-                  This Weekend
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(datePreset === '30d' ? 'bg-indigo-50 border-indigo-200' : '')}
-                  onClick={() => {
-                    setDatePreset('30d');
-                    setSelectedDate(null);
-                    setDateQuery('');
-                  }}
-                >
-                  Next 30 Days
-                </Button>
+              <div className="mb-4 rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-white to-indigo-50 p-3 shadow-sm">
+                <div className="mb-2 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-indigo-700">
+                  Quick Date Range
+                </div>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="default"
+                    className={cn(
+                      "min-h-12 rounded-xl border-2 px-5 text-lg font-semibold tracking-tight transition-all",
+                      datePreset === 'today'
+                        ? "border-indigo-600 bg-indigo-600 text-white shadow-[0_8px_18px_rgba(79,70,229,0.35)] hover:bg-indigo-600"
+                        : "border-slate-300 bg-white text-slate-800 hover:border-indigo-300 hover:bg-indigo-50"
+                    )}
+                    onClick={() => {
+                      setDatePreset('today');
+                      setSelectedDate(null);
+                      setDateQuery('');
+                    }}
+                  >
+                    Today
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="default"
+                    className={cn(
+                      "min-h-12 rounded-xl border-2 px-5 text-lg font-semibold tracking-tight transition-all",
+                      datePreset === 'week'
+                        ? "border-indigo-600 bg-indigo-600 text-white shadow-[0_8px_18px_rgba(79,70,229,0.35)] hover:bg-indigo-600"
+                        : "border-slate-300 bg-white text-slate-800 hover:border-indigo-300 hover:bg-indigo-50"
+                    )}
+                    onClick={() => {
+                      setDatePreset('week');
+                      setSelectedDate(null);
+                      setDateQuery('');
+                    }}
+                  >
+                    Next 7 Days
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="default"
+                    className={cn(
+                      "min-h-12 rounded-xl border-2 px-5 text-lg font-semibold tracking-tight transition-all",
+                      datePreset === 'weekend'
+                        ? "border-indigo-600 bg-indigo-600 text-white shadow-[0_8px_18px_rgba(79,70,229,0.35)] hover:bg-indigo-600"
+                        : "border-slate-300 bg-white text-slate-800 hover:border-indigo-300 hover:bg-indigo-50"
+                    )}
+                    onClick={() => {
+                      setDatePreset('weekend');
+                      setSelectedDate(null);
+                      setDateQuery('');
+                    }}
+                  >
+                    This Weekend
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="default"
+                    className={cn(
+                      "min-h-12 rounded-xl border-2 px-5 text-lg font-semibold tracking-tight transition-all",
+                      datePreset === '30d'
+                        ? "border-indigo-600 bg-indigo-600 text-white shadow-[0_8px_18px_rgba(79,70,229,0.35)] hover:bg-indigo-600"
+                        : "border-slate-300 bg-white text-slate-800 hover:border-indigo-300 hover:bg-indigo-50"
+                    )}
+                    onClick={() => {
+                      setDatePreset('30d');
+                      setSelectedDate(null);
+                      setDateQuery('');
+                    }}
+                  >
+                    Next 30 Days
+                  </Button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -884,12 +909,12 @@ export const Dashboard = () => {
                 }}
               />
 
-              {/* Categories */}
-              <div className="mt-4 w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              {/* All category (dedicated row) */}
+              <div className="mt-4 flex justify-center">
                 <Button
                   size="sm"
                   className={cn(
-                    "w-full rounded-2xl border whitespace-nowrap justify-start gap-3 h-14",
+                    "w-full max-w-3xl rounded-2xl border whitespace-nowrap justify-start gap-3 h-16 px-5",
                     activeCategory === null
                       ? "bg-gradient-to-r from-rose-100 via-amber-100 to-sky-100 text-slate-700 border-slate-200 shadow-[0_3px_0_0_rgba(148,163,184,0.35),0_10px_20px_rgba(148,163,184,0.18)]"
                       : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
@@ -909,6 +934,10 @@ export const Dashboard = () => {
                     </span>
                   </span>
                 </Button>
+              </div>
+
+              {/* Categories */}
+              <div className="mt-2 w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                 {Object.keys(categoryIcons).map((category) => {
                   const categoryKey = mapCategoryToBackend(category);
                   const count = filteredCategoryCounts[categoryKey] || 0;
