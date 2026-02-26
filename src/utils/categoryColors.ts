@@ -41,15 +41,15 @@ export const categoryColors: Record<string, CategoryColor> = {
     hover: 'hover:bg-sky-100'
   },
 
-  // Comedy - Warm Amber (fun and inviting)
+  // Comedy - Bright Cyan (playful and distinct)
   comedy: {
     name: 'Comedy',
-    background: 'bg-amber-50',
-    border: 'border-amber-200',
-    text: 'text-amber-900',
-    accent: 'text-amber-700',
-    icon: 'text-amber-600',
-    hover: 'hover:bg-amber-100'
+    background: 'bg-cyan-50',
+    border: 'border-cyan-200',
+    text: 'text-cyan-900',
+    accent: 'text-cyan-700',
+    icon: 'text-cyan-600',
+    hover: 'hover:bg-cyan-100'
   },
 
   // Lectures - Sage Green (intellectual and calm)
@@ -74,15 +74,15 @@ export const categoryColors: Record<string, CategoryColor> = {
     hover: 'hover:bg-pink-100'
   },
 
-  // Desi - Saffron (South Asian cultural events)
+  // Desi - Fuchsia (vibrant cultural identity, clearly distinct)
   desi: {
     name: 'Desi',
-    background: 'bg-amber-50',
-    border: 'border-amber-200',
-    text: 'text-amber-900',
-    accent: 'text-amber-700',
-    icon: 'text-amber-600',
-    hover: 'hover:bg-amber-100'
+    background: 'bg-fuchsia-50',
+    border: 'border-fuchsia-200',
+    text: 'text-fuchsia-900',
+    accent: 'text-fuchsia-700',
+    icon: 'text-fuchsia-600',
+    hover: 'hover:bg-fuchsia-100'
   },
 
   // Finance - Teal (professional)
@@ -118,15 +118,15 @@ export const categoryColors: Record<string, CategoryColor> = {
     hover: 'hover:bg-rose-100'
   },
 
-  // Art - Champagne/Pale Gold (trending warm neutral)
+  // Art - Lime (fresh and clearly separated from comedy/desi)
   art: {
     name: 'Art',
-    background: 'bg-yellow-50',
-    border: 'border-yellow-200',
-    text: 'text-yellow-900',
-    accent: 'text-yellow-800',
-    icon: 'text-yellow-700',
-    hover: 'hover:bg-yellow-100'
+    background: 'bg-lime-50',
+    border: 'border-lime-200',
+    text: 'text-lime-900',
+    accent: 'text-lime-700',
+    icon: 'text-lime-600',
+    hover: 'hover:bg-lime-100'
   },
 
   // Food - Peach (warm and inviting)
