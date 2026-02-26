@@ -47,8 +47,8 @@ export const Dashboard = () => {
   };
 
   const handleDateClick = (date: Date) => {
+    if (datePreset) return;
     setSelectedDate(date);
-    setDatePreset(null);
   };
 
   const calendarEvents = state.calendarEvents;
@@ -249,7 +249,7 @@ export const Dashboard = () => {
               </div>
 
               <div className="mt-3 flex justify-center">
-                <Button size="sm" className="w-full max-w-xl rounded-2xl border justify-center gap-3 h-14 bg-gray-100 text-gray-700" onClick={() => { setActiveCategory(null); setSelectedDate(null); setDatePreset(null); setSearchQuery(''); }}>
+                <Button size="sm" className="w-full max-w-xl rounded-2xl border justify-center gap-3 h-14 bg-gray-100 text-gray-700" onClick={() => { setActiveCategory(null); setSelectedDate(null); setDatePreset('30d'); setSearchQuery(''); }}>
                   <RefreshCw className="h-5 w-5" /><span className="font-semibold">Reset Filters</span>
                 </Button>
               </div>

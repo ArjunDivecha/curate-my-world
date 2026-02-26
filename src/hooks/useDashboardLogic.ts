@@ -68,7 +68,7 @@ export const useDashboardLogic = () => {
   const [refreshStatusText, setRefreshStatusText] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [dateQuery, setDateQuery] = useState('');
-  const [datePreset, setDatePreset] = useState<null | 'today' | 'week' | 'weekend' | '30d'>(null);
+  const [datePreset, setDatePreset] = useState<null | 'today' | 'week' | 'weekend' | '30d'>('30d');
   const [fetcherReady, setFetcherReady] = useState(false);
 
   // --- Refs ---
