@@ -22,10 +22,13 @@ Important: Railway `staging` is currently the live backend environment. Railway 
   - Venue scraper cache (Jina Reader + Claude Haiku extraction)
 - Normalizes into 10 categories:
   - Music, Theatre, Comedy, Movies, Art, Food, Tech, Lectures, Kids, Desi
-- Supports search, category filters, date filters/presets, and multiple viewing modes:
+- Supports search, category filters, date filters/presets, and two primary viewing modes:
   - Event View
-  - Day View (category lanes)
-  - Week View (day grid)
+  - Date View (adapts by preset: Today, Next 7 Days, This Weekend, Next 30 Days)
+- UI behavior notes:
+  - Events auto-load on page startup
+  - Events auto-refresh as filter context changes (search/date/category/preset/view)
+  - `Reset Filters` clears active filters without wiping loaded data
 - Supports moderation lists:
   - Block event
   - Block site/domain
@@ -40,7 +43,7 @@ Important: Railway `staging` is currently the live backend environment. Railway 
 The `/all-categories` endpoint **never** makes live Ticketmaster API calls during a user request. Instead:
 - A background scheduler pre-computes the full all-categories response and writes it to Postgres (`all_categories_response_cache` table)
 - **Daily at 6:00 AM Pacific (`America/Los_Angeles`)**: scheduler refreshes the cache
-- **Fetch Events button**: always reads from Postgres cache (instant, single DB read)
+- Frontend auto-fetch flow reads from Postgres cache (instant, single DB read)
 - If cache is >24h old, it still serves stale cached data by default (no write-on-read)
 - Request-time refresh is opt-in via `refresh=true` on `/api/events/all-categories`
 - If no cache exists yet, returns empty response; daily scheduler (or explicit `refresh=true`) builds it
@@ -172,4 +175,4 @@ Health:
 `IMPLEMENTATION_PLAN.md` and `REDESIGN_REPORT.md` are historical planning/analysis artifacts, not live runbooks.
 
 ---
-Last updated: 2026-02-11
+Last updated: 2026-02-26

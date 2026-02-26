@@ -654,9 +654,6 @@ export const Dashboard = () => {
           <div className="mb-10 space-y-5">
             <div className="bg-gray-50 p-5 sm:p-6 rounded-2xl shadow-inner border border-gray-200">
               <div className="mb-4 rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-white to-indigo-50 p-3 shadow-sm">
-                <div className="mb-2 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-indigo-700">
-                  Quick Date Range
-                </div>
                 <div className="flex flex-wrap justify-center gap-2">
                   <Button
                     variant="outline"
@@ -914,7 +911,7 @@ export const Dashboard = () => {
                 <Button
                   size="sm"
                   className={cn(
-                    "w-full max-w-3xl rounded-2xl border whitespace-nowrap justify-start gap-3 h-16 px-5",
+                    "w-full sm:w-[28rem] lg:w-[40%] max-w-none rounded-2xl border whitespace-nowrap justify-start gap-3 h-14 px-5",
                     activeCategory === null
                       ? "bg-gradient-to-r from-rose-100 via-amber-100 to-sky-100 text-slate-700 border-slate-200 shadow-[0_3px_0_0_rgba(148,163,184,0.35),0_10px_20px_rgba(148,163,184,0.18)]"
                       : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
