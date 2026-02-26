@@ -709,7 +709,7 @@ export const Dashboard = () => {
                   <Input
                     id="event-search"
                     className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
-                    placeholder="Search: title, venue, 'ai conference', 'festival'..."
+                    placeholder="Refine Search - Search Venue, Event..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -728,7 +728,7 @@ export const Dashboard = () => {
                   <Input
                     id="event-date"
                     className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
-                    placeholder="Date (MM/DD or YYYY-MM-DD)"
+                    placeholder="Choose Specific Date - Date (mm/dd or YYYY-MM-DD)"
                     value={dateQuery}
                     onChange={(e) => setDateQuery(e.target.value)}
                     onKeyDown={(e) => {
@@ -755,22 +755,20 @@ export const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
-                <div className="flex flex-wrap gap-2">
-                  <FetchEventsButton
-                    location={preferences.location.address}
-                    preferences={{
-                      categories: Object.keys(preferences.interests.categories).filter(cat => preferences.interests.categories[cat]),
-                      timePreferences: preferences.filters.timePreferences,
-                      customKeywords: preferences.interests.keywords,
-                      aiInstructions: preferences.aiInstructions
-                    }}
-                    selectedProviders={selectedProviders}
-                    onBackgroundRefreshing={handleBackgroundRefreshing}
-                    fetchRef={fetchEventsRef}
-                    onFetcherReady={() => setFetcherReady(true)}
-                    autoMode
-                    onAllEventsFetched={(fetchedEventsByCategory, fetchedCategoryStats, fetchedProviderDetails) => {
+              <FetchEventsButton
+                location={preferences.location.address}
+                preferences={{
+                  categories: Object.keys(preferences.interests.categories).filter(cat => preferences.interests.categories[cat]),
+                  timePreferences: preferences.filters.timePreferences,
+                  customKeywords: preferences.interests.keywords,
+                  aiInstructions: preferences.aiInstructions
+                }}
+                selectedProviders={selectedProviders}
+                onBackgroundRefreshing={handleBackgroundRefreshing}
+                fetchRef={fetchEventsRef}
+                onFetcherReady={() => setFetcherReady(true)}
+                autoMode
+                onAllEventsFetched={(fetchedEventsByCategory, fetchedCategoryStats, fetchedProviderDetails) => {
                   console.log('✅ Received raw events by category:', fetchedEventsByCategory);
                   console.log('🔑 Raw category keys:', Object.keys(fetchedEventsByCategory));
                   setEventsByCategory(fetchedEventsByCategory);
@@ -884,30 +882,10 @@ export const Dashboard = () => {
                 onProcessingTime={(timeMs) => {
                   setTotalProcessingTime(timeMs);
                 }}
-                  />
-
-                  <Button
-                    onClick={() => {
-                      // Reset active filters only; keep loaded events intact.
-                      setActiveCategory(null);
-                      setSelectedDate(null);
-                      setDatePreset(null);
-                      setDateQuery('');
-                      setSearchQuery('');
-                      toast({
-                        title: "Filters Reset",
-                        description: "Showing all loaded events.",
-                      });
-                    }}
-                    className="w-full sm:w-auto bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-full hover:bg-gray-300 transition"
-                  >
-                    Reset Filters
-                  </Button>
-                </div>
-              </div>
+              />
 
               {/* Categories */}
-              <div className="mt-4 w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+              <div className="mt-4 w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                 <Button
                   size="sm"
                   className={cn(
@@ -964,6 +942,28 @@ export const Dashboard = () => {
                     </Button>
                   );
                 })}
+              </div>
+
+              <div className="mt-3 flex justify-center">
+                <Button
+                  size="sm"
+                  className="w-full max-w-xl rounded-2xl border justify-center gap-3 h-14 bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
+                  onClick={() => {
+                    // Reset active filters only; keep loaded events intact.
+                    setActiveCategory(null);
+                    setSelectedDate(null);
+                    setDatePreset(null);
+                    setDateQuery('');
+                    setSearchQuery('');
+                    toast({
+                      title: "Filters Reset",
+                      description: "Showing all loaded events.",
+                    });
+                  }}
+                >
+                  <RefreshCw className="h-5 w-5" />
+                  <span className="font-semibold">Reset Filters</span>
+                </Button>
               </div>
 
               <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-3">
