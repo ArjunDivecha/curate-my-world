@@ -9,29 +9,32 @@ import { WeekendSplitView } from "./WeekendSplitView";
 import { ThirtyDayAgendaView } from "./ThirtyDayAgendaView";
 import { Header } from "./Header";
 import { FetchEventsButton } from "./FetchEventsButton";
-import { Calendar, Grid3X3, CalendarDays, Music, Drama, Palette, Coffee, Cpu, Mic2, BookOpen, Baby, Globe, RefreshCw, Search, Film } from "lucide-react";
+import { Calendar, Grid3X3, CalendarDays, Music, Drama, Palette, Coffee, Cpu, Mic2, BookOpen, Baby, Globe, RefreshCw, Search, Film, ChevronDown } from "lucide-react";
 import { getCategoryColor } from "@/utils/categoryColors";
 import { cn } from "@/lib/utils";
 import { getWeekendRange, startOfLocalDay } from "@/lib/dateViewRanges";
 import { useDashboardLogic } from "@/hooks/useDashboardLogic";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as DatePickerCalendar } from "@/components/ui/calendar";
 
 export const Dashboard = () => {
   const { state, actions, refs } = useDashboardLogic();
   const {
     preferences, events, savedEvents, activeCategory,
     transformedEventsByCategory, activeTab, selectedDate, selectedProviders,
-    backgroundRefreshing, refreshStatusText, searchQuery, dateQuery,
+    backgroundRefreshing, refreshStatusText, searchQuery,
     datePreset, fetcherReady, eventsForEventView, filteredCategoryCounts
   } = state;
 
   const {
     setActiveCategory, setActiveTab, setSelectedDate,
-    setSearchQuery, setDateQuery, setDatePreset, setFetcherReady,
+    setSearchQuery, setDatePreset, setFetcherReady,
     handleBackgroundRefreshing, handleSaveToCalendar, handleRemoveFromCalendar,
-    applyTypedDate, handleAllEventsFetched, mapCategoryToBackend
+    handleAllEventsFetched, mapCategoryToBackend
   } = actions;
 
   const { fetchEventsRef } = refs;
+  const [datePickerOpen, setDatePickerOpen] = React.useState(false);
 
   // Track when events state changes
   useEffect(() => {
@@ -46,7 +49,6 @@ export const Dashboard = () => {
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
     setDatePreset(null);
-    setDateQuery('');
   };
 
   const calendarEvents = state.calendarEvents;
@@ -123,15 +125,66 @@ export const Dashboard = () => {
                           ? "border-indigo-600 bg-indigo-600 text-white shadow-[0_8px_18px_rgba(79,70,229,0.35)]"
                           : "border-slate-300 bg-white text-slate-800 hover:border-indigo-300 hover:bg-indigo-50"
                       )}
-                      onClick={() => { setDatePreset(preset as any); setSelectedDate(null); setDateQuery(''); }}
+                      onClick={() => { setDatePreset(preset as any); setSelectedDate(null); }}
                     >
                       {preset === 'today' ? 'Today' : preset === 'week' ? 'Next 7 Days' : preset === 'weekend' ? 'This Weekend' : 'Next 30 Days'}
                     </Button>
                   ))}
+
+                  <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          "min-h-12 rounded-xl border-2 px-5 text-lg font-semibold tracking-tight transition-all border-slate-300 bg-white text-slate-800 hover:border-indigo-300 hover:bg-indigo-50",
+                          selectedDate ? "border-indigo-600 bg-indigo-50 text-indigo-900" : ""
+                        )}
+                      >
+                        <CalendarDays className="h-5 w-5 mr-2" />
+                        {selectedDate
+                          ? selectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                          : "Choose Specific Date"}
+                        <ChevronDown className="h-4 w-4 ml-2 opacity-70" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="center">
+                      <div className="p-3 border-b text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                        Pick A Specific Date
+                      </div>
+                      <DatePickerCalendar
+                        mode="single"
+                        selected={selectedDate ?? undefined}
+                        onSelect={(date) => {
+                          if (!date) return;
+                          setSelectedDate(date);
+                          setDatePreset(null);
+                          setDatePickerOpen(false);
+                        }}
+                        initialFocus
+                      />
+                      {selectedDate && (
+                        <div className="p-3 border-t flex justify-end">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setSelectedDate(null);
+                              setDatePreset(null);
+                              setDatePickerOpen(false);
+                            }}
+                          >
+                            Clear Date
+                          </Button>
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 <div className="relative">
                   <Input
                     className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400"
@@ -140,17 +193,6 @@ export const Dashboard = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                   {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">&times;</button>}
-                </div>
-                <div className="relative">
-                  <Input
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400"
-                    placeholder="Choose Specific Date (mm/dd or YYYY-MM-DD)"
-                    value={dateQuery}
-                    onChange={(e) => setDateQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && applyTypedDate()}
-                    onBlur={() => dateQuery.trim() && applyTypedDate()}
-                  />
-                  {(selectedDate || dateQuery.trim()) && <button onClick={() => { setDateQuery(''); setSelectedDate(null); setDatePreset(null); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">&times;</button>}
                 </div>
               </div>
 
@@ -172,15 +214,16 @@ export const Dashboard = () => {
 
               <div className="mt-4 flex justify-center">
                 <Button
+                  variant="outline"
                   size="sm"
                   className={cn(
-                    "w-full sm:w-[28rem] lg:w-[40%] rounded-2xl border whitespace-nowrap justify-start gap-3 h-14 px-5",
-                    activeCategory === null ? "bg-gradient-to-r from-rose-100 via-amber-100 to-sky-100" : "bg-slate-50"
+                    "w-full sm:w-[28rem] lg:w-[40%] rounded-2xl border whitespace-nowrap justify-start gap-3 h-14 px-5 text-slate-900",
+                    activeCategory === null ? "bg-gradient-to-r from-rose-100 via-amber-100 to-sky-100 border-slate-200" : "bg-slate-50 border-slate-200 hover:bg-slate-100"
                   )}
                   onClick={() => handleCategoryFilter(null)}
                 >
                   <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border bg-white/70"><Search className="h-5 w-5" /></span>
-                  <span className="text-left leading-tight"><span className="block font-semibold">All</span><span className="block text-xs text-slate-500">{totalEventCount} events</span></span>
+                  <span className="text-left leading-tight"><span className="block font-semibold text-slate-900">All</span><span className="block text-xs text-slate-700">{totalEventCount} events</span></span>
                 </Button>
               </div>
 
@@ -206,7 +249,7 @@ export const Dashboard = () => {
               </div>
 
               <div className="mt-3 flex justify-center">
-                <Button size="sm" className="w-full max-w-xl rounded-2xl border justify-center gap-3 h-14 bg-gray-100 text-gray-700" onClick={() => { setActiveCategory(null); setSelectedDate(null); setDatePreset(null); setDateQuery(''); setSearchQuery(''); }}>
+                <Button size="sm" className="w-full max-w-xl rounded-2xl border justify-center gap-3 h-14 bg-gray-100 text-gray-700" onClick={() => { setActiveCategory(null); setSelectedDate(null); setDatePreset(null); setSearchQuery(''); }}>
                   <RefreshCw className="h-5 w-5" /><span className="font-semibold">Reset Filters</span>
                 </Button>
               </div>
