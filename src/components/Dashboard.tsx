@@ -653,6 +653,57 @@ export const Dashboard = () => {
           {/* Compact Control Surface (Option A-inspired) */}
           <div className="mb-10 space-y-5">
             <div className="bg-gray-50 p-5 sm:p-6 rounded-2xl shadow-inner border border-gray-200">
+              <div className="mb-3 flex flex-wrap justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(datePreset === 'today' ? 'bg-indigo-50 border-indigo-200' : '')}
+                  onClick={() => {
+                    setDatePreset('today');
+                    setSelectedDate(null);
+                    setDateQuery('');
+                  }}
+                >
+                  Today
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(datePreset === 'week' ? 'bg-indigo-50 border-indigo-200' : '')}
+                  onClick={() => {
+                    setDatePreset('week');
+                    setSelectedDate(null);
+                    setDateQuery('');
+                  }}
+                >
+                  Next 7 Days
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(datePreset === 'weekend' ? 'bg-indigo-50 border-indigo-200' : '')}
+                  onClick={() => {
+                    setDatePreset('weekend');
+                    setSelectedDate(null);
+                    setDateQuery('');
+                  }}
+                >
+                  This Weekend
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(datePreset === '30d' ? 'bg-indigo-50 border-indigo-200' : '')}
+                  onClick={() => {
+                    setDatePreset('30d');
+                    setSelectedDate(null);
+                    setDateQuery('');
+                  }}
+                >
+                  Next 30 Days
+                </Button>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="relative">
                   <Input
@@ -704,58 +755,7 @@ export const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={cn(datePreset === 'today' ? 'bg-indigo-50 border-indigo-200' : '')}
-                    onClick={() => {
-                      setDatePreset('today');
-                      setSelectedDate(null);
-                      setDateQuery('');
-                    }}
-                  >
-                    Today
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={cn(datePreset === 'week' ? 'bg-indigo-50 border-indigo-200' : '')}
-                    onClick={() => {
-                      setDatePreset('week');
-                      setSelectedDate(null);
-                      setDateQuery('');
-                    }}
-                  >
-                    Next 7 Days
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={cn(datePreset === 'weekend' ? 'bg-indigo-50 border-indigo-200' : '')}
-                    onClick={() => {
-                      setDatePreset('weekend');
-                      setSelectedDate(null);
-                      setDateQuery('');
-                    }}
-                  >
-                    This Weekend
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={cn(datePreset === '30d' ? 'bg-indigo-50 border-indigo-200' : '')}
-                    onClick={() => {
-                      setDatePreset('30d');
-                      setSelectedDate(null);
-                      setDateQuery('');
-                    }}
-                  >
-                    Next 30 Days
-                  </Button>
-                </div>
-
+              <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
                 <div className="flex flex-wrap gap-2">
                   <FetchEventsButton
                     location={preferences.location.address}
@@ -886,34 +886,22 @@ export const Dashboard = () => {
                 }}
                   />
 
-                  <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                    Auto-refresh is on
-                  </span>
-
                   <Button
                     onClick={() => {
-                      // Clear all event-related state
-                      setEvents([]);
-                      setSavedEvents([]);
-                      setEventsByCategory({});
-                      setTransformedEventsByCategory({});
-                      setCategoryStats({});
+                      // Reset active filters only; keep loaded events intact.
                       setActiveCategory(null);
                       setSelectedDate(null);
                       setDatePreset(null);
                       setDateQuery('');
                       setSearchQuery('');
-                      setProviderDetails([]);
-                      setTotalProcessingTime(0);
-                      try { localStorage.removeItem(LOCAL_EVENTS_CACHE_KEY); } catch {}
                       toast({
-                        title: "Events Cleared",
-                        description: "All events were cleared. Fresh events will auto-load.",
+                        title: "Filters Reset",
+                        description: "Showing all loaded events.",
                       });
                     }}
                     className="w-full sm:w-auto bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-full hover:bg-gray-300 transition"
                   >
-                    Clear
+                    Reset Filters
                   </Button>
                 </div>
               </div>
