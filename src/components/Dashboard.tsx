@@ -12,7 +12,7 @@ import { WeekDayGrid } from "./WeekDayGrid";
 import { WeekendSplitView } from "./WeekendSplitView";
 import { ThirtyDayAgendaView } from "./ThirtyDayAgendaView";
 import { Header } from "./Header";
-import { FetchEventsButton, type ProviderStatSummary } from "./FetchEventsButton";
+import { FetchEventsButton, type ProviderStatSummary, type FetchEventsTriggerOptions } from "./FetchEventsButton";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar, Grid3X3, CalendarDays, Mail, Github, Music, Drama, Palette, Coffee, Zap, GraduationCap, Search, Film, Cpu, Mic2, BookOpen, Baby, Globe, RefreshCw } from "lucide-react";
 import { getCategoryColor } from "@/utils/categoryColors";
@@ -105,8 +105,10 @@ export const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');  // Local search within fetched events
   const [dateQuery, setDateQuery] = useState(''); // typed date filter (MM/DD or YYYY-MM-DD)
   const [datePreset, setDatePreset] = useState<null | 'today' | 'week' | 'weekend' | '30d'>(null);
+  const [fetcherReady, setFetcherReady] = useState(false);
   const refreshPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const fetchEventsRef = useRef<(() => void) | null>(null);
+  const fetchEventsRef = useRef<((options?: FetchEventsTriggerOptions) => void) | null>(null);
+  const hasTriggeredInitialAutoFetchRef = useRef(false);
 
   // Category mapping: Frontend display names to backend API names
   // Current supported categories: music, theatre, comedy, movies, art, food, tech, lectures, kids, desi
@@ -207,9 +209,9 @@ export const Dashboard = () => {
             clearInterval(refreshPollRef.current);
             refreshPollRef.current = null;
           }
-          // Trigger a silent re-fetch by clicking the FetchEventsButton programmatically
+          // Trigger a silent re-fetch programmatically after background refresh completes.
           if (fetchEventsRef.current) {
-            fetchEventsRef.current();
+            fetchEventsRef.current({ silent: true });
           }
         }
       } catch {
@@ -497,6 +499,39 @@ export const Dashboard = () => {
     setDatePreset(null);
   }, [dateQuery, toast]);
 
+  const selectedProvidersSignature = React.useMemo(
+    () =>
+      Object.entries(selectedProviders)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, enabled]) => `${key}:${enabled ? 1 : 0}`)
+        .join('|'),
+    [selectedProviders]
+  );
+  const selectedDateSignature = selectedDate ? startOfLocalDay(selectedDate).toISOString() : '';
+
+  // Auto-fetch once on load and re-fetch (debounced) when control context changes.
+  useEffect(() => {
+    if (!fetcherReady || !fetchEventsRef.current) return;
+    const isInitialRun = !hasTriggeredInitialAutoFetchRef.current;
+    const delayMs = isInitialRun ? 0 : 450;
+    const timer = setTimeout(() => {
+      fetchEventsRef.current?.({ silent: true });
+      hasTriggeredInitialAutoFetchRef.current = true;
+    }, delayMs);
+    return () => clearTimeout(timer);
+  }, [
+    fetcherReady,
+    activeTab,
+    activeCategory,
+    datePreset,
+    selectedDateSignature,
+    dateQuery,
+    searchQuery,
+    preferences.location.address,
+    preferences.aiInstructions,
+    selectedProvidersSignature,
+  ]);
+
   useEffect(() => {
     console.log('🧭 Active category:', activeCategory, ' | eventsForEventView:', eventsForEventView.length, ' | buckets:', Object.keys(transformedEventsByCategory));
   }, [activeCategory, eventsForEventView, transformedEventsByCategory]);
@@ -733,6 +768,8 @@ export const Dashboard = () => {
                     selectedProviders={selectedProviders}
                     onBackgroundRefreshing={handleBackgroundRefreshing}
                     fetchRef={fetchEventsRef}
+                    onFetcherReady={() => setFetcherReady(true)}
+                    autoMode
                     onAllEventsFetched={(fetchedEventsByCategory, fetchedCategoryStats, fetchedProviderDetails) => {
                   console.log('✅ Received raw events by category:', fetchedEventsByCategory);
                   console.log('🔑 Raw category keys:', Object.keys(fetchedEventsByCategory));
@@ -840,7 +877,6 @@ export const Dashboard = () => {
                   const allTransformedEvents = Object.values(newTransformedEventsByCategory).flat();
                   console.log('🌍 Total transformed events for display:', allTransformedEvents.length);
                   setEvents(allTransformedEvents);
-                  setActiveCategory(null); // Show 'All' events initially
                 }}
                 onProviderDetails={(details) => {
                   setProviderDetails(details);
@@ -848,8 +884,11 @@ export const Dashboard = () => {
                 onProcessingTime={(timeMs) => {
                   setTotalProcessingTime(timeMs);
                 }}
-                    className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-2 text-white font-bold py-3 px-6 rounded-full transition hover:transform hover:-translate-y-0.5 hover:shadow-lg"
                   />
+
+                  <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                    Auto-refresh is on
+                  </span>
 
                   <Button
                     onClick={() => {
@@ -869,7 +908,7 @@ export const Dashboard = () => {
                       try { localStorage.removeItem(LOCAL_EVENTS_CACHE_KEY); } catch {}
                       toast({
                         title: "Events Cleared",
-                        description: "All events have been cleared. Click 'Fetch Events' to get fresh events!",
+                        description: "All events were cleared. Fresh events will auto-load.",
                       });
                     }}
                     className="w-full sm:w-auto bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-full hover:bg-gray-300 transition"
@@ -1139,7 +1178,7 @@ export const Dashboard = () => {
             <Calendar className="w-16 h-16 mx-auto text-gray-400 mb-4" />
             <h3 className="text-xl font-semibold mb-2 text-gray-700">No Events Yet</h3>
             <p className="text-gray-500 mb-6">
-              Click "Fetch Events" to discover amazing Bay Area events from Ticketmaster and local venues
+              Events load automatically on startup and when filters change.
             </p>
           </div>
         )}

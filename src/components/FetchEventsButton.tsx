@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, MapPin, AlertTriangle, Wifi, WifiOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -12,9 +12,15 @@ interface FetchEventsButtonProps {
   onProviderDetails?: (details: ProviderStatSummary[], statsMap: ProviderStatsMap) => void;
   onProcessingTime?: (timeMs: number) => void;
   onBackgroundRefreshing?: (refreshing: boolean) => void;
-  fetchRef?: React.MutableRefObject<(() => void) | null>;
+  fetchRef?: React.MutableRefObject<((options?: FetchEventsTriggerOptions) => void) | null>;
+  onFetcherReady?: () => void;
+  autoMode?: boolean;
   selectedProviders: Record<string, boolean>;
   className?: string;
+}
+
+export interface FetchEventsTriggerOptions {
+  silent?: boolean;
 }
 
 export interface ProviderStatSummary {
@@ -44,11 +50,15 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
   onProcessingTime,
   onBackgroundRefreshing,
   fetchRef,
+  onFetcherReady,
+  autoMode = false,
   selectedProviders,
   className
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [healthStatus, setHealthStatus] = useState<ApiHealthStatus | null>(null);
+  const inFlightRef = useRef(false);
+  const fetcherReadyNotifiedRef = useRef(false);
   const { toast } = useToast();
 
   const activeProviderKeys = useMemo(
@@ -79,33 +89,46 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
   // Expose fetch function to parent via ref for programmatic triggers
   useEffect(() => {
     if (fetchRef) {
-      fetchRef.current = () => fetchRealEvents();
+      fetchRef.current = (options?: FetchEventsTriggerOptions) => fetchRealEvents(options);
+    }
+    if (!fetcherReadyNotifiedRef.current) {
+      onFetcherReady?.();
+      fetcherReadyNotifiedRef.current = true;
     }
   });
 
-  const fetchRealEvents = async () => {
+  const fetchRealEvents = async (options: FetchEventsTriggerOptions = {}) => {
+    const silent = !!options.silent;
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     setIsLoading(true);
     
     // Pre-flight health check
     const currentHealth = await apiHealthChecker.forceCheck();
     if (!currentHealth.isHealthy) {
-      toast({
-        title: "🚨 Backend Connection Issue",
-        description: `Backend is ${currentHealth.backend.reachable ? 'reachable' : 'unreachable'}. API is ${currentHealth.api.functional ? 'functional' : 'not functional'}. Please wait for auto-recovery or check the console.`,
-        variant: "destructive",
-      });
+      if (!silent) {
+        toast({
+          title: "🚨 Backend Connection Issue",
+          description: `Backend is ${currentHealth.backend.reachable ? 'reachable' : 'unreachable'}. API is ${currentHealth.api.functional ? 'functional' : 'not functional'}. Please wait for auto-recovery or check the console.`,
+          variant: "destructive",
+        });
+      }
       setIsLoading(false);
+      inFlightRef.current = false;
       return;
     }
     
     try {
       if (noProvidersSelected) {
-        toast({
-          title: "Select a data source",
-          description: "Turn on at least one provider before fetching events.",
-          variant: "destructive",
-        });
+        if (!silent) {
+          toast({
+            title: "Select a data source",
+            description: "Turn on at least one provider before fetching events.",
+            variant: "destructive",
+          });
+        }
         setIsLoading(false);
+        inFlightRef.current = false;
         return;
       }
 
@@ -170,11 +193,13 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
       console.log('📋 Events by category:', eventsByCategory);
       
       if (totalEvents === 0) {
-        toast({
-          title: "No events found",
-          description: "No events were found across all categories for this location. Try a different location or check back later.",
-          variant: "destructive",
-        });
+        if (!silent) {
+          toast({
+            title: "No events found",
+            description: "No events were found across all categories for this location. Try a different location or check back later.",
+            variant: "destructive",
+          });
+        }
         return;
       }
 
@@ -188,10 +213,12 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
         ? `Found ${totalEvents} events across all categories! (${categoryBreakdown})`
         : `Found ${totalEvents} events across all categories!`;
 
-      toast({
-        title: "🎭 All Categories Fetched!",
-        description: successMessage + ` • Processing time: ${Math.round(processingTime/1000)}s`,
-      });
+      if (!silent) {
+        toast({
+          title: "🎭 All Categories Fetched!",
+          description: successMessage + ` • Processing time: ${Math.round(processingTime/1000)}s`,
+        });
+      }
 
       // Pass all events data to parent component for category filtering
       if (onAllEventsFetched) {
@@ -247,13 +274,16 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
 
     } catch (error: any) {
       console.error('❌ Error fetching events with all-categories endpoint:', error);
-      toast({
-        title: "Error fetching events",
-        description: error.message || "Failed to fetch events from all-categories endpoint. Make sure the API server is running on port 8765.",
-        variant: "destructive",
-      });
+      if (!silent) {
+        toast({
+          title: "Error fetching events",
+          description: error.message || "Failed to fetch events from all-categories endpoint. Make sure the API server is running on port 8765.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
+      inFlightRef.current = false;
     }
   };
 
@@ -301,9 +331,11 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
     return "bg-yellow-600 hover:bg-yellow-700 text-white";
   };
 
+  if (autoMode) return null;
+
   return (
     <Button
-      onClick={fetchRealEvents}
+      onClick={() => fetchRealEvents({ silent: false })}
       disabled={isLoading || (healthStatus && !healthStatus.isHealthy) || noProvidersSelected}
       className={getButtonClassName()}
       title={healthStatus ? `Backend: ${healthStatus.backend.reachable ? 'Connected' : 'Disconnected'} | API: ${healthStatus.api.functional ? 'Functional' : 'Failed'} | Last Check: ${healthStatus.lastChecked ? healthStatus.lastChecked.toLocaleTimeString() : 'n/a'}` : 'Checking connection...'}
