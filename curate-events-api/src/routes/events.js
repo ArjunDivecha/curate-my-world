@@ -134,6 +134,12 @@ const ALL_CATEGORIES_REFRESH_TIMEZONE = 'America/Los_Angeles';
 const ALL_CATEGORIES_REFRESH_HOUR = 6;
 const ALL_CATEGORIES_REFRESH_MINUTE = 0;
 const ALL_CATEGORIES_CACHE_STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
+// Ticketmaster still enforces its own page-size cap internally (currently 200).
+const TICKETMASTER_FETCH_LIMIT = Number.MAX_SAFE_INTEGER;
+const VENUE_SCRAPER_FETCH_LIMIT = Number.MAX_SAFE_INTEGER;
+const RESPONSE_LIMIT_MODE = 'unlimited';
+// Keep the all-categories cache key compatible with existing rows in DB.
+const ALL_CATEGORIES_CACHE_KEY_LIMIT = Math.min(500, config.api.maxLimit);
 
 function getZonedParts(date, timeZone) {
   const dtf = new Intl.DateTimeFormat('en-US', {
@@ -205,8 +211,7 @@ export async function triggerBackgroundAllCategoriesRefresh(requestKey, opts) {
   logger.info('Starting background all-categories refresh', { requestKey: requestKey.slice(0, 80) });
 
   try {
-    const { location, date_range, eventLimit, selectedProviders,
-            includeTicketmaster, includeVenueScraper, includeWhitelist } = opts;
+    const { location, date_range, includeTicketmaster, includeVenueScraper } = opts;
 
     const supportedCategorySet = new Set(SUPPORTED_CATEGORIES);
     const supportedCategories = categoryManager.getSupportedCategories()
@@ -220,11 +225,11 @@ export async function triggerBackgroundAllCategoriesRefresh(requestKey, opts) {
             .catch(e => ({ key, status: 'rejected', reason: e }))
       );
       if (includeTicketmaster) {
-        enqueue('ticketmaster', () => ticketmasterClient.searchEvents({ category, location, limit: eventLimit })
+        enqueue('ticketmaster', () => ticketmasterClient.searchEvents({ category, location, limit: TICKETMASTER_FETCH_LIMIT })
           .then(r => ({ success: r.success||false, events: r.events||[], count: r.events?.length||0, source:'ticketmaster', cost:0 })));
       }
       if (includeVenueScraper) {
-        enqueue('venue_scraper', () => venueScraperClient.searchEvents({ category, location, limit: eventLimit })
+        enqueue('venue_scraper', () => venueScraperClient.searchEvents({ category, location, limit: VENUE_SCRAPER_FETCH_LIMIT })
           .then(r => ({ success: r.success||false, events: r.events||[], count: r.events?.length||0, source:'venue_scraper', cost:0 })));
       }
       const settled = await Promise.all(providerPromises);
@@ -259,7 +264,7 @@ export async function triggerBackgroundAllCategoriesRefresh(requestKey, opts) {
       success: true, eventsByCategory, categoryStats, totalEvents,
       categories: supportedCategories, providerStats: {}, providerDetails: [],
       processingTime: 0, backgroundRefreshing: false,
-      metadata: { location, dateRange: date_range || 'next 30 days', limitPerCategory: eventLimit,
+      metadata: { location, dateRange: date_range || 'next 30 days', limitPerCategory: RESPONSE_LIMIT_MODE,
         categoriesFetched: supportedCategories.length,
         requestId: `bg_refresh_${Date.now()}_${Math.random().toString(36).substr(2,9)}` }
     };
@@ -275,11 +280,10 @@ export async function triggerBackgroundAllCategoriesRefresh(requestKey, opts) {
 
 export function getDefaultAllCategoriesRefreshRequest() {
   const defaultProviders = new Set(Object.entries(PROVIDER_DEFAULTS).filter(([,v])=>v).map(([k])=>k));
-  const defaultLimit = Math.min(500, config.api.maxLimit); // match frontend's limit=500
   const requestKey = JSON.stringify({
     location: 'San Francisco, CA',
     date_range: 'next 30 days',
-    limit: defaultLimit,
+    limit: ALL_CATEGORIES_CACHE_KEY_LIMIT,
     providers: Array.from(defaultProviders).sort()
   });
 
@@ -288,7 +292,6 @@ export function getDefaultAllCategoriesRefreshRequest() {
     opts: {
       location: 'San Francisco, CA',
       date_range: 'next 30 days',
-      eventLimit: defaultLimit,
       selectedProviders: defaultProviders,
       includeTicketmaster: true,
       includeVenueScraper: true,
@@ -319,11 +322,10 @@ export async function refreshDefaultAllCategoriesCache({ reason = 'manual' } = {
  */
 router.get('/all-categories', async (req, res) => {
   const startTime = Date.now();
-  const { location = 'San Francisco, CA', date_range, limit, refresh } = req.query;
-  const eventLimit = Math.min(parseInt(limit) || 15, config.api.maxLimit);
+  const { location = 'San Francisco, CA', date_range, limit: requestedLimit, refresh } = req.query;
   const forceRefresh = String(refresh || '').toLowerCase() === '1' || String(refresh || '').toLowerCase() === 'true';
 
-  logRequest(logger, req, 'allCategoriesEvents', { location, date_range, limit });
+  logRequest(logger, req, 'allCategoriesEvents', { location, date_range, requestedLimit, limitMode: RESPONSE_LIMIT_MODE });
 
   let selectedProviders = parseProviderSelection(req);
   if (selectedProviders.size === 0) {
@@ -346,7 +348,7 @@ router.get('/all-categories', async (req, res) => {
   const requestKey = JSON.stringify({
     location,
     date_range: date_range || 'next 30 days',
-    limit: eventLimit,
+    limit: ALL_CATEGORIES_CACHE_KEY_LIMIT,
     providers: Array.from(selectedProviders).sort()
   });
 
@@ -358,7 +360,14 @@ router.get('/all-categories', async (req, res) => {
       const isStale = ageMs > ALL_CATEGORIES_CACHE_STALE_THRESHOLD_MS;
       const shouldRefresh = forceRefresh;
       logger.info('Serving DB-cached all-categories response', {
-        location, eventLimit, ageMs, stale: isStale, forceRefresh, duration: `${duration}ms`
+        location,
+        limitMode: RESPONSE_LIMIT_MODE,
+        requestedLimit,
+        cacheKeyLimit: ALL_CATEGORIES_CACHE_KEY_LIMIT,
+        ageMs,
+        stale: isStale,
+        forceRefresh,
+        duration: `${duration}ms`
       });
       res.json({
         ...dbCached.payload,
@@ -377,7 +386,7 @@ router.get('/all-categories', async (req, res) => {
       // Trigger background refresh (non-blocking) only when explicitly requested.
       if (shouldRefresh) {
         triggerBackgroundAllCategoriesRefresh(requestKey, {
-          location, date_range, eventLimit, selectedProviders,
+          location, date_range, selectedProviders,
           includeTicketmaster, includeVenueScraper, includeWhitelist
         });
       }
@@ -424,7 +433,7 @@ router.get('/all-categories', async (req, res) => {
     metadata: {
       location,
       dateRange: date_range || 'next 30 days',
-      limitPerCategory: eventLimit,
+      limitPerCategory: RESPONSE_LIMIT_MODE,
       categoriesFetched: supportedCategories.length,
       dbCache: false,
       forceRefreshRequested: forceRefresh,
@@ -438,7 +447,7 @@ router.get('/all-categories', async (req, res) => {
   logResponse(logger, res, 'allCategoriesEvents-empty', duration, { totalEvents: 0 });
   if (shouldRefresh) {
     triggerBackgroundAllCategoriesRefresh(requestKey, {
-      location, date_range, eventLimit, selectedProviders,
+      location, date_range, selectedProviders,
       includeTicketmaster, includeVenueScraper, includeWhitelist
     });
   }
@@ -479,7 +488,7 @@ router.get('/:category', async (req, res) => {
 
   try {
     const { category } = req.params;
-    const { location, date_range, limit } = req.query;
+    const { location, date_range, limit: requestedLimit } = req.query;
 
     if (!location) {
       return res.status(400).json({
@@ -490,10 +499,8 @@ router.get('/:category', async (req, res) => {
       });
     }
 
-    const eventLimit = limit ? Math.min(parseInt(limit), config.api.maxLimit) : 50;
-
     // Check cache first
-    const cacheKey = eventCache.generateKey(category, location, date_range, { limit: eventLimit }, '');
+    const cacheKey = eventCache.generateKey(category, location, date_range, { limit: RESPONSE_LIMIT_MODE }, '');
     const cachedResult = eventCache.get(cacheKey);
 
     if (cachedResult) {
@@ -503,12 +510,18 @@ router.get('/:category', async (req, res) => {
       return res.json({ ...cachedResult, cached: true, cacheStats: eventCache.getStats() });
     }
 
-    logger.info('Processing event request', { category, location, dateRange: date_range, limit: eventLimit });
+    logger.info('Processing event request', {
+      category,
+      location,
+      dateRange: date_range,
+      requestedLimit,
+      limitMode: RESPONSE_LIMIT_MODE
+    });
 
     // Fetch from Ticketmaster + Venue Scraper in parallel
     const [ticketmasterResult, venueScraperResult] = await Promise.allSettled([
-      ticketmasterClient.searchEvents({ category, location, limit: eventLimit }),
-      venueScraperClient.searchEvents({ category, location, limit: eventLimit })
+      ticketmasterClient.searchEvents({ category, location, limit: TICKETMASTER_FETCH_LIMIT }),
+      venueScraperClient.searchEvents({ category, location, limit: VENUE_SCRAPER_FETCH_LIMIT })
     ]);
 
     // Prepare event lists for deduplication
@@ -585,7 +598,7 @@ router.get('/:category', async (req, res) => {
         category,
         location,
         dateRange: date_range || 'next 30 days',
-        limit: eventLimit
+        limit: RESPONSE_LIMIT_MODE
       }
     };
 
@@ -637,7 +650,7 @@ router.get('/', async (req, res) => {
       usage: {
         endpoint: '/api/events/:category',
         requiredParams: ['location'],
-        optionalParams: ['date_range', 'limit', 'min_confidence'],
+        optionalParams: ['date_range', 'min_confidence'],
         example: '/api/events/theatre?location=San Francisco, CA&date_range=this weekend'
       }
     };
@@ -712,14 +725,19 @@ router.get('/:category/ticketmaster', async (req, res) => {
 
   try {
     const { category } = req.params;
-    const { location = 'San Francisco, CA', limit = 10 } = req.query;
+    const { location = 'San Francisco, CA', limit: requestedLimit } = req.query;
 
-    logger.info('Fetching Ticketmaster events', { category, location, limit });
+    logger.info('Fetching Ticketmaster events', {
+      category,
+      location,
+      requestedLimit,
+      limitMode: RESPONSE_LIMIT_MODE
+    });
 
     const response = await ticketmasterClient.searchEvents({
       category,
       location,
-      limit: parseInt(limit)
+      limit: TICKETMASTER_FETCH_LIMIT
     });
 
     const processingTime = Date.now() - startTime;
@@ -758,12 +776,19 @@ router.get('/:category/venue-scraper', async (req, res) => {
 
   try {
     const { category } = req.params;
-    const { location = 'San Francisco, CA', limit = 50 } = req.query;
+    const { location = 'San Francisco, CA', limit: requestedLimit } = req.query;
+
+    logger.info('Fetching venue scraper events', {
+      category,
+      location,
+      requestedLimit,
+      limitMode: RESPONSE_LIMIT_MODE
+    });
 
     const response = await venueScraperClient.searchEvents({
       category,
       location,
-      limit: parseInt(limit)
+      limit: VENUE_SCRAPER_FETCH_LIMIT
     });
 
     const processingTime = Date.now() - startTime;

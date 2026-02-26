@@ -143,7 +143,6 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
       const params = new URLSearchParams();
       params.set('location', location);
       params.set('date_range', 'next 30 days');
-      params.set('limit', '500');
       // Use cached all-categories data by default for stable UX.
       // A background refresh may still be triggered server-side when cache is stale.
       if (aiInstructions) {

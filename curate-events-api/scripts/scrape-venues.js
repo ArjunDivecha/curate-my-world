@@ -640,6 +640,69 @@ function addFallbackEventsFromCalendarUrls(events, markdown, venue) {
   return additions.length ? [...events, ...additions] : events;
 }
 
+function extractFamsfVenueHints(markdown) {
+  const lines = String(markdown || '').split(/\r?\n/);
+  const hints = new Map();
+  const famsfExhibitionUrlRegex = /https?:\/\/(?:www\.)?famsf\.org\/exhibitions\/[^\s)\]]+/gi;
+
+  const normalizeHint = (text) => {
+    const lower = String(text || '').toLowerCase();
+    const hasDeYoung = lower.includes('de young');
+    const hasLegion = lower.includes('legion of honor');
+    if (hasDeYoung && hasLegion) return 'both';
+    if (hasDeYoung) return 'deyoung';
+    if (hasLegion) return 'legion';
+    return null;
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] || '';
+    const matches = Array.from(line.matchAll(famsfExhibitionUrlRegex))
+      .map(match => String(match[0] || '').replace(/[),.;]+$/, '').trim())
+      .filter(Boolean);
+    if (matches.length === 0) continue;
+
+    // Look at the current line + nearby lines where the museum label usually appears.
+    const context = lines.slice(i, Math.min(lines.length, i + 7)).join(' ');
+    const hint = normalizeHint(context);
+    if (!hint) continue;
+
+    for (const url of matches) {
+      const normalizedUrl = normalizeEventUrl(url);
+      if (normalizedUrl && !hints.has(normalizedUrl)) {
+        hints.set(normalizedUrl, hint);
+      }
+    }
+  }
+
+  return hints;
+}
+
+function applyFamsfVenueHints(events, markdown, venue) {
+  const domain = String(venue?.domain || '').toLowerCase();
+  const famsfDomains = new Set(['famsf.org', 'deyoung.famsf.org', 'legionofhonor.famsf.org']);
+  if (!famsfDomains.has(domain)) return events;
+  if (!Array.isArray(events) || events.length === 0) return events;
+
+  const hints = extractFamsfVenueHints(markdown);
+  if (hints.size === 0) return events;
+
+  return events.map(event => {
+    const normalizedUrl = normalizeEventUrl(event?.eventUrl);
+    if (!normalizedUrl) return event;
+    const hint = hints.get(normalizedUrl);
+    if (!hint) return event;
+
+    if (hint === 'deyoung') {
+      return { ...event, venue: 'de Young Museum', venueDomain: 'deyoung.famsf.org' };
+    }
+    if (hint === 'legion') {
+      return { ...event, venue: 'Legion of Honor', venueDomain: 'legionofhonor.famsf.org' };
+    }
+    return { ...event, venue: 'de Young Museum / Legion of Honor', venueDomain: 'famsf.org' };
+  });
+}
+
 function safeDecodeUrlParam(value) {
   if (value === null || value === undefined) return '';
   try {
@@ -1033,6 +1096,7 @@ async function main() {
               markdown
             );
             events = addFallbackEventsFromCalendarUrls(extractedEvents, markdown, venue);
+            events = applyFamsfVenueHints(events, markdown, venue);
             const addedByUrlScan = events.length - extractedEvents.length;
             if (addedByUrlScan > 0) {
               console.log(`  Added ${addedByUrlScan} events from calendar URL scan`);
@@ -1051,9 +1115,9 @@ async function main() {
         const stampedEvents = events.map((event, idx) => ({
           ...event,
           id: `venue_${venue.domain.replace(/\./g, '_')}_${idx}_${Date.now()}`,
-          venue: venue.name,
-          venueDomain: venue.domain,
-          location: [venue.city, venue.state].filter(Boolean).join(', ') || 'Bay Area, CA',
+          venue: event.venue || venue.name,
+          venueDomain: event.venueDomain || venue.domain,
+          location: event.location || [venue.city, venue.state].filter(Boolean).join(', ') || 'Bay Area, CA',
           source: 'venue_scraper',
           scrapedAt: attemptedAt
         }));
