@@ -289,15 +289,21 @@ function categorizeIcsEvent({ summary, description, categories, fallbackCategory
   const likelyNativeAmericanContext = /\b(american indian|native american|indigenous|tribal)\b/.test(text);
   const desiSignals = /\b(desi|bollywood|bhangra|garba|dandiya|holi|diwali|south asian|punjabi|gujarati|tamil|telugu|hindi|urdu|kathak|bharatanatyam|kollywood|tollywood)\b/.test(text);
   const indianSignal = /\bindian\b/.test(text);
+  const lgbtqSignals = /\b(lgbtq?\+?|queer|gay|lesbian|trans(?:gender)?|nonbinary|pride|drag)\b/.test(text);
+  const socialDanceSignals = /\b(salsa|bachata|kizomba|zouk|swing|lindy|tango social|dance social|social dance|dance party|club night|nightclub|dance floor|dj set|dj night)\b/.test(text);
+  const stageDanceSignals = /\b(ballet|dance performance|dance theater|dance theatre|dance company|choreography|contemporary dance)\b/.test(text);
 
   if (!likelyNativeAmericanContext && (desiSignals || indianSignal)) return 'desi';
+  if (lgbtqSignals) return 'lgbtq';
+  if (socialDanceSignals) return 'dance';
 
   if (/(stand-up|stand up|comedy|improv|laugh)/.test(text)) return 'comedy';
   if (/(concert|music|musical|jazz|dj)/.test(text)) return 'music';
   if (/(film|movie|cinema)/.test(text)) return 'movies';
   if (/(food|culinary|wine|farmers market|night market)/.test(text)) return 'food';
   if (/(lecture|talk|panel|conference|tour|workshop|class|literary)/.test(text)) return 'lectures';
-  if (/(theater|theatre|ballet|dance|performance|opera)/.test(text)) return 'theatre';
+  if (stageDanceSignals) return 'theatre';
+  if (/(theater|theatre|performance|opera)/.test(text)) return 'theatre';
   if (/(tech|startup|developer|software|hackathon|artificial intelligence|\bai\b)/.test(text)) return 'tech';
   if (/(kids|children|family)/.test(text)) return 'kids';
   if (/(art|exhibit|gallery|visual|photography|fort mason art)/.test(text)) return 'art';
@@ -802,7 +808,7 @@ Return a JSON array of events. Each event must have:
 - "startDate": ISO date string (YYYY-MM-DDTHH:mm:ss). If only a date is given, use 19:00 as default time.
 - "endDate": ISO date string or null
 - "description": string (1-2 sentences)
-- "category": string (one of: music, theatre, comedy, movies, art, food, tech, lectures, kids, desi)
+- "category": string (lowercase slug; use venue default when unsure)
 - "price": string or null (e.g. "$25", "$15-$45", "Free")
 - "eventUrl": string or null (direct link to event page)
 - "city": string or null (the city where the event takes place, e.g. "San Francisco", "Oakland", "London", "Istanbul")

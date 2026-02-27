@@ -54,7 +54,7 @@ export const ApiTester: React.FC = () => {
 
   // Current supported categories
   const categories = [
-    'music', 'theatre', 'comedy', 'movies', 'art', 'food', 'tech', 'lectures', 'kids', 'desi'
+    'music', 'theatre', 'comedy', 'movies', 'art', 'food', 'tech', 'lectures', 'kids', 'desi', 'dance', 'lgbtq'
   ];
 
   const getDefaultPrompt = (source: string, category: string): string => {

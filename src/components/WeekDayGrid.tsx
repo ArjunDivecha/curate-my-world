@@ -72,7 +72,7 @@ const laneKeyForEvent = (event: Event) => {
     .map((s) => String(s).toLowerCase());
 
   // Keep this aligned with backend bucket keys.
-  const keys = ["music", "theatre", "comedy", "movies", "art", "food", "tech", "lectures", "kids", "desi"];
+  const keys = ["music", "theatre", "comedy", "movies", "art", "food", "tech", "lectures", "kids", "desi", "dance", "lgbtq"];
   for (const k of keys) {
     if (raw.includes(k)) return k;
   }

@@ -85,6 +85,28 @@ export const categoryColors: Record<string, CategoryColor> = {
     hover: 'hover:bg-fuchsia-100'
   },
 
+  // Dance - Warm Amber (high-energy social events)
+  dance: {
+    name: 'Dance',
+    background: 'bg-amber-50',
+    border: 'border-amber-200',
+    text: 'text-amber-900',
+    accent: 'text-amber-700',
+    icon: 'text-amber-600',
+    hover: 'hover:bg-amber-100'
+  },
+
+  // LGBTQ+ - Magenta Rose (distinct community category)
+  lgbtq: {
+    name: 'LGBTQ+',
+    background: 'bg-pink-50',
+    border: 'border-pink-200',
+    text: 'text-pink-900',
+    accent: 'text-pink-700',
+    icon: 'text-pink-600',
+    hover: 'hover:bg-pink-100'
+  },
+
   // Finance - Teal (professional)
   finance: {
     name: 'Finance',
@@ -300,6 +322,22 @@ export const getCategoryColor = (category: string | string[]): CategoryColor => 
     'family': 'kids',
     'youth': 'kids',
     'desi': 'desi',
+    'dance': 'dance',
+    'social-dance': 'dance',
+    'dance-party': 'dance',
+    'nightclub': 'dance',
+    'club-night': 'dance',
+    'salsa': 'dance',
+    'bachata': 'dance',
+    'lgbt': 'lgbtq',
+    'lgbtq': 'lgbtq',
+    'lgbtq-': 'lgbtq',
+    'queer': 'lgbtq',
+    'gay': 'lgbtq',
+    'lesbian': 'lgbtq',
+    'trans': 'lgbtq',
+    'pride': 'lgbtq',
+    'drag': 'lgbtq',
     'indian': 'desi',
     'south-asian': 'desi',
     'south asian': 'desi',

@@ -6,7 +6,7 @@ import { type ProviderStatSummary, type FetchEventsTriggerOptions } from "@/comp
 import { buildEventSearchMatcher } from "@/lib/eventSearch";
 
 // Constants from original Dashboard
-const LOCAL_EVENTS_CACHE_KEY = 'cmw_events_cache_v4';
+const LOCAL_EVENTS_CACHE_KEY = 'cmw_events_cache_v5';
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 
 export interface Preferences {
@@ -27,14 +27,17 @@ const personalizedPreferences: Preferences = {
   interests: {
     categories: {
       'Music': true, 'Theatre': true, 'Comedy': true, 'Movies': true, 'Art': true,
-      'Food': true, 'Tech': true, 'Lectures': true, 'Kids': true, 'Desi': true
+      'Food': true, 'Tech': true, 'Lectures': true, 'Kids': true, 'Desi': true,
+      'Dance': true, 'LGBTQ': true
     },
     keywords: [
       'concerts', 'live music', 'jazz', 'classical', 'plays', 'musicals', 'broadway', 'opera',
       'stand-up', 'improv', 'comedy show', 'film', 'screening', 'cinema', 'museum', 'gallery', 'exhibition',
       'food festival', 'cooking class', 'wine tasting', 'tech meetup', 'hackathon', 'startup',
       'author talk', 'lecture', 'book signing', 'family', 'kids activities', 'children',
-      'desi', 'indian', 'bollywood', 'bhangra', 'garba', 'dandiya', 'holi', 'diwali'
+      'desi', 'indian', 'bollywood', 'bhangra', 'garba', 'dandiya', 'holi', 'diwali',
+      'dance party', 'social dance', 'salsa', 'bachata', 'swing',
+      'lgbtq', 'queer', 'drag', 'pride'
     ]
   },
   location: { address: 'San Francisco, CA' },
@@ -57,6 +60,7 @@ export const useDashboardLogic = () => {
   const [savedEvents, setSavedEvents] = useState<any[]>([]);
   const [eventsByCategory, setEventsByCategory] = useState<any>({});
   const [categoryStats, setCategoryStats] = useState<any>({});
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [transformedEventsByCategory, setTransformedEventsByCategory] = useState<any>({});
   const [activeTab, setActiveTab] = useState<'events' | 'date'>('events');
@@ -81,7 +85,7 @@ export const useDashboardLogic = () => {
     const categoryMap: Record<string, string> = {
       'Music': 'music', 'Theatre': 'theatre', 'Comedy': 'comedy', 'Movies': 'movies',
       'Art': 'art', 'Food': 'food', 'Tech': 'tech', 'Lectures': 'lectures',
-      'Kids': 'kids', 'Desi': 'desi'
+      'Kids': 'kids', 'Desi': 'desi', 'Dance': 'dance', 'LGBTQ': 'lgbtq'
     };
     return categoryMap[frontendCategory] || frontendCategory.toLowerCase();
   };
@@ -142,6 +146,7 @@ export const useDashboardLogic = () => {
       if (!isFresh) return;
       setTransformedEventsByCategory(data.buckets);
       setCategoryStats(data.stats || {});
+      setAvailableCategories(Object.keys(data.buckets || {}).map((value) => String(value).toLowerCase()));
       const allEvents = Object.values(data.buckets).flat();
       setEvents(allEvents);
     } catch (err) { console.error('Cache restore failed', err); }
@@ -162,6 +167,39 @@ export const useDashboardLogic = () => {
     })();
     return () => { cancelled = true; };
   }, [handleBackgroundRefreshing]);
+
+  const selectedProvidersSignature = useMemo(
+    () =>
+      Object.entries(selectedProviders)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, enabled]) => `${key}:${enabled ? 1 : 0}`)
+        .join('|'),
+    [selectedProviders]
+  );
+  const selectedDateSignature = selectedDate ? startOfLocalDay(selectedDate).toISOString() : '';
+
+  // Auto-fetch once on load and re-fetch when filter/search context changes.
+  useEffect(() => {
+    if (!fetcherReady || !fetchEventsRef.current) return;
+    const isInitialRun = !hasTriggeredInitialAutoFetchRef.current;
+    const delayMs = isInitialRun ? 0 : 450;
+    const timer = setTimeout(() => {
+      fetchEventsRef.current?.({ silent: true });
+      hasTriggeredInitialAutoFetchRef.current = true;
+    }, delayMs);
+    return () => clearTimeout(timer);
+  }, [
+    fetcherReady,
+    activeTab,
+    activeCategory,
+    datePreset,
+    selectedDateSignature,
+    dateQuery,
+    searchQuery,
+    preferences.location.address,
+    preferences.aiInstructions,
+    selectedProvidersSignature,
+  ]);
 
   // --- Memoized Derived Data ---
   const calendarEvents = useMemo(() => {
@@ -282,9 +320,18 @@ export const useDashboardLogic = () => {
     setSelectedDate(parsed); setDatePreset(null);
   }, [dateQuery, toast]);
 
-  const handleAllEventsFetched = (fetchedEventsByCategory: any, fetchedCategoryStats: any, fetchedProviderDetails: any) => {
+  const handleAllEventsFetched = (
+    fetchedEventsByCategory: any,
+    fetchedCategoryStats: any,
+    fetchedProviderDetails: any,
+    fetchedCategories?: string[]
+  ) => {
     setEventsByCategory(fetchedEventsByCategory);
     setCategoryStats(fetchedCategoryStats);
+    const normalizedCategories = Array.isArray(fetchedCategories)
+      ? fetchedCategories.map((value) => String(value).toLowerCase())
+      : Object.keys(fetchedEventsByCategory || {}).map((value) => String(value).toLowerCase());
+    setAvailableCategories(normalizedCategories);
     if (Array.isArray(fetchedProviderDetails)) setProviderDetails(fetchedProviderDetails);
 
     const newTransformed = Object.entries(fetchedEventsByCategory).reduce((acc, [cat, evs]) => {
@@ -328,7 +375,7 @@ export const useDashboardLogic = () => {
 
   return {
     state: {
-      preferences, events, savedEvents, eventsByCategory, categoryStats, activeCategory,
+      preferences, events, savedEvents, eventsByCategory, categoryStats, availableCategories, activeCategory,
       transformedEventsByCategory, activeTab, selectedDate, selectedProviders, providerDetails,
       totalProcessingTime, backgroundRefreshing, refreshStatusText, searchQuery, dateQuery,
       datePreset, fetcherReady, calendarEvents, eventsForEventView, filteredCategoryCounts

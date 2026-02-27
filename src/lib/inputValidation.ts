@@ -71,7 +71,7 @@ export const locationSchema = z.string()
  * Validate event preferences
  */
 export const eventPreferencesSchema = z.object({
-  categories: z.array(z.string().min(1).max(50)).max(10),
+  categories: z.array(z.string().min(1).max(50)),
   priceRange: z.object({
     min: z.number().min(0).max(10000),
     max: z.number().min(0).max(10000)

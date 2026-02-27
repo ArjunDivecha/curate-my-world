@@ -8,7 +8,12 @@ interface FetchEventsButtonProps {
   location?: string;
   preferences?: any;
   onEventsFetched?: (events: any[]) => void;
-  onAllEventsFetched?: (eventsByCategory: any, categoryStats: any, providerDetails?: ProviderStatSummary[]) => void;
+  onAllEventsFetched?: (
+    eventsByCategory: any,
+    categoryStats: any,
+    providerDetails?: ProviderStatSummary[],
+    categories?: string[]
+  ) => void;
   onProviderDetails?: (details: ProviderStatSummary[], statsMap: ProviderStatsMap) => void;
   onProcessingTime?: (timeMs: number) => void;
   onBackgroundRefreshing?: (refreshing: boolean) => void;
@@ -179,7 +184,7 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
         throw new Error(data.error || 'Failed to fetch events from all categories');
       }
       
-      const { eventsByCategory, categoryStats, totalEvents, processingTime, providerStats, providerDetails } = data;
+      const { eventsByCategory, categoryStats, totalEvents, processingTime, providerStats, providerDetails, categories } = data;
       
       console.log(`🎉 Total events across all categories: ${totalEvents}`);
       console.log('📊 Category breakdown:', categoryStats);
@@ -221,7 +226,7 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
 
       // Pass all events data to parent component for category filtering
       if (onAllEventsFetched) {
-        onAllEventsFetched(eventsByCategory, categoryStats, providerDetails);
+        onAllEventsFetched(eventsByCategory, categoryStats, providerDetails, categories);
       }
 
       if (onProviderDetails) {

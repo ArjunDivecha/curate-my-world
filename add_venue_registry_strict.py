@@ -66,19 +66,6 @@ USER_AGENT = (
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36"
 )
 
-ALLOWED_CATEGORIES = {
-    "all",
-    "music",
-    "theatre",
-    "comedy",
-    "movies",
-    "art",
-    "food",
-    "tech",
-    "lectures",
-    "kids",
-}
-
 # User preference: treat all provided venues as Bay Area venues.
 # Keep a light city extractor for convenience, but do not hard-block writes.
 CITY_REGEX = re.compile(
@@ -228,11 +215,8 @@ def normalize_city(city: Optional[str]) -> Optional[str]:
 
 def validate_category(category: str) -> str:
     normalized = category.strip().lower()
-    if normalized not in ALLOWED_CATEGORIES:
-        fail(
-            f"Invalid category '{category}'. "
-            f"Allowed: {sorted(ALLOWED_CATEGORIES)}"
-        )
+    if not normalized:
+        fail("Category must be non-empty.")
     return normalized
 
 

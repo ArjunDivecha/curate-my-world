@@ -39,7 +39,7 @@ export const PreferencesModal = ({ isOpen, onClose, preferences, onSave }: Prefe
   const defaultCategories = [
     'Music', 'Art', 'Theatre', 'Food', 'Desi', 'Technology', 'Business',
     'Health & Wellness', 'Sports', 'Education', 'Comedy', 'Film', 'Literature',
-    'Dance', 'Photography', 'Fashion', 'Gaming', 'Outdoor Activities'
+    'Dance', 'LGBTQ+', 'Photography', 'Fashion', 'Gaming', 'Outdoor Activities'
   ];
 
   const timeSlots = [

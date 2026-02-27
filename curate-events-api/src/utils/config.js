@@ -82,7 +82,7 @@ export const config = {
     
     // Event processing
     maxEventsPerCategory: 100,
-    defaultCategories: ['theatre', 'music', 'museums'],
+    defaultCategories: ['theatre', 'music', 'art', 'dance', 'lgbtq'],
     
     // Response format
     includeMetadata: true,

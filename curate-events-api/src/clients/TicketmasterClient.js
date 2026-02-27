@@ -405,7 +405,8 @@ export class TicketmasterClient {
     if (segment === 'Arts & Theatre') {
       if (genre === 'comedy' || subGenre === 'comedy' || subGenre === 'stand-up') return 'comedy';
       if (genre === 'theatre' || genre === 'theater' || subGenre.includes('musical') || subGenre.includes('play')) return 'theatre';
-      if (genre === 'dance' || genre === 'opera') return 'theatre';
+      if (genre === 'dance') return 'dance';
+      if (genre === 'opera') return 'theatre';
       if (genre === 'fine art' || genre === 'visual arts') return 'art';
       if (genre === 'lecture' || genre === 'seminar') return 'lectures';
       if (genre === 'children' || genre === 'family') return 'kids';

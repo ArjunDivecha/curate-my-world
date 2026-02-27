@@ -7,9 +7,8 @@
  * Unified category mapping for all event providers. This is the single source
  * of truth for how our categories map to each provider's classification system.
  * 
- * SUPPORTED CATEGORIES (10 total):
- * - Tier 1 (High volume): music, theatre, comedy, movies, art
- * - Tier 2 (Good coverage): food, tech, lectures, kids, desi
+ * SUPPORTED CATEGORIES:
+ * - Defined by CATEGORY_CONFIG below (no hard-coded category count limit).
  * 
  * PROVIDERS:
  * - Ticketmaster: Uses segment IDs and genre IDs
@@ -246,6 +245,55 @@ export const CATEGORY_CONFIG = {
       'holi', 'diwali', 'punjabi', 'gujarati', 'tamil', 'telugu', 'hindi', 'urdu',
       'kathak', 'bharatanatyam', 'kollywood', 'tollywood'
     ]
+  },
+
+  dance: {
+    displayName: 'Dance',
+    description: 'Social dance nights, club dancing, DJ nights, dance classes and socials',
+    priority: 'medium',
+    ticketmaster: null, // Scraper-first category
+    searchQueries: [
+      'dance nights {location}',
+      'salsa bachata socials {location}',
+      'club dance events {location}',
+      'swing dance socials {location}'
+    ],
+    searchDomains: [
+      'inlakechdance.com',
+      'odc.dance',
+      'crybaby.live',
+      'lapena.org',
+      'cigarbarandgrill.com',
+      'ashkenaz.com',
+      'myhipline.com'
+    ],
+    keywords: [
+      'dance', 'dance night', 'dance party', 'social dance', 'dance social',
+      'salsa', 'bachata', 'cumbia', 'swing', 'lindy hop', 'tango', 'kizomba',
+      'dj', 'club night', 'nightclub', 'dance class'
+    ]
+  },
+
+  lgbtq: {
+    displayName: 'LGBTQ+',
+    description: 'Queer community events, drag shows, pride events, and LGBTQ+ nightlife',
+    priority: 'medium',
+    ticketmaster: null, // Scraper-first category
+    searchQueries: [
+      'lgbtq events {location}',
+      'queer events {location}',
+      'drag shows {location}',
+      'pride events {location}'
+    ],
+    searchDomains: [
+      'sfpride.org',
+      'glbthistory.org',
+      'thecastro.com'
+    ],
+    keywords: [
+      'lgbtq', 'lgbt', 'queer', 'gay', 'lesbian', 'trans', 'transgender',
+      'nonbinary', 'pride', 'drag', 'drag show', 'queer dance party'
+    ]
   }
 };
 
@@ -253,8 +301,7 @@ export const CATEGORY_CONFIG = {
  * List of supported categories (in display order)
  */
 export const SUPPORTED_CATEGORIES = [
-  'music', 'theatre', 'comedy', 'movies', 'art',  // Tier 1
-  'food', 'tech', 'lectures', 'kids', 'desi'       // Tier 2
+  ...Object.keys(CATEGORY_CONFIG)
 ];
 
 /**
@@ -355,7 +402,29 @@ export function normalizeCategory(category) {
     'musical': 'theatre',
     'broadway': 'theatre',
     'opera': 'theatre',
-    'dance': 'theatre',
+    'dance': 'dance',
+    'dance party': 'dance',
+    'dance class': 'dance',
+    'social dance': 'dance',
+    'dance social': 'dance',
+    'nightclub': 'dance',
+    'club night': 'dance',
+    'dj night': 'dance',
+    'salsa': 'dance',
+    'bachata': 'dance',
+    'swing dance': 'dance',
+    'lindy hop': 'dance',
+    'lgbt': 'lgbtq',
+    'lgbtq': 'lgbtq',
+    'lgbtq+': 'lgbtq',
+    'gay': 'lgbtq',
+    'lesbian': 'lgbtq',
+    'queer': 'lgbtq',
+    'trans': 'lgbtq',
+    'transgender': 'lgbtq',
+    'pride': 'lgbtq',
+    'drag': 'lgbtq',
+    'drag show': 'lgbtq',
     'concerts': 'music',
     'concert': 'music',
     'live music': 'music',

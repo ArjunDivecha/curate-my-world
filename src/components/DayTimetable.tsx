@@ -58,7 +58,7 @@ const openEventUrl = (event: Event) => {
 
 const laneKeyForEvent = (event: Event) => {
   const raw = [event.source, ...(event.categories || [])].filter(Boolean).map((s) => String(s).toLowerCase());
-  const keys = ["music", "theatre", "comedy", "movies", "art", "food", "tech", "lectures", "kids", "desi"];
+  const keys = ["music", "theatre", "comedy", "movies", "art", "food", "tech", "lectures", "kids", "desi", "dance", "lgbtq"];
   for (const k of keys) {
     if (raw.includes(k)) return k;
   }
@@ -77,9 +77,11 @@ const laneLabel: Record<string, string> = {
   lectures: "Lectures",
   kids: "Kids",
   desi: "Desi",
+  dance: "Dance",
+  lgbtq: "LGBTQ+",
 };
 
-const LANE_ORDER = ["music", "theatre", "comedy", "movies", "art", "food", "tech", "lectures", "kids", "desi"];
+const LANE_ORDER = ["music", "theatre", "comedy", "movies", "art", "food", "tech", "lectures", "kids", "desi", "dance", "lgbtq"];
 const MAX_VISIBLE_OVERLAP_COLUMNS = 3;
 
 interface LaneLayoutEvent {

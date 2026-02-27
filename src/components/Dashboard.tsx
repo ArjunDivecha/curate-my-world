@@ -20,7 +20,7 @@ import { Calendar as DatePickerCalendar } from "@/components/ui/calendar";
 export const Dashboard = () => {
   const { state, actions, refs } = useDashboardLogic();
   const {
-    preferences, events, savedEvents, activeCategory,
+    preferences, events, savedEvents, availableCategories, activeCategory,
     transformedEventsByCategory, activeTab, selectedDate, selectedProviders,
     backgroundRefreshing, refreshStatusText, searchQuery,
     datePreset, fetcherReady, eventsForEventView, filteredCategoryCounts
@@ -30,7 +30,7 @@ export const Dashboard = () => {
     setActiveCategory, setActiveTab, setSelectedDate,
     setSearchQuery, setDatePreset, setFetcherReady,
     handleBackgroundRefreshing, handleSaveToCalendar, handleRemoveFromCalendar,
-    handleAllEventsFetched, mapCategoryToBackend
+    handleAllEventsFetched
   } = actions;
 
   const { fetchEventsRef } = refs;
@@ -79,10 +79,55 @@ export const Dashboard = () => {
             : 'Calendar';
   const dateViewTitle = `Date View - ${dateViewPresetLabel}`;
 
-  const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-    'Music': Music, 'Theatre': Drama, 'Comedy': Mic2, 'Movies': Film, 'Art': Palette,
-    'Food': Coffee, 'Tech': Cpu, 'Lectures': BookOpen, 'Kids': Baby, 'Desi': Globe
+  const categoryIconByKey: Record<string, React.ComponentType<{ className?: string }>> = {
+    music: Music,
+    theatre: Drama,
+    comedy: Mic2,
+    movies: Film,
+    art: Palette,
+    food: Coffee,
+    tech: Cpu,
+    lectures: BookOpen,
+    kids: Baby,
+    desi: Globe,
+    dance: Music,
+    lgbtq: Globe,
   };
+  const categoryLabelByKey: Record<string, string> = {
+    music: "Music",
+    theatre: "Theatre",
+    comedy: "Comedy",
+    movies: "Movies",
+    art: "Art",
+    food: "Food",
+    tech: "Tech",
+    lectures: "Lectures",
+    kids: "Kids",
+    desi: "Desi",
+    dance: "Dance",
+    lgbtq: "LGBTQ",
+  };
+  const preferredCategoryOrder = ["music", "theatre", "comedy", "movies", "art", "food", "tech", "lectures", "kids", "desi", "dance", "lgbtq"];
+  const visibleCategoryKeys = React.useMemo(() => {
+    const configured = Array.isArray(availableCategories)
+      ? availableCategories.map((value) => String(value).toLowerCase())
+      : [];
+    const discovered = new Set<string>([
+      ...Object.keys(transformedEventsByCategory || {}),
+      ...Object.keys(filteredCategoryCounts || {}),
+    ].map((value) => String(value).toLowerCase()));
+
+    const configuredSet = new Set(configured);
+    const orderedPreferred = preferredCategoryOrder.filter((key) => configuredSet.size === 0 || configuredSet.has(key));
+    const configuredUnknown = configured
+      .filter((key) => !preferredCategoryOrder.includes(key))
+      .sort((a, b) => a.localeCompare(b));
+    const discoveredUnknown = Array.from(discovered)
+      .filter((key) => !orderedPreferred.includes(key) && !configuredUnknown.includes(key))
+      .sort((a, b) => a.localeCompare(b));
+
+    return [...orderedPreferred, ...configuredUnknown, ...discoveredUnknown];
+  }, [availableCategories, filteredCategoryCounts, transformedEventsByCategory]);
 
   const totalEventCount = Object.values(filteredCategoryCounts).reduce((sum, count) => sum + count, 0);
   const hasAnyEvents = Object.values(transformedEventsByCategory).some((arr: any) => Array.isArray(arr) && arr.length > 0);
@@ -227,15 +272,15 @@ export const Dashboard = () => {
               </div>
 
               <div className="mt-2 w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-                {Object.keys(categoryIcons).map((catName) => {
-                  const catKey = mapCategoryToBackend(catName);
+                {visibleCategoryKeys.map((catKey) => {
+                  const catName = categoryLabelByKey[catKey] || catKey.toUpperCase();
                   const count = filteredCategoryCounts[catKey] || 0;
                   const selected = activeCategory === catKey;
                   const colors = getCategoryColor(catKey);
-                  const Icon = categoryIcons[catName];
+                  const Icon = categoryIconByKey[catKey] || Globe;
                   return (
                     <Button
-                      key={catName}
+                      key={catKey}
                       size="sm"
                       className={cn("w-full rounded-2xl border whitespace-nowrap justify-start gap-3 h-14", colors.background, colors.border, colors.text, colors.hover, selected ? "border-2 shadow-sm" : "")}
                       onClick={() => handleCategoryFilter(catKey)}

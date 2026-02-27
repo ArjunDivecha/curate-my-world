@@ -124,6 +124,36 @@ function ensureProviderStats(map, providerKey, selected) {
   return map[providerKey];
 }
 
+function ensureAllCategoriesPayloadShape(payload = {}) {
+  const supportedCategories = [...SUPPORTED_CATEGORIES];
+  const eventsByCategory = { ...(payload.eventsByCategory || {}) };
+  const categoryStats = { ...(payload.categoryStats || {}) };
+
+  supportedCategories.forEach((category) => {
+    if (!Array.isArray(eventsByCategory[category])) {
+      eventsByCategory[category] = [];
+    }
+
+    const existingStats = categoryStats[category];
+    const count = eventsByCategory[category].length;
+    if (!existingStats || typeof existingStats !== 'object') {
+      categoryStats[category] = { count };
+    } else if (typeof existingStats.count !== 'number') {
+      categoryStats[category] = { ...existingStats, count };
+    }
+  });
+
+  const totalEvents = supportedCategories.reduce((sum, category) => sum + eventsByCategory[category].length, 0);
+
+  return {
+    ...payload,
+    eventsByCategory,
+    categoryStats,
+    categories: supportedCategories,
+    totalEvents,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Background refresh: re-computes all-categories and writes to Postgres.
 // Called by the daily orchestrator and when explicitly requested via `refresh=1|true`.
@@ -213,10 +243,7 @@ export async function triggerBackgroundAllCategoriesRefresh(requestKey, opts) {
   try {
     const { location, date_range, includeTicketmaster, includeVenueScraper } = opts;
 
-    const supportedCategorySet = new Set(SUPPORTED_CATEGORIES);
-    const supportedCategories = categoryManager.getSupportedCategories()
-      .filter(cat => supportedCategorySet.has(cat.name))
-      .map(cat => cat.name);
+    const supportedCategories = [...SUPPORTED_CATEGORIES];
 
     const categoryPromises = supportedCategories.map(async (category) => {
       const providerPromises = [];
@@ -355,6 +382,7 @@ router.get('/all-categories', async (req, res) => {
   try {
     const dbCached = await readAllCategoriesCache(requestKey);
     if (dbCached) {
+      const hydratedPayload = ensureAllCategoriesPayloadShape(dbCached.payload || {});
       const ageMs = Date.now() - dbCached.updatedAt;
       const duration = Date.now() - startTime;
       const isStale = ageMs > ALL_CATEGORIES_CACHE_STALE_THRESHOLD_MS;
@@ -370,10 +398,10 @@ router.get('/all-categories', async (req, res) => {
         duration: `${duration}ms`
       });
       res.json({
-        ...dbCached.payload,
-        backgroundRefreshing: shouldRefresh || _bgRefreshInProgress || !!dbCached.payload?.backgroundRefreshing,
+        ...hydratedPayload,
+        backgroundRefreshing: shouldRefresh || _bgRefreshInProgress || !!hydratedPayload.backgroundRefreshing,
         metadata: {
-          ...(dbCached.payload.metadata || {}),
+          ...(hydratedPayload.metadata || {}),
           dbCache: true,
           dbCacheAgeMs: ageMs,
           stale: isStale,
@@ -381,7 +409,7 @@ router.get('/all-categories', async (req, res) => {
         }
       });
       logResponse(logger, res, 'allCategoriesEvents-dbCached', duration, {
-        totalEvents: dbCached.payload.totalEvents || 0
+        totalEvents: hydratedPayload.totalEvents || 0
       });
       // Trigger background refresh (non-blocking) only when explicitly requested.
       if (shouldRefresh) {
@@ -408,10 +436,7 @@ router.get('/all-categories', async (req, res) => {
   })).toISOString();
   logger.info('No cached data available yet; returning empty response', { location, duration: `${duration}ms` });
 
-  const supportedCategorySet = new Set(SUPPORTED_CATEGORIES);
-  const supportedCategories = categoryManager.getSupportedCategories()
-    .filter(cat => supportedCategorySet.has(cat.name))
-    .map(cat => cat.name);
+  const supportedCategories = [...SUPPORTED_CATEGORIES];
 
   const emptyByCategory = {};
   const emptyStats = {};

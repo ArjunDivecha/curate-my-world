@@ -75,6 +75,28 @@ export class CategoryManager {
         ],
         priority: 'medium'
       },
+      dance: {
+        aliases: [
+          'social dance', 'dance social', 'dance party', 'club night', 'nightclub',
+          'salsa', 'bachata', 'swing', 'lindy hop', 'tango'
+        ],
+        keywords: [
+          'dance', 'dance night', 'social dance', 'dance social', 'dance class',
+          'dj', 'nightclub', 'club', 'salsa', 'bachata', 'swing', 'lindy hop', 'tango'
+        ],
+        priority: 'medium'
+      },
+      lgbtq: {
+        aliases: [
+          'lgbt', 'lgbtq+', 'queer', 'gay', 'lesbian', 'trans', 'transgender',
+          'pride', 'drag'
+        ],
+        keywords: [
+          'lgbt', 'lgbtq', 'lgbtq+', 'queer', 'gay', 'lesbian', 'trans', 'transgender',
+          'nonbinary', 'pride', 'drag', 'drag show'
+        ],
+        priority: 'medium'
+      },
       lectures: {
         aliases: ['talks', 'presentations', 'seminars', 'workshops', 'discussions', 'education'],
         keywords: ['lecture', 'talk', 'presentation', 'seminar', 'workshop', 'discussion', 'speaker', 'author', 'educational'],
@@ -259,6 +281,42 @@ Provide results in JSON format:
     "price_range": "Price information or Free",
     "age_range": "Recommended ages",
     "description": "Brief description"
+  }
+]
+
+Provide actual real events with accurate information.`,
+
+      dance: `Find all social dance events for {location} for the {dateRange}. Focus on places where people go dancing: dance nights, DJ nights, salsa/bachata socials, swing socials, dance classes, and club dance events.
+
+Provide results in JSON format:
+[
+  {
+    "title": "Event Title",
+    "venue": "Venue Name",
+    "location": "City, State",
+    "date": "Date range or specific dates",
+    "show_times": ["Time 1", "Time 2"],
+    "website": "https://venue-website.com",
+    "price_range": "Price information or Free",
+    "dance_style": "Salsa/Bachata/Swing/Open format/etc."
+  }
+]
+
+Provide actual real events with accurate information.`,
+
+      lgbtq: `Find all LGBTQ+ events for {location} for the {dateRange}. Include queer community events, pride events, queer nightlife, drag shows, and LGBTQ+ social gatherings.
+
+Provide results in JSON format:
+[
+  {
+    "title": "Event Title",
+    "venue": "Venue Name",
+    "location": "City, State",
+    "date": "Date range or specific dates",
+    "show_times": ["Time 1", "Time 2"],
+    "website": "https://venue-website.com",
+    "price_range": "Price information or Free",
+    "event_type": "Drag/Community/Pride/Party/etc."
   }
 ]
 
@@ -533,6 +591,27 @@ Include concrete, verifiable events with URLs and dates.`,
       'dandiya': 'desi',
       'holi': 'desi',
       'diwali': 'desi',
+      'dance': 'dance',
+      'social dance': 'dance',
+      'dance social': 'dance',
+      'dance class': 'dance',
+      'dance party': 'dance',
+      'nightclub': 'dance',
+      'club night': 'dance',
+      'dj night': 'dance',
+      'salsa': 'dance',
+      'bachata': 'dance',
+      'swing': 'dance',
+      'lgbt': 'lgbtq',
+      'lgbtq': 'lgbtq',
+      'lgbtq+': 'lgbtq',
+      'queer': 'lgbtq',
+      'gay': 'lgbtq',
+      'lesbian': 'lgbtq',
+      'trans': 'lgbtq',
+      'transgender': 'lgbtq',
+      'drag': 'lgbtq',
+      'pride': 'lgbtq',
       // Backward compatibility mappings for replaced categories
       'automotive': 'psychology',
       'data-analysis': 'artificial-intelligence',
