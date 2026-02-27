@@ -3851,7 +3851,7 @@
   {
     "name": "1015 Folsom",
     "domain": "1015.com",
-    "category": "all",
+    "category": "dance",
     "city": "San Francisco",
     "state": "CA",
     "website": "https://1015.com",
@@ -4126,7 +4126,7 @@
   {
     "name": "DNA Lounge",
     "domain": "dnalounge.com",
-    "category": "all",
+    "category": "dance",
     "city": "San Francisco",
     "state": "CA",
     "website": "https://dnalounge.com",
@@ -4588,7 +4588,7 @@
   {
     "name": "Oasis SF",
     "domain": "sfoasis.com",
-    "category": "all",
+    "category": "lgbtq",
     "city": "San Francisco",
     "state": "CA",
     "website": "https://sfoasis.com",
@@ -5202,5 +5202,93 @@
     "calendar_url": "https://www.myhipline.com/",
     "source": "manual_add_strict",
     "discovered_at": "2026-02-27T03:40:00.167484+00:00"
+  },
+  {
+    "name": "F8 Nightclub",
+    "domain": "f8sf.com",
+    "category": "dance",
+    "city": "San Francisco",
+    "state": "CA",
+    "website": "https://f8sf.com",
+    "calendar_url": "https://f8sf.com/",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-02-27T05:29:41.446Z"
+  },
+  {
+    "name": "Cat Club SF",
+    "domain": "sfcatclub.com",
+    "category": "dance",
+    "city": "San Francisco",
+    "state": "CA",
+    "website": "https://sfcatclub.com",
+    "calendar_url": "https://sfcatclub.com/",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-02-27T05:29:41.446Z"
+  },
+  {
+    "name": "SF Eagle",
+    "domain": "sf-eagle.com",
+    "category": "lgbtq",
+    "city": "San Francisco",
+    "state": "CA",
+    "website": "https://sf-eagle.com",
+    "calendar_url": "https://sf-eagle.com/events",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-02-27T05:29:41.446Z"
+  },
+  {
+    "name": "Beaux SF",
+    "domain": "beauxsf.com",
+    "category": "lgbtq",
+    "city": "San Francisco",
+    "state": "CA",
+    "website": "https://beauxsf.com",
+    "calendar_url": "https://beauxsf.com/events",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-02-27T05:29:41.446Z"
+  },
+  {
+    "name": "The Cafe SF",
+    "domain": "cafesf.com",
+    "category": "lgbtq",
+    "city": "San Francisco",
+    "state": "CA",
+    "website": "https://cafesf.com",
+    "calendar_url": "https://cafesf.com/",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-02-27T05:29:41.446Z"
+  },
+  {
+    "name": "The Stud SF",
+    "domain": "studsf.com",
+    "category": "lgbtq",
+    "city": "San Francisco",
+    "state": "CA",
+    "website": "https://studsf.com",
+    "calendar_url": "https://studsf.com/calendar",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-02-27T05:29:41.446Z"
+  },
+  {
+    "name": "Jolene's",
+    "domain": "jolenessf.com",
+    "category": "lgbtq",
+    "city": "San Francisco",
+    "state": "CA",
+    "website": "https://jolenessf.com",
+    "calendar_url": "https://jolenessf.com/events",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-02-27T05:29:41.446Z"
+  },
+  {
+    "name": "El Rio SF",
+    "domain": "elriosf.com",
+    "category": "lgbtq",
+    "city": "San Francisco",
+    "state": "CA",
+    "website": "https://elriosf.com",
+    "calendar_url": "https://www.elriosf.com/calendar",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-02-27T05:29:41.446Z"
   }
 ]

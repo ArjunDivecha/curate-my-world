@@ -265,7 +265,10 @@ export const CATEGORY_CONFIG = {
       'lapena.org',
       'cigarbarandgrill.com',
       'ashkenaz.com',
-      'myhipline.com'
+      'myhipline.com',
+      'f8sf.com',
+      'sfcatclub.com',
+      'dnalounge.com'
     ],
     keywords: [
       'dance', 'dance night', 'dance party', 'social dance', 'dance social',
@@ -288,7 +291,14 @@ export const CATEGORY_CONFIG = {
     searchDomains: [
       'sfpride.org',
       'glbthistory.org',
-      'thecastro.com'
+      'thecastro.com',
+      'sfoasis.com',
+      'sf-eagle.com',
+      'beauxsf.com',
+      'cafesf.com',
+      'studsf.com',
+      'jolenessf.com',
+      'elriosf.com'
     ],
     keywords: [
       'lgbtq', 'lgbt', 'queer', 'gay', 'lesbian', 'trans', 'transgender',
