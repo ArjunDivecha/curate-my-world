@@ -96,7 +96,14 @@ async function handleHealth(req, res, { checkApi } = {}) {
           startedAt: latestDailyUpdateRun.started_at,
           completedAt: latestDailyUpdateRun.completed_at,
           error: latestDailyUpdateRun.error,
-          reportPath: latestDailyUpdateRun.report_path
+          reportPath: latestDailyUpdateRun.report_path,
+          aggregatorIntel: latestDailyUpdateRun.summary?.aggregatorIntel
+            ? {
+                success: !!latestDailyUpdateRun.summary.aggregatorIntel.success,
+                summary: latestDailyUpdateRun.summary.aggregatorIntel.summary || null,
+                latestReportPath: latestDailyUpdateRun.summary.aggregatorIntel.outputs?.latestMarkdownReportPath || null
+              }
+            : null
         } : null
       };
 
