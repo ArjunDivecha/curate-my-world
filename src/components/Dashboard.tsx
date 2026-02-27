@@ -117,8 +117,7 @@ export const Dashboard = () => {
       ...Object.keys(filteredCategoryCounts || {}),
     ].map((value) => String(value).toLowerCase()));
 
-    const configuredSet = new Set(configured);
-    const orderedPreferred = preferredCategoryOrder.filter((key) => configuredSet.size === 0 || configuredSet.has(key));
+    const orderedPreferred = [...preferredCategoryOrder];
     const configuredUnknown = configured
       .filter((key) => !preferredCategoryOrder.includes(key))
       .sort((a, b) => a.localeCompare(b));
