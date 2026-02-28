@@ -19,8 +19,10 @@ try {
 } catch {}
 
 const SCRAPER_SCRIPT = path.resolve(__dirname, './scrape-venues.js');
+const AGGREGATOR_INTEL_SCRIPT = path.resolve(__dirname, '../../scripts/venue-discovery/mine_aggregator_gaps.js');
 const ROOT_DATA_DIR = path.resolve(__dirname, '../../data');
 const FILE_CACHE_PATH = path.join(ROOT_DATA_DIR, 'venue-events-cache.json');
+const VETTING_DIR = path.join(ROOT_DATA_DIR, 'venue-vetting');
 const REPORT_DIR = process.env.DAILY_UPDATE_REPORT_DIR
   ? path.resolve(process.env.DAILY_UPDATE_REPORT_DIR)
   : path.resolve(__dirname, '../data/reports');
@@ -121,6 +123,15 @@ function loadCacheFromFile() {
   }
 }
 
+function loadJsonFromFile(filePath, fallback = null) {
+  try {
+    if (!fs.existsSync(filePath)) return fallback;
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  } catch {
+    return fallback;
+  }
+}
+
 async function loadCurrentCache() {
   const dbCache = await readVenueCacheFromDb();
   if (dbCache && typeof dbCache === 'object') return dbCache;
@@ -172,6 +183,60 @@ function formatDuration(ms) {
   return `${minutes}m ${seconds}s`;
 }
 
+async function runAggregatorIntelMining({ logPath, dateStamp }) {
+  if (!fs.existsSync(AGGREGATOR_INTEL_SCRIPT)) {
+    appendLog(logPath, `aggregator_intel: skipped (script missing at ${AGGREGATOR_INTEL_SCRIPT})`);
+    return {
+      enabled: false,
+      success: false,
+      skipped: true,
+      reason: 'script_missing',
+      scriptPath: AGGREGATOR_INTEL_SCRIPT,
+    };
+  }
+
+  const run = await runNodeScript(
+    AGGREGATOR_INTEL_SCRIPT,
+    [`--stamp=${dateStamp}`, `--report-dir=${REPORT_DIR}`, `--vetting-dir=${VETTING_DIR}`],
+    { logPath, label: 'aggregator_intel' }
+  );
+
+  const jsonReportPath = path.join(REPORT_DIR, `aggregator-intel-${dateStamp}.json`);
+  const markdownReportPath = path.join(REPORT_DIR, `aggregator-intel-${dateStamp}.md`);
+  const latestJsonReportPath = path.join(REPORT_DIR, 'aggregator-intel-latest.json');
+  const latestMarkdownReportPath = path.join(REPORT_DIR, 'aggregator-intel-latest.md');
+  const csvReportPath = path.join(VETTING_DIR, `aggregator-candidates-${dateStamp}.csv`);
+  const latestCsvReportPath = path.join(VETTING_DIR, 'aggregator-candidates-latest.csv');
+
+  const jsonReport = loadJsonFromFile(jsonReportPath, null);
+  const summary = jsonReport?.summary || null;
+
+  appendLog(
+    logPath,
+    `aggregator_intel: success=${run.ok} candidates=${summary?.candidateDomainCount ?? 'n/a'} coverageGaps=${summary?.coverageGapCount ?? 'n/a'}`
+  );
+
+  return {
+    enabled: true,
+    success: run.ok,
+    skipped: false,
+    exitCode: run.exitCode,
+    startedAt: run.startedAt,
+    finishedAt: run.finishedAt,
+    durationMs: run.durationMs,
+    error: run.error || null,
+    summary,
+    outputs: {
+      jsonReportPath,
+      markdownReportPath,
+      latestJsonReportPath,
+      latestMarkdownReportPath,
+      csvReportPath,
+      latestCsvReportPath,
+    },
+  };
+}
+
 function buildMarkdownReport({
   startedAt,
   finishedAt,
@@ -181,6 +246,7 @@ function buildMarkdownReport({
   retriesBefore,
   retriesAfter,
   allCategories,
+  aggregatorIntel,
   cacheSummary,
   failures,
 }) {
@@ -220,6 +286,29 @@ function buildMarkdownReport({
   }
   lines.push('');
 
+  lines.push('## Aggregator Intelligence');
+  lines.push(`- enabled: ${aggregatorIntel?.enabled === false ? 'false' : 'true'}`);
+  lines.push(`- success: ${!!aggregatorIntel?.success}`);
+  if (aggregatorIntel?.skipped) {
+    lines.push(`- skipped: true (${aggregatorIntel?.reason || 'unknown'})`);
+  }
+  if (aggregatorIntel?.exitCode !== undefined) {
+    lines.push(`- exitCode: ${aggregatorIntel.exitCode}`);
+  }
+  const intelSummary = aggregatorIntel?.summary || null;
+  if (intelSummary) {
+    lines.push(`- candidateDomainCount: ${intelSummary.candidateDomainCount ?? 0}`);
+    lines.push(`- unmatchedVenueCandidateCount: ${intelSummary.unmatchedVenueCandidateCount ?? 0}`);
+    lines.push(`- coverageGapCount: ${intelSummary.coverageGapCount ?? 0}`);
+  }
+  if (aggregatorIntel?.outputs?.latestMarkdownReportPath) {
+    lines.push(`- latestReportPath: ${aggregatorIntel.outputs.latestMarkdownReportPath}`);
+  }
+  if (aggregatorIntel?.error) {
+    lines.push(`- error: ${aggregatorIntel.error}`);
+  }
+  lines.push('');
+
   lines.push('## Top Outstanding Failures');
   if (!failures.length) {
     lines.push('- None');
@@ -245,6 +334,13 @@ function buildMarkdownReport({
     lines.push('- All-categories DB cache was rebuilt after venue updates.');
   } else {
     lines.push('- All-categories DB cache refresh failed; existing cache continues serving.');
+  }
+  if (aggregatorIntel?.success) {
+    lines.push('- Aggregator intelligence report was refreshed for tomorrow morning review.');
+  } else if (aggregatorIntel?.skipped) {
+    lines.push('- Aggregator intelligence step was skipped due to missing script.');
+  } else {
+    lines.push('- Aggregator intelligence step failed; previous report remains as fallback.');
   }
 
   return lines.join('\n') + '\n';
@@ -321,11 +417,13 @@ async function main() {
       }
     })();
 
+    const aggregatorIntel = await runAggregatorIntelMining({ logPath, dateStamp });
+
     const finalCache = await loadCurrentCache();
     const cacheSummary = summarizeCache(finalCache);
     const failures = getRetryCandidates(finalCache);
 
-    if (fullRun.ok && failures.length === 0 && allCategories.success) {
+    if (fullRun.ok && failures.length === 0 && allCategories.success && aggregatorIntel.success) {
       finalStatus = 'success';
     } else if (cacheSummary.totalEvents > 0) {
       finalStatus = 'partial_success';
@@ -347,6 +445,7 @@ async function main() {
       retryRuns,
       cacheSummary,
       allCategories,
+      aggregatorIntel,
       failureCount: failures.length,
     };
 
@@ -359,6 +458,7 @@ async function main() {
       retriesBefore,
       retriesAfter: failures.length,
       allCategories,
+      aggregatorIntel,
       cacheSummary,
       failures,
     });
