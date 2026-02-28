@@ -5290,5 +5290,192 @@
     "calendar_url": "https://www.elriosf.com/calendar",
     "source": "manual_add_strict",
     "discovered_at": "2026-02-27T05:29:41.446Z"
+  },
+  {
+    "name": "Eventbrite SF Discover",
+    "domain": "eventbrite.com",
+    "website": "https://www.eventbrite.com/",
+    "calendar_url": "https://www.eventbrite.com/d/ca--san-francisco/events/",
+    "category": "all",
+    "city": "San Francisco",
+    "state": "CA",
+    "source": "manual_add_aggregator_seed",
+    "discovered_at": "2026-02-28T00:34:10.415Z"
+  },
+  {
+    "name": "Fever San Francisco",
+    "domain": "feverup.com",
+    "website": "https://feverup.com/",
+    "calendar_url": "https://feverup.com/en/san-francisco",
+    "category": "all",
+    "city": "San Francisco",
+    "state": "CA",
+    "source": "manual_add_aggregator_seed",
+    "discovered_at": "2026-02-28T00:34:10.415Z"
+  },
+  {
+    "name": "DICE Discover",
+    "domain": "dice.fm",
+    "website": "https://dice.fm/",
+    "calendar_url": "https://dice.fm/",
+    "category": "all",
+    "city": "San Francisco",
+    "state": "CA",
+    "source": "manual_add_aggregator_seed",
+    "discovered_at": "2026-02-28T00:34:10.415Z"
+  },
+  {
+    "name": "Resident Advisor SF Events",
+    "domain": "ra.co",
+    "website": "https://ra.co/",
+    "calendar_url": "https://ra.co/events/us/sanfrancisco",
+    "category": "all",
+    "city": "San Francisco",
+    "state": "CA",
+    "source": "manual_add_aggregator_seed",
+    "discovered_at": "2026-02-28T00:34:10.415Z"
+  },
+  {
+    "name": "Bandsintown San Francisco",
+    "domain": "bandsintown.com",
+    "website": "https://www.bandsintown.com/",
+    "calendar_url": "https://www.bandsintown.com/?city=San%20Francisco",
+    "category": "all",
+    "city": "San Francisco",
+    "state": "CA",
+    "source": "manual_add_aggregator_seed",
+    "discovered_at": "2026-02-28T00:34:10.415Z"
+  },
+  {
+    "name": "Songkick SF Bay Area",
+    "domain": "songkick.com",
+    "website": "https://www.songkick.com/",
+    "calendar_url": "https://www.songkick.com/metro-areas/26330-us-sf-bay-area",
+    "category": "all",
+    "city": "San Francisco",
+    "state": "CA",
+    "source": "manual_add_aggregator_seed",
+    "discovered_at": "2026-02-28T00:34:10.415Z"
+  },
+  {
+    "name": "Time Out San Francisco Events",
+    "domain": "timeout.com",
+    "website": "https://www.timeout.com/",
+    "calendar_url": "https://www.timeout.com/san-francisco/things-to-do",
+    "category": "all",
+    "city": "San Francisco",
+    "state": "CA",
+    "source": "manual_add_aggregator_seed",
+    "discovered_at": "2026-02-28T00:34:10.415Z"
+  },
+  {
+    "name": "AllEvents San Francisco",
+    "domain": "allevents.in",
+    "website": "https://allevents.in/",
+    "calendar_url": "https://allevents.in/san-francisco",
+    "category": "all",
+    "city": "San Francisco",
+    "state": "CA",
+    "source": "manual_add_aggregator_seed",
+    "discovered_at": "2026-02-28T00:34:10.415Z"
+  },
+  {
+    "name": "Luma Discover SF",
+    "domain": "lu.ma",
+    "website": "https://lu.ma/",
+    "calendar_url": "https://lu.ma/discover?place=San%20Francisco%2C%20CA",
+    "category": "all",
+    "city": "San Francisco",
+    "state": "CA",
+    "source": "manual_add_aggregator_seed",
+    "discovered_at": "2026-02-28T00:34:10.415Z"
+  },
+  {
+    "name": "Ticketmaster Discover SF",
+    "domain": "ticketmaster.com",
+    "website": "https://www.ticketmaster.com/",
+    "calendar_url": "https://www.ticketmaster.com/discover/san-francisco?categoryId=KZFzniwnSyZfZ7v7nJ",
+    "category": "all",
+    "city": "San Francisco",
+    "state": "CA",
+    "source": "manual_add_aggregator_seed",
+    "discovered_at": "2026-02-28T00:34:10.415Z"
+  },
+  {
+    "name": "Partiful Discover",
+    "domain": "partiful.com",
+    "website": "https://partiful.com/",
+    "calendar_url": "https://partiful.com/discover",
+    "category": "all",
+    "city": "San Francisco",
+    "state": "CA",
+    "source": "manual_add_aggregator_seed",
+    "discovered_at": "2026-02-28T00:34:10.415Z"
+  },
+  {
+    "name": "Moe's Alley",
+    "domain": "moesalley.com",
+    "category": "music",
+    "city": "Santa Cruz",
+    "state": "CA",
+    "website": "https://moesalley.com",
+    "calendar_url": "http://www.moesalley.com",
+    "source": "manual_add_aggregator_jsonld",
+    "discovered_at": "2026-02-28T00:38:55.030815+00:00"
+  },
+  {
+    "name": "Thee Stork Club",
+    "domain": "theestorkclub.com",
+    "category": "music",
+    "city": "Oakland",
+    "state": "CA",
+    "website": "https://theestorkclub.com",
+    "calendar_url": "https://theestorkclub.com/",
+    "source": "manual_add_aggregator_jsonld",
+    "discovered_at": "2026-02-28T00:38:55.602772+00:00"
+  },
+  {
+    "name": "HopMonk Tavern Novato",
+    "domain": "hopmonk.com",
+    "category": "music",
+    "city": "Novato",
+    "state": "CA",
+    "website": "https://hopmonk.com",
+    "calendar_url": "http://www.hopmonk.com/novato/",
+    "source": "manual_add_aggregator_jsonld",
+    "discovered_at": "2026-02-28T00:38:56.246460+00:00"
+  },
+  {
+    "name": "The Knockout",
+    "domain": "theknockoutsf.com",
+    "category": "music",
+    "city": "San Francisco",
+    "state": "CA",
+    "website": "https://theknockoutsf.com",
+    "calendar_url": "http://theknockoutsf.com",
+    "source": "manual_add_aggregator_jsonld",
+    "discovered_at": "2026-02-28T00:38:57.178896+00:00"
+  },
+  {
+    "name": "Union City Christian Academy",
+    "domain": "uccacademy.org",
+    "category": "music",
+    "city": "Union City",
+    "state": "CA",
+    "website": "https://uccacademy.org",
+    "calendar_url": "https://www.uccacademy.org/",
+    "source": "manual_add_aggregator_jsonld",
+    "discovered_at": "2026-02-28T00:38:57.595798+00:00"
+  },
+  {
+    "name": "The Ivy Room",
+    "domain": "ivyroom.com",
+    "category": "music",
+    "city": "Albany",
+    "state": "CA",
+    "website": "https://ivyroom.com",
+    "calendar_url": "http://www.ivyroom.com/",
+    "source": "manual_add_aggregator_jsonld",
+    "discovered_at": "2026-02-28T00:38:58.337906+00:00"
   }
 ]
