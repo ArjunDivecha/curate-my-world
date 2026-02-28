@@ -3166,21 +3166,6 @@
     "discovered_at": "2026-01-16T18:12:38.788Z"
   },
   {
-    "name": "San Francisco",
-    "website": "https://luma.com/sf",
-    "domain": "luma.com",
-    "description": "Popular events in San Francisco ·Events Calendar\n![] \n## What’s Happening in\n# San Francisco\nIn San Francisco, innovation pulses through tech talks, creative meetups, and more. A haven for tech, desig",
-    "category": "tech",
-    "city": "San Francisco",
-    "state": "CA",
-    "calendar_url": "https://luma.com/events",
-    "source": "exa_discovery",
-    "discovered_at": "2026-01-16T18:12:38.788Z",
-    "lat": 37.776547,
-    "lng": -122.3948371,
-    "geocoded_at": "2026-01-16T19:40:14.253140Z"
-  },
-  {
     "name": "San Francisco Bay Area, United States - in 2025",
     "website": "https://www.hackathon.com/city/united-states/san-francisco-bay-area/2025",
     "domain": "hackathon.com",
@@ -3194,15 +3179,15 @@
   },
   {
     "name": "SF and Bay Area AI Events - Agenda Hero",
-    "website": "https://agendahero.com/schedule/0f8899a0-3dbc-4d6a-ad05-58225b751316",
+    "website": "https://agendahero.com",
     "domain": "agendahero.com",
     "description": "SF and Bay Area AI Events\n[\nagendahero\n] [Make any schedule. Share it with anyone.] \nLoading...",
     "category": "tech",
     "city": "San Francisco",
     "state": "CA",
-    "calendar_url": "https://agendahero.com/events",
-    "source": "exa_discovery",
-    "discovered_at": "2026-01-16T18:12:38.788Z"
+    "calendar_url": "https://agendahero.com/schedule/0f8899a0-3dbc-4d6a-ad05-58225b751316",
+    "source": "manual_add_ai_seed",
+    "discovered_at": "2026-02-28T00:47:52.435864+00:00"
   },
   {
     "name": "SF Ruby AI Hackathon at Sentry HQ by Evil Martians",
@@ -5477,5 +5462,27 @@
     "calendar_url": "http://www.ivyroom.com/",
     "source": "manual_add_aggregator_jsonld",
     "discovered_at": "2026-02-28T00:38:58.337906+00:00"
+  },
+  {
+    "name": "CreateWith AI Events (SF)",
+    "domain": "createwith.com",
+    "category": "tech",
+    "city": "San Francisco",
+    "state": "CA",
+    "website": "https://createwith.com",
+    "calendar_url": "https://www.createwith.com/cities/san-francisco",
+    "source": "manual_add_ai_seed",
+    "discovered_at": "2026-02-28T00:47:41.424027+00:00"
+  },
+  {
+    "name": "SFSU AI Events",
+    "domain": "ai.sfsu.edu",
+    "category": "tech",
+    "city": "San Francisco",
+    "state": "CA",
+    "website": "https://ai.sfsu.edu",
+    "calendar_url": "https://ai.sfsu.edu/events",
+    "source": "manual_add_ai_seed",
+    "discovered_at": "2026-02-28T01:11:59.266647+00:00"
   }
 ]
