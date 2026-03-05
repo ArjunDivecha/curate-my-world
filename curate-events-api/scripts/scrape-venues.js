@@ -167,6 +167,272 @@ async function fetchRawText(url) {
   }
 }
 
+async function fetchRawHtml(url) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
+        'User-Agent': 'CurateMyWorld/1.0'
+      },
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.text();
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
+
+function isLumaVenue(venue) {
+  const domain = String(venue?.domain || '').toLowerCase();
+  if (domain === 'lu.ma' || domain === 'luma.com') return true;
+
+  const calendarUrl = String(venue?.calendar_url || '').toLowerCase();
+  return calendarUrl.includes('lu.ma') || calendarUrl.includes('luma.com');
+}
+
+function extractJsonFromScriptTag(html, scriptId) {
+  const escapedId = escapeRegex(scriptId);
+  const pattern = new RegExp(`<script[^>]*id=["']${escapedId}["'][^>]*>([\\s\\S]*?)<\\/script>`, 'i');
+  const match = String(html || '').match(pattern);
+  if (!match || !match[1]) return null;
+
+  try {
+    return JSON.parse(match[1]);
+  } catch {
+    return null;
+  }
+}
+
+function normalizeDateTimeWithZ(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString().replace('.000Z', 'Z');
+}
+
+function resolveLumaEventUrl(rawUrl) {
+  const input = String(rawUrl || '').trim();
+  if (!input) return null;
+  if (/^https?:\/\//i.test(input)) return normalizeEventUrl(input);
+
+  const slug = input.replace(/^\/+/, '');
+  if (!slug) return null;
+  return normalizeEventUrl(`https://lu.ma/${slug}`);
+}
+
+function getFirstNonEmpty(...values) {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return null;
+}
+
+function normalizeLumaPrice(eventItem) {
+  const candidates = [
+    eventItem?.event?.price,
+    eventItem?.event?.price_text,
+    eventItem?.event?.ticket_price,
+    eventItem?.event?.ticket_price_text,
+    eventItem?.ticket_info?.price,
+    eventItem?.ticket_info?.price_text,
+    eventItem?.ticket_info?.ticket_price,
+  ];
+  for (const candidate of candidates) {
+    if (candidate === null || candidate === undefined) continue;
+    const text = String(candidate).trim();
+    if (!text || text.toLowerCase() === 'null') continue;
+    return text;
+  }
+  return null;
+}
+
+function normalizeLumaDescription(eventObj, eventItem) {
+  const raw = getFirstNonEmpty(
+    eventObj?.description,
+    eventObj?.blurb,
+    eventObj?.tagline,
+    eventItem?.description,
+    eventItem?.calendar?.name
+  );
+  if (!raw) return '';
+  return decodeHtmlEntities(stripHtml(raw)).slice(0, 500);
+}
+
+function normalizeLumaCity(eventObj, eventItem, fallbackCity = null) {
+  return getFirstNonEmpty(
+    eventObj?.geo_address_info?.city,
+    eventObj?.location_info?.city,
+    eventItem?.featured_city?.name,
+    eventItem?.calendar?.geo_city,
+    fallbackCity
+  );
+}
+
+function parseLumaEventItem(eventItem, venue, startOfToday) {
+  const eventObj = (eventItem && typeof eventItem === 'object' && eventItem.event) ? eventItem.event : eventItem;
+  if (!eventObj || typeof eventObj !== 'object') return null;
+
+  const title = decodeHtmlEntities(getFirstNonEmpty(eventObj.name, eventItem?.name) || '').trim();
+  const startDate = normalizeDateTimeWithZ(getFirstNonEmpty(eventObj.start_at, eventItem?.start_at, eventObj.startDate));
+  if (!title || !startDate) return null;
+
+  const startDateObj = new Date(startDate);
+  if (Number.isNaN(startDateObj.getTime()) || startDateObj < startOfToday) return null;
+
+  const endDate = normalizeDateTimeWithZ(getFirstNonEmpty(eventObj.end_at, eventItem?.end_at, eventObj.endDate));
+  const description = normalizeLumaDescription(eventObj, eventItem);
+  const city = normalizeLumaCity(eventObj, eventItem, venue.city || null);
+  const eventUrl = resolveLumaEventUrl(getFirstNonEmpty(eventObj.url, eventItem?.url, eventObj.public_url));
+
+  const categoryHints = [
+    title,
+    description,
+    eventItem?.calendar?.name,
+    eventObj?.event_type,
+    eventObj?.topic,
+    eventObj?.geo_address_info?.city_state
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  return {
+    title,
+    startDate,
+    endDate,
+    description,
+    category: categorizeIcsEvent({
+      summary: title,
+      description: categoryHints,
+      categories: '',
+      fallbackCategory: venue.category || 'all'
+    }),
+    price: normalizeLumaPrice(eventItem),
+    eventUrl,
+    city
+  };
+}
+
+function extractLumaEventCandidates(nextData) {
+  const candidates = [];
+  const pushIfArray = (value) => {
+    if (Array.isArray(value)) candidates.push(value);
+  };
+
+  const pageProps = nextData?.props?.pageProps;
+  const initialData = pageProps?.initialData;
+  const discoveryData = initialData?.data;
+
+  pushIfArray(discoveryData?.events);
+  pushIfArray(discoveryData?.featured_events);
+  pushIfArray(discoveryData?.page?.events);
+  pushIfArray(initialData?.featured_place?.events);
+  pushIfArray(initialData?.events);
+  pushIfArray(pageProps?.events);
+
+  return candidates;
+}
+
+function extractLumaEventsFromHtml(html, venue) {
+  const nextData = extractJsonFromScriptTag(html, '__NEXT_DATA__');
+  if (!nextData) return [];
+
+  const candidates = extractLumaEventCandidates(nextData);
+  if (!candidates.length) return [];
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const deduped = new Map();
+
+  for (const candidateList of candidates) {
+    for (const item of candidateList) {
+      const parsed = parseLumaEventItem(item, venue, startOfToday);
+      if (!parsed) continue;
+      const dedupeKey = parsed.eventUrl || `${parsed.title}|${parsed.startDate}`;
+      deduped.set(dedupeKey, parsed);
+    }
+  }
+
+  return Array.from(deduped.values()).sort((a, b) => {
+    const aTime = new Date(a.startDate).getTime();
+    const bTime = new Date(b.startDate).getTime();
+    return aTime - bTime;
+  });
+}
+
+function buildLumaCandidateUrls(venue) {
+  const urls = new Set();
+  const calendarUrl = String(venue?.calendar_url || '').trim();
+  if (calendarUrl) urls.add(calendarUrl);
+
+  const city = String(venue?.city || '').trim().toLowerCase();
+  const citySlugMap = {
+    'san francisco': 'sf',
+    'oakland': 'oakland',
+    'berkeley': 'berkeley',
+    'san jose': 'san-jose',
+    'palo alto': 'palo-alto',
+    'mountain view': 'mountain-view',
+    'redwood city': 'redwood-city'
+  };
+  const directSlug = citySlugMap[city];
+  if (directSlug) urls.add(`https://luma.com/${directSlug}`);
+
+  try {
+    if (calendarUrl) {
+      const parsed = new URL(calendarUrl);
+      const place = safeDecodeUrlParam(parsed.searchParams.get('place'));
+      const cityFromPlace = place.split(',')[0].trim().toLowerCase();
+      const placeSlug = citySlugMap[cityFromPlace];
+      if (placeSlug) urls.add(`https://luma.com/${placeSlug}`);
+    }
+  } catch {}
+
+  return Array.from(urls);
+}
+
+async function fetchLumaEvents(venue) {
+  const urls = buildLumaCandidateUrls(venue);
+  const deduped = new Map();
+  let hadSuccessfulFetch = false;
+  let lastError = null;
+
+  for (const url of urls) {
+    try {
+      const html = await fetchRawHtml(url);
+      hadSuccessfulFetch = true;
+      const events = extractLumaEventsFromHtml(html, venue);
+      for (const event of events) {
+        const key = event.eventUrl || `${event.title}|${event.startDate}`;
+        deduped.set(key, event);
+      }
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (!hadSuccessfulFetch && lastError) {
+    throw lastError;
+  }
+
+  return Array.from(deduped.values()).sort((a, b) => {
+    const aTime = new Date(a.startDate).getTime();
+    const bTime = new Date(b.startDate).getTime();
+    return aTime - bTime;
+  });
+}
+
 function decodeIcsText(value) {
   return String(value || '')
     .replace(/\\n/gi, ' ')
@@ -1062,56 +1328,70 @@ async function main() {
             events = tribeEvents;
             console.log(`  Parsed ${events.length} events from Tribe JSON feed`);
           } else {
-          // Fetch via Jina Reader
-            const markdown = await fetchViaJina(venue.calendar_url, {
-              maxMarkdownLength: getMarkdownLimitForVenue(venue)
-            });
-
-            if (!markdown || markdown.length < 100) {
-              console.log(`  Skipped: too little content (${markdown?.length || 0} chars)`);
-              skippedCount++;
-
-              // Preserve previously-scraped events if we have them (avoid clobbering cache on transient failures).
-              const prev = cache.venues?.[venue.domain] || {};
-              const preservedEvents = Array.isArray(prev?.events) ? prev.events : [];
-              const priorFreshAt = prev.dataFreshAt || prev.lastScraped || null;
-
-              cache.venues[venue.domain] = {
-                venueName: venue.name,
-                domain: venue.domain,
-                category: venue.category,
-                city: venue.city,
-                state: venue.state,
-                events: preservedEvents,
-                lastAttemptedAt: attemptedAt,
-                lastScraped: priorFreshAt,
-                dataFreshAt: priorFreshAt,
-                status: preservedEvents.length > 0 ? 'empty_page_preserved' : 'empty_page',
-                eventCount: preservedEvents.length
-              };
-              await persistCache(cache, { writeDb: writeDbForThisRun });
-              await sleep(JINA_DELAY_MS);
-              continue;
+            if (isLumaVenue(venue)) {
+              try {
+                const lumaEvents = await fetchLumaEvents(venue);
+                if (lumaEvents.length > 0) {
+                  events = lumaEvents;
+                  console.log(`  Parsed ${events.length} events from Luma Next.js payload`);
+                }
+              } catch (lumaError) {
+                console.log(`  Luma direct parser failed (${lumaError.message}); falling back to Jina`);
+              }
             }
 
-            // Extract events with Haiku
-            const extractedEvents = await extractEventsWithHaiku(
-              anthropic,
-              venue.name,
-              venue.category || 'general',
-              markdown
-            );
-            events = addFallbackEventsFromCalendarUrls(extractedEvents, markdown, venue);
-            events = applyFamsfVenueHints(events, markdown, venue);
-            const addedByUrlScan = events.length - extractedEvents.length;
-            if (addedByUrlScan > 0) {
-              console.log(`  Added ${addedByUrlScan} events from calendar URL scan`);
-            }
             if (events.length === 0) {
-              const calendarLinkEvents = extractEventsFromGoogleCalendarLinks(markdown, venue);
-              if (calendarLinkEvents.length > 0) {
-                events = calendarLinkEvents;
-                console.log(`  Parsed ${events.length} events from Google Calendar link fallback`);
+              // Fetch via Jina Reader
+              const markdown = await fetchViaJina(venue.calendar_url, {
+                maxMarkdownLength: getMarkdownLimitForVenue(venue)
+              });
+
+              if (!markdown || markdown.length < 100) {
+                console.log(`  Skipped: too little content (${markdown?.length || 0} chars)`);
+                skippedCount++;
+
+                // Preserve previously-scraped events if we have them (avoid clobbering cache on transient failures).
+                const prev = cache.venues?.[venue.domain] || {};
+                const preservedEvents = Array.isArray(prev?.events) ? prev.events : [];
+                const priorFreshAt = prev.dataFreshAt || prev.lastScraped || null;
+
+                cache.venues[venue.domain] = {
+                  venueName: venue.name,
+                  domain: venue.domain,
+                  category: venue.category,
+                  city: venue.city,
+                  state: venue.state,
+                  events: preservedEvents,
+                  lastAttemptedAt: attemptedAt,
+                  lastScraped: priorFreshAt,
+                  dataFreshAt: priorFreshAt,
+                  status: preservedEvents.length > 0 ? 'empty_page_preserved' : 'empty_page',
+                  eventCount: preservedEvents.length
+                };
+                await persistCache(cache, { writeDb: writeDbForThisRun });
+                await sleep(JINA_DELAY_MS);
+                continue;
+              }
+
+              // Extract events with Haiku
+              const extractedEvents = await extractEventsWithHaiku(
+                anthropic,
+                venue.name,
+                venue.category || 'general',
+                markdown
+              );
+              events = addFallbackEventsFromCalendarUrls(extractedEvents, markdown, venue);
+              events = applyFamsfVenueHints(events, markdown, venue);
+              const addedByUrlScan = events.length - extractedEvents.length;
+              if (addedByUrlScan > 0) {
+                console.log(`  Added ${addedByUrlScan} events from calendar URL scan`);
+              }
+              if (events.length === 0) {
+                const calendarLinkEvents = extractEventsFromGoogleCalendarLinks(markdown, venue);
+                if (calendarLinkEvents.length > 0) {
+                  events = calendarLinkEvents;
+                  console.log(`  Parsed ${events.length} events from Google Calendar link fallback`);
+                }
               }
             }
           }
