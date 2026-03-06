@@ -68,6 +68,7 @@ const MARKDOWN_LENGTH_OVERRIDES = {
   // so the extractor can see current/future occurrences.
   'bampfa.org': 120000,
   'calperformances.org': 70000,
+  'sf.funcheap.com': 120000,
 };
 const TRIBE_FEED_OVERRIDES = {
   'fortmason.org': 'https://fortmason.org/wp-json/tribe/events/v1/events'
@@ -191,6 +192,175 @@ async function fetchRawHtml(url) {
     clearTimeout(timeoutId);
     throw error;
   }
+}
+
+function isFuncheapVenue(venue) {
+  const domain = String(venue?.domain || '').toLowerCase();
+  if (domain === 'sf.funcheap.com' || domain === 'funcheap.com') return true;
+
+  const calendarUrl = String(venue?.calendar_url || '').toLowerCase();
+  return calendarUrl.includes('funcheap.com');
+}
+
+function isLikelyFuncheapEventUrl(url) {
+  const value = String(url || '').trim();
+  if (!value) return false;
+
+  try {
+    const parsed = new URL(value);
+    const pathname = parsed.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+    const blockedPrefixes = [
+      '/events',
+      '/category',
+      '/region',
+      '/tag',
+      '/author',
+      '/city-guide',
+      '/free-events',
+      '/today',
+      '/weekend',
+      '/win',
+      '/subscribe',
+      '/faq',
+      '/about',
+      '/contact',
+      '/search'
+    ];
+
+    if (blockedPrefixes.some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
+      return false;
+    }
+
+    // Event/article URLs are typically one slug segment at the root.
+    const parts = pathname.split('/').filter(Boolean);
+    return parts.length >= 1;
+  } catch {
+    return false;
+  }
+}
+
+function extractFuncheapPrice(metaText) {
+  const normalized = decodeHtmlEntities(stripHtml(metaText || ''));
+  const match = normalized.match(/Cost:\s*([^|]+?)(?:\||$)/i);
+  if (!match) return null;
+  const raw = String(match[1] || '').trim();
+  if (!raw) return null;
+  if (/free/i.test(raw)) return 'Free';
+  return raw.slice(0, 80);
+}
+
+function buildFuncheapCandidateUrls(venue) {
+  const urls = new Set();
+  const calendarUrl = String(venue?.calendar_url || '').trim();
+
+  if (calendarUrl) urls.add(calendarUrl);
+  urls.add('https://sf.funcheap.com/events/');
+  urls.add('https://sf.funcheap.com/events/east-bay/');
+  urls.add('https://sf.funcheap.com/events/san-francisco/');
+
+  return Array.from(urls);
+}
+
+function parseFuncheapEventsFromHtml(html, venue) {
+  const source = String(html || '');
+  if (!source) return [];
+
+  const chunks = source.split(/<div id="post-\d+"[^>]*class="[^"]*\bpost\b[^"]*"[^>]*>/i);
+  if (chunks.length <= 1) return [];
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const deduped = new Map();
+
+  for (const chunk of chunks.slice(1)) {
+    const urlAndTitleMatch =
+      chunk.match(/<div class="title entry-title"[\s\S]*?<a href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i) ||
+      chunk.match(/<a href="([^"]+)"[^>]*rel="bookmark"[^>]*title="([^"]+)"/i);
+
+    if (!urlAndTitleMatch) continue;
+
+    const eventUrl = normalizeEventUrl(decodeHtmlEntities(urlAndTitleMatch[1] || '').trim());
+    if (!eventUrl || !isLikelyFuncheapEventUrl(eventUrl)) continue;
+
+    const title = decodeHtmlEntities(stripHtml(urlAndTitleMatch[2] || '')).trim();
+    if (!title) continue;
+
+    const startRaw = (chunk.match(/data-event-date="([^"]+)"/i) || [])[1];
+    const endRaw = (chunk.match(/data-event-date-end="([^"]+)"/i) || [])[1];
+    const startDate = parseSqlDateTime(startRaw);
+    const endDate = parseSqlDateTime(endRaw);
+    if (!startDate) continue;
+
+    const startDateObj = new Date(startDate);
+    if (Number.isNaN(startDateObj.getTime()) || startDateObj < startOfToday) continue;
+
+    const metaHtml = (chunk.match(/<div class="meta date-time[\s\S]*?>([\s\S]*?)<\/div>/i) || [])[1] || '';
+    const descriptionHtml = (chunk.match(/<p[^>]*>([\s\S]*?)<\/p>/i) || [])[1] || '';
+    const description = decodeHtmlEntities(stripHtml(descriptionHtml)).slice(0, 500);
+    const metaText = decodeHtmlEntities(stripHtml(metaHtml));
+
+    const city = extractCityFromLocation(
+      `${title} ${description} ${metaText}`,
+      venue.city || null
+    );
+
+    const categoryHint = `${title} ${description} ${metaText}`;
+    const normalized = {
+      title,
+      startDate,
+      endDate,
+      description,
+      category: categorizeIcsEvent({
+        summary: title,
+        description: categoryHint,
+        categories: '',
+        fallbackCategory: venue.category || 'all'
+      }),
+      price: extractFuncheapPrice(metaHtml),
+      eventUrl,
+      city
+    };
+
+    const key = normalized.eventUrl || `${normalized.title}|${normalized.startDate}`;
+    deduped.set(key, normalized);
+  }
+
+  return Array.from(deduped.values()).sort((a, b) => {
+    const aTime = new Date(a.startDate).getTime();
+    const bTime = new Date(b.startDate).getTime();
+    return aTime - bTime;
+  });
+}
+
+async function fetchFuncheapEvents(venue) {
+  const urls = buildFuncheapCandidateUrls(venue);
+  const deduped = new Map();
+  let hadSuccessfulFetch = false;
+  let lastError = null;
+
+  for (const url of urls) {
+    try {
+      const html = await fetchRawHtml(url);
+      hadSuccessfulFetch = true;
+      const events = parseFuncheapEventsFromHtml(html, venue);
+      for (const event of events) {
+        const key = event.eventUrl || `${event.title}|${event.startDate}`;
+        deduped.set(key, event);
+      }
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (!hadSuccessfulFetch && lastError) {
+    throw lastError;
+  }
+
+  return Array.from(deduped.values()).sort((a, b) => {
+    const aTime = new Date(a.startDate).getTime();
+    const bTime = new Date(b.startDate).getTime();
+    return aTime - bTime;
+  });
 }
 
 function isLumaVenue(venue) {
@@ -1328,6 +1498,18 @@ async function main() {
             events = tribeEvents;
             console.log(`  Parsed ${events.length} events from Tribe JSON feed`);
           } else {
+            if (isFuncheapVenue(venue)) {
+              try {
+                const funcheapEvents = await fetchFuncheapEvents(venue);
+                if (funcheapEvents.length > 0) {
+                  events = funcheapEvents;
+                  console.log(`  Parsed ${events.length} events from Funcheap HTML parser`);
+                }
+              } catch (funcheapError) {
+                console.log(`  Funcheap parser failed (${funcheapError.message}); falling back to Jina`);
+              }
+            }
+
             if (isLumaVenue(venue)) {
               try {
                 const lumaEvents = await fetchLumaEvents(venue);
