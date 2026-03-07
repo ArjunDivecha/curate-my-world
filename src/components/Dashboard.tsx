@@ -269,9 +269,12 @@ export const Dashboard = () => {
                 <Button
                   variant="outline"
                   size="sm"
+                  aria-pressed={allCategoriesSelected}
                   className={cn(
-                    "w-full sm:w-[28rem] lg:w-[40%] rounded-2xl border whitespace-nowrap justify-start gap-3 h-14 px-5 text-slate-900",
-                    allCategoriesSelected ? "bg-gradient-to-r from-rose-100 via-amber-100 to-sky-100 border-slate-200 shadow-sm" : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+                    "w-full sm:w-[28rem] lg:w-[40%] rounded-2xl border whitespace-nowrap justify-start gap-3 h-14 px-5 text-slate-900 transition-all duration-150",
+                    allCategoriesSelected
+                      ? "bg-gradient-to-r from-rose-100 via-amber-100 to-sky-100 border-slate-500 shadow-[0_0_0_3px_rgba(148,163,184,0.18),0_10px_20px_rgba(148,163,184,0.12)]"
+                      : "bg-slate-50 border-slate-200 hover:bg-slate-100 hover:-translate-y-0.5"
                   )}
                   onClick={() => handleCategoryFilter(null)}
                 >
@@ -290,11 +293,24 @@ export const Dashboard = () => {
                   return (
                     <Button
                       key={catKey}
+                      variant="outline"
                       size="sm"
-                      className={cn("w-full rounded-2xl border whitespace-nowrap justify-start gap-3 h-14", colors.background, colors.border, colors.text, colors.hover, selected ? "border-2 shadow-sm ring-2 ring-white/80" : "")}
+                      aria-pressed={selected}
+                      className={cn(
+                        "w-full rounded-2xl whitespace-nowrap justify-start gap-3 h-14 transition-all duration-150",
+                        colors.background,
+                        colors.border,
+                        colors.text,
+                        selected
+                          ? "border-slate-600 shadow-[0_0_0_3px_rgba(15,23,42,0.12),0_10px_18px_rgba(15,23,42,0.08)] -translate-y-0.5"
+                          : `${colors.hover} hover:-translate-y-0.5`
+                      )}
                       onClick={() => handleCategoryFilter(catKey)}
                     >
-                      <span className={cn("inline-flex h-9 w-9 items-center justify-center rounded-xl border", colors.border, "bg-white/50")}><Icon className={cn("h-6 w-6", colors.accent)} /></span>
+                      <span className={cn(
+                        "inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-all duration-150",
+                        selected ? "border-slate-600 bg-white shadow-sm" : `${colors.border} bg-white/50`
+                      )}><Icon className={cn("h-6 w-6", colors.accent)} /></span>
                       <span className="text-left leading-tight"><span className="block font-semibold">{catName}</span><span className={cn("block text-xs", colors.accent)}>{count} events</span></span>
                     </Button>
                   );
