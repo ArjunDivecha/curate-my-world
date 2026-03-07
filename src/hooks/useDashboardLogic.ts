@@ -51,6 +51,26 @@ const defaultProviderSelection: Record<string, boolean> = {
   whitelist: false,
 };
 
+const normalizeCategoryKey = (value: string) => (
+  value === 'technology' ? 'tech' : String(value).toLowerCase()
+);
+
+const getEventIdentity = (event: any) => (
+  String(event?.id || `${event?.title || 'untitled'}|${event?.startDate || ''}|${event?.venue?.name || ''}`)
+);
+
+const dedupeEvents = (events: any[]) => Array.from(
+  new Map(events.map((event) => [getEventIdentity(event), event])).values()
+);
+
+const getBucketEventsForCategory = (buckets: Record<string, any[]>, categoryKey: string) => {
+  const normalizedCategoryKey = normalizeCategoryKey(categoryKey);
+  if (normalizedCategoryKey === 'tech') {
+    return [...(buckets.tech || []), ...(buckets.technology || [])];
+  }
+  return buckets[normalizedCategoryKey] || [];
+};
+
 export const useDashboardLogic = () => {
   const { toast } = useToast();
 
@@ -61,7 +81,7 @@ export const useDashboardLogic = () => {
   const [eventsByCategory, setEventsByCategory] = useState<any>({});
   const [categoryStats, setCategoryStats] = useState<any>({});
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const [transformedEventsByCategory, setTransformedEventsByCategory] = useState<any>({});
   const [activeTab, setActiveTab] = useState<'events' | 'date'>('events');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -146,8 +166,10 @@ export const useDashboardLogic = () => {
       if (!isFresh) return;
       setTransformedEventsByCategory(data.buckets);
       setCategoryStats(data.stats || {});
-      setAvailableCategories(Object.keys(data.buckets || {}).map((value) => String(value).toLowerCase()));
-      const allEvents = Object.values(data.buckets).flat();
+      setAvailableCategories(Array.from(new Set(
+        Object.keys(data.buckets || {}).map((value) => normalizeCategoryKey(String(value)))
+      )));
+      const allEvents = dedupeEvents(Object.values(data.buckets).flat());
       setEvents(allEvents);
     } catch (err) { console.error('Cache restore failed', err); }
   }, []);
@@ -176,6 +198,10 @@ export const useDashboardLogic = () => {
         .join('|'),
     [selectedProviders]
   );
+  const activeCategoriesSignature = useMemo(
+    () => [...activeCategories].sort().join('|'),
+    [activeCategories]
+  );
   const selectedDateSignature = selectedDate ? startOfLocalDay(selectedDate).toISOString() : '';
 
   // Auto-fetch once on load and re-fetch when filter/search context changes.
@@ -191,7 +217,7 @@ export const useDashboardLogic = () => {
   }, [
     fetcherReady,
     activeTab,
-    activeCategory,
+    activeCategoriesSignature,
     datePreset,
     selectedDateSignature,
     dateQuery,
@@ -204,14 +230,9 @@ export const useDashboardLogic = () => {
   // --- Memoized Derived Data ---
   const calendarEvents = useMemo(() => {
     if (!Object.keys(transformedEventsByCategory).length) return [];
-    let evs: any[] = [];
-    if (activeCategory === null) {
-      evs = Object.values(transformedEventsByCategory).flat();
-    } else if (activeCategory === 'technology') {
-      evs = [...(transformedEventsByCategory['tech'] || []), ...(transformedEventsByCategory['technology'] || [])];
-    } else {
-      evs = transformedEventsByCategory[activeCategory] || [];
-    }
+    let evs: any[] = activeCategories.length === 0
+      ? dedupeEvents(Object.values(transformedEventsByCategory).flat())
+      : dedupeEvents(activeCategories.flatMap((categoryKey) => getBucketEventsForCategory(transformedEventsByCategory, categoryKey)));
 
     if (datePreset) {
       const start = startOfLocalDay(new Date());
@@ -241,7 +262,7 @@ export const useDashboardLogic = () => {
         .map((row) => row.event);
     }
     return evs;
-  }, [activeCategory, transformedEventsByCategory, datePreset, searchQuery]);
+  }, [activeCategories, transformedEventsByCategory, datePreset, searchQuery]);
 
   const eventsForEventView = useMemo(() => {
     let evs = calendarEvents;
@@ -329,9 +350,9 @@ export const useDashboardLogic = () => {
     setEventsByCategory(fetchedEventsByCategory);
     setCategoryStats(fetchedCategoryStats);
     const normalizedCategories = Array.isArray(fetchedCategories)
-      ? fetchedCategories.map((value) => String(value).toLowerCase())
-      : Object.keys(fetchedEventsByCategory || {}).map((value) => String(value).toLowerCase());
-    setAvailableCategories(normalizedCategories);
+      ? fetchedCategories.map((value) => normalizeCategoryKey(String(value)))
+      : Object.keys(fetchedEventsByCategory || {}).map((value) => normalizeCategoryKey(String(value)));
+    setAvailableCategories(Array.from(new Set(normalizedCategories)));
     if (Array.isArray(fetchedProviderDetails)) setProviderDetails(fetchedProviderDetails);
 
     const newTransformed = Object.entries(fetchedEventsByCategory).reduce((acc, [cat, evs]) => {
@@ -370,18 +391,18 @@ export const useDashboardLogic = () => {
     try {
       localStorage.setItem(LOCAL_EVENTS_CACHE_KEY, JSON.stringify({ buckets: newTransformed, stats: fetchedCategoryStats, timestamp: Date.now() }));
     } catch (err) { console.error('Cache save failed', err); }
-    setEvents(Object.values(newTransformed).flat());
+    setEvents(dedupeEvents(Object.values(newTransformed).flat()));
   };
 
   return {
     state: {
-      preferences, events, savedEvents, eventsByCategory, categoryStats, availableCategories, activeCategory,
+      preferences, events, savedEvents, eventsByCategory, categoryStats, availableCategories, activeCategories,
       transformedEventsByCategory, activeTab, selectedDate, selectedProviders, providerDetails,
       totalProcessingTime, backgroundRefreshing, refreshStatusText, searchQuery, dateQuery,
       datePreset, fetcherReady, calendarEvents, eventsForEventView, filteredCategoryCounts
     },
     actions: {
-      setPreferences, setEvents, setSavedEvents, setActiveCategory, setActiveTab, setSelectedDate,
+      setPreferences, setEvents, setSavedEvents, setActiveCategories, setActiveTab, setSelectedDate,
       setSelectedProviders, setProviderDetails, setTotalProcessingTime, setBackgroundRefreshing,
       setRefreshStatusText, setSearchQuery, setDateQuery, setDatePreset, setFetcherReady,
       handleProviderToggle, handleBackgroundRefreshing, handleSaveToCalendar, handleRemoveFromCalendar,

@@ -20,14 +20,14 @@ import { Calendar as DatePickerCalendar } from "@/components/ui/calendar";
 export const Dashboard = () => {
   const { state, actions, refs } = useDashboardLogic();
   const {
-    preferences, events, savedEvents, availableCategories, activeCategory,
+    preferences, events, savedEvents, availableCategories, activeCategories,
     transformedEventsByCategory, activeTab, selectedDate, selectedProviders,
     backgroundRefreshing, refreshStatusText, searchQuery,
     datePreset, fetcherReady, eventsForEventView, filteredCategoryCounts
   } = state;
 
   const {
-    setActiveCategory, setActiveTab, setSelectedDate,
+    setActiveCategories, setActiveTab, setSelectedDate,
     setSearchQuery, setDatePreset, setFetcherReady,
     handleBackgroundRefreshing, handleSaveToCalendar, handleRemoveFromCalendar,
     handleAllEventsFetched
@@ -42,7 +42,16 @@ export const Dashboard = () => {
   }, [events]);
 
   const handleCategoryFilter = (category: string | null) => {
-    setActiveCategory(category);
+    if (category === null) {
+      setActiveCategories([]);
+      return;
+    }
+
+    setActiveCategories((previous) => (
+      previous.includes(category)
+        ? previous.filter((value) => value !== category)
+        : [...previous, category]
+    ));
   };
 
   const handleDateClick = (date: Date) => {
@@ -130,6 +139,7 @@ export const Dashboard = () => {
 
   const totalEventCount = Object.values(filteredCategoryCounts).reduce((sum, count) => sum + count, 0);
   const hasAnyEvents = Object.values(transformedEventsByCategory).some((arr: any) => Array.isArray(arr) && arr.length > 0);
+  const allCategoriesSelected = activeCategories.length === 0;
 
   return (
     <div className="min-h-screen">
@@ -261,7 +271,7 @@ export const Dashboard = () => {
                   size="sm"
                   className={cn(
                     "w-full sm:w-[28rem] lg:w-[40%] rounded-2xl border whitespace-nowrap justify-start gap-3 h-14 px-5 text-slate-900",
-                    activeCategory === null ? "bg-gradient-to-r from-rose-100 via-amber-100 to-sky-100 border-slate-200" : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+                    allCategoriesSelected ? "bg-gradient-to-r from-rose-100 via-amber-100 to-sky-100 border-slate-200 shadow-sm" : "bg-slate-50 border-slate-200 hover:bg-slate-100"
                   )}
                   onClick={() => handleCategoryFilter(null)}
                 >
@@ -274,14 +284,14 @@ export const Dashboard = () => {
                 {visibleCategoryKeys.map((catKey) => {
                   const catName = categoryLabelByKey[catKey] || catKey.toUpperCase();
                   const count = filteredCategoryCounts[catKey] || 0;
-                  const selected = activeCategory === catKey;
+                  const selected = activeCategories.includes(catKey);
                   const colors = getCategoryColor(catKey);
                   const Icon = categoryIconByKey[catKey] || Globe;
                   return (
                     <Button
                       key={catKey}
                       size="sm"
-                      className={cn("w-full rounded-2xl border whitespace-nowrap justify-start gap-3 h-14", colors.background, colors.border, colors.text, colors.hover, selected ? "border-2 shadow-sm" : "")}
+                      className={cn("w-full rounded-2xl border whitespace-nowrap justify-start gap-3 h-14", colors.background, colors.border, colors.text, colors.hover, selected ? "border-2 shadow-sm ring-2 ring-white/80" : "")}
                       onClick={() => handleCategoryFilter(catKey)}
                     >
                       <span className={cn("inline-flex h-9 w-9 items-center justify-center rounded-xl border", colors.border, "bg-white/50")}><Icon className={cn("h-6 w-6", colors.accent)} /></span>
@@ -292,7 +302,7 @@ export const Dashboard = () => {
               </div>
 
               <div className="mt-3 flex justify-center">
-                <Button size="sm" className="w-full max-w-xl rounded-2xl border justify-center gap-3 h-14 bg-gray-100 text-gray-700" onClick={() => { setActiveCategory(null); setSelectedDate(null); setDatePreset('30d'); setSearchQuery(''); }}>
+                <Button size="sm" className="w-full max-w-xl rounded-2xl border justify-center gap-3 h-14 bg-gray-100 text-gray-700" onClick={() => { setActiveCategories([]); setSelectedDate(null); setDatePreset('30d'); setSearchQuery(''); }}>
                   <RefreshCw className="h-5 w-5" /><span className="font-semibold">Reset Filters</span>
                 </Button>
               </div>
@@ -321,17 +331,21 @@ export const Dashboard = () => {
               </div>
             ) : (
               <div className="space-y-6">
-                {(activeCategory || selectedDate || searchQuery.trim()) && (
+                {(activeCategories.length > 0 || selectedDate || searchQuery.trim()) && (
                   <div className="bg-muted/50 rounded-lg p-4 mb-6 border">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-sm font-medium">Active Filters:</h3>
                         {searchQuery.trim() && <Badge variant="secondary">Search: "{searchQuery.trim()}"</Badge>}
-                        {activeCategory && <Badge variant="secondary">Category: {activeCategory}</Badge>}
+                        {activeCategories.map((categoryKey) => (
+                          <Badge key={categoryKey} variant="secondary">
+                            {categoryLabelByKey[categoryKey] || categoryKey.toUpperCase()}
+                          </Badge>
+                        ))}
                         {selectedDate && <Badge variant="secondary">Date: {selectedDate.toLocaleDateString()}</Badge>}
                         <span className="text-xs text-muted-foreground">({eventsForEventView.length} results)</span>
                       </div>
-                      <Button variant="outline" size="sm" onClick={() => { setActiveCategory(null); setSelectedDate(null); setSearchQuery(''); }}>Clear Filters</Button>
+                      <Button variant="outline" size="sm" onClick={() => { setActiveCategories([]); setSelectedDate(null); setSearchQuery(''); }}>Clear Filters</Button>
                     </div>
                   </div>
                 )}
