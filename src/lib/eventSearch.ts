@@ -313,9 +313,15 @@ function buildGroupsFromWords(words: string[]): TermGroup[] {
     for (const span of [3, 2]) {
       if (i + span > normalizedWords.length) continue;
       const phrase = normalizedWords.slice(i, i + span).join(' ');
-      if (!ALIAS_GRAPH.has(phrase) && !REGION_KEYS.has(phrase)) continue;
+      const isRegionPhrase = REGION_KEYS.has(phrase);
+      if (!ALIAS_GRAPH.has(phrase) && !isRegionPhrase) continue;
 
-      const group = createGroup(phrase, { isPhrase: true, keepStopWords: true, expandRegions: true });
+      const group = createGroup(phrase, {
+        isPhrase: true,
+        keepStopWords: true,
+        expandRegions: true,
+        field: isRegionPhrase ? 'venue' : undefined,
+      });
       if (group) groups.push(group);
       i += span;
       matchedAlias = true;
@@ -323,7 +329,12 @@ function buildGroupsFromWords(words: string[]): TermGroup[] {
     }
 
     if (matchedAlias) continue;
-    const group = createGroup(normalizedWords[i], { isPhrase: false, expandRegions: true });
+    const token = normalizedWords[i];
+    const group = createGroup(token, {
+      isPhrase: false,
+      expandRegions: true,
+      field: REGION_KEYS.has(token) ? 'venue' : undefined,
+    });
     if (group) groups.push(group);
     i += 1;
   }
