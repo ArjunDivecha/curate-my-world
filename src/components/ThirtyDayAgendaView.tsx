@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn, cleanHtmlText } from "@/lib/utils";
+import { navigateToEventUrl } from "@/lib/eventNavigation";
 import { parseEventDateLocalAware } from "@/lib/dateViewRanges";
 import { getCategoryColor } from "@/utils/categoryColors";
 import { CalendarDays, Clock, BookmarkCheck, ExternalLink } from "lucide-react";
@@ -46,7 +47,7 @@ const formatTime = (dateString: string) => {
 const openEventUrl = (event: Event) => {
   const url = event.eventUrl || event.ticketUrl;
   if (!url) return;
-  window.open(url, "_blank", "noopener,noreferrer");
+  navigateToEventUrl(url);
 };
 
 const laneKeyForEvent = (event: Event) => {

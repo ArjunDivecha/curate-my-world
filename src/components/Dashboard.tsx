@@ -241,7 +241,7 @@ export const Dashboard = () => {
                 <div className="relative">
                   <Input
                     className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400"
-                    placeholder='Search events/venues (try: "de young", venue:fox, cat:art, -kids)'
+                    placeholder="Search for Event, City or Venue"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />

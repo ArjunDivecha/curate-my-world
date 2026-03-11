@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MapPin, Clock, Calendar, ExternalLink, Eye, ChevronDown } from "lucide-react";
 import { cleanHtmlText } from "@/lib/utils";
+import { navigateToEventUrl } from "@/lib/eventNavigation";
 import { saveToCalendar, validateEventForCalendar } from "@/lib/calendarUtils";
 import { useToast } from "@/hooks/use-toast";
 import { getCategoryColor, getCategoryBadgeClasses } from "@/utils/categoryColors";
@@ -198,7 +199,7 @@ export const EventCard = ({ event }: EventCardProps) => {
 
   const openEventPage = () => {
     if (!eventLink) return;
-    window.open(eventLink, '_blank', 'noopener,noreferrer');
+    navigateToEventUrl(eventLink);
   };
 
   const handleExternalCalendarSave = (calendarType: 'google' | 'outlook' | 'apple' | 'download') => {
@@ -360,8 +361,6 @@ export const EventCard = ({ event }: EventCardProps) => {
                 {/* Event Page Button with Hover Preview */}
                 <a 
                   href={event.eventUrl || event.ticketUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
                   className="inline-block"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -370,7 +369,10 @@ export const EventCard = ({ event }: EventCardProps) => {
                       e.preventDefault();
                       setShowPreview(false);
                       setIsHovering(false);
+                      return;
                     }
+                    e.preventDefault();
+                    openEventPage();
                   }}
                 >
                   <Button 

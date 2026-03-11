@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { cleanHtmlText } from "@/lib/utils";
+import { navigateToEventUrl } from "@/lib/eventNavigation";
 import { getCategoryColor } from "@/utils/categoryColors";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock, BookmarkCheck, ExternalLink } from "lucide-react";
 import { parseEventDateLocalAware } from "@/lib/dateViewRanges";
@@ -63,7 +64,7 @@ const formatTime = (dateString: string) => {
 const openEventUrl = (event: Event) => {
   const url = event.eventUrl || event.ticketUrl;
   if (!url) return;
-  window.open(url, "_blank", "noopener,noreferrer");
+  navigateToEventUrl(url);
 };
 
 const laneKeyForEvent = (event: Event) => {

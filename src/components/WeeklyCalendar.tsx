@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Calendar, Star, BookmarkCheck, Clock, MapPin, Eye } from "lucide-react";
 import { cleanHtmlText } from "@/lib/utils";
+import { navigateToEventUrl } from "@/lib/eventNavigation";
 import { getApiBaseUrl } from "@/utils/apiConfig";
 
 interface Event {
@@ -234,7 +235,7 @@ export const WeeklyCalendar = ({ events, savedEvents = [], onEventToggleSaved, o
     setPreviewPos(null);
     setHoveringEventId(null);
     setContextMenu(null);
-    window.open(url, "_blank", "noopener,noreferrer");
+    navigateToEventUrl(url);
   };
 
   const getPreviewSrc = (event: Event) => {
