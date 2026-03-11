@@ -88,6 +88,59 @@ const RAW_ALIAS_GROUPS: string[][] = [
 
 const ALIAS_GRAPH = buildAliasGraph(RAW_ALIAS_GROUPS);
 
+const REGION_EXPANSIONS: Record<string, string[]> = {
+  'east bay': [
+    'berkeley', 'oakland', 'emeryville', 'richmond', 'albany', 'el cerrito',
+    'piedmont', 'alameda', 'walnut creek', 'concord', 'pleasant hill',
+    'lafayette', 'orinda', 'moraga', 'san leandro', 'hayward', 'fremont',
+    'union city', 'newark', 'castro valley', 'san pablo', 'hercules',
+    'pinole', 'martinez', 'antioch', 'pittsburg', 'brentwood',
+  ],
+  'south bay': [
+    'san jose', 'sunnyvale', 'santa clara', 'cupertino', 'mountain view',
+    'palo alto', 'milpitas', 'campbell', 'los gatos', 'saratoga',
+    'gilroy', 'morgan hill', 'los altos', 'los altos hills',
+  ],
+  'peninsula': [
+    'san mateo', 'redwood city', 'palo alto', 'menlo park', 'burlingame',
+    'daly city', 'half moon bay', 'san carlos', 'belmont', 'foster city',
+    'millbrae', 'south san francisco', 'san bruno', 'pacifica',
+    'woodside', 'atherton', 'portola valley',
+  ],
+  'north bay': [
+    'san rafael', 'mill valley', 'sausalito', 'novato', 'tiburon',
+    'corte madera', 'larkspur', 'fairfax', 'petaluma', 'napa', 'sonoma',
+    'santa rosa', 'vallejo', 'benicia', 'san anselmo', 'ross',
+  ],
+  'marin': [
+    'san rafael', 'mill valley', 'sausalito', 'novato', 'tiburon',
+    'corte madera', 'larkspur', 'fairfax', 'san anselmo', 'ross',
+    'stinson beach', 'bolinas', 'inverness', 'point reyes',
+  ],
+  'napa valley': ['napa', 'yountville', 'st helena', 'calistoga', 'american canyon', 'rutherford', 'oakville'],
+  'wine country': [
+    'napa', 'sonoma', 'healdsburg', 'st helena', 'calistoga', 'yountville',
+    'petaluma', 'santa rosa', 'glen ellen', 'kenwood', 'sebastopol',
+  ],
+  'tri-valley': ['pleasanton', 'livermore', 'dublin', 'san ramon', 'danville'],
+  'the city': ['san francisco'],
+  'downtown sf': ['san francisco'],
+  'soma': ['san francisco'],
+  'silicon valley': [
+    'san jose', 'sunnyvale', 'santa clara', 'cupertino', 'mountain view',
+    'palo alto', 'menlo park', 'milpitas', 'campbell', 'los gatos',
+    'los altos', 'saratoga', 'redwood city', 'fremont',
+  ],
+  'bay area': [
+    'san francisco', 'oakland', 'berkeley', 'san jose', 'palo alto',
+    'mountain view', 'sunnyvale', 'santa clara', 'redwood city', 'san mateo',
+    'walnut creek', 'concord', 'fremont', 'hayward', 'richmond',
+    'san rafael', 'napa', 'sonoma', 'santa rosa', 'vallejo',
+  ],
+};
+
+const REGION_KEYS = new Set(Object.keys(REGION_EXPANSIONS));
+
 function buildAliasGraph(groups: string[][]): Map<string, string[]> {
   const graph = new Map<string, Set<string>>();
   for (const group of groups) {
@@ -210,7 +263,10 @@ function dedupeGroups(groups: TermGroup[]): TermGroup[] {
   return Array.from(byKey.values());
 }
 
-function createGroup(rawValue: string, options?: { isPhrase?: boolean; field?: SearchFieldKey; keepStopWords?: boolean }): TermGroup | null {
+function createGroup(
+  rawValue: string,
+  options?: { isPhrase?: boolean; field?: SearchFieldKey; keepStopWords?: boolean; expandRegions?: boolean },
+): TermGroup | null {
   const normalized = normalizeText(rawValue);
   if (!normalized) return null;
 
@@ -223,6 +279,13 @@ function createGroup(rawValue: string, options?: { isPhrase?: boolean; field?: S
 
   const aliasVariants = ALIAS_GRAPH.get(normalized) || [];
   for (const alias of aliasVariants) variants.add(alias);
+
+  if (options?.expandRegions) {
+    const regionCities = REGION_EXPANSIONS[normalized];
+    if (regionCities) {
+      for (const city of regionCities) variants.add(city);
+    }
+  }
 
   if (!isPhrase && words.length === 1) {
     const stemmed = stemWord(normalized);
@@ -250,9 +313,9 @@ function buildGroupsFromWords(words: string[]): TermGroup[] {
     for (const span of [3, 2]) {
       if (i + span > normalizedWords.length) continue;
       const phrase = normalizedWords.slice(i, i + span).join(' ');
-      if (!ALIAS_GRAPH.has(phrase)) continue;
+      if (!ALIAS_GRAPH.has(phrase) && !REGION_KEYS.has(phrase)) continue;
 
-      const group = createGroup(phrase, { isPhrase: true, keepStopWords: true });
+      const group = createGroup(phrase, { isPhrase: true, keepStopWords: true, expandRegions: true });
       if (group) groups.push(group);
       i += span;
       matchedAlias = true;
@@ -260,7 +323,7 @@ function buildGroupsFromWords(words: string[]): TermGroup[] {
     }
 
     if (matchedAlias) continue;
-    const group = createGroup(normalizedWords[i], { isPhrase: false });
+    const group = createGroup(normalizedWords[i], { isPhrase: false, expandRegions: true });
     if (group) groups.push(group);
     i += 1;
   }
