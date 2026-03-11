@@ -557,7 +557,10 @@ function buildLumaCandidateUrls(venue) {
     'redwood city': 'redwood-city'
   };
   const directSlug = citySlugMap[city];
-  if (directSlug) urls.add(`https://luma.com/${directSlug}`);
+  if (directSlug) {
+    urls.add(`https://luma.com/${directSlug}`);
+    urls.add(`https://lu.ma/${directSlug}`);
+  }
 
   try {
     if (calendarUrl) {
@@ -565,7 +568,10 @@ function buildLumaCandidateUrls(venue) {
       const place = safeDecodeUrlParam(parsed.searchParams.get('place'));
       const cityFromPlace = place.split(',')[0].trim().toLowerCase();
       const placeSlug = citySlugMap[cityFromPlace];
-      if (placeSlug) urls.add(`https://luma.com/${placeSlug}`);
+      if (placeSlug) {
+        urls.add(`https://luma.com/${placeSlug}`);
+        urls.add(`https://lu.ma/${placeSlug}`);
+      }
     }
   } catch {}
 
@@ -583,6 +589,222 @@ async function fetchLumaEvents(venue) {
       const html = await fetchRawHtml(url);
       hadSuccessfulFetch = true;
       const events = extractLumaEventsFromHtml(html, venue);
+      for (const event of events) {
+        const key = event.eventUrl || `${event.title}|${event.startDate}`;
+        deduped.set(key, event);
+      }
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (!hadSuccessfulFetch && lastError) {
+    throw lastError;
+  }
+
+  return Array.from(deduped.values()).sort((a, b) => {
+    const aTime = new Date(a.startDate).getTime();
+    const bTime = new Date(b.startDate).getTime();
+    return aTime - bTime;
+  });
+}
+
+function isDoTheBayVenue(venue) {
+  const domain = String(venue?.domain || '').toLowerCase();
+  if (domain === 'dothebay.com') return true;
+
+  const calendarUrl = String(venue?.calendar_url || '').toLowerCase();
+  const website = String(venue?.website || '').toLowerCase();
+  return calendarUrl.includes('dothebay.com') || website.includes('dothebay.com');
+}
+
+function buildDoTheBayCandidateUrls(venue) {
+  const urls = new Set();
+  const calendarUrl = String(venue?.calendar_url || '').trim();
+  const website = String(venue?.website || '').trim();
+
+  if (calendarUrl) urls.add(calendarUrl);
+
+  if (website) {
+    try {
+      const parsed = new URL(website);
+      if (parsed.hostname.toLowerCase().includes('dothebay.com')) {
+        urls.add(website);
+      }
+    } catch {}
+  }
+
+  urls.add('https://dothebay.com/events');
+  return Array.from(urls);
+}
+
+function parseDoTheBayPageDate(html, sourceUrl) {
+  const source = String(html || '');
+  const attrMatch = source.match(/data-ds-active-date="(\d{4}-\d{2}-\d{2})"/i);
+  if (attrMatch?.[1]) return attrMatch[1];
+
+  const titleMatch = source.match(/<title>([\s\S]*?)<\/title>/i);
+  const title = decodeHtmlEntities(stripHtml(titleMatch?.[1] || ''));
+  const dateTextMatch = title.match(/\b([A-Z][a-z]+ \d{1,2}(?:st|nd|rd|th)?, \d{4})\b/);
+  if (dateTextMatch?.[1]) {
+    const cleaned = dateTextMatch[1].replace(/(\d{1,2})(st|nd|rd|th)/i, '$1');
+    const parsed = new Date(cleaned);
+    if (!Number.isNaN(parsed.getTime())) {
+      const year = parsed.getFullYear();
+      const month = String(parsed.getMonth() + 1).padStart(2, '0');
+      const day = String(parsed.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  }
+
+  const urlValue = String(sourceUrl || '');
+  if (/\/today\/?$/i.test(urlValue) || /\btoday\b/i.test(title)) {
+    const now = new Date();
+    const pacificNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+    const year = pacificNow.getFullYear();
+    const month = String(pacificNow.getMonth() + 1).padStart(2, '0');
+    const day = String(pacificNow.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  return null;
+}
+
+function extractDoTheBayOffset(rawDateTime, pageDate) {
+  const raw = String(rawDateTime || '').trim();
+  const explicitOffset = raw.match(/([+-]\d{2}):?(\d{2})$/);
+  if (explicitOffset) return `${explicitOffset[1]}:${explicitOffset[2]}`;
+  if (/z$/i.test(raw)) return 'Z';
+
+  if (!pageDate) return '-08:00';
+
+  try {
+    const probe = new Date(`${pageDate}T12:00:00Z`);
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Los_Angeles',
+      timeZoneName: 'longOffset'
+    }).formatToParts(probe);
+    const value = parts.find(part => part.type === 'timeZoneName')?.value || '';
+    const offsetMatch = value.match(/GMT([+-]\d{1,2})(?::?(\d{2}))?/i);
+    if (!offsetMatch) return '-08:00';
+    const hours = String(Math.abs(Number(offsetMatch[1]))).padStart(2, '0');
+    const sign = offsetMatch[1].startsWith('-') ? '-' : '+';
+    const minutes = offsetMatch[2] ? offsetMatch[2] : '00';
+    return `${sign}${hours}:${minutes}`;
+  } catch {
+    return '-08:00';
+  }
+}
+
+function buildDoTheBayStartDate(pageDate, timeText, rawDateTime) {
+  const cleanedTime = decodeHtmlEntities(stripHtml(timeText || ''));
+  const timeMatch = cleanedTime.match(/\b(\d{1,2})(?::(\d{2}))?\s*(AM|PM)\b/i);
+  if (!pageDate || !timeMatch) {
+    const raw = String(rawDateTime || '').trim();
+    if (!raw) return null;
+    const zuluMatch = raw.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})(?::(\d{2}))?Z$/i);
+    if (zuluMatch) return `${zuluMatch[1]}:${zuluMatch[2] || '00'}Z`;
+
+    const offsetMatch = raw.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})(?::(\d{2}))?([+-]\d{2}):?(\d{2})$/i);
+    if (offsetMatch) return `${offsetMatch[1]}:${offsetMatch[2] || '00'}${offsetMatch[3]}:${offsetMatch[4]}`;
+
+    return raw;
+  }
+
+  let hour = Number(timeMatch[1]) % 12;
+  if (String(timeMatch[3]).toUpperCase() === 'PM') hour += 12;
+  const minute = timeMatch[2] ? Number(timeMatch[2]) : 0;
+  const offset = extractDoTheBayOffset(rawDateTime, pageDate);
+  return `${pageDate}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00${offset}`;
+}
+
+function extractDoTheBayEventsFromHtml(html, venue, sourceUrl) {
+  const source = String(html || '');
+  if (!source) return [];
+
+  const cardChunks = source
+    .split(/<div class="ds-listing event-card\b/i)
+    .slice(1)
+    .map(chunk => `<div class="ds-listing event-card${chunk}`);
+
+  if (!cardChunks.length) return [];
+
+  const pageDate = parseDoTheBayPageDate(source, sourceUrl);
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const deduped = new Map();
+
+  for (const chunk of cardChunks) {
+    const title = decodeHtmlEntities(stripHtml(
+      (chunk.match(/<span class="ds-listing-event-title-text"[^>]*itemprop="name"[^>]*>([\s\S]*?)<\/span>/i) || [])[1] || ''
+    )).trim();
+    if (!title) continue;
+
+    const href = decodeHtmlEntities((chunk.match(/<a href="([^"]+)"[^>]*itemprop="url"[^>]*class="ds-listing-event-title/i) || [])[1] || '').trim();
+    const eventUrl = href ? normalizeEventUrl(new URL(href, 'https://dothebay.com').toString()) : null;
+    if (!eventUrl) continue;
+
+    const rawDateTime = (
+      chunk.match(/<meta[^>]*itemprop="startDate"[^>]*(?:datetime|content)="([^"]+)"/i) ||
+      chunk.match(/<meta[^>]*(?:datetime|content)="([^"]+)"[^>]*itemprop="startDate"/i) ||
+      []
+    )[1] || '';
+
+    const timeHtml = (chunk.match(/<div class="ds-event-time dtstart">([\s\S]*?)<\/div>/i) || [])[1] || '';
+    const startDate = buildDoTheBayStartDate(pageDate, timeHtml, rawDateTime);
+    if (!startDate) continue;
+
+    const startDateObj = new Date(startDate);
+    if (Number.isNaN(startDateObj.getTime()) || startDateObj < startOfToday) continue;
+
+    const venueName = decodeHtmlEntities(stripHtml(
+      (chunk.match(/<a href="\/venues\/[^"]*"[^>]*itemprop="url"[^>]*>\s*<span itemprop="name">([\s\S]*?)<\/span>/i) || [])[1] || ''
+    )).trim();
+    const city = decodeHtmlEntities(
+      ((chunk.match(/<meta itemprop="addressLocality" content="([^"]+)"/i) || [])[1] || venue.city || '')
+    ).trim() || venue.city || null;
+    const byline = decodeHtmlEntities(stripHtml((chunk.match(/<span class="ds-byline">([\s\S]*?)<\/span>/i) || [])[1] || '')).trim();
+    const cardCategory = ((chunk.match(/ds-event-category-([a-z0-9-]+)/i) || [])[1] || '').replace(/-/g, ' ');
+    const description = [byline, venueName, city].filter(Boolean).join(' - ').slice(0, 500);
+
+    const normalized = {
+      title,
+      startDate,
+      endDate: null,
+      description,
+      category: categorizeIcsEvent({
+        summary: title,
+        description: [description, cardCategory].filter(Boolean).join(' '),
+        categories: cardCategory,
+        fallbackCategory: venue.category || 'all'
+      }),
+      price: null,
+      eventUrl,
+      city
+    };
+
+    const key = normalized.eventUrl || `${normalized.title}|${normalized.startDate}`;
+    deduped.set(key, normalized);
+  }
+
+  return Array.from(deduped.values()).sort((a, b) => {
+    const aTime = new Date(a.startDate).getTime();
+    const bTime = new Date(b.startDate).getTime();
+    return aTime - bTime;
+  });
+}
+
+async function fetchDoTheBayEvents(venue) {
+  const urls = buildDoTheBayCandidateUrls(venue);
+  const deduped = new Map();
+  let hadSuccessfulFetch = false;
+  let lastError = null;
+
+  for (const url of urls) {
+    try {
+      const html = await fetchRawHtml(url);
+      hadSuccessfulFetch = true;
+      const events = extractDoTheBayEventsFromHtml(html, venue, url);
       for (const event of events) {
         const key = event.eventUrl || `${event.title}|${event.startDate}`;
         deduped.set(key, event);
@@ -1519,6 +1741,18 @@ async function main() {
                 }
               } catch (lumaError) {
                 console.log(`  Luma direct parser failed (${lumaError.message}); falling back to Jina`);
+              }
+            }
+
+            if (events.length === 0 && isDoTheBayVenue(venue)) {
+              try {
+                const doTheBayEvents = await fetchDoTheBayEvents(venue);
+                if (doTheBayEvents.length > 0) {
+                  events = doTheBayEvents;
+                  console.log(`  Parsed ${events.length} events from DoTheBay HTML parser`);
+                }
+              } catch (doTheBayError) {
+                console.log(`  DoTheBay parser failed (${doTheBayError.message}); falling back to Jina`);
               }
             }
 
