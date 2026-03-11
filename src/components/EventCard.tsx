@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MapPin, Clock, Calendar, ExternalLink, Share2, Bookmark, Eye } from "lucide-react";
+import { MapPin, Clock, Calendar, ExternalLink, Eye, ChevronDown } from "lucide-react";
 import { cleanHtmlText } from "@/lib/utils";
 import { saveToCalendar, validateEventForCalendar } from "@/lib/calendarUtils";
 import { useToast } from "@/hooks/use-toast";
@@ -62,13 +62,13 @@ interface Event {
 
 interface EventCardProps {
   event: Event;
-  onSaveToCalendar: (eventId: string) => void;
 }
 
-export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
+export const EventCard = ({ event }: EventCardProps) => {
   const { toast } = useToast();
   const [isHovering, setIsHovering] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const eventLink = event.eventUrl || event.ticketUrl;
   
   // Get category colors for this event
   const categoryColor = getCategoryColor(event.categories);
@@ -196,6 +196,11 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
   // Use relative /api path - works in both dev (Vite proxy) and prod (same server)
   const API_BASE = getApiBaseUrl();
 
+  const openEventPage = () => {
+    if (!eventLink) return;
+    window.open(eventLink, '_blank', 'noopener,noreferrer');
+  };
+
   const handleExternalCalendarSave = (calendarType: 'google' | 'outlook' | 'apple' | 'download') => {
     // Convert event to calendar format
     const calendarEvent = {
@@ -247,7 +252,19 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
   };
 
   return (
-    <Card className={`group shadow-card sm:hover:shadow-elegant transition-all duration-300 sm:hover:-translate-y-1 animate-fade-in sm:h-full ${categoryColor.background} ${categoryColor.border} ${categoryColor.hover}`}>
+    <Card
+      className={`group shadow-card sm:hover:shadow-elegant transition-all duration-300 sm:hover:-translate-y-1 animate-fade-in sm:h-full ${categoryColor.background} ${categoryColor.border} ${categoryColor.hover} ${eventLink ? 'cursor-pointer' : ''}`}
+      onClick={() => openEventPage()}
+      onKeyDown={(e) => {
+        if (!eventLink) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openEventPage();
+        }
+      }}
+      role={eventLink ? 'link' : undefined}
+      tabIndex={eventLink ? 0 : undefined}
+    >
       <CardContent className="p-4 sm:p-6 flex flex-col sm:h-full">
         {/* Header Section - Fixed Height */}
         <div className="mb-3 sm:mb-4">
@@ -268,8 +285,8 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
           {/* Whitelist / Blacklist controls - Only show in development */}
           {import.meta.env.MODE === 'development' && (
             <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <Button size="sm" variant="outline" onClick={handleBlacklistEvent} className="hover:bg-red-50 hover:text-red-700 hover:border-red-300">🚫 Block Event</Button>
-              <Button size="sm" variant="outline" onClick={handleBlacklistDomain} className="hover:bg-red-50 hover:text-red-700 hover:border-red-300">🚫 Block Site</Button>
+              <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleBlacklistEvent(); }} className="hover:bg-red-50 hover:text-red-700 hover:border-red-300">🚫 Block Event</Button>
+              <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleBlacklistDomain(); }} className="hover:bg-red-50 hover:text-red-700 hover:border-red-300">🚫 Block Site</Button>
             </div>
           )}
         </div>
@@ -330,6 +347,7 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
             {(event.eventUrl || event.ticketUrl) && (
               <div 
                 className="relative"
+                onClick={(e) => e.stopPropagation()}
                 onMouseEnter={() => setIsHovering(true)}
                 onMouseLeave={(e) => {
                   // Don't hide if mouse is moving to the popup area
@@ -346,6 +364,7 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
                   rel="noopener noreferrer"
                   className="inline-block"
                   onClick={(e) => {
+                    e.stopPropagation();
                     // Prevent navigation if preview is showing
                     if (showPreview) {
                       e.preventDefault();
@@ -435,34 +454,21 @@ export const EventCard = ({ event, onSaveToCalendar }: EventCardProps) => {
             </div>
           )}
             
-            {/* Save + Export */}
-            {/* Save to Internal Calendar Button */}
-            <Button 
-              size="sm" 
-              onClick={() => {
-                onSaveToCalendar(event.id);
-                toast({
-                  title: "Event Saved",
-                  description: `"${event.title}" has been added to your calendar.`,
-                });
-              }}
-              className="flex-1 min-w-0 h-9 sm:h-10 bg-gradient-primary hover:opacity-90 transition-all duration-300 shadow-elegant text-sm"
-            >
-              <Bookmark className="w-4 h-4 mr-2" />
-              <span className="sm:hidden">Save</span>
-              <span className="hidden sm:inline truncate">Save to Calendar</span>
-            </Button>
-            
             {/* Export to External Calendar Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
                   size="sm" 
                   variant="outline"
-                  className="h-9 sm:h-10 px-3"
-                  aria-label="Export to external calendar"
+                  className="flex-1 min-w-0 h-9 sm:h-10 px-3 justify-between"
+                  aria-label="Add to external calendar"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <Share2 className="w-4 h-4" />
+                  <span className="flex items-center gap-2 truncate">
+                    <Calendar className="w-4 h-4" />
+                    <span className="truncate">Add to Calendar</span>
+                  </span>
+                  <ChevronDown className="w-4 h-4 flex-shrink-0" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">

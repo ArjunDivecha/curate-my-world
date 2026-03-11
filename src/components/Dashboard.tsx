@@ -369,7 +369,7 @@ export const Dashboard = () => {
                   <div className="text-center text-muted-foreground py-12 border rounded-lg">No events match your current filters.<div className="mt-2 text-xs">Try a different date or clear filters.</div></div>
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                    {eventsForEventView.map(event => <EventCard key={event.id} event={event} onSaveToCalendar={handleSaveToCalendar} />)}
+                    {eventsForEventView.map(event => <EventCard key={event.id} event={event} />)}
                   </div>
                 )}
               </div>
