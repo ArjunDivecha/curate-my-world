@@ -320,7 +320,7 @@ function buildGroupsFromWords(words: string[]): TermGroup[] {
         isPhrase: true,
         keepStopWords: true,
         expandRegions: true,
-        field: isRegionPhrase ? 'venue' : undefined,
+        field: isRegionPhrase ? 'address' : undefined,
       });
       if (group) groups.push(group);
       i += span;
@@ -333,7 +333,7 @@ function buildGroupsFromWords(words: string[]): TermGroup[] {
     const group = createGroup(token, {
       isPhrase: false,
       expandRegions: true,
-      field: REGION_KEYS.has(token) ? 'venue' : undefined,
+      field: REGION_KEYS.has(token) ? 'address' : undefined,
     });
     if (group) groups.push(group);
     i += 1;
