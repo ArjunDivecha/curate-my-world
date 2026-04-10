@@ -1,0 +1,166 @@
+{
+  "generatedAt": "2026-04-09T18:23:58.298Z",
+  "venues": [
+    {
+      "name": "SFJAZZ.org",
+      "domain": "sfjazz.org",
+      "category": "music",
+      "calendarUrl": "https://sfjazz.org/events",
+      "markdownChars": 8875,
+      "runs": [
+        {
+          "key": "haiku",
+          "label": "Claude Haiku 4.5",
+          "model": "claude-haiku-4-5-20251001",
+          "skipped": false,
+          "inputTokens": 3784,
+          "outputTokens": 103,
+          "cost": 0.004299,
+          "rawTextPreview": "```json\n[]\n```\n\nThe page returned a 404 error with no actual event listings. While there are some event references in the navigation menu (like \"Hiromi's Sonicwonder\" on MAY 8 and \"George Benson\" on MAY 11), these are part of the site navigation/menus and not the actual calendar content requested. The main content is only an error page, so no specific events can be reliably extracted.",
+          "eventCount": 0,
+          "titleCoverage": 0,
+          "startDateCoverage": 0,
+          "directUrlCoverage": 0,
+          "cityCoverage": 0,
+          "duplicateCount": 0
+        },
+        {
+          "key": "gpt4oMini",
+          "label": "GPT-4o mini",
+          "model": "openai/gpt-4o-mini",
+          "skipped": false,
+          "inputTokens": 3118,
+          "outputTokens": 5,
+          "cost": 0.0004707,
+          "rawTextPreview": "```json\n[]\n```",
+          "eventCount": 0,
+          "titleCoverage": 0,
+          "startDateCoverage": 0,
+          "directUrlCoverage": 0,
+          "cityCoverage": 0,
+          "duplicateCount": 0
+        },
+        {
+          "key": "geminiFlashLite",
+          "label": "Gemini 2.5 Flash Lite",
+          "model": "google/gemini-2.5-flash-lite",
+          "skipped": false,
+          "inputTokens": 3481,
+          "outputTokens": 1,
+          "cost": 0.00034850000000000007,
+          "rawTextPreview": "[]",
+          "eventCount": 0,
+          "titleCoverage": 0,
+          "startDateCoverage": 0,
+          "directUrlCoverage": 0,
+          "cityCoverage": 0,
+          "duplicateCount": 0
+        }
+      ]
+    },
+    {
+      "name": "de Young Museum",
+      "domain": "deyoung.famsf.org",
+      "category": "museums",
+      "calendarUrl": "https://deyoung.famsf.org/calendar",
+      "markdownChars": 15021,
+      "runs": [
+        {
+          "key": "haiku",
+          "label": "Claude Haiku 4.5",
+          "model": "claude-haiku-4-5-20251001",
+          "skipped": false,
+          "inputTokens": 6939,
+          "outputTokens": 98,
+          "cost": 0.007429,
+          "rawTextPreview": "```json\n[]\n```\n\nThe page content provided is primarily navigation menus and exhibition listings without specific upcoming events. While there are exhibitions listed (which are ongoing through various dates), these are exhibitions rather than discrete events. The calendar page itself does not contain specific event titles with dates, times, prices, or event URLs that would qualify as \"upcoming events\" separate from the exhibitions. The page is truncated and does not show event listings with the r",
+          "eventCount": 0,
+          "titleCoverage": 0,
+          "startDateCoverage": 0,
+          "directUrlCoverage": 0,
+          "cityCoverage": 0,
+          "duplicateCount": 0
+        },
+        {
+          "key": "gpt4oMini",
+          "label": "GPT-4o mini",
+          "model": "openai/gpt-4o-mini",
+          "skipped": false,
+          "inputTokens": 5968,
+          "outputTokens": 1252,
+          "cost": 0.0016464000000000001,
+          "rawTextPreview": "```json\n[\n    {\n        \"title\": \"Leilah Babirye: We Have a History\",\n        \"startDate\": \"2026-04-09T19:00:00\",\n        \"endDate\": null,\n        \"description\": \"Explore the works of Leilah Babirye, showcasing her unique perspective on history and identity.\",\n        \"category\": \"museums\",\n        \"price\": null,\n        \"eventUrl\": \"https://www.famsf.org/exhibitions/leilah-babirye\",\n        \"city\": \"San Francisco\"\n    },\n    {\n        \"title\": \"The McCoy Jones Collection: Textiles from Central ",
+          "eventCount": 11,
+          "titleCoverage": 1,
+          "startDateCoverage": 1,
+          "directUrlCoverage": 1,
+          "cityCoverage": 1,
+          "duplicateCount": 0
+        },
+        {
+          "key": "geminiFlashLite",
+          "label": "Gemini 2.5 Flash Lite",
+          "model": "google/gemini-2.5-flash-lite",
+          "skipped": false,
+          "inputTokens": 7548,
+          "outputTokens": 1768,
+          "cost": 0.0014620000000000002,
+          "rawTextPreview": "```json\n[\n  {\n    \"title\": \"Leilah Babirye: We Have a History\",\n    \"startDate\": \"2026-04-09T19:00:00\",\n    \"endDate\": \"2026-05-03T23:59:59\",\n    \"description\": \"An exhibition featuring the work of Leilah Babirye, showcasing her unique artistic creations. The exhibition is held at the de Young Museum.\",\n    \"category\": \"museums\",\n    \"price\": null,\n    \"eventUrl\": \"https://www.famsf.org/exhibitions/leilah-babirye\",\n    \"city\": \"San Francisco\"\n  },\n  {\n    \"title\": \"The McCoy Jones Collection: Te",
+          "eventCount": 11,
+          "titleCoverage": 1,
+          "startDateCoverage": 1,
+          "directUrlCoverage": 1,
+          "cityCoverage": 1,
+          "duplicateCount": 0
+        }
+      ]
+    }
+  ],
+  "models": [
+    {
+      "key": "haiku",
+      "label": "Claude Haiku 4.5",
+      "model": "claude-haiku-4-5-20251001",
+      "successCount": 2,
+      "totalCost": 0.011727999999999999,
+      "totalInputTokens": 10723,
+      "totalOutputTokens": 201,
+      "totalEvents": 0,
+      "avgEventsPerVenue": 0,
+      "avgTitleCoverage": 0,
+      "avgStartDateCoverage": 0,
+      "avgDirectUrlCoverage": 0,
+      "avgCityCoverage": 0
+    },
+    {
+      "key": "gpt4oMini",
+      "label": "GPT-4o mini",
+      "model": "openai/gpt-4o-mini",
+      "successCount": 2,
+      "totalCost": 0.0021171000000000002,
+      "totalInputTokens": 9086,
+      "totalOutputTokens": 1257,
+      "totalEvents": 11,
+      "avgEventsPerVenue": 5.5,
+      "avgTitleCoverage": 0.5,
+      "avgStartDateCoverage": 0.5,
+      "avgDirectUrlCoverage": 0.5,
+      "avgCityCoverage": 0.5
+    },
+    {
+      "key": "geminiFlashLite",
+      "label": "Gemini 2.5 Flash Lite",
+      "model": "google/gemini-2.5-flash-lite",
+      "successCount": 2,
+      "totalCost": 0.0018105000000000003,
+      "totalInputTokens": 11029,
+      "totalOutputTokens": 1769,
+      "totalEvents": 11,
+      "avgEventsPerVenue": 5.5,
+      "avgTitleCoverage": 0.5,
+      "avgStartDateCoverage": 0.5,
+      "avgDirectUrlCoverage": 0.5,
+      "avgCityCoverage": 0.5
+    }
+  ]
+}

@@ -15,7 +15,7 @@
  *
  * DESCRIPTION:
  * Daily scheduled job that scrapes venue calendars via Jina Reader,
- * then extracts structured events using Claude Haiku. Results are cached
+ * then extracts structured events using an LLM fallback (default: GPT-4o mini via OpenRouter). Results are cached
  * in venue-events-cache.json for the VenueScraperClient to serve at
  * request time (no network calls during API requests).
  *
@@ -23,13 +23,13 @@
  * cd curate-events-api && npm run scrape:venues
  *
  * DEPENDENCIES:
- * - @anthropic-ai/sdk (Claude Haiku for event extraction)
+ * - @anthropic-ai/sdk (fallback extractor when OpenRouter is unavailable)
  * - node-fetch (for Jina Reader HTTP calls)
  *
  * NOTES:
  * - Rate limiting: 1s between Jina calls to avoid 429s
  * - Incremental writes: saves after each venue (fault tolerant)
- * - Cost: ~$0.05 per full 286-venue run via Claude Haiku
+ * - Cost depends on configured fallback model and token volume
  * =============================================================================
  */
 
@@ -85,6 +85,17 @@ function getAnthropicKey() {
     const envPath = '/Users/arjundivecha/Dropbox/AAA Backup/.env.txt';
     const envContent = fs.readFileSync(envPath, 'utf-8');
     const match = envContent.match(/ANTHROPIC_API_KEY=(.+)/);
+    if (match) return match[1].trim();
+  } catch {}
+  return null;
+}
+
+function getOpenRouterKey() {
+  if (process.env.OPENROUTER_API_KEY) return process.env.OPENROUTER_API_KEY;
+  try {
+    const envPath = '/Users/arjundivecha/Dropbox/AAA Backup/.env.txt';
+    const envContent = fs.readFileSync(envPath, 'utf-8');
+    const match = envContent.match(/OPENROUTER_API_KEY=(.+)/);
     if (match) return match[1].trim();
   } catch {}
   return null;
@@ -825,6 +836,161 @@ async function fetchDoTheBayEvents(venue) {
   });
 }
 
+function isBampfaVenue(venue) {
+  const domain = String(venue?.domain || '').toLowerCase();
+  if (domain === 'bampfa.org') return true;
+
+  const calendarUrl = String(venue?.calendar_url || '').toLowerCase();
+  const website = String(venue?.website || '').toLowerCase();
+  return calendarUrl.includes('bampfa.org') || website.includes('bampfa.org');
+}
+
+function parseBampfaDateLabel(dateText) {
+  const cleaned = decodeHtmlEntities(stripHtml(dateText || ''))
+    .replace(/^[A-Za-z]+,\s*/, '')
+    .trim();
+  if (!cleaned) return null;
+
+  const parsed = new Date(cleaned);
+  if (Number.isNaN(parsed.getTime())) return null;
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function buildDateTimeFromClock(datePart, timeText) {
+  const match = decodeHtmlEntities(stripHtml(timeText || '')).match(/\b(\d{1,2})(?::(\d{2}))?\s*(AM|PM)\b/i);
+  if (!datePart || !match) return null;
+
+  let hour = Number(match[1]) % 12;
+  if (String(match[3]).toUpperCase() === 'PM') hour += 12;
+  const minute = Number(match[2] || '0');
+  return `${datePart}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`;
+}
+
+function parseBampfaDateTimeRange(dateText, timeText) {
+  const datePart = parseBampfaDateLabel(dateText);
+  const cleanedTime = decodeHtmlEntities(stripHtml(timeText || ''))
+    .replace(/[–—]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!datePart || !cleanedTime) return { startDate: null, endDate: null };
+
+  const rangeMatch = cleanedTime.match(/(.+?)\s*-\s*(.+)/);
+  if (rangeMatch) {
+    const startDate = buildDateTimeFromClock(datePart, rangeMatch[1]);
+    const endDate = buildDateTimeFromClock(datePart, rangeMatch[2]);
+    return { startDate, endDate };
+  }
+
+  const singleDate = buildDateTimeFromClock(datePart, cleanedTime);
+  return { startDate: singleDate, endDate: singleDate };
+}
+
+function normalizeBampfaPrice(text) {
+  const normalized = decodeHtmlEntities(stripHtml(text || ''));
+  if (!normalized) return null;
+  if (/\bfree\b/i.test(normalized)) return 'Free';
+  const match = normalized.match(/\$\d+(?:\.\d{2})?(?:\s*-\s*\$\d+(?:\.\d{2})?)?/);
+  return match ? match[0] : null;
+}
+
+function extractBampfaEventsFromHtml(html, venue) {
+  const source = String(html || '');
+  if (!source) return [];
+
+  const blocks = source.split(/<div class="popupboxthing" data-popup="[^"]+">/i).slice(1);
+  if (!blocks.length) return [];
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const deduped = new Map();
+
+  for (const block of blocks) {
+    const endIdx = block.indexOf('<div class="overlay-back"></div>');
+    const chunk = endIdx >= 0 ? block.slice(0, endIdx) : block;
+
+    const title = decodeHtmlEntities(stripHtml(
+      (chunk.match(/<div class="title">[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i) || [])[1] || ''
+    )).trim();
+    if (!title) continue;
+
+    const popupDate = (chunk.match(/<div class="popupboxthing-date">([\s\S]*?)<\/div>/i) || [])[1] || '';
+    const popupTime = (chunk.match(/<div class="popupboxthing-time">[\s\S]*?<strong>([\s\S]*?)<\/strong>/i) || [])[1] || '';
+    const { startDate: popupStartDate, endDate: popupEndDate } = parseBampfaDateTimeRange(popupDate, popupTime);
+
+    const addToCalHref = decodeHtmlEntities(
+      ((chunk.match(/<a class="add-to-cal-link"[^>]*href="([\s\S]*?)"/i) || [])[1] || '').trim()
+    );
+
+    let calendarStartDate = null;
+    let calendarEndDate = null;
+    let detailsRaw = '';
+    if (addToCalHref) {
+      try {
+        const calendarUrl = new URL(addToCalHref);
+        const datesRaw = safeDecodeUrlParam(calendarUrl.searchParams.get('dates'));
+        detailsRaw = safeDecodeUrlParam(calendarUrl.searchParams.get('details'));
+        const [startRaw, endRaw] = datesRaw.split('/');
+        calendarStartDate = parseGoogleCalendarDate(startRaw);
+        calendarEndDate = parseGoogleCalendarDate(endRaw);
+      } catch {}
+    }
+
+    const startDate = popupStartDate || calendarStartDate;
+    const endDate = popupEndDate || calendarEndDate;
+    if (!startDate) continue;
+
+    const startDateObj = new Date(startDate);
+    if (Number.isNaN(startDateObj.getTime()) || startDateObj < startOfToday) continue;
+
+    const href = decodeHtmlEntities(
+      ((chunk.match(/<div class="title">[\s\S]*?<a href="([^"]+)"/i) || [])[1] || '').trim()
+    );
+    const detailsUrlMatch = detailsRaw.match(/https?:\/\/[^\s]+/i);
+    const eventUrl = detailsUrlMatch?.[0]
+      ? normalizeEventUrl(detailsUrlMatch[0].replace(/[.)\]]+$/, ''))
+      : (href ? normalizeEventUrl(new URL(href, 'https://bampfa.org').toString()) : null);
+
+    const infoText = decodeHtmlEntities(stripHtml((chunk.match(/<div class="event-information">([\s\S]*?)<\/div>/i) || [])[1] || ''));
+    const summaryText = decodeHtmlEntities(stripHtml((chunk.match(/<div class="event-summary">([\s\S]*?)<\/div>/i) || [])[1] || ''));
+    const description = [infoText, summaryText].filter(Boolean).join(' ').slice(0, 500);
+    const admissionText = decodeHtmlEntities(stripHtml((chunk.match(/<div class="admission_information">([\s\S]*?)<\/div>/i) || [])[1] || ''));
+    const categoryHints = `${title} ${description} ${admissionText}`;
+
+    const normalized = {
+      title,
+      startDate,
+      endDate,
+      description,
+      category: categorizeIcsEvent({
+        summary: title,
+        description: categoryHints,
+        categories: '',
+        fallbackCategory: venue.category || 'all'
+      }),
+      price: normalizeBampfaPrice(`${infoText} ${summaryText} ${admissionText}`),
+      eventUrl,
+      city: venue.city || 'Berkeley'
+    };
+
+    const key = `${normalized.eventUrl || normalized.title}|${normalized.startDate}`;
+    deduped.set(key, normalized);
+  }
+
+  return Array.from(deduped.values()).sort((a, b) => {
+    const aTime = new Date(a.startDate).getTime();
+    const bTime = new Date(b.startDate).getTime();
+    return aTime - bTime;
+  });
+}
+
+async function fetchBampfaEvents(venue) {
+  const html = await fetchRawHtml(venue.calendar_url);
+  return extractBampfaEventsFromHtml(html, venue);
+}
+
 function decodeIcsText(value) {
   return String(value || '')
     .replace(/\\n/gi, ' ')
@@ -1446,17 +1612,11 @@ function extractEventsFromGoogleCalendarLinks(markdown, venue) {
 }
 
 /**
- * Extract events from markdown using Claude Haiku
+ * Extract events from markdown using the configured fallback extractor
  */
-async function extractEventsWithHaiku(anthropic, venueName, venueCategory, calendarMarkdown) {
+function buildEventExtractionPrompt(venueName, venueCategory, calendarMarkdown) {
   const today = new Date().toISOString().split('T')[0];
-
-  const response = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 4096,
-    messages: [{
-      role: 'user',
-      content: `Extract upcoming events from this venue calendar page. Today is ${today}.
+  return `Extract upcoming events from this venue calendar page. Today is ${today}.
 
 VENUE: ${venueName}
 DEFAULT CATEGORY: ${venueCategory}
@@ -1480,13 +1640,11 @@ RULES:
 - Return ONLY the JSON array, no other text
 
 CALENDAR CONTENT:
-${calendarMarkdown}`
-    }]
-  });
+${calendarMarkdown}`;
+}
 
-  // Parse the response
-  const text = response.content[0]?.text || '[]';
-  // Extract JSON from response (handle markdown code blocks)
+function parseExtractedEvents(rawText, venueName, extractorLabel) {
+  const text = String(rawText || '[]');
   const jsonMatch = text.match(/\[[\s\S]*\]/);
   if (!jsonMatch) return [];
 
@@ -1494,9 +1652,62 @@ ${calendarMarkdown}`
     const events = JSON.parse(jsonMatch[0]);
     return Array.isArray(events) ? events : [];
   } catch {
-    console.error(`  Failed to parse Haiku response for ${venueName}`);
+    console.error(`  Failed to parse ${extractorLabel} response for ${venueName}`);
     return [];
   }
+}
+
+async function extractEventsWithOpenRouter(apiKey, venueName, venueCategory, calendarMarkdown) {
+  const prompt = buildEventExtractionPrompt(venueName, venueCategory, calendarMarkdown);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://github.com/ArjunDivecha/curate-my-world',
+        'X-Title': 'Curate My World Venue Scraper'
+      },
+      body: JSON.stringify({
+        model: 'openai/gpt-4o-mini',
+        temperature: 0,
+        max_tokens: 4096,
+        messages: [{
+          role: 'user',
+          content: prompt
+        }]
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`OpenRouter HTTP ${response.status}: ${await response.text()}`);
+    }
+
+    const json = await response.json();
+    const text = json?.choices?.[0]?.message?.content || '[]';
+    return parseExtractedEvents(text, venueName, 'GPT-4o mini');
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function extractEventsWithAnthropic(anthropic, venueName, venueCategory, calendarMarkdown) {
+  const prompt = buildEventExtractionPrompt(venueName, venueCategory, calendarMarkdown);
+  const response = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 4096,
+    messages: [{
+      role: 'user',
+      content: prompt
+    }]
+  });
+
+  return parseExtractedEvents(response.content[0]?.text || '[]', venueName, 'Claude Haiku');
 }
 
 /**
@@ -1583,18 +1794,21 @@ async function main() {
   }
 
   try {
-    // Validate API key
-    const apiKey = getAnthropicKey();
-    if (!apiKey) {
-      console.error('ERROR: ANTHROPIC_API_KEY not found. Set it in .env or environment.');
+    // Validate extractor credentials
+    const openRouterApiKey = getOpenRouterKey();
+    const anthropicApiKey = getAnthropicKey();
+    if (!openRouterApiKey && !anthropicApiKey) {
+      console.error('ERROR: OPENROUTER_API_KEY or ANTHROPIC_API_KEY not found. Set one in .env or environment.');
       if (scrapeRunId) {
-        await completeVenueScrapeRun(scrapeRunId, { status: 'error', error: 'ANTHROPIC_API_KEY missing' });
+        await completeVenueScrapeRun(scrapeRunId, { status: 'error', error: 'extractor API key missing' });
         scrapeRunCompleted = true;
       }
-      throw new Error('ANTHROPIC_API_KEY missing');
+      throw new Error('extractor API key missing');
     }
 
-    const anthropic = new Anthropic({ apiKey });
+    const anthropic = anthropicApiKey ? new Anthropic({ apiKey: anthropicApiKey }) : null;
+    const extractorLabel = openRouterApiKey ? 'GPT-4o mini via OpenRouter' : 'Claude Haiku fallback';
+    console.log(`Using fallback extractor: ${extractorLabel}`);
 
     // Load venue registry
     if (!fs.existsSync(VENUE_REGISTRY_PATH)) {
@@ -1756,6 +1970,18 @@ async function main() {
               }
             }
 
+            if (events.length === 0 && isBampfaVenue(venue)) {
+              try {
+                const bampfaEvents = await fetchBampfaEvents(venue);
+                if (bampfaEvents.length > 0) {
+                  events = bampfaEvents;
+                  console.log(`  Parsed ${events.length} events from BAMPFA HTML parser`);
+                }
+              } catch (bampfaError) {
+                console.log(`  BAMPFA parser failed (${bampfaError.message}); falling back to model extraction`);
+              }
+            }
+
             if (events.length === 0) {
               // Fetch via Jina Reader
               const markdown = await fetchViaJina(venue.calendar_url, {
@@ -1789,13 +2015,20 @@ async function main() {
                 continue;
               }
 
-              // Extract events with Haiku
-              const extractedEvents = await extractEventsWithHaiku(
-                anthropic,
-                venue.name,
-                venue.category || 'general',
-                markdown
-              );
+              // Extract events with the configured model fallback
+              const extractedEvents = openRouterApiKey
+                ? await extractEventsWithOpenRouter(
+                    openRouterApiKey,
+                    venue.name,
+                    venue.category || 'general',
+                    markdown
+                  )
+                : await extractEventsWithAnthropic(
+                    anthropic,
+                    venue.name,
+                    venue.category || 'general',
+                    markdown
+                  );
               events = addFallbackEventsFromCalendarUrls(extractedEvents, markdown, venue);
               events = applyFamsfVenueHints(events, markdown, venue);
               const addedByUrlScan = events.length - extractedEvents.length;
