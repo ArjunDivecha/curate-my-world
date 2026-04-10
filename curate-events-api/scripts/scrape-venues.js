@@ -71,7 +71,9 @@ const MARKDOWN_LENGTH_OVERRIDES = {
   'sf.funcheap.com': 120000,
 };
 const TRIBE_FEED_OVERRIDES = {
-  'fortmason.org': 'https://fortmason.org/wp-json/tribe/events/v1/events'
+  'fortmason.org': 'https://fortmason.org/wp-json/tribe/events/v1/events',
+  'museumca.org': 'https://museumca.org/wp-json/tribe/events/v1/events',
+  'sfmcd.org': 'https://sfmcd.org/wp-json/tribe/events/v1/events'
 };
 const TRIBE_LOOKAHEAD_DAYS = 180;
 const TRIBE_PER_PAGE = 100;
@@ -203,6 +205,192 @@ async function fetchRawHtml(url) {
     clearTimeout(timeoutId);
     throw error;
   }
+}
+
+function isFamsfVenue(venue) {
+  const domain = String(venue?.domain || '').toLowerCase();
+  if (domain === 'famsf.org' || domain === 'deyoung.famsf.org' || domain === 'legionofhonor.famsf.org') return true;
+
+  const calendarUrl = String(venue?.calendar_url || '').toLowerCase();
+  const website = String(venue?.website || '').toLowerCase();
+  return calendarUrl.includes('famsf.org') || website.includes('famsf.org');
+}
+
+function buildFamsfCandidateUrls(venue) {
+  const urls = new Set();
+  const calendarUrl = String(venue?.calendar_url || '').trim();
+  const website = String(venue?.website || '').trim();
+
+  if (calendarUrl) urls.add(calendarUrl);
+  if (website && website.toLowerCase().includes('famsf.org')) urls.add(website);
+  urls.add('https://www.famsf.org/whats-on');
+
+  return Array.from(urls);
+}
+
+function parseDateOnlyToDateTime(value, fallbackTime = '19:00:00') {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+
+  const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}T${fallbackTime}`;
+  }
+
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}T${fallbackTime}`;
+}
+
+function parseFamsfMetaDates(metaText, metaHtml) {
+  const normalizedText = decodeHtmlEntities(stripHtml(metaText || ''))
+    .replace(/\s+/g, ' ')
+    .trim();
+  const isoDates = Array.from(String(metaHtml || '').matchAll(/datetime="(\d{4}-\d{2}-\d{2})"/gi))
+    .map(match => match[1]);
+
+  if (/^through\b/i.test(normalizedText) && isoDates[0]) {
+    const closeDate = parseDateOnlyToDateTime(isoDates[0]);
+    return { startDate: closeDate, endDate: closeDate, metaText: normalizedText };
+  }
+
+  if (isoDates.length >= 2) {
+    return {
+      startDate: parseDateOnlyToDateTime(isoDates[0]),
+      endDate: parseDateOnlyToDateTime(isoDates[1]),
+      metaText: normalizedText
+    };
+  }
+
+  if (isoDates.length === 1) {
+    const onlyDate = parseDateOnlyToDateTime(isoDates[0]);
+    return { startDate: onlyDate, endDate: onlyDate, metaText: normalizedText };
+  }
+
+  const naturalDates = Array.from(normalizedText.matchAll(/\b([A-Z][a-z]{2,8}\s+\d{1,2},\s+\d{4})\b/g))
+    .map(match => match[1]);
+  if (naturalDates.length >= 2) {
+    return {
+      startDate: parseDateOnlyToDateTime(naturalDates[0]),
+      endDate: parseDateOnlyToDateTime(naturalDates[1]),
+      metaText: normalizedText
+    };
+  }
+  if (naturalDates.length === 1) {
+    const onlyDate = parseDateOnlyToDateTime(naturalDates[0]);
+    return { startDate: onlyDate, endDate: onlyDate, metaText: normalizedText };
+  }
+
+  return { startDate: null, endDate: null, metaText: normalizedText };
+}
+
+function inferFamsfVenueInfo(badges, fallbackVenue) {
+  const normalizedBadges = badges.map(badge => decodeHtmlEntities(stripHtml(badge || '')).trim().toLowerCase());
+  if (normalizedBadges.some(badge => badge.includes('de young'))) {
+    return { venue: 'de Young Museum', venueDomain: 'deyoung.famsf.org' };
+  }
+  if (normalizedBadges.some(badge => badge.includes('legion of honor'))) {
+    return { venue: 'Legion of Honor', venueDomain: 'legionofhonor.famsf.org' };
+  }
+  return {
+    venue: fallbackVenue?.name || 'Fine Arts Museums of San Francisco',
+    venueDomain: fallbackVenue?.domain || 'famsf.org'
+  };
+}
+
+function extractFamsfEventsFromHtml(html, venue) {
+  const source = String(html || '');
+  if (!source) return [];
+
+  const cardPattern = /<h3 class="order-2 f-heading-3">[\s\S]*?<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<p class="mt-12 text-secondary f-body-1 order-3">([\s\S]*?)<\/p>[\s\S]*?<div class="flex flex-wrap gap-8 mb-16 order-1">([\s\S]*?)<\/div>/gi;
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const deduped = new Map();
+
+  for (const match of source.matchAll(cardPattern)) {
+    const eventUrl = normalizeEventUrl(decodeHtmlEntities((match[1] || '').trim()));
+    if (!eventUrl || /\/exhibitions\/past\/?$/i.test(eventUrl)) continue;
+
+    const title = decodeHtmlEntities(stripHtml(match[2] || '')).trim();
+    if (!title) continue;
+
+    const metaHtml = match[3] || '';
+    const meta = parseFamsfMetaDates(metaHtml, metaHtml);
+    if (!meta.startDate) continue;
+
+    const startDateObj = new Date(meta.startDate);
+    if (Number.isNaN(startDateObj.getTime()) || startDateObj < startOfToday) continue;
+
+    const badges = Array.from(String(match[4] || '').matchAll(/<span[^>]*>([\s\S]*?)<\/span>/gi))
+      .map(badgeMatch => decodeHtmlEntities(stripHtml(badgeMatch[1] || '')).trim())
+      .filter(Boolean);
+    const famsfVenue = inferFamsfVenueInfo(badges, venue);
+    const description = [meta.metaText, badges.join(', ')]
+      .filter(Boolean)
+      .join(' - ')
+      .slice(0, 500);
+
+    const normalized = {
+      title,
+      startDate: meta.startDate,
+      endDate: meta.endDate,
+      description,
+      category: categorizeIcsEvent({
+        summary: title,
+        description: `${description} exhibition museum`,
+        categories: badges.join(' '),
+        fallbackCategory: venue.category || 'all'
+      }),
+      price: null,
+      eventUrl,
+      city: venue.city || 'San Francisco',
+      venue: famsfVenue.venue,
+      venueDomain: famsfVenue.venueDomain
+    };
+
+    const key = normalized.eventUrl || `${normalized.title}|${normalized.startDate}`;
+    deduped.set(key, normalized);
+  }
+
+  return Array.from(deduped.values()).sort((a, b) => {
+    const aTime = new Date(a.startDate).getTime();
+    const bTime = new Date(b.startDate).getTime();
+    return aTime - bTime;
+  });
+}
+
+async function fetchFamsfEvents(venue) {
+  const urls = buildFamsfCandidateUrls(venue);
+  const deduped = new Map();
+  let hadSuccessfulFetch = false;
+  let lastError = null;
+
+  for (const url of urls) {
+    try {
+      const html = await fetchRawHtml(url);
+      hadSuccessfulFetch = true;
+      const events = extractFamsfEventsFromHtml(html, venue);
+      for (const event of events) {
+        const key = event.eventUrl || `${event.title}|${event.startDate}`;
+        deduped.set(key, event);
+      }
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (!hadSuccessfulFetch && lastError) {
+    throw lastError;
+  }
+
+  return Array.from(deduped.values()).sort((a, b) => {
+    const aTime = new Date(a.startDate).getTime();
+    const bTime = new Date(b.startDate).getTime();
+    return aTime - bTime;
+  });
 }
 
 function isFuncheapVenue(venue) {
@@ -1340,7 +1528,7 @@ async function fetchTribeEvents(venue) {
       if (item?.status && String(item.status).toLowerCase() !== 'publish') continue;
       if (item?.hide_from_listings) continue;
 
-      const title = decodeHtmlEntities(item?.title || '').trim();
+      const title = decodeHtmlEntities(stripHtml(item?.title || '')).trim();
       const startDateTime = parseSqlDateTime(item?.start_date || item?.utc_start_date);
       const endDateTime = parseSqlDateTime(item?.end_date || item?.utc_end_date);
       const eventUrl = normalizeEventUrl(item?.url || '');
@@ -1386,6 +1574,136 @@ async function fetchTribeEvents(venue) {
     const bTime = new Date(b.startDate).getTime();
     return aTime - bTime;
   });
+}
+
+function parseTribeHtmlDateTime(datePart, timeHtml) {
+  const cleaned = decodeHtmlEntities(stripHtml(timeHtml || ''))
+    .replace(/[–—]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!datePart) return { startDate: null, endDate: null };
+
+  if (!cleaned || /\ball day\b/i.test(cleaned)) {
+    return {
+      startDate: `${datePart}T00:00:00`,
+      endDate: `${datePart}T23:59:59`
+    };
+  }
+
+  const fromRangeMatch = cleaned.match(/from\s+(\d{1,2}(?::\d{2})?\s*[AP]M)\s*-\s*(\d{1,2}(?::\d{2})?\s*[AP]M)/i);
+  if (fromRangeMatch) {
+    return {
+      startDate: buildDateTimeFromClock(datePart, fromRangeMatch[1]),
+      endDate: buildDateTimeFromClock(datePart, fromRangeMatch[2])
+    };
+  }
+
+  const fromSingleMatch = cleaned.match(/from\s+(\d{1,2}(?::\d{2})?\s*[AP]M)/i);
+  if (fromSingleMatch) {
+    const startDate = buildDateTimeFromClock(datePart, fromSingleMatch[1]);
+    const endTimeMatch = cleaned.match(/-\s*(\d{1,2}(?::\d{2})?\s*[AP]M)\b/i);
+    return {
+      startDate,
+      endDate: endTimeMatch ? buildDateTimeFromClock(datePart, endTimeMatch[1]) : null
+    };
+  }
+
+  const firstTimeMatch = cleaned.match(/\b(\d{1,2}(?::\d{2})?\s*[AP]M)\b/i);
+  if (firstTimeMatch) {
+    return {
+      startDate: buildDateTimeFromClock(datePart, firstTimeMatch[1]),
+      endDate: null
+    };
+  }
+
+  return {
+    startDate: `${datePart}T19:00:00`,
+    endDate: null
+  };
+}
+
+function extractTribeHtmlEventsFromHtml(html, venue) {
+  const source = String(html || '');
+  if (!source) return [];
+  if (/No upcoming events right now/i.test(source)) return null;
+  if (!/tribe-events-calendar-list__event-row/i.test(source)) return [];
+
+  const chunks = source
+    .split(/<li\s+class="tribe-common-g-row tribe-events-calendar-list__event-row"[^>]*>/i)
+    .slice(1);
+  if (!chunks.length) return [];
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const deduped = new Map();
+
+  for (const chunk of chunks) {
+    const title = decodeHtmlEntities(stripHtml(
+      (chunk.match(/class="tribe-events-calendar-list__event-title-link[^"]*"[\s\S]*?>([\s\S]*?)<\/a>/i) || [])[1] || ''
+    )).trim();
+    if (!title) continue;
+
+    const href = decodeHtmlEntities(
+      ((chunk.match(/class="tribe-events-calendar-list__event-title-link[^"]*"[\s\S]*?href="([^"]+)"/i) || [])[1] || '').trim()
+    );
+    const eventUrl = href ? normalizeEventUrl(href) : null;
+    if (!eventUrl) continue;
+
+    const datePart = ((chunk.match(/class="tribe-events-calendar-list__event-date-tag-datetime"[^>]*datetime="(\d{4}-\d{2}-\d{2})"/i) || [])[1] || '').trim();
+    const timeHtml = (chunk.match(/class="tribe-events-calendar-list__event-datetime"[^>]*>([\s\S]*?)<\/time>/i) || [])[1] || '';
+    const { startDate, endDate } = parseTribeHtmlDateTime(datePart, timeHtml);
+    if (!startDate) continue;
+
+    const startDateObj = new Date(startDate);
+    if (Number.isNaN(startDateObj.getTime()) || startDateObj < startOfToday) continue;
+
+    const description = decodeHtmlEntities(stripHtml(
+      (chunk.match(/class="tribe-events-calendar-list__event-description[^"]*"[^>]*>([\s\S]*?)<\/div>/i) || [])[1] || ''
+    )).replace(/\s+/g, ' ').trim().slice(0, 500);
+    const categoryNames = Array.from(chunk.matchAll(/<a[^>]*rel="tag"[^>]*>([\s\S]*?)<\/a>/gi))
+      .map(match => decodeHtmlEntities(stripHtml(match[1] || '')).trim())
+      .filter(Boolean);
+    const venueName = decodeHtmlEntities(stripHtml(
+      (chunk.match(/class="tribe-events-calendar-list__event-venue-title[^"]*"[^>]*>([\s\S]*?)<\/span>/i) || [])[1] || ''
+    )).trim();
+    const venueAddress = decodeHtmlEntities(stripHtml(
+      (chunk.match(/class="tribe-events-calendar-list__event-venue-address"[^>]*>([\s\S]*?)<\/span>/i) || [])[1] || ''
+    )).trim();
+    const price = decodeHtmlEntities(stripHtml(
+      (chunk.match(/class="tribe-events-c-small-cta__price"[^>]*>([\s\S]*?)<\/span>/i) || [])[1] || ''
+    )).trim() || null;
+    const city = extractCityFromLocation(`${venueName} ${venueAddress}`, venue.city || null);
+
+    const normalized = {
+      title,
+      startDate,
+      endDate,
+      description,
+      category: categorizeIcsEvent({
+        summary: title,
+        description: `${description} ${venueName} ${venueAddress}`.trim(),
+        categories: categoryNames.join(' '),
+        fallbackCategory: venue.category || 'all'
+      }),
+      price,
+      eventUrl,
+      city
+    };
+
+    const key = normalized.eventUrl || `${normalized.title}|${normalized.startDate}`;
+    deduped.set(key, normalized);
+  }
+
+  return Array.from(deduped.values()).sort((a, b) => {
+    const aTime = new Date(a.startDate).getTime();
+    const bTime = new Date(b.startDate).getTime();
+    return aTime - bTime;
+  });
+}
+
+async function fetchTribeHtmlEvents(venue) {
+  const html = await fetchRawHtml(venue.calendar_url);
+  return extractTribeHtmlEventsFromHtml(html, venue);
 }
 
 function extractEventUrlsFromMarkdown(markdown, domain) {
@@ -1893,6 +2211,7 @@ async function main() {
 
       try {
         let events = [];
+        let skipModelFallback = false;
 
         if (isIcsFeedUrl(venue.calendar_url)) {
           const icsText = await fetchRawText(venue.calendar_url);
@@ -1970,6 +2289,18 @@ async function main() {
               }
             }
 
+            if (events.length === 0 && isFamsfVenue(venue)) {
+              try {
+                const famsfEvents = await fetchFamsfEvents(venue);
+                if (famsfEvents.length > 0) {
+                  events = famsfEvents;
+                  console.log(`  Parsed ${events.length} events from FAMSF HTML parser`);
+                }
+              } catch (famsfError) {
+                console.log(`  FAMSF parser failed (${famsfError.message}); falling back to model extraction`);
+              }
+            }
+
             if (events.length === 0 && isBampfaVenue(venue)) {
               try {
                 const bampfaEvents = await fetchBampfaEvents(venue);
@@ -1983,6 +2314,21 @@ async function main() {
             }
 
             if (events.length === 0) {
+              try {
+                const tribeHtmlEvents = await fetchTribeHtmlEvents(venue);
+                if (tribeHtmlEvents === null) {
+                  skipModelFallback = true;
+                  console.log('  The Events Calendar page reports no upcoming events');
+                } else if (tribeHtmlEvents.length > 0) {
+                  events = tribeHtmlEvents;
+                  console.log(`  Parsed ${events.length} events from The Events Calendar HTML parser`);
+                }
+              } catch (tribeHtmlError) {
+                console.log(`  The Events Calendar HTML parser failed (${tribeHtmlError.message}); falling back to model extraction`);
+              }
+            }
+
+            if (events.length === 0 && !skipModelFallback) {
               // Fetch via Jina Reader
               const markdown = await fetchViaJina(venue.calendar_url, {
                 maxMarkdownLength: getMarkdownLimitForVenue(venue)

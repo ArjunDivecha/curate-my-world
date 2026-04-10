@@ -50,7 +50,7 @@
     "city": "Stanford",
     "state": "CA",
     "website": "https://anderson.stanford.edu",
-    "calendar_url": "https://anderson.stanford.edu/events",
+    "calendar_url": "https://events.stanford.edu/department/anderson_collection_at_stanford_university",
     "source": "existing_whitelist",
     "coordinates": {
       "lat": 37.4265407,
@@ -106,7 +106,7 @@
     "category": "art",
     "city": "San Francisco",
     "state": "CA",
-    "calendar_url": "https://ybca.org/events",
+    "calendar_url": "https://ybca.org/calendar/",
     "source": "exa_discovery",
     "discovered_at": "2026-01-16T18:12:17.244Z",
     "lat": 37.7852456,
@@ -132,7 +132,7 @@
     "city": "Stanford",
     "state": "CA",
     "website": "https://museum.stanford.edu",
-    "calendar_url": "https://museum.stanford.edu/events",
+    "calendar_url": "https://events.stanford.edu/department/cantor_arts_center",
     "source": "existing_whitelist",
     "coordinates": {
       "lat": 37.4265407,
@@ -2662,7 +2662,7 @@
     "category": "music",
     "city": "San Francisco",
     "state": "CA",
-    "calendar_url": "https://sfjazz.org/events",
+    "calendar_url": "https://www.sfjazz.org/calendar/",
     "source": "exa_discovery",
     "discovered_at": "2026-01-16T18:11:56.557Z"
   },
