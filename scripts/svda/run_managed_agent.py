@@ -12,6 +12,7 @@ import datetime as dt
 import json
 import os
 import sys
+import threading
 import time
 from typing import Any
 
@@ -27,6 +28,10 @@ DEFAULT_REPO_URL = "https://github.com/ArjunDivecha/curate-my-world"
 DEFAULT_MOUNT_PATH = "/workspace/curate-my-world"
 DEFAULT_GITHUB_MCP_URL = "https://api.githubcopilot.com/mcp/"
 DEFAULT_VAULT_DISPLAY_NAME = "SVDA GitHub"
+DEFAULT_MAX_SECONDS = 420
+DEFAULT_MAX_TOOL_EVENTS = 16
+DEFAULT_MAX_WEB_FETCH_EVENTS = 8
+DEFAULT_MAX_OUTPUT_TOKENS = 2500
 
 
 class AnthropicAPI:
@@ -111,10 +116,12 @@ def ensure_agent(client: AnthropicAPI, name: str, model: str, github_mcp_url: st
 
     system_prompt = (
         "You are SVDA, the Squirtle Venue Discovery Agent. Complete the user's "
-        "venue-discovery task end to end inside the mounted repository. Follow "
+        "venue-discovery task inside the mounted repository. Follow "
         "repo-local instructions, validate artifacts before committing, create a "
         "branch with the claude/svda- prefix, and open a human-reviewed PR. "
-        "Never push to main."
+        "Never push to main. Cost control is mandatory: prefer a small partial "
+        "result over extended research, and stop immediately when the user task "
+        "specifies a wall-clock, tool, fetch, or token cap."
     )
     payload = {
         "model": model,
@@ -299,11 +306,24 @@ def create_session(
     return session_id
 
 
-def build_user_message(repo_mount_path: str, run_date: str, source_ref: str) -> str:
+def build_user_message(
+    repo_mount_path: str,
+    run_date: str,
+    source_ref: str,
+    max_seconds: int,
+    max_tool_events: int,
+    max_web_fetch_events: int,
+    max_output_tokens: int,
+) -> str:
     return f"""Run the Squirtle Venue Discovery Agent workflow for {run_date}.
 
 Repository mount path: {repo_mount_path}
 Repository source ref: {source_ref}
+Hard runner caps:
+- Wall clock: {max_seconds} seconds.
+- Material tool events: {max_tool_events}.
+- Web fetch events: {max_web_fetch_events}.
+- Output tokens: {max_output_tokens}.
 
 Instructions:
 1. cd to the repository mount path.
@@ -311,10 +331,11 @@ Instructions:
 3. Read docs/svda/PROMPT.md and follow it as the authoritative task prompt.
 4. Read .claude/skills/venue-discovery/SKILL.md for the operational rules.
 5. Use run date {run_date} for branch names and candidate filenames.
-6. Create a branch named claude/svda-{run_date}, commit the candidate JSON and any proposed registry rows, push the branch, and open a GitHub PR against main.
-7. If validation fails, write data/venue-candidates/{run_date}_ERROR.md instead of proposing registry rows, then open a PR with the error artifact.
+6. Research a maximum of 5 candidate venues. Stop early if 3 strong candidates are validated.
+7. Create a branch named claude/svda-{run_date}, commit the candidate JSON and any proposed registry rows, push the branch, and open a GitHub PR against main.
+8. If validation fails or caps are reached, write data/venue-candidates/{run_date}_ERROR.md or a partial candidates file, then open a PR with that artifact.
 
-Do not push to main. Do not modify unrelated files."""
+Do not push to main. Do not modify unrelated files. Do not continue researching after a cap is reached."""
 
 
 def build_smoke_message(repo_mount_path: str, source_ref: str) -> str:
@@ -348,6 +369,18 @@ def send_user_message(client: AnthropicAPI, session_id: str, message: str) -> No
     }
     client.request("POST", f"/sessions/{session_id}/events", json=payload)
     print("Sent SVDA task message.")
+
+
+def interrupt_session(client: AnthropicAPI, session_id: str, reason: str) -> None:
+    if client.dry_run:
+        print(f"DRY_RUN interrupt skipped: {reason}")
+        return
+    payload = {"events": [{"type": "user.interrupt"}]}
+    try:
+        client.request("POST", f"/sessions/{session_id}/events", json=payload)
+        print(f"Sent interrupt to session {session_id}: {reason}")
+    except Exception as exc:
+        print(f"Failed to interrupt session {session_id}: {exc}", file=sys.stderr)
 
 
 def parse_sse_events(response: requests.Response) -> Any:
@@ -388,24 +421,68 @@ def print_event(event: dict[str, Any]) -> None:
         print(f"[agent] {event_type}")
 
 
-def stream_until_idle(client: AnthropicAPI, session_id: str, initial_message: str) -> None:
+def stream_until_idle(
+    client: AnthropicAPI,
+    session_id: str,
+    initial_message: str,
+    max_seconds: int,
+    max_tool_events: int,
+    max_web_fetch_events: int,
+    max_output_tokens: int,
+) -> None:
     if client.dry_run:
         send_user_message(client, session_id, initial_message)
         print("DRY_RUN stream skipped.")
         return
+
+    started = time.monotonic()
+    stop_event = threading.Event()
+    tool_events = 0
+    web_fetch_events = 0
+    output_tokens = 0
+
+    def watchdog() -> None:
+        if not stop_event.wait(max_seconds):
+            interrupt_session(client, session_id, f"wall-clock cap {max_seconds}s reached")
+
+    watchdog_thread = threading.Thread(target=watchdog, daemon=True)
+    watchdog_thread.start()
 
     with client.stream(f"/sessions/{session_id}/events/stream") as response:
         send_user_message(client, session_id, initial_message)
         for event in parse_sse_events(response):
             print_event(event)
             event_type = event.get("type")
+            if time.monotonic() - started > max_seconds:
+                interrupt_session(client, session_id, f"wall-clock cap {max_seconds}s reached")
+                raise RuntimeError(f"SVDA stopped after exceeding {max_seconds}s wall-clock cap.")
+            if event_type in {"agent.tool_use", "agent.mcp_tool_use"}:
+                tool_events += 1
+                tool_name = str(event.get("name", ""))
+                if tool_name == "web_fetch":
+                    web_fetch_events += 1
+                if tool_events > max_tool_events:
+                    interrupt_session(client, session_id, f"tool event cap {max_tool_events} exceeded")
+                    raise RuntimeError(f"SVDA stopped after exceeding {max_tool_events} tool events.")
+                if web_fetch_events > max_web_fetch_events:
+                    interrupt_session(client, session_id, f"web fetch cap {max_web_fetch_events} exceeded")
+                    raise RuntimeError(f"SVDA stopped after exceeding {max_web_fetch_events} web fetch events.")
+            if event_type == "agent.message":
+                for block in event.get("content", []):
+                    output_tokens += max(1, len(block.get("text", "")) // 4)
+                if output_tokens > max_output_tokens:
+                    interrupt_session(client, session_id, f"output cap {max_output_tokens} estimated tokens exceeded")
+                    raise RuntimeError(f"SVDA stopped after exceeding {max_output_tokens} estimated output tokens.")
             if event_type == "session.status_idle":
+                stop_event.set()
                 stop_reason = event.get("stop_reason") or {}
                 if stop_reason.get("type") == "requires_action":
                     raise RuntimeError(f"Session requires tool confirmation: {json.dumps(stop_reason)}")
                 return
             if event_type in {"session.status_failed", "session.status_error"}:
+                stop_event.set()
                 raise RuntimeError(f"Session failed: {json.dumps(event)}")
+    stop_event.set()
 
 
 def retrieve_session(client: AnthropicAPI, session_id: str) -> dict[str, Any]:
@@ -475,6 +552,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mount-path", default=os.environ.get("SVDA_MOUNT_PATH", DEFAULT_MOUNT_PATH))
     parser.add_argument("--github-mcp-url", default=os.environ.get("SVDA_GITHUB_MCP_URL", DEFAULT_GITHUB_MCP_URL))
     parser.add_argument("--vault-display-name", default=os.environ.get("SVDA_VAULT_DISPLAY_NAME", DEFAULT_VAULT_DISPLAY_NAME))
+    parser.add_argument("--max-seconds", type=int, default=int(os.environ.get("SVDA_MAX_SECONDS", DEFAULT_MAX_SECONDS)))
+    parser.add_argument("--max-tool-events", type=int, default=int(os.environ.get("SVDA_MAX_TOOL_EVENTS", DEFAULT_MAX_TOOL_EVENTS)))
+    parser.add_argument("--max-web-fetch-events", type=int, default=int(os.environ.get("SVDA_MAX_WEB_FETCH_EVENTS", DEFAULT_MAX_WEB_FETCH_EVENTS)))
+    parser.add_argument("--max-output-tokens", type=int, default=int(os.environ.get("SVDA_MAX_OUTPUT_TOKENS", DEFAULT_MAX_OUTPUT_TOKENS)))
     parser.add_argument(
         "--source-ref",
         default=(
@@ -524,9 +605,25 @@ def main() -> int:
     message = (
         build_smoke_message(args.mount_path, args.source_ref)
         if args.smoke_only
-        else build_user_message(args.mount_path, args.run_date, args.source_ref)
+        else build_user_message(
+            args.mount_path,
+            args.run_date,
+            args.source_ref,
+            args.max_seconds,
+            args.max_tool_events,
+            args.max_web_fetch_events,
+            args.max_output_tokens,
+        )
     )
-    stream_until_idle(client, session_id, message)
+    stream_until_idle(
+        client,
+        session_id,
+        message,
+        args.max_seconds,
+        args.max_tool_events,
+        args.max_web_fetch_events,
+        args.max_output_tokens,
+    )
     events = list_session_events(client, session_id)
     summarize_session_events(events)
     session = retrieve_session(client, session_id)

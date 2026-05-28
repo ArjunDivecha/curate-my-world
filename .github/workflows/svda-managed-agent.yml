@@ -13,10 +13,11 @@ on:
         required: false
         type: string
         default: ""
-  schedule:
-    # Monday 06:00 UTC is Sunday 22:00 Pacific Standard Time.
-    # During Pacific Daylight Time this fires at Sunday 23:00.
-    - cron: "0 6 * * 1"
+      confirm_full_discovery:
+        description: "Type RUN_FULL_DISCOVERY to allow a non-smoke run"
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -26,7 +27,7 @@ jobs:
   run:
     name: Start SVDA Managed Agents session
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 12
 
     steps:
       - name: Checkout
@@ -45,9 +46,16 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.SVDA_GITHUB_TOKEN || github.token }}
           SVDA_SOURCE_REF: ${{ inputs.source_ref || github.ref_name }}
+          SVDA_MAX_SECONDS: "420"
+          SVDA_MAX_TOOL_EVENTS: "16"
+          SVDA_MAX_WEB_FETCH_EVENTS: "8"
+          SVDA_MAX_OUTPUT_TOKENS: "2500"
         run: |
           args=()
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.smoke_only }}" = "true" ]; then
             args+=(--smoke-only)
+          elif [ "${{ inputs.confirm_full_discovery }}" != "RUN_FULL_DISCOVERY" ]; then
+            echo "Refusing full discovery without confirm_full_discovery=RUN_FULL_DISCOVERY"
+            exit 2
           fi
           python scripts/svda/run_managed_agent.py "${args[@]}"
