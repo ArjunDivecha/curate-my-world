@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0",
+  "run_date": "2026-05-28",
+  "run_id": "svda-2026-05-28",
+  "routine_session_url": "https://code.claude.com",
+  "category_targeted": "Desi",
+  "geographic_scope": [
+    "San Francisco",
+    "Oakland",
+    "Berkeley",
+    "San Mateo",
+    "Burlingame",
+    "Redwood City",
+    "Palo Alto",
+    "Menlo Park",
+    "San Jose",
+    "Mountain View",
+    "Cupertino",
+    "Santa Clara",
+    "Sunnyvale",
+    "Milpitas",
+    "Fremont",
+    "Mill Valley",
+    "San Rafael",
+    "Sausalito"
+  ],
+  "agent_model": "claude-sonnet-4-6",
+  "extraction_model": "claude-sonnet-4-6",
+  "total_cost_usd": 0,
+  "session_duration_minutes": 22,
+  "candidates_proposed": [],
+  "candidates_rejected": [
+    {
+      "url": "https://www.southindiafinearts.org/upcoming-events",
+      "name": "South India Fine Arts (SIFA)",
+      "rejection_reason": "extraction_failed",
+      "notes": "Bay Area premier Indian classical arts org (Carnatic concerts, Santa Clara). HTTP 403 from WebFetch — page not fetchable in this environment. Search confirms Carnatic Concert by Vid. Abhishek Raghuram & Vid. Shashank Subramanyam on May 10 2026 at Santa Clara Convention Center. High-quality target for next run."
+    },
+    {
+      "url": "https://www.carnaticchamberconcerts.com/",
+      "name": "Carnatic Chamber Concerts (CCC)",
+      "rejection_reason": "extraction_failed",
+      "notes": "Monthly Carnatic youth concerts in Milpitas (Shirdi Sai Parivaar auditorium). HTTP 403. Search confirms May 10 2026 event 2-5pm. Strong desi music candidate for next run."
+    },
+    {
+      "url": "https://nonstopbhangra.com/",
+      "name": "Non Stop Bhangra",
+      "rejection_reason": "extraction_failed",
+      "notes": "SF-based Punjabi/bhangra collective, 20+ years, Bay Area's premier bhangra party. HTTP 403. Search confirms: Holi Festival Mar 7 2026 at 7th West Oakland; Friday Nights at Oakland Museum May 29 2026. High monthly volume. Strong candidate for next run."
+    },
+    {
+      "url": "https://dholrhythms.com/",
+      "name": "Dholrhythms Dance Company",
+      "rejection_reason": "extraction_failed",
+      "notes": "All-women SF Bay Area Indian dance company, produces Non Stop Bhangra and Colors Of India performances. HTTP 403. No specific upcoming events confirmed from search. Moderate candidate for next run."
+    },
+    {
+      "url": "https://www.aiaevents.org/",
+      "name": "AIA Events (Association of Indo Americans)",
+      "rejection_reason": "extraction_failed",
+      "notes": "Bay Area's premier South Asian cultural celebrations: Holi Festival, Diwali Dhamaka, Food Festival. HTTP 403. Search confirms Dussehra Diwali Dhamaka Oct 19 2026 at Alameda County Fairgrounds, Pleasanton. High event volume candidate for next run."
+    },
+    {
+      "url": "https://www.gcabayarea.org/events",
+      "name": "Gujarati Cultural Association of Bay Area (GCA)",
+      "rejection_reason": "extraction_failed",
+      "notes": "Major Gujarati cultural association hosting Holi, Navratri, Diwali, summer picnics across Bay Area. HTTP 403. Geographic scope confirmed (Bay Area). High volume candidate for next run."
+    },
+    {
+      "url": "https://www.bata.org/upcoming-events.html",
+      "name": "Bay Area Telugu Association (BATA)",
+      "rejection_reason": "extraction_failed",
+      "notes": "Telugu cultural org hosting Sankranti, Ugadi, Deepavali at ICC Milpitas. HTTP 403. Search confirms Sankranti Sambaralu Jan 25 2026 at ICC Milpitas. Moderate volume (3 festivals/year). Candidate for next run."
+    },
+    {
+      "url": "https://kknc.org/event-calendar/",
+      "name": "Kannada Koota Northern California (KKNC)",
+      "rejection_reason": "extraction_failed",
+      "notes": "Kannada community cultural org, Bay Area. HTTP 403. Search confirms Kannada cultural event Apr 25 2026 at Pleasanton Fairgrounds. Low-moderate event volume. Candidate for next run."
+    },
+    {
+      "url": "https://abhinaya.org/",
+      "name": "Abhinaya Dance Company of San Jose",
+      "rejection_reason": "extraction_failed",
+      "notes": "Classical Bharatanatyam dance company based in San Jose. HTTP 403. Search confirms May 16 2026 performance at Mission City Center for Performing Arts, Santa Clara. Strong cultural arts candidate for next run."
+    },
+    {
+      "url": "https://www.indiacc.org/",
+      "name": "India Community Center (ICC) Milpitas",
+      "rejection_reason": "extraction_failed",
+      "notes": "Major South Asian community center at 525 Los Coches St, Milpitas. HTTP 403. Search confirms multiple May-Oct 2026 events including Gujju Bhai Ni Exchange Offer May 29, SHE Celebrate Her May 31, Starry Night With BACA Awards Oct 2. High volume venue, multiple categories. Strong candidate for next run."
+    }
+  ]
+}
