@@ -1,0 +1,53 @@
+name: SVDA Managed Agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      smoke_only:
+        description: "Run setup-only smoke test instead of venue discovery"
+        required: false
+        type: boolean
+        default: true
+      source_ref:
+        description: "Repository ref for the Managed Agent session to check out"
+        required: false
+        type: string
+        default: ""
+  schedule:
+    # Monday 06:00 UTC is Sunday 22:00 Pacific Standard Time.
+    # During Pacific Daylight Time this fires at Sunday 23:00.
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  run:
+    name: Start SVDA Managed Agents session
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install runner dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Start Managed Agents session
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.SVDA_GITHUB_TOKEN || github.token }}
+          SVDA_SOURCE_REF: ${{ inputs.source_ref || github.ref_name }}
+        run: |
+          args=()
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.smoke_only }}" = "true" ]; then
+            args+=(--smoke-only)
+          fi
+          python scripts/svda/run_managed_agent.py "${args[@]}"

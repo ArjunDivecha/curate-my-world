@@ -1,0 +1,241 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ArjunDivecha/curate-my-world/data/venue-candidates/schema.json",
+  "title": "Squirtle Venue Discovery Agent Candidate Run",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_date",
+    "run_id",
+    "managed_agent_session_url",
+    "category_targeted",
+    "geographic_scope",
+    "agent_model",
+    "total_cost_usd",
+    "session_duration_minutes",
+    "candidates_proposed",
+    "candidates_rejected"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "run_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^svda-[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "managed_agent_session_url": {
+      "type": "string"
+    },
+    "category_targeted": {
+      "const": "Desi"
+    },
+    "geographic_scope": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "agent_model": {
+      "type": "string"
+    },
+    "extraction_model": {
+      "type": "string"
+    },
+    "total_cost_usd": {
+      "type": "number",
+      "minimum": 0
+    },
+    "session_duration_minutes": {
+      "type": "number",
+      "minimum": 0
+    },
+    "candidates_proposed": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/candidate"
+      }
+    },
+    "candidates_rejected": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/rejection"
+      }
+    }
+  },
+  "$defs": {
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "url",
+        "discovery_theme",
+        "registry_category",
+        "location",
+        "venue_type",
+        "extraction_score",
+        "monthly_event_estimate",
+        "sample_events",
+        "dedup_status",
+        "closest_existing_match",
+        "rationale",
+        "agent_confidence",
+        "registry_row_proposed"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^cand-[0-9]{3}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "discovery_theme": {
+          "const": "Desi"
+        },
+        "registry_category": {
+          "type": "string",
+          "enum": [
+            "all",
+            "music",
+            "theatre",
+            "comedy",
+            "movies",
+            "art",
+            "food",
+            "tech",
+            "lectures",
+            "kids",
+            "desi",
+            "dance",
+            "lgbtq"
+          ]
+        },
+        "location": {
+          "type": "string",
+          "minLength": 1
+        },
+        "venue_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "extraction_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "monthly_event_estimate": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sample_events": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/sample_event"
+          }
+        },
+        "dedup_status": {
+          "type": "string",
+          "enum": [
+            "novel",
+            "likely_duplicate",
+            "duplicate_existing"
+          ]
+        },
+        "closest_existing_match": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "agent_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "registry_row_proposed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "sample_event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "date",
+        "url"
+      ],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "date": {
+          "type": "string",
+          "minLength": 1
+        },
+        "time": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "url": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "rejection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "url",
+        "rejection_reason"
+      ],
+      "properties": {
+        "url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string"
+        },
+        "rejection_reason": {
+          "type": "string",
+          "enum": [
+            "no_structured_events",
+            "geographic_mismatch",
+            "category_mismatch",
+            "duplicate_existing",
+            "dead_site",
+            "extraction_failed",
+            "low_event_volume"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
