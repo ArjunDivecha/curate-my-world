@@ -7,7 +7,7 @@ WORKFLOW
 3. Read `curate-events-api/src/utils/categoryMapping.js` and use it as the live source of truth for registry category keys.
 4. Read `data/venue-registry.json` and load existing venues for dedup.
 5. Target discovery theme for this run: Desi.
-6. Use web search and web fetch to find about 10 candidate Bay Area venues in scope.
+6. Use web search and web fetch to find at most 5 candidate Bay Area venues in scope.
 7. For each candidate:
    - Fetch the event page in this session.
    - Verify it has structured event listings.
@@ -27,8 +27,10 @@ HARD CONSTRAINTS
 - Only propose candidates whose event page was fetched during this session.
 - Reject out-of-scope locations.
 - Stop if estimated spend exceeds $3.00.
-- Stop after 30 material tool calls.
-- Keep the session under 30 minutes.
+- Stop after 16 material tool calls.
+- Use at most 6 web searches and at most 8 web fetches total.
+- Keep the session under 7 minutes.
+- Prefer writing a partial candidate/error artifact over continuing research.
 - Do not modify frontend, backend, scraper, or deployment code.
 - Do not modify `.github/workflows/`, `scripts/svda/`, or the Managed Agents setup docs during a normal discovery run.
 
