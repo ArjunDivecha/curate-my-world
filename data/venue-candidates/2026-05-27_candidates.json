@@ -1,0 +1,167 @@
+{
+  "schema_version": "1.0",
+  "run_date": "2026-05-27",
+  "run_id": "svda-2026-05-27",
+  "managed_agent_session_url": "n/a",
+  "category_targeted": "Desi",
+  "geographic_scope": [
+    "San Francisco",
+    "Oakland",
+    "Berkeley",
+    "San Mateo",
+    "Burlingame",
+    "Redwood City",
+    "Palo Alto",
+    "Menlo Park",
+    "San Jose",
+    "Mountain View",
+    "Cupertino",
+    "Santa Clara",
+    "Sunnyvale",
+    "Milpitas",
+    "Fremont",
+    "Mill Valley",
+    "San Rafael",
+    "Sausalito"
+  ],
+  "agent_model": "claude-opus-4-5",
+  "extraction_model": "claude-opus-4-5",
+  "total_cost_usd": 0,
+  "session_duration_minutes": 45,
+  "candidates_proposed": [
+    {
+      "id": "cand-001",
+      "name": "Abhinaya Dance Company of San José",
+      "url": "https://abhinaya.org/performances/",
+      "discovery_theme": "Desi",
+      "registry_category": "desi",
+      "location": "San José, CA",
+      "venue_type": "Indian classical dance company / performing arts organization",
+      "extraction_score": 0.9,
+      "monthly_event_estimate": 3,
+      "sample_events": [
+        {
+          "title": "Namitha Shenoy Arangetram (Bharatanatyam debut recital)",
+          "date": "2026-06-13",
+          "time": null,
+          "url": "https://abhinaya.org/portfolio-item/arangetrams-2024-2-2/"
+        },
+        {
+          "title": "Diya Shah Arangetram (Bharatanatyam debut recital) at De Anza Visual and Performing Arts Center",
+          "date": "2026-06-21",
+          "time": null,
+          "url": "https://abhinaya.org/portfolio-item/arangetrams-2024-2-2/"
+        },
+        {
+          "title": "Tara Sundaralingam Arangetram (Bharatanatyam debut recital) at McAfee Performing Arts Center",
+          "date": "2026-07-18",
+          "time": null,
+          "url": "https://abhinaya.org/portfolio-item/arangetrams-2024-2-2/"
+        }
+      ],
+      "dedup_status": "novel",
+      "closest_existing_match": null,
+      "rationale": "Founded in San José in 1980, Abhinaya Dance Company is the Bay Area's premier Bharatanatyam (South Indian classical dance) organization. Their fetched 2026 calendar page shows 17 in-scope Bay Area events from January through May (averaging approximately 3/month), including community performances at temples, schools, senior centers, and public festivals in San José, Santa Clara, Mountain View, Saratoga, and Palo Alto. The fetched Arangetrams 2026 page confirms four upcoming student debut recitals in June–July 2026 at in-scope venues. The website's calendar is a clean structured table with event title, date, and venue, yielding high extraction confidence. Abhinaya is a 501(c)(3) supported by the City of San José, Hewlett Foundation, SVCreates, California Arts Council, and the NEA. Squirtle gains unique coverage of South Indian classical dance and devotional performances not captured by existing aggregator entries.",
+      "agent_confidence": 0.82,
+      "registry_row_proposed": true
+    },
+    {
+      "id": "cand-002",
+      "name": "FOG – Festival of Globe (FIANC)",
+      "url": "https://fogsv.com/",
+      "discovery_theme": "Desi",
+      "registry_category": "desi",
+      "location": "Fremont, CA",
+      "venue_type": "South Asian cultural festival producer / umbrella organization",
+      "extraction_score": 0.7,
+      "monthly_event_estimate": 1,
+      "sample_events": [
+        {
+          "title": "34th FOG India Day Parade and Fair/Mela – 2-day festival",
+          "date": "2026-08-15",
+          "time": "10:00 AM",
+          "url": "https://fogsv.com/fog-2026-program-schedule/"
+        }
+      ],
+      "dedup_status": "novel",
+      "closest_existing_match": null,
+      "rationale": "FOG (Festival of Globe), operated by the Federation of Indo-Americans of Northern California (FIANC), is a Fremont-based 501(c)(3) umbrella organization founded in 1983. It produces several annual South Asian flagship events: India Day Parade & Fair/Mela (August 15–16, 2026 confirmed on fetched program schedule page), Holi Day Dance Competition, Independence Day Dance Competition, Diwali Mela, Music Fest, and New Year celebration. The 2026 program schedule page was fetched and confirms the India Day event with venue, dates, and external ticket/booth links. However, FOG's events are concentrated into 4–6 major festivals per year (seasonal pattern), yielding a monthly_event_estimate of ~1, which is below the 3/month registry cutoff. Included as a borderline candidate; may merit inclusion if sub-event listings (individual performances within festivals) become scrapable.",
+      "agent_confidence": 0.72,
+      "registry_row_proposed": false
+    },
+    {
+      "id": "cand-003",
+      "name": "ICMA Foundation – Indian Classical Music and Arts Foundation",
+      "url": "https://www.icmafoundation.org/events.html",
+      "discovery_theme": "Desi",
+      "registry_category": "desi",
+      "location": "Santa Clara, CA",
+      "venue_type": "Indian classical music presenting organization",
+      "extraction_score": 0.8,
+      "monthly_event_estimate": 1,
+      "sample_events": [
+        {
+          "title": "Indian Jazz Journey at Stanford Jazz Festival 2026 – Mahesh Kale (vocals) and George Brooks (saxophone) at Bing Concert Hall, Stanford University",
+          "date": "2026-06-21",
+          "time": "4:00 PM",
+          "url": "https://www.icmafoundation.org/indian-jazz-journey-jun-2026.html"
+        }
+      ],
+      "dedup_status": "novel",
+      "closest_existing_match": null,
+      "rationale": "ICMA Foundation is a Bay Area 501(c)(3) presenting organization founded by Hindustani vocalist Mahesh Kale. It produces premium Indian classical music concerts, most notably the annual Indian Jazz Journey at Stanford Jazz Festival (June 21, 2026 confirmed on fetched events page at Bing Concert Hall) and Abhangwari (annual Marathi devotional music production). Events page clearly lists the June 21, 2026 Indian Jazz Journey with full artist bios, ticket pricing tiers, and buy links. However, ICMA produces only 2–3 events per year, yielding a monthly_event_estimate of ~1, which is below the 3/month registry cutoff. Included as a high-quality borderline candidate; the annual Stanford Jazz collaboration gives strong geographic and quality signal.",
+      "agent_confidence": 0.72,
+      "registry_row_proposed": false
+    }
+  ],
+  "candidates_rejected": [
+    {
+      "url": "https://www.southindiafinearts.org/upcoming-events",
+      "name": "South India Fine Arts (SIFA)",
+      "rejection_reason": "no_structured_events",
+      "notes": "The fetched upcoming-events page shows only CLOSED 2024 festival events (Sept 27–29, 2024 at India Community Center, Milpitas). The Thyagaraja Aradhana 2026 was February 15, 2026 (past relative to run date). No future events listed as of 2026-05-27."
+    },
+    {
+      "url": "https://www.sangeethaamsha.com/events",
+      "name": "Sangeethaamsha",
+      "rejection_reason": "no_structured_events",
+      "notes": "The fetched events page lists all historical events (2020–2024 only). The site directs users to givebutter.com for latest events but no upcoming concerts are posted. Last listed Bay Area event was June 29, 2024."
+    },
+    {
+      "url": "https://www.aiaevents.org/",
+      "name": "AIA Events – Association of Indo Americans",
+      "rejection_reason": "extraction_failed",
+      "notes": "Multiple fetches of aiaevents.org and sub-pages returned only HTML metadata (title, og:tags). The site uses client-side JavaScript rendering; structured event listings are not accessible to the web fetcher. AIA produces major annual events (Holi Fest, Great Indian Food & Shopping Fest, SWADES, Dussehra Diwali Dhamaka) but content was not extractable."
+    },
+    {
+      "url": "https://www.eknazar.com/bayarea/Events/mindex.php",
+      "name": "eKnazar Bay Area Events",
+      "rejection_reason": "category_mismatch",
+      "notes": "eKnazar is a broad South Asian events aggregator functionally identical to already-registered sources Sulekha (events.sulekha.com), ePadosi (epadosi.com), and SimplyDesi (simplydesi.us). The fetched page mixes Bay Area events with non-Bay-Area and online events from San Diego, Kansas City, and other cities. Adding another general aggregator duplicates existing registry coverage."
+    },
+    {
+      "url": "https://www.bmfbayarea.org/events",
+      "name": "Bhartiya Mandal Foundation",
+      "rejection_reason": "dead_site",
+      "notes": "Multiple fetch attempts returned url_not_accessible errors. The site appears to be offline or blocking automated access."
+    },
+    {
+      "url": "https://navarasa.org/upcoming/",
+      "name": "Navarasa Dance Theater",
+      "rejection_reason": "no_structured_events",
+      "notes": "The fetched upcoming page lists only events from 2010–2015. The organization (San Jose-based Bharatanatyam/Kalari company) may still be active on Facebook, but the website has not been updated with any events since 2015. No future events are extractable."
+    },
+    {
+      "url": "https://www.bata.org/",
+      "name": "Bay Area Telugu Association (BATA)",
+      "rejection_reason": "extraction_failed",
+      "notes": "All fetch attempts to bata.org and sub-paths return only HTML metadata (og:tags, meta keywords). The site is a client-side rendered application; event listings are not accessible to the web fetcher. BATA is known to hold Sankranti, Ugadi, Deepavali, and Maya Bazaar events annually and is a high-priority candidate for a future run using a JavaScript-capable scraper."
+    },
+    {
+      "url": "https://www.siliconandhra.org/en/events/",
+      "name": "Silicon Andhra",
+      "rejection_reason": "extraction_failed",
+      "notes": "The events page returned url_not_accessible. An alternate URL siliconandhra.org/events.html notes inline frames are required to view content. Silicon Andhra is an active Milpitas-based Telugu cultural organization conducting 5 major events/year (Ugadi, Annamacharya Jayanthi, Anniversary, Andhra Samskrutikotsavam, Kuchipudi Convention), but structured event data could not be extracted in this session."
+    }
+  ]
+}
