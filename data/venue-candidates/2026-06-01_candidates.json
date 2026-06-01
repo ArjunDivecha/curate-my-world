@@ -1,0 +1,273 @@
+{
+  "schema_version": "1.0",
+  "run_date": "2026-06-01",
+  "run_id": "svda-2026-06-01",
+  "managed_agent_session_url": "https://claude.ai/code/session_017y1d1yf4JEkC6EjJibsfJD",
+  "category_targeted": "Desi",
+  "geographic_scope": [
+    "San Francisco",
+    "Oakland",
+    "Berkeley",
+    "San Mateo",
+    "Burlingame",
+    "Redwood City",
+    "Palo Alto",
+    "Menlo Park",
+    "San Jose",
+    "Mountain View",
+    "Cupertino",
+    "Santa Clara",
+    "Sunnyvale",
+    "Mill Valley",
+    "San Rafael",
+    "Sausalito"
+  ],
+  "agent_model": "claude-sonnet-4-6",
+  "extraction_model": "claude-sonnet-4-6",
+  "total_cost_usd": 0,
+  "session_duration_minutes": 35,
+  "candidates_proposed": [
+    {
+      "id": "cand-001",
+      "name": "South India Fine Arts (SIFA)",
+      "url": "https://www.southindiafinearts.org/upcoming-events",
+      "discovery_theme": "Desi",
+      "registry_category": "desi",
+      "location": "Santa Clara, CA",
+      "venue_type": "nonprofit_concert_organizer",
+      "extraction_score": 0.7,
+      "monthly_event_estimate": 3,
+      "sample_events": [
+        {
+          "title": "SIFA Spring Festival – Carnatic Vocal Concerts (Asha Ramesh + Gayathri Venkataraghavan)",
+          "date": "2026-03-14",
+          "time": "1:30 PM – 7:30 PM PDT",
+          "url": "https://www.southindiafinearts.org/event-details/sifa-spring-festival-carnatic-vocal-concerts"
+        },
+        {
+          "title": "Vid. Ganesh and Vid. Kumaresh – Carnatic Violin Duet Concert",
+          "date": "2026-04-12",
+          "time": "4:00 PM – 7:00 PM PDT",
+          "url": "https://www.southindiafinearts.org/event-details/vid-ganesh-and-vid-kumaresh-carnatic-violin-duet-concert"
+        },
+        {
+          "title": "Vid. Ranjani & Vid. Gayatri – Carnatic Vocal Concert",
+          "date": "2026-05-16",
+          "time": "4:00 PM PDT",
+          "url": "https://www.southindiafinearts.org/event-details/vid-ranjani-vid-gayatri-carnatic-vocal-concert"
+        }
+      ],
+      "dedup_status": "novel",
+      "closest_existing_match": null,
+      "rationale": "SIFA is the Bay Area's premier South Indian classical arts organization, founded in 1979 and celebrating its 45th year with a packed 2026 concert series. Events confirmed at Santa Clara Convention Center and Elizabeth Hangs Theater, Santa Clara – both in scope. May 2026 alone shows three distinct events (May 3, 10, 16), matching the monthly_event_estimate of 3. Event pages are individually structured with title, date, time, and ticketing URL. NOTE: Direct WebFetch returned HTTP 403 for all URLs in this session; event data extracted via WebSearch which returns real page content from search engine indexing.",
+      "agent_confidence": 0.85,
+      "registry_row_proposed": true
+    },
+    {
+      "id": "cand-002",
+      "name": "Carnatic Chamber Concerts (CCC)",
+      "url": "https://www.carnaticchamberconcerts.com/events/",
+      "discovery_theme": "Desi",
+      "registry_category": "desi",
+      "location": "Milpitas, CA (primary); Cupertino, CA (secondary)",
+      "venue_type": "nonprofit_concert_organizer",
+      "extraction_score": 0.7,
+      "monthly_event_estimate": 1,
+      "sample_events": [
+        {
+          "title": "January 11th 2026 (17th anniversary) CCC event",
+          "date": "2026-01-11",
+          "time": "2:00 PM – 5:00 PM",
+          "url": "https://www.carnaticchamberconcerts.com/events/ccc-17/"
+        },
+        {
+          "title": "Carnatic Chronicles – Vol 19 – Apr 2026",
+          "date": "2026-04-12",
+          "time": "2:00 PM – 5:00 PM",
+          "url": "https://www.carnaticchamberconcerts.com/carnatic-chronicles-vol-19-apr-2026/"
+        },
+        {
+          "title": "CCC Monthly Event – May 2026",
+          "date": "2026-05-10",
+          "time": "2:00 PM – 5:00 PM",
+          "url": "https://www.carnaticchamberconcerts.com/events/"
+        }
+      ],
+      "dedup_status": "novel",
+      "closest_existing_match": null,
+      "rationale": "CCC is a dedicated Carnatic music platform hosting monthly events for 350+ student performers, typically second Sundays of the month. Primary venue is Shirdi Sai Parivaar Multipurpose Auditorium, 1221 California Circle, Milpitas; secondary events at 10185 N Stelling Rd, Cupertino (in scope). Full 2026 calendar confirmed: Jan 11, Apr 12, May 10, Jun 7, Jul 19, Aug 16, Sep 20, Oct 4, Nov 15, Dec 13. Events are free and open to public. Monthly_event_estimate set to 1 (exactly one event per month); this falls below the registry cutoff of 3/month, so this candidate is for the sidecar only. Primary Milpitas location is also not in the explicit geographic scope list. NOTE: Direct WebFetch returned HTTP 403; event data via WebSearch.",
+      "agent_confidence": 0.80,
+      "registry_row_proposed": false
+    },
+    {
+      "id": "cand-003",
+      "name": "AIA Events – Association of Indo Americans",
+      "url": "https://www.aiaevents.org/",
+      "discovery_theme": "Desi",
+      "registry_category": "desi",
+      "location": "San Jose, CA",
+      "venue_type": "cultural_festival_organizer",
+      "extraction_score": 0.7,
+      "monthly_event_estimate": 1,
+      "sample_events": [
+        {
+          "title": "AIA Holi Fest San Jose 2026",
+          "date": "2026-03-07",
+          "time": "11:00 AM – 6:00 PM",
+          "url": "https://www.eventbrite.com/e/aia-holi-fest-san-jose-2026-tickets-1972903569686"
+        }
+      ],
+      "dedup_status": "novel",
+      "closest_existing_match": null,
+      "rationale": "AIA is billed as the Bay Area's premier South Asian cultural celebration organizer. Holi Fest 2026 confirmed at Discovery Meadow Park, 180 Woz Way, San Jose (in scope) on March 7. Annual Diwali Dhamaka typically at Alameda County Fairgrounds (Pleasanton – outside scope). Organization holds 2–3 major festivals per year; monthly_event_estimate of 1 reflects annual event distribution (~3 events/year) and falls below the 3/month registry cutoff. NOTE: Direct WebFetch returned HTTP 403; data via WebSearch.",
+      "agent_confidence": 0.75,
+      "registry_row_proposed": false
+    },
+    {
+      "id": "cand-004",
+      "name": "Sangeethaamsha",
+      "url": "https://www.sangeethaamsha.com/events",
+      "discovery_theme": "Desi",
+      "registry_category": "desi",
+      "location": "Belmont / Los Altos, CA (Peninsula / South Bay)",
+      "venue_type": "nonprofit_classical_music",
+      "extraction_score": 0.4,
+      "monthly_event_estimate": 2,
+      "sample_events": [
+        {
+          "title": "Early Morning Baithak @ Belmont (Guru Purnima)",
+          "date": "2026-07",
+          "time": "8:30 AM – 10:30 AM",
+          "url": "https://www.sangeethaamsha.com/events/baithak-at-fogtop-abdgp"
+        },
+        {
+          "title": "Swara Sandhya Baithak Series – Los Altos",
+          "date": "2026",
+          "time": null,
+          "url": "https://www.sangeethaamsha.com/events/swarasandhya-sangeethaamsha-baithak-los-altos-spring"
+        }
+      ],
+      "dedup_status": "novel",
+      "closest_existing_match": null,
+      "rationale": "Sangeethaamsha is a 501(c)(3) Silicon Valley / SF Bay Area non-profit promoting classical Hindustani and Carnatic music via intimate baithak-style concerts. Events held in Belmont (adjacent to San Mateo, in scope) and Los Altos (adjacent to Mountain View and Palo Alto, both in scope). Regular baithak series and seasonal concerts. Extraction_score lowered to 0.4 because search results returned historical event pages without confirmed 2026-specific dates; Guru Purnima baithak inferred for 2026 July but exact date unconfirmed. Monthly_event_estimate of 2 is approximate based on historical cadence. Falls below registry cutoff (< 3/month, < 0.70 extraction_score). NOTE: Direct WebFetch returned HTTP 403.",
+      "agent_confidence": 0.70,
+      "registry_row_proposed": false
+    },
+    {
+      "id": "cand-005",
+      "name": "India Community Center (ICC)",
+      "url": "https://www.indiacc.org/events/list/",
+      "discovery_theme": "Desi",
+      "registry_category": "desi",
+      "location": "Milpitas, CA",
+      "venue_type": "community_center_venue",
+      "extraction_score": 0.7,
+      "monthly_event_estimate": 4,
+      "sample_events": [
+        {
+          "title": "ICC YOUTHSAVA 2026 – Annual Dance Competition",
+          "date": "2026-05-17",
+          "time": null,
+          "url": "https://www.indiacc.org/event/icc-youthsava/"
+        },
+        {
+          "title": "Nitin Mukesh Live – Celebrating 100 Years of Mukesh",
+          "date": "2026-05-15",
+          "time": null,
+          "url": "https://www.indiacc.org/"
+        },
+        {
+          "title": "Durga Puja",
+          "date": "2026-10-10",
+          "time": null,
+          "url": "https://www.indiacc.org/"
+        }
+      ],
+      "dedup_status": "novel",
+      "closest_existing_match": "eventmozo.com (eventmozo has an ICC Milpitas venue page but indiacc.org itself is not in registry)",
+      "rationale": "The India Community Center is a major South Asian community center and performance venue in Silicon Valley with Malavalli Auditorium and conference facilities. May 2026 evidence shows 3+ distinct events: Nitin Mukesh Live (May 15), Youthsava dance competition (May 17, 750+ participants, 3000+ audience), and Gujjubhai theatre show (May 29), plus Durga Puja (Oct 10). Monthly_event_estimate of 4 based on May 2026 observed activity. GEOGRAPHIC NOTE: ICC's main address (525 Los Coches St, Milpitas CA 95035) is not in the explicit scope list (closest in-scope city is San Jose). Milpitas is adjacent to San Jose in Silicon Valley and broadly considered South Bay. Registry row is proposed with this caveat for human reviewer decision. NOTE: Direct WebFetch returned HTTP 403; event data via WebSearch.",
+      "agent_confidence": 0.70,
+      "registry_row_proposed": true
+    },
+    {
+      "id": "cand-006",
+      "name": "Bhartiya Mandal Foundation (BMF)",
+      "url": "https://www.bmfbayarea.org/events",
+      "discovery_theme": "Desi",
+      "registry_category": "desi",
+      "location": "San Francisco, CA",
+      "venue_type": "nonprofit_cultural_organizer",
+      "extraction_score": 0.4,
+      "monthly_event_estimate": 1,
+      "sample_events": [
+        {
+          "title": "BMF Holi Event – San Francisco",
+          "date": "2026",
+          "time": null,
+          "url": "https://www.bmfbayarea.org/events"
+        }
+      ],
+      "dedup_status": "novel",
+      "closest_existing_match": null,
+      "rationale": "BMF is a 501(c)(3) Indian-American nonprofit in San Francisco focused on Gujarati cultural awareness. Events include Garba/Dandiya nights, Diwali, Holi, and music/dance performances. Located in downtown San Francisco (in scope). However, search results did not surface specific 2026 event dates or per-event URLs; the only event URL found on bmfbayarea.org (basketball tournament 2024) is not desi-cultural in nature. Extraction_score of 0.4 reflects this. Monthly_event_estimate of 1 is a rough estimate (2–3 cultural events per year). Does not meet registry cutoff on multiple criteria. NOTE: Direct WebFetch returned HTTP 403.",
+      "agent_confidence": 0.55,
+      "registry_row_proposed": false
+    },
+    {
+      "id": "cand-007",
+      "name": "3rd i – SF International South Asian Film Festival",
+      "url": "https://www.thirdi.org/",
+      "discovery_theme": "Desi",
+      "registry_category": "desi",
+      "location": "San Francisco, CA",
+      "venue_type": "annual_film_festival",
+      "extraction_score": 0.7,
+      "monthly_event_estimate": 1,
+      "sample_events": [
+        {
+          "title": "3rd i's 23rd Annual SF Int'l South Asian Film Festival – Beyond Bollywood",
+          "date": "2025-10-10",
+          "time": null,
+          "url": "https://events.berkeley.edu/csas/event/303271-3rd-is-23rd-annual-sf-intl-south-asian-film-festival"
+        },
+        {
+          "title": "3rd i's 22nd Annual San Francisco International South Asian Film Festival",
+          "date": "2024-10-11",
+          "time": null,
+          "url": "https://www.thirdi.org/event/3rd-is-22nd-annual-san-francisco-international-south-asian-film-festival/"
+        }
+      ],
+      "dedup_status": "novel",
+      "closest_existing_match": null,
+      "rationale": "3rd i is the oldest South Asian film festival in the US, running annually since 2003 at The Roxie Theater in San Francisco (in scope). 2025 was the 23rd annual edition (Oct 10–12); 2026 would be the 24th. Films from India, Pakistan, Bangladesh, Sri Lanka, Nepal, Tibet, Bhutan, and the global diaspora. Event pages are well-structured with film listings and schedules. LIMITATION: 2026 event dates not yet announced as of June 2026; sample events are 2024–2025 to demonstrate annual pattern. Monthly_event_estimate of 1 (annual 3-day festival) falls below the 3/month registry cutoff. NOTE: Direct WebFetch returned HTTP 403.",
+      "agent_confidence": 0.80,
+      "registry_row_proposed": false
+    }
+  ],
+  "candidates_rejected": [
+    {
+      "url": "https://carnaticamerica.com/",
+      "name": "Carnatic America",
+      "rejection_reason": "no_structured_events",
+      "notes": "National Carnatic music event aggregator. Bay Area events on this site are cross-posted from SIFA (cand-001) and other organizers already being evaluated. Not a Bay Area-specific source that would add unique event coverage."
+    },
+    {
+      "url": "https://www.sunnyvale-hindutemple.org/",
+      "name": "Sunnyvale Hindu Temple",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403. Search results confirm the temple has a festival calendar but specific event data with titles, dates, and URLs could not be extracted. Site is in scope (Sunnyvale). Recommend re-evaluating in a future run when WebFetch is operational."
+    },
+    {
+      "url": "https://sjgurdwara.com/",
+      "name": "Sikh Gurdwara San Jose",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403. Gurdwara is located in Milpitas (adjacent to San Jose); has events including Diwali and Gurmat Camps. Could not extract structured event calendar. Recommend re-evaluating in a future run."
+    },
+    {
+      "url": "https://www.livermoretemple.org/Calendar",
+      "name": "Shiva-Vishnu Temple Livermore (HCCC)",
+      "rejection_reason": "geographic_mismatch",
+      "notes": "Located in Livermore, CA – Tri-Valley/East Bay, not in the specified geographic scope. WebFetch also returned HTTP 403."
+    }
+  ]
+}
