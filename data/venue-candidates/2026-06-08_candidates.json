@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.0",
+  "run_date": "2026-06-08",
+  "run_id": "svda-2026-06-08",
+  "managed_agent_session_url": "https://claude.ai/code/session_01QNQYSBtsBq8u9c6qSmjcdC",
+  "category_targeted": "Desi",
+  "geographic_scope": [
+    "San Francisco",
+    "Oakland",
+    "Berkeley",
+    "San Mateo",
+    "Burlingame",
+    "Redwood City",
+    "Palo Alto",
+    "Menlo Park",
+    "San Jose",
+    "Mountain View",
+    "Cupertino",
+    "Santa Clara",
+    "Sunnyvale",
+    "Mill Valley",
+    "San Rafael",
+    "Sausalito"
+  ],
+  "agent_model": "claude-sonnet-4-6",
+  "total_cost_usd": 0.1,
+  "session_duration_minutes": 18,
+  "candidates_proposed": [],
+  "candidates_rejected": [
+    {
+      "url": "https://www.southindiafinearts.org/upcoming-events",
+      "name": "South India Fine Arts (SIFA)",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403 Forbidden (network policy blocks outbound HTTP in this execution environment). WebSearch confirms SIFA hosts regular carnatic vocal concerts and bharatanatyam performances in the Bay Area (e.g., concerts by Vid. Abhishek Raghuram, Vid. Gayathri Venkataraghavan). Strong candidate for a future run when WebFetch is available."
+    },
+    {
+      "url": "https://www.aiaevents.org/events",
+      "name": "AIA Events",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403 Forbidden. WebSearch confirms AIA Events organises Bay Area's largest South Asian cultural events including Holi Festival, Diwali Dhamaka, and South Asian Food Festival, claiming 1M+ community members. Calendar page unreachable in this session."
+    },
+    {
+      "url": "https://www.indiacc.org/",
+      "name": "India Community Center (ICC) Milpitas",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403 Forbidden. Located at 525 Los Coches Street, Milpitas CA — note Milpitas is not in the defined geographic scope, so this venue would also require geographic review. WebSearch shows regular ICC-branded cultural events (Antakshari, Karaoke nights, Robotics classes)."
+    },
+    {
+      "url": "https://www.bmfbayarea.org/events",
+      "name": "Bhartiya Mandal Foundation (BMF Bay Area)",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403 Forbidden. Bay Area Indian cultural organisation discovered via WebSearch. Event calendar page unreachable in this session."
+    },
+    {
+      "url": "https://bicsca.org/",
+      "name": "Bay Area Indian Cultural Society (BICS)",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403 Forbidden. WebSearch confirms BICS hosted Ugadi Mela 2026 on March 28 at Cottonwood Creek K-8 School, Dublin (Dublin is outside the geographic scope). BICS may also run South Bay events — requires further investigation in a future run."
+    },
+    {
+      "url": "https://sachi.org/",
+      "name": "SACHI",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403 Forbidden. San Francisco Bay Area Indian art and cultural nonprofit. WebSearch shows events at Berkeley Public Library and Brower Center in May 2026. Strong potential candidate — in-scope city (Berkeley), South Asian focus, uses cultural venue spaces. Priority re-fetch in next run."
+    },
+    {
+      "url": "https://carnaticamerica.com/events/",
+      "name": "Carnatic America",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403 Forbidden. Organises Bay Area Kala Utsavam (BAKU), an annual multi-day carnatic music festival and competition in the Bay Area (March 2026 edition confirmed by WebSearch). Events appear to include concerts at Bay Area venues. Good candidate for future run."
+    },
+    {
+      "url": "https://www.sunnyvale-hindutemple.org/events.php",
+      "name": "Sunnyvale Hindu Temple",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403 Forbidden. Sunnyvale (in geographic scope). Hosts monthly poojas, festival celebrations (Maha Shivaratri, etc.) and a dedicated festivals calendar page. Structured calendar confirmed at sunnyvale-hindutemple.org/festivals.php via WebSearch snippet."
+    },
+    {
+      "url": "https://sjgurdwara.com/events/",
+      "name": "Sikh Gurdwara San Jose",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403 Forbidden. San Jose (in geographic scope). Described as the largest Gurdwara in North America. Hosts Diwali celebrations, Gurmat Camps, and other community events. Public-facing events page confirmed in WebSearch. Strong candidate for future run."
+    }
+  ]
+}
