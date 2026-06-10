@@ -5496,17 +5496,5 @@
     "source": "svda_weekly",
     "discovered_at": "2026-06-01T05:00:00+00:00",
     "registry_row_proposed": true
-  },
-  {
-    "name": "India Community Center (ICC)",
-    "domain": "indiacc.org",
-    "category": "desi",
-    "city": "Milpitas",
-    "state": "CA",
-    "website": "https://www.indiacc.org/",
-    "calendar_url": "https://www.indiacc.org/events/list/",
-    "source": "svda_weekly",
-    "discovered_at": "2026-06-01T05:00:00+00:00",
-    "registry_row_proposed": true
   }
 ]
