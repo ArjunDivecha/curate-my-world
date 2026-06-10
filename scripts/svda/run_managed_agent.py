@@ -243,20 +243,25 @@ def ensure_environment(client: AnthropicAPI, name: str) -> str:
     existing = list_named(client, "/environments", name)
     if existing:
         environment_id = existing["id"]
-        print(f"Reusing Managed Agents environment {name}: {environment_id}")
-        return environment_id
+        # Check if existing environment has the current networking config.
+        # If it has the old "limited" networking, delete and recreate with
+        # "full" so WebFetch can reach arbitrary venue sites.
+        detail = client.request("GET", f"/environments/{environment_id}")
+        current_net = ((detail or {}).get("config") or {}).get("networking") or {}
+        if current_net.get("type") != "full":
+            print(f"Environment {name} has outdated networking type '{current_net.get('type', 'unknown')}'; recreating with 'full' networking.")
+            client.request("DELETE", f"/environments/{environment_id}")
+            print(f"Deleted outdated environment {name}: {environment_id}")
+        else:
+            print(f"Reusing Managed Agents environment {name}: {environment_id}")
+            return environment_id
 
     payload = {
         "name": name,
         "config": {
             "type": "cloud",
             "networking": {
-                "type": "limited",
-                "allowed_hosts": [
-                    "github.com",
-                    "api.github.com",
-                    "api.githubcopilot.com",
-                ],
+                "type": "full",
                 "allow_mcp_servers": True,
                 "allow_package_managers": False,
             },
