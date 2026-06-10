@@ -3,32 +3,63 @@
 SCRIPT NAME: discover_venues.py
 =============================================================================
 
+DESCRIPTION:
+    AI-powered venue discovery script that uses the Claude API to build a
+    comprehensive registry of Bay Area event venues. It discovers venues
+    across eight categories (music, theatre, comedy, art, lectures, movies,
+    food, tech) by querying Claude for each region and category combination.
+    Discovered venues are merged with an optional existing whitelist loaded
+    from an Excel file to preserve previously validated calendar URLs and
+    domain mappings. Each venue is then geocoded via the Nominatim/OpenStreetMap
+    API to obtain lat/lng coordinates. Calendar URLs can optionally be enriched
+    through additional Claude queries. The final merged and geocoded registry
+    is saved as both JSON and Excel files, with a detailed summary logged to
+    both console and a dedicated log file.
+
 INPUT FILES:
-- None (generates data from AI APIs)
+    /Users/arjundivecha/Dropbox/AAA Backup/.env.txt
+        Fallback credentials file read to obtain ANTHROPIC_API_KEY when
+        1Password credential loading fails and the env var is not already set.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/data/whitelist.xlsx
+        Optional existing whitelist of venues loaded via pd.read_excel and
+        merged with newly discovered venues to preserve previously validated
+        calendar URLs and domain mappings.
 
 OUTPUT FILES:
-- data/venue-registry.json: Comprehensive venue database
-- data/venue-registry.xlsx: Excel version for manual review
-- logs/venue-discovery.log: Processing log
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/data/venue-registry.json
+        Comprehensive venue database in JSON format: all discovered and merged
+        venues with names, addresses, categories, coordinates, calendar URLs,
+        and metadata fields (discovery source, timestamps, venue IDs).
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/data/venue-registry.xlsx
+        Excel version of the venue registry with coordinates flattened into
+        separate lat/lng columns, suitable for manual review and filtering.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/logs/venue-discovery.log
+        Processing log recording each discovery phase, geocoding progress,
+        merge counts, and final summary statistics.
 
 VERSION: 1.0
-LAST UPDATED: 2026-01-17
-AUTHOR: Claude Code
-
-DESCRIPTION:
-AI-powered venue discovery script that uses Claude and Perplexity to build
-a comprehensive registry of Bay Area event venues with addresses, calendar
-URLs, and geographic coordinates.
+LAST UPDATED: 2026-06-05
+AUTHOR: Arjun Divecha
 
 DEPENDENCIES:
-- anthropic
-- requests
-- pandas
-- openpyxl
+    - anthropic
+    - requests
+    - pandas
+    - openpyxl
 
 USAGE:
-python scripts/venue-discovery/discover_venues.py
+    python scripts/venue-discovery/discover_venues.py
+    OR:
+    conda run -p /path/to/venv python scripts/venue-discovery/discover_venues.py
 
+NOTES:
+    - Requires an ANTHROPIC_API_KEY, sourced in order: 1Password credentials,
+      environment variable, then /Users/arjundivecha/Dropbox/AAA Backup/.env.txt.
+    - Respects Nominatim rate limits (1 request/second) during geocoding.
+    - Deduplicates venues by name+city to avoid redundant entries across
+      overlapping categories and regions.
+    - The Claude model is hardcoded to claude-sonnet-4-20250514 in
+      VenueDiscoveryAgent.__init__; update to use a different model version.
 =============================================================================
 """
 

@@ -1,10 +1,48 @@
 #!/usr/bin/env python3
 """
-Merge one or more candidate lists into a single deduped CSV.
+=============================================================================
+SCRIPT NAME: merge_candidates.py
+=============================================================================
 
-Dedup key: normalized domain (lowercase, strip leading www.)
+DESCRIPTION:
+    Merges one or more CSV candidate lists (e.g. from multiple venue-
+    discovery scraping runs) into a single deduplicated CSV. Dedup is by
+    normalized domain (lowercased, leading "www." stripped). On conflicts
+    the strategy is deliberately simple: "latest wins" — the last input
+    file's row for a given domain overwrites all earlier ones. Output
+    rows are sorted alphabetically by normalized domain for readability.
 
-This is intentionally simple: "latest wins" on conflicts.
+INPUT FILES:
+    (CLI positional arguments — one or more CSV paths)
+    Each input CSV must contain columns: category, name, website, notes.
+        category: venue category label (defaults to "all" if missing)
+        name: venue name (rows without name are skipped)
+        website: venue URL (rows without website are skipped)
+        notes: free-text notes about the venue
+
+OUTPUT FILES:
+    (CLI argument --out <path>)
+    CSV written with the same columns (category, name, website, notes)
+    containing the deduplicated, sorted result rows.
+
+VERSION: 1.0
+LAST UPDATED: 2026-06-05
+AUTHOR: Arjun Divecha
+
+DEPENDENCIES:
+    - (none beyond Python stdlib: argparse, csv, dataclasses, pathlib,
+      typing, urllib.parse)
+
+USAGE:
+    python merge_candidates.py --out output.csv input1.csv [input2.csv ...]
+
+NOTES:
+    - All paths are specified at runtime via CLI arguments; there are no
+      hardcoded file paths in this script.
+    - Rows missing both name and website are silently skipped.
+    - The "latest wins" rule means order of input files matters: put
+      more authoritative sources last if they should take precedence.
+=============================================================================
 """
 
 from __future__ import annotations

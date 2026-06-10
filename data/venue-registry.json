@@ -5484,5 +5484,49 @@
     "calendar_url": "https://ai.sfsu.edu/events",
     "source": "manual_add_ai_seed",
     "discovered_at": "2026-02-28T01:11:59.266647+00:00"
+  },
+  {
+    "name": "Berkeley Art Center",
+    "domain": "berkeleyartcenter.org",
+    "category": "art",
+    "city": "Berkeley",
+    "state": "CA",
+    "website": "https://www.berkeleyartcenter.org",
+    "calendar_url": "https://www.berkeleyartcenter.org/events",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-04-24T20:50:27.000Z"
+  },
+  {
+    "name": "Pegasus Books",
+    "domain": "pegasusbookstore.com",
+    "category": "lectures",
+    "city": "Berkeley",
+    "state": "CA",
+    "website": "https://pegasusbookstore.com",
+    "calendar_url": "https://pegasusbookstore.com/events/calendar",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-04-24T20:50:27.000Z"
+  },
+  {
+    "name": "Berkeley Playhouse",
+    "domain": "berkeleyplayhouse.org",
+    "category": "theatre",
+    "city": "Berkeley",
+    "state": "CA",
+    "website": "https://berkeleyplayhouse.org",
+    "calendar_url": "https://berkeleyplayhouse.org/season/",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-04-24T20:50:27.000Z"
+  },
+  {
+    "name": "CCL Alameda Events at David Brower Center",
+    "domain": "cclalameda.org",
+    "category": "all",
+    "city": "Berkeley",
+    "state": "CA",
+    "website": "https://cclalameda.org",
+    "calendar_url": "https://cclalameda.org/",
+    "source": "manual_add_strict",
+    "discovered_at": "2026-04-24T21:09:00.000Z"
   }
 ]

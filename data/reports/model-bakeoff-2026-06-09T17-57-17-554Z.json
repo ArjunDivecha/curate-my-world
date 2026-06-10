@@ -1,0 +1,283 @@
+{
+  "generatedAt": "2026-06-09T17:57:17.554Z",
+  "venues": [
+    {
+      "name": "SFJAZZ.org",
+      "domain": "sfjazz.org",
+      "category": "music",
+      "calendarUrl": "https://www.sfjazz.org/calendar/",
+      "markdownChars": 597,
+      "runs": [
+        {
+          "key": "haiku",
+          "label": "Claude Haiku 4.5",
+          "model": "claude-haiku-4-5-20251001",
+          "skipped": false,
+          "inputTokens": 511,
+          "outputTokens": 9,
+          "cost": 0.000556,
+          "rawTextPreview": "```json\n[]\n```",
+          "eventCount": 0,
+          "titleCoverage": 0,
+          "startDateCoverage": 0,
+          "directUrlCoverage": 0,
+          "cityCoverage": 0,
+          "duplicateCount": 0
+        },
+        {
+          "key": "deepseekV4Flash",
+          "label": "DeepSeek V4 Flash",
+          "model": "deepseek/deepseek-v4-flash",
+          "skipped": false,
+          "inputTokens": 468,
+          "outputTokens": 138,
+          "cost": 0.0000731352,
+          "rawTextPreview": "[]",
+          "eventCount": 0,
+          "titleCoverage": 0,
+          "startDateCoverage": 0,
+          "directUrlCoverage": 0,
+          "cityCoverage": 0,
+          "duplicateCount": 0
+        }
+      ]
+    },
+    {
+      "name": "de Young Museum",
+      "domain": "deyoung.famsf.org",
+      "category": "museums",
+      "calendarUrl": "https://deyoung.famsf.org/calendar",
+      "markdownChars": 596,
+      "runs": [
+        {
+          "key": "haiku",
+          "label": "Claude Haiku 4.5",
+          "model": "claude-haiku-4-5-20251001",
+          "skipped": false,
+          "inputTokens": 505,
+          "outputTokens": 9,
+          "cost": 0.00055,
+          "rawTextPreview": "```json\n[]\n```",
+          "eventCount": 0,
+          "titleCoverage": 0,
+          "startDateCoverage": 0,
+          "directUrlCoverage": 0,
+          "cityCoverage": 0,
+          "duplicateCount": 0
+        },
+        {
+          "key": "deepseekV4Flash",
+          "label": "DeepSeek V4 Flash",
+          "model": "deepseek/deepseek-v4-flash",
+          "skipped": false,
+          "inputTokens": 467,
+          "outputTokens": 162,
+          "cost": 0.00007775530000000001,
+          "rawTextPreview": "[]\n```json\n[]\n```",
+          "eventCount": 0,
+          "titleCoverage": 0,
+          "startDateCoverage": 0,
+          "directUrlCoverage": 0,
+          "cityCoverage": 0,
+          "duplicateCount": 0
+        }
+      ]
+    },
+    {
+      "name": "SFMOMA",
+      "domain": "sfmoma.org",
+      "category": "museums",
+      "calendarUrl": "https://www.sfmoma.org/events",
+      "markdownChars": 11563,
+      "runs": [
+        {
+          "key": "haiku",
+          "label": "Claude Haiku 4.5",
+          "model": "claude-haiku-4-5-20251001",
+          "skipped": false,
+          "inputTokens": 4264,
+          "outputTokens": 1379,
+          "cost": 0.011159,
+          "rawTextPreview": "```json\n[\n  {\n    \"title\": \"June Member Mondays\",\n    \"startDate\": \"2026-06-14T10:00:00\",\n    \"endDate\": \"2026-06-14T12:00:00\",\n    \"description\": \"SFMOMA Members enjoy complimentary coffee and treats on Monday mornings in June.\",\n    \"category\": \"museums\",\n    \"price\": null,\n    \"eventUrl\": \"https://www.sfmoma.org/event/june-member-mondays/\",\n    \"city\": \"San Francisco\"\n  },\n  {\n    \"title\": \"Free Family Day: Line, Shape, and Color\",\n    \"startDate\": \"2026-06-14T10:00:00\",\n    \"endDate\": \"2026-",
+          "eventCount": 10,
+          "titleCoverage": 1,
+          "startDateCoverage": 1,
+          "directUrlCoverage": 1,
+          "cityCoverage": 1,
+          "duplicateCount": 0
+        },
+        {
+          "key": "deepseekV4Flash",
+          "label": "DeepSeek V4 Flash",
+          "model": "deepseek/deepseek-v4-flash",
+          "skipped": false,
+          "inputTokens": 3721,
+          "outputTokens": 990,
+          "cost": 0.0005604083,
+          "rawTextPreview": "```json\n[\n  {\n    \"title\": \"June Member Mondays\",\n    \"startDate\": \"2026-06-09T10:00:00\",\n    \"endDate\": \"2026-06-30T12:00:00\",\n    \"description\": \"SFMOMA Members enjoy complimentary coffee and treats on Monday mornings in June.\",\n    \"category\": \"for-members\",\n    \"price\": null,\n    \"eventUrl\": \"https://www.sfmoma.org/event/june-member-mondays/\",\n    \"city\": \"San Francisco\"\n  },\n  {\n    \"title\": \"Free Family Day: Line, Shape, and Color\",\n    \"startDate\": \"2026-06-14T10:00:00\",\n    \"endDate\": \"2",
+          "eventCount": 8,
+          "titleCoverage": 1,
+          "startDateCoverage": 1,
+          "directUrlCoverage": 1,
+          "cityCoverage": 1,
+          "duplicateCount": 0
+        }
+      ]
+    },
+    {
+      "name": "The Midway SF",
+      "domain": "themidwaysf.com",
+      "category": "music",
+      "calendarUrl": "https://themidwaysf.com/events/",
+      "markdownChars": 15021,
+      "runs": [
+        {
+          "key": "haiku",
+          "label": "Claude Haiku 4.5",
+          "model": "claude-haiku-4-5-20251001",
+          "skipped": false,
+          "inputTokens": 6322,
+          "outputTokens": 2104,
+          "cost": 0.016842,
+          "rawTextPreview": "```json\n[\n  {\n    \"title\": \"Frank Ocean - Channel ORANGE\",\n    \"startDate\": \"2026-06-09T19:30:00\",\n    \"endDate\": null,\n    \"description\": \"An Envelop Immersive Listening Experience at The Midway SF. Experience Frank Ocean's Channel ORANGE album in an immersive audio environment.\",\n    \"category\": \"music\",\n    \"price\": null,\n    \"eventUrl\": \"https://www.eventbrite.com/e/frank-ocean-channel-orange-listen-envelop-sf-730pm-tickets-1989100547282?utm_source=themidway&utm_medium=venuewebsite\",\n    \"ci",
+          "eventCount": 13,
+          "titleCoverage": 1,
+          "startDateCoverage": 1,
+          "directUrlCoverage": 1,
+          "cityCoverage": 1,
+          "duplicateCount": 0
+        },
+        {
+          "key": "deepseekV4Flash",
+          "label": "DeepSeek V4 Flash",
+          "model": "deepseek/deepseek-v4-flash",
+          "skipped": false,
+          "inputTokens": 5353,
+          "outputTokens": 4733,
+          "cost": 0.0014567077,
+          "rawTextPreview": "[\n  {\n    \"title\": \"Frank Ocean - Channel ORANGE\",\n    \"startDate\": \"2026-06-09T19:30:00\",\n    \"endDate\": null,\n    \"description\": \"An Envelop Immersive Listening Experience at The Midway SF. 18+ event.\",\n    \"category\": \"music\",\n    \"price\": null,\n    \"eventUrl\": \"https://www.eventbrite.com/e/frank-ocean-channel-orange-listen-envelop-sf-730pm-tickets-1989100547282?utm_source=themidway&utm_medium=venuewebsite\",\n    \"city\": \"San Francisco\"\n  },\n  {\n    \"title\": \"Frank Ocean - Channel ORANGE\",\n   ",
+          "eventCount": 18,
+          "titleCoverage": 1,
+          "startDateCoverage": 1,
+          "directUrlCoverage": 1,
+          "cityCoverage": 1,
+          "duplicateCount": 0
+        }
+      ]
+    },
+    {
+      "name": "City Arts & Lectures",
+      "domain": "cityboxoffice.com",
+      "category": "lectures",
+      "calendarUrl": "https://cityboxoffice.com/events",
+      "markdownChars": 2950,
+      "runs": [
+        {
+          "key": "haiku",
+          "label": "Claude Haiku 4.5",
+          "model": "claude-haiku-4-5-20251001",
+          "skipped": false,
+          "inputTokens": 1481,
+          "outputTokens": 9,
+          "cost": 0.0015259999999999998,
+          "rawTextPreview": "```json\n[]\n```",
+          "eventCount": 0,
+          "titleCoverage": 0,
+          "startDateCoverage": 0,
+          "directUrlCoverage": 0,
+          "cityCoverage": 0,
+          "duplicateCount": 0
+        },
+        {
+          "key": "deepseekV4Flash",
+          "label": "DeepSeek V4 Flash",
+          "model": "deepseek/deepseek-v4-flash",
+          "skipped": false,
+          "inputTokens": 1236,
+          "outputTokens": 6,
+          "cost": 0.00012267839999999998,
+          "rawTextPreview": "```json\n[]\n```",
+          "eventCount": 0,
+          "titleCoverage": 0,
+          "startDateCoverage": 0,
+          "directUrlCoverage": 0,
+          "cityCoverage": 0,
+          "duplicateCount": 0
+        }
+      ]
+    },
+    {
+      "name": "BAMPFA (Berkeley Art Museum and Pacific Film Archive)",
+      "domain": "bampfa.org",
+      "category": "movies",
+      "calendarUrl": "https://bampfa.org/visit/calendar",
+      "markdownChars": 116319,
+      "runs": [
+        {
+          "key": "haiku",
+          "label": "Claude Haiku 4.5",
+          "model": "claude-haiku-4-5-20251001",
+          "skipped": false,
+          "inputTokens": 44184,
+          "outputTokens": 4988,
+          "cost": 0.069124,
+          "rawTextPreview": "```json\n[\n  {\n    \"title\": \"Bob le flambeur\",\n    \"startDate\": \"2026-06-04T19:00:00\",\n    \"endDate\": null,\n    \"description\": \"Jean-Pierre Melville's drollest, most likable gangster movie in a 4K Digital Restoration. A cinematic birth of the cool featuring a jazzy genre pastiche.\",\n    \"category\": \"movies\",\n    \"price\": null,\n    \"eventUrl\": \"https://bampfa.org/event/bob-flambeur\",\n    \"city\": \"Berkeley\"\n  },\n  {\n    \"title\": \"Two Prosecutors\",\n    \"startDate\": \"2026-06-05T19:00:00\",\n    \"endDat",
+          "eventCount": 35,
+          "titleCoverage": 1,
+          "startDateCoverage": 1,
+          "directUrlCoverage": 1,
+          "cityCoverage": 1,
+          "duplicateCount": 0
+        },
+        {
+          "key": "deepseekV4Flash",
+          "label": "DeepSeek V4 Flash",
+          "model": "deepseek/deepseek-v4-flash",
+          "skipped": false,
+          "inputTokens": 39925,
+          "outputTokens": 9732,
+          "cost": 0.005837938700000001,
+          "rawTextPreview": "```json\n[\n  {\n    \"title\": \"The Rules of the Game\",\n    \"startDate\": \"2026-06-10T19:00:00\",\n    \"endDate\": null,\n    \"description\": \"Jean Renoir, France, 1939, (106 mins) 4K Digital Restoration. Made just before the outbreak of World War II, Jean Renoir’s masterpiece turns a country-house gathering into a tragicomic study of polite society on the brink of collapse.\",\n    \"category\": \"film\",\n    \"price\": null,\n    \"eventUrl\": \"https://bampfa.org/event/rules-game\",\n    \"city\": \"Berkeley\"\n  },\n  {\n",
+          "eventCount": 45,
+          "titleCoverage": 1,
+          "startDateCoverage": 1,
+          "directUrlCoverage": 1,
+          "cityCoverage": 1,
+          "duplicateCount": 0
+        }
+      ]
+    }
+  ],
+  "models": [
+    {
+      "key": "haiku",
+      "label": "Claude Haiku 4.5",
+      "model": "claude-haiku-4-5-20251001",
+      "successCount": 6,
+      "totalCost": 0.09975700000000001,
+      "totalInputTokens": 57267,
+      "totalOutputTokens": 8498,
+      "totalEvents": 58,
+      "avgEventsPerVenue": 9.666666666666666,
+      "avgTitleCoverage": 0.5,
+      "avgStartDateCoverage": 0.5,
+      "avgDirectUrlCoverage": 0.5,
+      "avgCityCoverage": 0.5
+    },
+    {
+      "key": "deepseekV4Flash",
+      "label": "DeepSeek V4 Flash",
+      "model": "deepseek/deepseek-v4-flash",
+      "successCount": 6,
+      "totalCost": 0.0081286236,
+      "totalInputTokens": 51170,
+      "totalOutputTokens": 15761,
+      "totalEvents": 71,
+      "avgEventsPerVenue": 11.833333333333334,
+      "avgTitleCoverage": 0.5,
+      "avgStartDateCoverage": 0.5,
+      "avgDirectUrlCoverage": 0.5,
+      "avgCityCoverage": 0.5
+    }
+  ]
+}

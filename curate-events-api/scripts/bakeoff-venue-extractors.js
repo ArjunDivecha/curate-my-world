@@ -1,3 +1,52 @@
+/**
+ * =============================================================================
+ * SCRIPT NAME: bakeoff-venue-extractors.js
+ * =============================================================================
+ *
+ * DESCRIPTION:
+ * Head-to-head comparison harness for the LLM that extracts events from venue
+ * calendar pages. For each selected venue it fetches the calendar markdown ONCE
+ * (via Jina Reader) and feeds the IDENTICAL prompt to every enabled model, so
+ * the only variable is the model. It then scores each model's output on event
+ * count, field coverage (title / startDate / direct URL / city), duplicate
+ * rate, token usage, and estimated cost, and writes JSON + Markdown reports.
+ *
+ * Models are defined in MODEL_SPECS and toggled in the `models` array in main().
+ * Currently enabled: Claude Haiku 4.5 (Anthropic) vs DeepSeek V4 Flash (OpenRouter).
+ *
+ * CLI FLAGS:
+ *   --all                Run against EVERY venue in the registry (442).
+ *   --domains=a.com,b.com Run only the listed venue domains.
+ *   --sample-size=N      When no --domains/--all, cap the built-in sample to N.
+ *   --limit=N            Cap the number of venues processed (applies after selection).
+ *   --delay-ms=N         Delay between venues to be gentle on Jina (default 500).
+ *
+ * INPUT FILES:
+ *   - /Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/data/venue-registry.json
+ *       Venue list with calendar URLs (read).
+ *   - /Users/arjundivecha/Dropbox/AAA Backup/.env.txt
+ *       Fallback source for ANTHROPIC_API_KEY (read) if not in process.env.
+ *   - curate-events-api/.env and repo-root .env (read via dotenv) for OPENROUTER_API_KEY.
+ *   - https://r.jina.ai/<calendar_url>  (network read, per venue)
+ *   - https://openrouter.ai/api/v1/chat/completions  (network, DeepSeek calls)
+ *   - https://api.anthropic.com  (network, Haiku calls)
+ *
+ * OUTPUT FILES (all under .../Curate-My-World Squirtle/data/reports/):
+ *   - model-bakeoff-<timestamp>.json   Full per-venue + per-model results.
+ *   - model-bakeoff-<timestamp>.md     Human-readable summary.
+ *   - model-bakeoff-latest.json        Copy of the latest run (JSON).
+ *   - model-bakeoff-latest.md          Copy of the latest run (Markdown).
+ *   Results are written INCREMENTALLY after each venue (atomic temp+rename) so a
+ *   crash mid-run does not lose completed work.
+ *
+ * USAGE:
+ *   node curate-events-api/scripts/bakeoff-venue-extractors.js --all
+ *
+ * VERSION: 2.0
+ * LAST UPDATED: 2026-06-09
+ * =============================================================================
+ */
+
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -48,6 +97,13 @@ const MODEL_SPECS = {
     inputPerMillion: 0.1,
     outputPerMillion: 0.4,
   },
+  deepseekV4Flash: {
+    provider: 'openrouter',
+    model: 'deepseek/deepseek-v4-flash',
+    // OpenRouter pricing as of 2026-06-09: $0.0983/M input, $0.1966/M output
+    inputPerMillion: 0.0983,
+    outputPerMillion: 0.1966,
+  },
 };
 
 const DEFAULT_SAMPLE_DOMAINS = [
@@ -82,6 +138,10 @@ function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function loadVenueRegistry() {
   return JSON.parse(fs.readFileSync(VENUE_REGISTRY_PATH, 'utf-8'));
 }
@@ -102,41 +162,67 @@ function parseArgs(argv) {
     argv.find(arg => arg.startsWith('--sample-size='))?.slice('--sample-size='.length) || DEFAULT_SAMPLE_DOMAINS.length
   );
 
+  const all = argv.includes('--all');
+  const limitRaw = argv.find(arg => arg.startsWith('--limit='))?.slice('--limit='.length);
+  const limit = limitRaw !== undefined ? Number(limitRaw) : null;
+  const delayRaw = argv.find(arg => arg.startsWith('--delay-ms='))?.slice('--delay-ms='.length);
+  const delayMs = delayRaw !== undefined ? Number(delayRaw) : 500;
+  const concurrencyRaw = argv.find(arg => arg.startsWith('--concurrency='))?.slice('--concurrency='.length);
+  const concurrency = concurrencyRaw !== undefined ? Number(concurrencyRaw) : 6;
+
   return {
     domains,
+    all,
+    limit: Number.isFinite(limit) ? limit : null,
+    delayMs: Number.isFinite(delayMs) ? delayMs : 500,
+    concurrency: Number.isFinite(concurrency) ? concurrency : 6,
     sampleSize: Number.isFinite(sampleSize) ? sampleSize : DEFAULT_SAMPLE_DOMAINS.length,
   };
 }
 
 async function fetchViaJina(calendarUrl, { maxMarkdownLength = DEFAULT_MAX_MARKDOWN_LENGTH } = {}) {
   const jinaUrl = `${JINA_READER_BASE}/${calendarUrl}`;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60000);
+  const jinaKey = process.env.JINA_API_KEY || null; // optional; raises rate limits if present
+  // Jina free tier rate-limits aggressively (HTTP 429). Retry with exponential backoff.
+  const MAX_ATTEMPTS = 5;
 
-  try {
-    const response = await fetch(jinaUrl, {
-      method: 'GET',
-      headers: {
-        Accept: 'text/markdown',
-        'User-Agent': 'CurateMyWorld/1.0',
-      },
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    try {
+      const headers = { Accept: 'text/markdown', 'User-Agent': 'CurateMyWorld/1.0' };
+      if (jinaKey) headers.Authorization = `Bearer ${jinaKey}`;
+      const response = await fetch(jinaUrl, { method: 'GET', headers, signal: controller.signal });
+      clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      throw new Error(`Jina HTTP ${response.status}: ${response.statusText}`);
+      if (response.status === 429 && attempt < MAX_ATTEMPTS) {
+        const backoffMs = 4000 * Math.pow(2, attempt - 1); // 4s, 8s, 16s, 32s
+        console.log(`    429 from Jina (attempt ${attempt}) — backing off ${backoffMs}ms`);
+        await sleep(backoffMs);
+        continue;
+      }
+      if (!response.ok) {
+        throw new Error(`Jina HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      let markdown = await response.text();
+      if (markdown.length > maxMarkdownLength) {
+        markdown = markdown.substring(0, maxMarkdownLength) + '\n\n[... truncated ...]';
+      }
+      return markdown;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      // Retry transient aborts/network errors too, except on the final attempt.
+      if (attempt < MAX_ATTEMPTS) {
+        const backoffMs = 4000 * Math.pow(2, attempt - 1);
+        console.log(`    Jina error "${error.message}" (attempt ${attempt}) — retrying in ${backoffMs}ms`);
+        await sleep(backoffMs);
+        continue;
+      }
+      throw error;
     }
-
-    let markdown = await response.text();
-    if (markdown.length > maxMarkdownLength) {
-      markdown = markdown.substring(0, maxMarkdownLength) + '\n\n[... truncated ...]';
-    }
-    return markdown;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    throw error;
   }
+  throw new Error('Jina fetch exhausted retries');
 }
 
 function buildPrompt(venueName, venueCategory, calendarMarkdown) {
@@ -169,15 +255,43 @@ ${calendarMarkdown}`;
 }
 
 function extractJsonArray(text) {
-  const match = String(text || '').match(/\[[\s\S]*\]/);
-  if (!match) return [];
+  // Strip markdown code fences (```json ... ```) that some models emit.
+  const cleaned = String(text || '').replace(/```(?:json)?/gi, '');
+  const start = cleaned.indexOf('[');
+  if (start === -1) return [];
+  const candidate = cleaned.slice(start);
 
-  try {
-    const parsed = JSON.parse(match[0]);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+  // Fast path: full array parses.
+  const full = candidate.match(/\[[\s\S]*\]/);
+  if (full) {
+    try {
+      const parsed = JSON.parse(full[0]);
+      if (Array.isArray(parsed)) return parsed;
+    } catch { /* fall through to salvage */ }
   }
+
+  // Salvage path: truncated array (no closing ]). Keep complete top-level objects.
+  const objects = [];
+  let depth = 0, objStart = -1, inStr = false, esc = false;
+  for (let i = 0; i < candidate.length; i++) {
+    const ch = candidate[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === '\\') esc = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') { inStr = true; continue; }
+    if (ch === '{') { if (depth === 0) objStart = i; depth++; }
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0 && objStart !== -1) {
+        try { objects.push(JSON.parse(candidate.slice(objStart, i + 1))); } catch { /* skip */ }
+        objStart = -1;
+      }
+    }
+  }
+  return objects;
 }
 
 function countApproxTokens(text) {
@@ -215,10 +329,14 @@ function scoreEvents(events) {
   };
 }
 
+// Output token ceiling. DeepSeek is verbose; 4096 truncated its JSON mid-array on
+// busy venues (broken array -> parsed as 0 events). 16000 clears the observed cap.
+const MAX_OUTPUT_TOKENS = 16000;
+
 async function runAnthropicModel(client, model, prompt) {
   const response = await client.messages.create({
     model,
-    max_tokens: 4096,
+    max_tokens: MAX_OUTPUT_TOKENS,
     messages: [{ role: 'user', content: prompt }],
   });
 
@@ -244,7 +362,7 @@ async function runOpenRouterModel(apiKey, model, prompt) {
     body: JSON.stringify({
       model,
       temperature: 0,
-      max_tokens: 4096,
+      max_tokens: MAX_OUTPUT_TOKENS,
       messages: [{ role: 'user', content: prompt }],
     }),
     signal: controller.signal,
@@ -268,19 +386,26 @@ function calculateCost(spec, inputTokens, outputTokens) {
   return ((inputTokens / 1_000_000) * spec.inputPerMillion) + ((outputTokens / 1_000_000) * spec.outputPerMillion);
 }
 
-function selectVenues(registry, domains, sampleSize) {
+function selectVenues(registry, { domains, all, sampleSize, limit }) {
   const byDomain = new Map(registry.map(venue => [String(venue.domain || '').toLowerCase(), venue]));
-  if (domains.length) {
-    return domains.map(domain => byDomain.get(domain)).filter(Boolean);
+
+  let selected;
+  if (all) {
+    // Every venue in the registry that has a calendar URL to fetch.
+    selected = registry.filter(venue => venue && venue.calendar_url);
+  } else if (domains.length) {
+    selected = domains.map(domain => byDomain.get(domain)).filter(Boolean);
+  } else {
+    selected = [];
+    for (const domain of DEFAULT_SAMPLE_DOMAINS) {
+      const venue = byDomain.get(domain);
+      if (venue) selected.push(venue);
+    }
+    selected = selected.slice(0, sampleSize);
   }
 
-  const selected = [];
-  for (const domain of DEFAULT_SAMPLE_DOMAINS) {
-    const venue = byDomain.get(domain);
-    if (venue) selected.push(venue);
-  }
-
-  return selected.slice(0, sampleSize);
+  if (limit && limit > 0) selected = selected.slice(0, limit);
+  return selected;
 }
 
 function formatMoney(value) {
@@ -328,106 +453,9 @@ function buildMarkdownReport(summary) {
   return lines.join('\n');
 }
 
-async function main() {
-  const args = parseArgs(process.argv.slice(2));
-  const registry = loadVenueRegistry();
-  const venues = selectVenues(registry, args.domains, args.sampleSize);
-
-  if (!venues.length) {
-    throw new Error('No venues selected for bakeoff');
-  }
-
-  const anthropicKey = getAnthropicKey();
-  const openRouterKey = getOpenRouterKey();
-  const anthropic = anthropicKey ? new Anthropic({ apiKey: anthropicKey }) : null;
-
-  const models = [
-    { key: 'haiku', label: 'Claude Haiku 4.5', enabled: !!anthropic },
-    { key: 'gpt4oMini', label: 'GPT-4o mini', enabled: !!openRouterKey },
-    { key: 'geminiFlashLite', label: 'Gemini 2.5 Flash Lite', enabled: !!openRouterKey },
-  ];
-
-  ensureDir(REPORT_DIR);
-  const generatedAt = new Date().toISOString();
-  const venueResults = [];
-
-  for (const venue of venues) {
-    console.log(`Fetching markdown for ${venue.name} (${venue.domain})`);
-    const markdown = await fetchViaJina(venue.calendar_url, {
-      maxMarkdownLength: getMarkdownLimitForVenue(venue),
-    });
-    const prompt = buildPrompt(venue.name, venue.category || 'general', markdown);
-    const runs = [];
-
-    for (const model of models) {
-      if (!model.enabled) {
-        runs.push({
-          key: model.key,
-          label: model.label,
-          model: MODEL_SPECS[model.key].model,
-          skipped: true,
-          error: model.key === 'haiku' ? 'ANTHROPIC_API_KEY missing' : 'OPENROUTER_API_KEY missing',
-          eventCount: 0,
-          cost: 0,
-          titleCoverage: 0,
-          startDateCoverage: 0,
-          directUrlCoverage: 0,
-          cityCoverage: 0,
-        });
-        continue;
-      }
-
-      try {
-        const spec = MODEL_SPECS[model.key];
-        console.log(`Running ${model.label} on ${venue.domain}`);
-        const result = spec.provider === 'anthropic'
-          ? await runAnthropicModel(anthropic, spec.model, prompt)
-          : await runOpenRouterModel(openRouterKey, spec.model, prompt);
-
-        const events = extractJsonArray(result.rawText);
-        const score = scoreEvents(events);
-        runs.push({
-          key: model.key,
-          label: model.label,
-          model: spec.model,
-          skipped: false,
-          inputTokens: result.inputTokens,
-          outputTokens: result.outputTokens,
-          cost: calculateCost(spec, result.inputTokens, result.outputTokens),
-          rawTextPreview: String(result.rawText || '').slice(0, 500),
-          ...score,
-        });
-        console.log(`Completed ${model.label} on ${venue.domain}: ${score.eventCount} events`);
-      } catch (error) {
-        runs.push({
-          key: model.key,
-          label: model.label,
-          model: MODEL_SPECS[model.key].model,
-          skipped: false,
-          error: error.message,
-          eventCount: 0,
-          cost: 0,
-          titleCoverage: 0,
-          startDateCoverage: 0,
-          directUrlCoverage: 0,
-          cityCoverage: 0,
-        });
-        console.log(`Failed ${model.label} on ${venue.domain}: ${error.message}`);
-      }
-    }
-
-    venueResults.push({
-      name: venue.name,
-      domain: venue.domain,
-      category: venue.category || null,
-      calendarUrl: venue.calendar_url,
-      markdownChars: markdown.length,
-      runs,
-    });
-  }
-
+function buildSummary(generatedAt, venueResults, models) {
   const modelSummaries = models.map(model => {
-    const runs = venueResults.map(venue => venue.runs.find(run => run.key === model.key)).filter(Boolean);
+    const runs = venueResults.map(venue => (venue.runs || []).find(run => run.key === model.key)).filter(Boolean);
     const validRuns = runs.filter(run => !run.error && !run.skipped);
     const totalCost = validRuns.reduce((sum, run) => sum + (run.cost || 0), 0);
     const totalInputTokens = validRuns.reduce((sum, run) => sum + (run.inputTokens || 0), 0);
@@ -454,22 +482,155 @@ async function main() {
     };
   });
 
-  const summary = {
-    generatedAt,
-    venues: venueResults,
-    models: modelSummaries,
-  };
+  return { generatedAt, venues: venueResults, models: modelSummaries };
+}
 
+// Atomic write: temp file + rename, so an interrupted write never corrupts the report.
+function atomicWrite(filePath, contents) {
+  const tmp = `${filePath}.tmp`;
+  fs.writeFileSync(tmp, contents);
+  fs.renameSync(tmp, filePath);
+}
+
+function writeReports({ generatedAt, venues, models }) {
+  const summary = buildSummary(generatedAt, venues, models);
   const stamp = generatedAt.replace(/[:.]/g, '-');
   const jsonPath = path.join(REPORT_DIR, `model-bakeoff-${stamp}.json`);
   const markdownPath = path.join(REPORT_DIR, `model-bakeoff-${stamp}.md`);
   const latestJsonPath = path.join(REPORT_DIR, 'model-bakeoff-latest.json');
   const latestMarkdownPath = path.join(REPORT_DIR, 'model-bakeoff-latest.md');
 
-  fs.writeFileSync(jsonPath, JSON.stringify(summary, null, 2));
-  fs.writeFileSync(markdownPath, buildMarkdownReport(summary));
-  fs.writeFileSync(latestJsonPath, JSON.stringify(summary, null, 2));
-  fs.writeFileSync(latestMarkdownPath, buildMarkdownReport(summary));
+  const json = JSON.stringify(summary, null, 2);
+  const md = buildMarkdownReport(summary);
+  atomicWrite(jsonPath, json);
+  atomicWrite(markdownPath, md);
+  atomicWrite(latestJsonPath, json);
+  atomicWrite(latestMarkdownPath, md);
+  return { jsonPath, markdownPath };
+}
+
+// Run one model against an already-fetched prompt; never throws (returns a run record).
+async function runModelOnPrompt(model, prompt, { anthropic, openRouterKey, domain }) {
+  if (!model.enabled) {
+    return {
+      key: model.key, label: model.label, model: MODEL_SPECS[model.key].model,
+      skipped: true,
+      error: model.key === 'haiku' ? 'ANTHROPIC_API_KEY missing' : 'OPENROUTER_API_KEY missing',
+      eventCount: 0, cost: 0, titleCoverage: 0, startDateCoverage: 0, directUrlCoverage: 0, cityCoverage: 0,
+    };
+  }
+  try {
+    const spec = MODEL_SPECS[model.key];
+    const result = spec.provider === 'anthropic'
+      ? await runAnthropicModel(anthropic, spec.model, prompt)
+      : await runOpenRouterModel(openRouterKey, spec.model, prompt);
+    const events = extractJsonArray(result.rawText);
+    const score = scoreEvents(events);
+    console.log(`    ${model.label} on ${domain}: ${score.eventCount} events`);
+    return {
+      key: model.key, label: model.label, model: spec.model, skipped: false,
+      inputTokens: result.inputTokens, outputTokens: result.outputTokens,
+      cost: calculateCost(spec, result.inputTokens, result.outputTokens),
+      rawTextPreview: String(result.rawText || '').slice(0, 500),
+      ...score,
+    };
+  } catch (error) {
+    console.log(`    ${model.label} on ${domain} FAILED: ${error.message}`);
+    return {
+      key: model.key, label: model.label, model: MODEL_SPECS[model.key].model, skipped: false,
+      error: error.message,
+      eventCount: 0, cost: 0, titleCoverage: 0, startDateCoverage: 0, directUrlCoverage: 0, cityCoverage: 0,
+    };
+  }
+}
+
+// Fetch one venue's markdown, then run all models on it IN PARALLEL. Never throws.
+async function processVenue(venue, { models, anthropic, openRouterKey }) {
+  const base = {
+    name: venue.name,
+    domain: venue.domain,
+    category: venue.category || null,
+    calendarUrl: venue.calendar_url,
+  };
+
+  let markdown;
+  try {
+    markdown = await fetchViaJina(venue.calendar_url, { maxMarkdownLength: getMarkdownLimitForVenue(venue) });
+  } catch (error) {
+    console.log(`  Jina fetch FAILED for ${venue.domain}: ${error.message} — skipping`);
+    return { ...base, markdownChars: 0, fetchError: error.message, runs: [] };
+  }
+
+  const prompt = buildPrompt(venue.name, venue.category || 'general', markdown);
+  const runs = await Promise.all(
+    models.map(model => runModelOnPrompt(model, prompt, { anthropic, openRouterKey, domain: venue.domain }))
+  );
+  return { ...base, markdownChars: markdown.length, runs };
+}
+
+// Bounded-concurrency map: process `items` with at most `concurrency` in flight.
+// Calls onResult(result, item) as each completes (used for incremental writes + progress).
+async function mapWithConcurrency(items, concurrency, worker, onResult) {
+  const results = new Array(items.length);
+  let next = 0;
+  let done = 0;
+
+  async function runner() {
+    while (true) {
+      const i = next++;
+      if (i >= items.length) return;
+      const result = await worker(items[i], i);
+      results[i] = result;
+      done += 1;
+      if (onResult) onResult(result, items[i], done, results);
+    }
+  }
+
+  const runners = Array.from({ length: Math.min(concurrency, items.length) }, () => runner());
+  await Promise.all(runners);
+  return results;
+}
+
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const registry = loadVenueRegistry();
+  const venues = selectVenues(registry, args);
+
+  if (!venues.length) {
+    throw new Error('No venues selected for bakeoff');
+  }
+
+  const anthropicKey = getAnthropicKey();
+  const openRouterKey = getOpenRouterKey();
+  const anthropic = anthropicKey ? new Anthropic({ apiKey: anthropicKey }) : null;
+
+  // Head-to-head: Claude Haiku 4.5 (current prod fallback) vs DeepSeek V4 Flash.
+  const models = [
+    { key: 'haiku', label: 'Claude Haiku 4.5', enabled: !!anthropic },
+    { key: 'deepseekV4Flash', label: 'DeepSeek V4 Flash', enabled: !!openRouterKey },
+  ];
+
+  ensureDir(REPORT_DIR);
+  const generatedAt = new Date().toISOString();
+  const totalVenues = venues.length;
+  const concurrency = Math.max(1, args.concurrency || 6);
+  console.log(`Bakeoff over ${totalVenues} venue(s): ${models.filter(m => m.enabled).map(m => m.label).join(' vs ')} | concurrency=${concurrency}`);
+
+  // Process venues with bounded concurrency. Both models run in parallel per venue.
+  // Results are written incrementally as each venue completes (fault tolerance).
+  const venueResults = await mapWithConcurrency(
+    venues,
+    concurrency,
+    (venue) => processVenue(venue, { models, anthropic, openRouterKey }),
+    (result, venue, done, resultsSoFar) => {
+      const tag = result.fetchError ? 'fetch-error' : `${(result.runs || []).map(r => r.eventCount ?? 'x').join('/')} events`;
+      console.log(`[${done}/${totalVenues}] ${result.domain}: ${tag}`);
+      // Incremental snapshot from results filled so far (fault tolerance).
+      writeReports({ generatedAt, venues: resultsSoFar.filter(Boolean), models });
+    }
+  );
+  // After completion, write the final, fully-ordered report.
+  const { jsonPath, markdownPath } = writeReports({ generatedAt, venues: venueResults.filter(Boolean), models });
 
   console.log(`Wrote JSON report: ${jsonPath}`);
   console.log(`Wrote Markdown report: ${markdownPath}`);

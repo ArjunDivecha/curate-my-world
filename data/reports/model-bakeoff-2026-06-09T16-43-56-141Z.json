@@ -1,0 +1,78 @@
+{
+  "generatedAt": "2026-06-09T16:43:56.141Z",
+  "venues": [
+    {
+      "name": "SFJAZZ.org",
+      "domain": "sfjazz.org",
+      "category": "music",
+      "calendarUrl": "https://www.sfjazz.org/calendar/",
+      "markdownChars": 10678,
+      "runs": [
+        {
+          "key": "haiku",
+          "label": "Claude Haiku 4.5",
+          "model": "claude-haiku-4-5-20251001",
+          "skipped": false,
+          "inputTokens": 4538,
+          "outputTokens": 304,
+          "cost": 0.006058000000000001,
+          "rawTextPreview": "```json\n[\n  {\n    \"title\": \"Wynton Marsalis Septet\",\n    \"startDate\": \"2026-07-14T19:00:00\",\n    \"endDate\": \"2026-07-15T19:00:00\",\n    \"description\": \"Performance by the Wynton Marsalis Septet at SFJAZZ Center's Miner Auditorium.\",\n    \"category\": \"music\",\n    \"price\": null,\n    \"eventUrl\": \"https://www.sfjazz.org/tickets/productions/summer-2026/wynton-marsalis-septet/\",\n    \"city\": \"San Francisco\"\n  },\n  {\n    \"title\": \"Brad Mehldau: Ride Into The Sun\",\n    \"startDate\": \"2026-08-29T19:00:00\",\n ",
+          "eventCount": 2,
+          "titleCoverage": 1,
+          "startDateCoverage": 1,
+          "directUrlCoverage": 1,
+          "cityCoverage": 1,
+          "duplicateCount": 0
+        },
+        {
+          "key": "deepseekV4Flash",
+          "label": "DeepSeek V4 Flash",
+          "model": "deepseek/deepseek-v4-flash",
+          "skipped": false,
+          "inputTokens": 3804,
+          "outputTokens": 2850,
+          "cost": 0.0009342432,
+          "rawTextPreview": "```json\n[\n  {\n    \"title\": \"Chucho Valdés Royal Quartet\",\n    \"startDate\": \"2026-06-12T19:30:00\",\n    \"endDate\": null,\n    \"description\": \"Chucho Valdés Royal Quartet performs live as part of the Fridays Live digital series.\",\n    \"category\": \"music\",\n    \"price\": null,\n    \"eventUrl\": \"https://www.sfjazz.org/athome/fridays-live/chucho-valdes-royal-quartet/\",\n    \"city\": \"San Francisco\"\n  },\n  {\n    \"title\": \"Wynton Marsalis Septet\",\n    \"startDate\": \"2026-07-14T19:00:00\",\n    \"endDate\": \"2026-0",
+          "eventCount": 4,
+          "titleCoverage": 1,
+          "startDateCoverage": 1,
+          "directUrlCoverage": 1,
+          "cityCoverage": 1,
+          "duplicateCount": 0
+        }
+      ]
+    }
+  ],
+  "models": [
+    {
+      "key": "haiku",
+      "label": "Claude Haiku 4.5",
+      "model": "claude-haiku-4-5-20251001",
+      "successCount": 1,
+      "totalCost": 0.006058000000000001,
+      "totalInputTokens": 4538,
+      "totalOutputTokens": 304,
+      "totalEvents": 2,
+      "avgEventsPerVenue": 2,
+      "avgTitleCoverage": 1,
+      "avgStartDateCoverage": 1,
+      "avgDirectUrlCoverage": 1,
+      "avgCityCoverage": 1
+    },
+    {
+      "key": "deepseekV4Flash",
+      "label": "DeepSeek V4 Flash",
+      "model": "deepseek/deepseek-v4-flash",
+      "successCount": 1,
+      "totalCost": 0.0009342432,
+      "totalInputTokens": 3804,
+      "totalOutputTokens": 2850,
+      "totalEvents": 4,
+      "avgEventsPerVenue": 4,
+      "avgTitleCoverage": 1,
+      "avgStartDateCoverage": 1,
+      "avgDirectUrlCoverage": 1,
+      "avgCityCoverage": 1
+    }
+  ]
+}

@@ -1,6 +1,65 @@
 """
-Geocode venues in data/venue-registry.json using Nominatim.
-Adds top-level lat/lng fields and preserves existing data.
+=============================================================================
+SCRIPT NAME: geocode_registry.py
+=============================================================================
+
+DESCRIPTION:
+    Reads a venue registry JSON file (venue-registry.json) containing venue
+    names, addresses, and cities, then geocodes each venue that lacks
+    lat/lng coordinates by querying the Nominatim (OpenStreetMap) API.
+    Uses a geocode cache JSON file to avoid redundant API calls across runs.
+    Respects Nominatim rate limits by enforcing a configurable delay between
+    requests. Attempts multiple query variants per venue (address-based,
+    name+cities, etc.) and retries failed requests up to 3 times with
+    exponential backoff. Before writing results, creates a timestamped backup
+    of the output file. Writes the updated venue registry and cache back to
+    disk periodically during processing and once at completion. Prints
+    progress and final summary to stdout.
+
+INPUT FILES:
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/data/venue-registry.json
+        JSON array of venue objects. Each venue may have fields:
+        name, address, city, state, coordinates (dict with lat/lng),
+        lat, lng. Venues with lat/lng already set are skipped.
+        Path can be overridden via --input.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/data/geocode-cache.json
+        JSON dict mapping query strings to Nominatim result objects
+        (lat, lng, display_name, importance). Persisted across runs
+        to avoid re-querying the API. Path can be overridden via --cache.
+
+OUTPUT FILES:
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/data/venue-registry.json
+        Updated venue registry with top-level lat, lng, and geocoded_at
+        fields added to newly geocoded venues. Path can be overridden via
+        --output. A timestamped backup (venue-registry.backup-{ts}.json)
+        is written alongside this file before modifications.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/data/geocode-cache.json
+        Updated geocode cache with newly resolved queries appended.
+        Path can be overridden via --cache.
+
+VERSION: 1.0
+LAST UPDATED: 2026-06-05
+AUTHOR: Arjun Divecha
+
+DEPENDENCIES:
+    None (stdlib only: argparse, json, re, sys, time, datetime,
+    pathlib, urllib)
+
+USAGE:
+    python geocode_registry.py
+    python geocode_registry.py --input path/to/venues.json --output path/to/out.json --cache path/to/cache.json
+    python geocode_registry.py --max 50 --min-delay 1.1 --retry-none --start 100
+
+NOTES:
+    - Requires internet access to reach nominatim.openstreetmap.org.
+    - Nominatim usage policy requires a meaningful User-Agent header and
+      a minimum delay of 1 second between requests (enforced via
+      --min-delay, default 1.1s).
+    - The VIEWBOX is hardcoded to the San Francisco Bay Area bounding box
+      by default.
+    - All relative paths in the code resolve relative to the project root
+      (three directories up from this script).
+=============================================================================
 """
 
 import argparse

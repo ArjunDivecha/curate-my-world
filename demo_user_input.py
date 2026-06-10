@@ -1,13 +1,41 @@
 #!/usr/bin/env python3
 """
-DEMO SCRIPT - CURATE MY WORLD USER INPUT PROCESSOR
-=================================================
+=============================================================================
+SCRIPT NAME: demo_user_input.py
+=============================================================================
 
-This script demonstrates the user input processor with pre-configured sample data,
-showing how the system captures preferences and generates prompts for the backend.
+INPUT FILES:
+- sample_chat_history.json (optional): Pre-configured sample chat history for
+  demonstration. Expected in the current working directory.
+- user_input_processor.py: Imported main processor module (sibling file in the
+  same curate-my-world project directory).
 
-Author: Arjun Divecha
-Version: 1.0
+OUTPUT FILES:
+- demo_outputs/curation_prompt_YYYYMMDD_HHMMSS.json: Generated curation prompt.
+- demo_outputs/user_preferences_YYYYMMDD_HHMMSS.json: Processed user preferences.
+- demo_outputs/processing_log_YYYYMMDD_HHMMSS.txt: Processing log.
+  All output files written to demo_outputs/ relative to current working directory.
+
+VERSION: 1.0
+LAST UPDATED: 2026-06-05
+AUTHOR: Arjun Divecha
+
+DESCRIPTION:
+Demonstration script for the Curate My World user input processor. Loads
+pre-configured sample user preferences, optionally processes a sample chat
+history file, and generates structured curation prompts to demonstrate how the
+system captures preferences and produces backend-ready output.
+
+DEPENDENCIES:
+- user_input_processor.py (sibling file in module directory)
+
+USAGE:
+  python demo_user_input.py
+
+NOTES:
+- Primarily a demo/example script; does not prompt for live user input.
+- Output directory (demo_outputs/) is created automatically if it does not exist.
+=============================================================================
 """
 
 import json
