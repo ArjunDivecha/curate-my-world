@@ -22,7 +22,7 @@
 import config from '../utils/config.js';
 import { createLogger } from '../utils/logger.js';
 import { getTicketmasterClassification, isTicketmasterSupported } from '../utils/categoryMapping.js';
-import { getEventsTimeZone, getStartOfZonedDay, getZonedDateTime } from '../utils/timeZoneDate.js';
+import { getEventsTimeZone, getStartOfZonedDay, getZonedDateTime, zonedTimeToUtcMs } from '../utils/timeZoneDate.js';
 
 const logger = createLogger('TicketmasterClient');
 const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -32,6 +32,15 @@ function toIsoSeconds(date) {
   return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
+/**
+ * Parse Ticketmaster's localDate/localTime (which are in the VENUE's local
+ * timezone — Pacific for Bay Area events) into a UTC Date.
+ *
+ * Previously this used `new Date(year, month-1, day, ...)`, which interprets
+ * the wall-clock values in the SERVER's timezone. On a UTC server (Railway)
+ * that shifted every event time by 7-8 hours and could move date-only events
+ * onto the wrong day. We now convert explicitly via the events timezone.
+ */
 function parseTicketmasterLocalDateTime(localDate, localTime) {
   if (!localDate || typeof localDate !== 'string') return null;
 
@@ -42,22 +51,25 @@ function parseTicketmasterLocalDateTime(localDate, localTime) {
   const month = Number(dateMatch[2]);
   const day = Number(dateMatch[3]);
 
-  // Build the date in local time to avoid UTC date-only parsing shifts.
-  const date = new Date(year, month - 1, day, 12, 0, 0, 0);
+  // Default for date-only events: noon local, safely inside the intended day.
+  let hour = 12;
+  let minute = 0;
+  let second = 0;
 
   if (localTime && typeof localTime === 'string') {
     const [hoursRaw, minutesRaw = '0', secondsRaw = '0'] = localTime.split(':');
-    const hours = Number(hoursRaw);
-    const minutes = Number(minutesRaw);
-    const seconds = Number(secondsRaw);
-    if (Number.isFinite(hours) && Number.isFinite(minutes) && Number.isFinite(seconds)) {
-      date.setHours(hours, minutes, seconds, 0);
+    const h = Number(hoursRaw);
+    const m = Number(minutesRaw);
+    const s = Number(secondsRaw);
+    if (Number.isFinite(h) && Number.isFinite(m) && Number.isFinite(s)) {
+      hour = h;
+      minute = m;
+      second = s;
     }
-  } else {
-    // No time provided: keep as all-day-ish event on the intended day.
-    date.setHours(12, 0, 0, 0);
   }
 
+  const utcMs = zonedTimeToUtcMs({ year, month, day, hour, minute, second }, EVENTS_TIME_ZONE);
+  const date = new Date(utcMs);
   return isNaN(date.getTime()) ? null : date;
 }
 
@@ -215,22 +227,34 @@ export class TicketmasterClient {
         if (parsedLocalDate) {
           eventDate = parsedLocalDate;
           hasValidDate = true;
+        } else {
+          // localDate present but unparseable — drop rather than fabricate.
+          logger.warn('Skipping Ticketmaster event with unparseable date', {
+            title: ticketmasterEvent.name?.substring(0, 50),
+            localDate,
+            eventId: ticketmasterEvent.id
+          });
+          return null;
         }
-        
-        // Filter out past events (only if we have a valid date)
-        if (hasValidDate) {
-          const today = getStartOfZonedDay(new Date(), EVENTS_TIME_ZONE);
-          if (eventDate < today) {
-            logger.debug('Skipping past Ticketmaster event', {
-              title: ticketmasterEvent.name?.substring(0, 50),
-              date: localDate
-            });
-            return null;
-          }
+
+        // Filter out past events
+        const today = getStartOfZonedDay(new Date(), EVENTS_TIME_ZONE);
+        if (eventDate < today) {
+          logger.debug('Skipping past Ticketmaster event', {
+            title: ticketmasterEvent.name?.substring(0, 50),
+            date: localDate
+          });
+          return null;
         }
       } else {
-        // No date - default to today (user preference)
-        eventDate = new Date();
+        // No date from Ticketmaster: drop the event instead of fabricating
+        // "today" as the date. A fabricated date is presented to the user as
+        // fact and pollutes today's listings with undated events.
+        logger.debug('Skipping Ticketmaster event with no start date', {
+          title: ticketmasterEvent.name?.substring(0, 50),
+          eventId: ticketmasterEvent.id
+        });
+        return null;
       }
 
       // Extract venue information

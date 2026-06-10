@@ -174,5 +174,33 @@ Health:
 
 `IMPLEMENTATION_PLAN.md` and `REDESIGN_REPORT.md` are historical planning/analysis artifacts, not live runbooks.
 
+## June 2026 Correctness & Safety Fixes
+
+The following fixes were applied after a full code review (all verified end-to-end locally):
+
+### Data integrity
+- **Cache schema repaired**: 11 venue entries that had been written to the root of `data/venue-events-cache.json` (instead of under `venues`) were moved/merged into `venues`. A timestamped backup was saved as `data/venue-events-cache.backup-*.json` before the repair.
+- **Fail-loud cache loader** (`scrape-venues.js`): if the cache file exists but is corrupt or malformed, the scraper now refuses to run instead of silently starting with an empty cache (which would have wiped all venue history on its next save).
+- **Fail-loud LLM parsing** (`scrape-venues.js`): a malformed model response now throws (preserving the venue's previous events, status `error`) instead of being recorded as "success with 0 events".
+- **Truncation detection**: model responses cut off at `max_tokens` are treated as errors; token budgets raised 4096 → 16000 for both extractors.
+- **Degraded-run detection**: a scrape where >50% of attempted venues fail is recorded as `partial_failure` instead of `success`.
+
+### Correctness
+- **Ticketmaster timezone fix** (`TicketmasterClient.js`): event dates/times from TM are venue-local (Pacific). They are now converted explicitly via `America/Los_Angeles` instead of the server's local timezone — on a UTC server (Railway) every event time was previously shifted by 7-8 hours.
+- **No fabricated dates**: TM events with no/unparseable start date are now dropped instead of being assigned "today".
+- **Route shadowing fixed** (`events.js`): `GET /api/events/categories` is now registered before `GET /api/events/:category`, so it returns the category list instead of a 400. The `GET /` handler also now uses the canonical `SUPPORTED_CATEGORIES` list.
+- **Category duplication guard** (`events.js`): events with an empty category are stamped with the category they were fetched for, preventing one event from appearing in all 12 buckets.
+- **Cache write failures surface** (`events.js`): if the background all-categories refresh computes events but cannot write them to Postgres (e.g. missing `DATABASE_URL`), it now logs an explicit error instead of "refresh complete".
+
+### Security
+- **Preview proxy locked down** (`preview.js`): `GET /api/preview?url=` was an open proxy. It now (1) blocks private/internal hosts (SSRF), and (2) only proxies domains in the venue registry plus known ticketing platforms; everything else gets the "Open in New Tab" fallback page.
+- **Production CORS default**: missing `FRONTEND_URL` now falls back to `https://squirtle-eta.vercel.app` instead of `*`.
+- **Jina Reader hardening** (`scrape-venues.js`): retries with backoff on 429/5xx/network errors; optional `JINA_API_KEY` env var is used when present for higher rate limits.
+- **Prompt-injection hardening**: scraped calendar content is delimited and explicitly marked as untrusted data in the extraction prompt.
+
+### Still pending (requires owner action)
+- **Rotate API keys**: keys were present in git history (`.env` was committed in the past). Rotate the Ticketmaster, Anthropic, and OpenRouter keys, then update Railway/local `.env`.
+- The scraper still reads fallback keys from `/Users/arjundivecha/Dropbox/AAA Backup/.env.txt` (kept by design for local runs).
+
 ---
-Last updated: 2026-02-26
+Last updated: 2026-06-09

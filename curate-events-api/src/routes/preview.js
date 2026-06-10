@@ -9,12 +9,67 @@
  */
 
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { createLogger } from '../utils/logger.js';
 
 const router = express.Router();
 const logger = createLogger('PreviewRoute');
 
 const JINA_READER_BASE = 'https://r.jina.ai';
+
+// ---------------------------------------------------------------------------
+// Host allowlist — this endpoint used to be an open proxy (any ?url= was
+// relayed through Jina and served from our origin). Now only domains we
+// actually have events for (venue registry) plus common ticketing platforms
+// are previewable. Anything else gets the graceful "Open in New Tab" page.
+// ---------------------------------------------------------------------------
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const VENUE_REGISTRY_PATH = path.resolve(__dirname, '../../../data/venue-registry.json');
+
+const STATIC_ALLOWED_DOMAINS = [
+  'ticketmaster.com', 'livenation.com', 'eventbrite.com', 'dice.fm',
+  'lu.ma', 'meetup.com', 'seetickets.us', 'etix.com', 'axs.com',
+  'tixr.com', 'showclix.com', 'funcheap.com', 'dothebay.com'
+];
+
+function loadAllowedDomains() {
+  const domains = new Set(STATIC_ALLOWED_DOMAINS);
+  try {
+    const registry = JSON.parse(fs.readFileSync(VENUE_REGISTRY_PATH, 'utf-8'));
+    // Registry is a top-level array of venue objects (support {venues: []} too).
+    const venues = Array.isArray(registry) ? registry : (Array.isArray(registry?.venues) ? registry.venues : []);
+    for (const venue of venues) {
+      if (venue?.domain) domains.add(String(venue.domain).toLowerCase());
+    }
+    logger.info('Preview allowlist loaded', { domainCount: domains.size });
+  } catch (error) {
+    logger.error('Failed to load venue registry for preview allowlist; only static domains allowed', { error: error.message });
+  }
+  return domains;
+}
+
+const ALLOWED_DOMAINS = loadAllowedDomains();
+
+function isAllowedHost(hostname) {
+  const host = String(hostname || '').toLowerCase();
+  for (const domain of ALLOWED_DOMAINS) {
+    if (host === domain || host.endsWith(`.${domain}`)) return true;
+  }
+  return false;
+}
+
+function isPrivateHost(hostname) {
+  const host = String(hostname || '').toLowerCase();
+  if (host === 'localhost' || host.endsWith('.local') || host.endsWith('.internal')) return true;
+  // IPv4 private/loopback/link-local ranges
+  if (/^(127\.|10\.|192\.168\.|169\.254\.|0\.)/.test(host)) return true;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(host)) return true;
+  // IPv6 loopback / unique-local / link-local
+  if (host === '::1' || host.startsWith('[::1]') || host.startsWith('fc') || host.startsWith('fd') || host.startsWith('fe80')) return true;
+  return false;
+}
 
 router.get('/', async (req, res) => {
   const target = String(req.query.url || '').trim();
@@ -28,6 +83,16 @@ router.get('/', async (req, res) => {
     if (!['http:', 'https:'].includes(url.protocol)) throw new Error('Unsupported protocol');
   } catch {
     return res.status(400).send('Invalid URL');
+  }
+
+  if (isPrivateHost(url.hostname)) {
+    logger.warn('Preview blocked: private/internal host', { url: url.href });
+    return res.status(403).send('Forbidden');
+  }
+
+  if (!isAllowedHost(url.hostname)) {
+    logger.warn('Preview blocked: host not in allowlist', { host: url.hostname });
+    return sendFallback(res, url, 'Preview is only available for known event sites');
   }
 
   logger.info('Fetching preview via Jina Reader', { url: url.href });

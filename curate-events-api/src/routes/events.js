@@ -270,10 +270,16 @@ export async function triggerBackgroundAllCategoriesRefresh(requestKey, opts) {
       const locFiltered = locationFilter.filterEventsByLocation(validEvents, location, { radiusKm: 50, allowBayArea: true, strictMode: false });
       const pastResult = dateFilter.filterPastEvents(locFiltered);
       const dateResult = dateFilter.filterEventsByDateRange(pastResult.filteredEvents, date_range || 'next 30 days');
-      const catFiltered = dateResult.filteredEvents.filter(ev => {
-        const c = (ev.category||'').toLowerCase();
-        return !c || normalizeCategory(c) === category;
-      });
+      // Providers pre-filter by category at fetch time, so an event with no
+      // category was returned specifically for THIS category. Keep it here
+      // (and stamp it) rather than letting an empty category match every
+      // bucket if a future provider stops pre-filtering.
+      const catFiltered = dateResult.filteredEvents
+        .filter(ev => {
+          const c = (ev.category || '').toLowerCase();
+          return !c || normalizeCategory(c) === category;
+        })
+        .map(ev => (ev.category ? ev : { ...ev, category }));
       return { category, events: catFiltered, count: catFiltered.length };
     });
 
@@ -296,7 +302,16 @@ export async function triggerBackgroundAllCategoriesRefresh(requestKey, opts) {
         requestId: `bg_refresh_${Date.now()}_${Math.random().toString(36).substr(2,9)}` }
     };
 
-    await writeAllCategoriesCache(requestKey, response);
+    // FAIL IS FAIL: writeAllCategoriesCache returns false on failure (e.g. no
+    // DATABASE_URL configured). Previously this was ignored and the log said
+    // "refresh complete" while all computed events were silently dropped.
+    const wrote = await writeAllCategoriesCache(requestKey, response);
+    if (!wrote) {
+      throw new Error(
+        `Computed ${totalEvents} events but FAILED to write all-categories cache to Postgres. ` +
+        'Check DATABASE_URL — without it the refresh result is discarded and the API keeps serving stale/empty data.'
+      );
+    }
     logger.info('Background all-categories refresh complete', { totalEvents });
   } catch (error) {
     logger.error('Background all-categories refresh failed', { error: error.message });
@@ -503,6 +518,42 @@ router.get('/refresh-status', async (req, res) => {
 });
 
 /**
+ * GET /api/events/categories
+ * List all supported event categories.
+ * IMPORTANT: must be registered BEFORE /:category, otherwise Express routes
+ * "categories" into the dynamic category handler (which 400s on missing location).
+ */
+router.get('/categories', async (req, res) => {
+  logRequest(logger, req, 'getCategories');
+
+  try {
+    const result = {
+      success: true,
+      categories: [...SUPPORTED_CATEGORIES],
+      count: SUPPORTED_CATEGORIES.length,
+      usage: {
+        endpoint: '/api/events/:category',
+        requiredParams: ['location'],
+        optionalParams: ['date_range', 'min_confidence'],
+        example: '/api/events/theatre?location=San Francisco, CA&date_range=this weekend'
+      }
+    };
+
+    logResponse(logger, res, 'getCategories', 0);
+    res.json(result);
+  } catch (error) {
+    logger.error('Error fetching categories', { error: error.message, stack: error.stack });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch categories',
+      categories: [],
+      count: 0,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
  * GET /api/events/:category
  * Fetch events for a specific category using Ticketmaster + Venue Scraper
  */
@@ -659,14 +710,16 @@ router.get('/:category', async (req, res) => {
 });
 
 /**
- * GET /api/events/categories
- * List all supported event categories
+ * GET /api/events/
+ * List all supported event categories.
+ * Uses categoryMapping.SUPPORTED_CATEGORIES (single source of truth),
+ * not CategoryManager's divergent legacy list.
  */
 router.get('/', async (req, res) => {
   logRequest(logger, req, 'getCategories');
   
   try {
-    const categories = categoryManager.getSupportedCategories();
+    const categories = [...SUPPORTED_CATEGORIES];
     
     const result = {
       success: true,

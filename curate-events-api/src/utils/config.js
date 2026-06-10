@@ -58,10 +58,12 @@ export const config = {
   // Logging
   logLevel: process.env.LOG_LEVEL || (nodeEnv === 'development' ? 'debug' : 'info'),
   
-  // CORS configuration - allow all origins in development for browser preview proxy support
+  // CORS configuration - allow all origins in development for browser preview proxy support.
+  // In production, default to the known frontend URL instead of '*' so a
+  // missing FRONTEND_URL env var doesn't silently open CORS to everyone.
   corsOrigins: nodeEnv === 'development' 
     ? true  // Allow all origins in development (browser preview uses random proxy ports)
-    : (process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : ['*']),
+    : (process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : ['https://squirtle-eta.vercel.app']),
   
   // Rate limiting
   rateLimiting: {
@@ -128,9 +130,10 @@ export function validateConfig() {
     throw new Error(`Missing required API keys: ${missingCritical.join(', ')}. Ticketmaster is the primary event source.`);
   }
 
-  // Warn (do not block) when optional provider keys are missing
+  // Warn (do not block) when optional provider keys are missing.
+  // Only keys that actually exist in config (legacy providers removed).
   const optional = [
-    'perplexityApiKey', 'anthropicApiKey', 'exaApiKey', 'serperApiKey',
+    'anthropicApiKey',
     'ticketmasterConsumerSecret'
   ];
   const missingOptional = optional.filter(key => !config[key]);
