@@ -1,0 +1,91 @@
+{
+  "schema_version": "1.0",
+  "run_date": "2026-06-15",
+  "run_id": "svda-2026-06-15",
+  "managed_agent_session_url": "https://code.claude.com/docs/en/claude-code-on-the-web",
+  "category_targeted": "Desi",
+  "geographic_scope": [
+    "San Francisco",
+    "Oakland",
+    "Berkeley",
+    "San Mateo",
+    "Burlingame",
+    "Redwood City",
+    "Palo Alto",
+    "Menlo Park",
+    "San Jose",
+    "Mountain View",
+    "Cupertino",
+    "Santa Clara",
+    "Sunnyvale",
+    "Mill Valley",
+    "San Rafael",
+    "Sausalito"
+  ],
+  "agent_model": "claude-sonnet-4-6",
+  "total_cost_usd": 0,
+  "session_duration_minutes": 22,
+  "candidates_proposed": [],
+  "candidates_rejected": [
+    {
+      "url": "https://www.aiaevents.org/",
+      "name": "AIA Events (Association of Indo-Americans)",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403 — network egress is restricted to github.com only in this environment (same failure as June 1 and June 8 runs). AIA Events is a high-value candidate: Bay Area's premier South Asian cultural festival org (25+ years, 1M+ engaged annually), hosts Holi Fest San Jose (Mar 7 2026) and Diwali Dhamaka. Should be re-evaluated after networking is fixed."
+    },
+    {
+      "url": "https://www.bmfbayarea.org/events",
+      "name": "Bhartiya Mandal Foundation",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403. Gujarati-community non-profit based in San Francisco Bay Area. Hosts Holi celebrations, charitable golf tournaments, children's activities, and networking events. Located in San Francisco. Worth re-evaluating when networking is fixed."
+    },
+    {
+      "url": "https://www.indiacc.org/",
+      "name": "India Community Center (ICC) — Milpitas",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403. Located at 525 Los Coches St, Milpitas CA 95035. Milpitas is adjacent to San Jose but not explicitly in the geographic scope list; needs scope decision. Search results show future events: June 5 Kannada Karaoke, June 20 Open Mic, Aug 9 ICC Antakshari Competition. High volume source — re-evaluate if networking fixed and scope confirmed."
+    },
+    {
+      "url": "https://www.southindiafinearts.org/events",
+      "name": "South India Fine Arts (SIFA)",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403. Established 1979 non-profit, Cupertino CA, presenting South Indian classical arts (Carnatic music, Bharatanatyam). Has individual event-detail pages. Very high-value desi/music candidate for South Bay coverage."
+    },
+    {
+      "url": "https://abhinaya.org/philosophy/schedule/",
+      "name": "Abhinaya Dance Company of San José",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403. Founded 1980 in San Jose, premier Bharatanatyam company with dedicated schedule and performances pages. Search confirmed Trikaala solo performance May 9 2026 at Cubberley Community Center. High-value desi candidate for South Bay dance coverage."
+    },
+    {
+      "url": "https://www.taranginischoolofkathak.org/",
+      "name": "Tarangini School of Kathak Dance",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403. San Jose/Cupertino-based Kathak school (CPAA Studio, 6148 Bollinger Rd, San Jose CA). Multiple Bay Area locations. May host performance events in addition to classes; needs event page verification."
+    },
+    {
+      "url": "https://idiadance.org/",
+      "name": "IDIA — I Dance hence I Am",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403. Annual Bay Area Bharatanatyam festival and conference (8 years running). 2025 festival was Aug 23; 2026 date not yet announced per search. Borderline on monthly_event_estimate (roughly 1 event/year) but high prestige and unique coverage."
+    },
+    {
+      "url": "https://www.gcabayarea.org/events",
+      "name": "GCA Bay Area (Gujarati Cultural Association)",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403. Bay Area Gujarati Cultural Association hosting Holi, Navratri, Diwali, garba, dandiya, and cultural programs. Appeared in search results for Bay Area South Asian garba events. Needs city/location verification."
+    },
+    {
+      "url": "https://www.sangeethaamsha.com/events",
+      "name": "Sangeethaamsha — Bay Area Classical Music",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403. Dedicated calendar listing 'Live & Online Classical music concerts in the San Francisco Bay Area' including Carnatic and Hindustani concerts and workshops. Appears to be a focused Bay Area desi music aggregator calendar — potentially high value for music/desi crossover coverage."
+    },
+    {
+      "url": "https://www.icmafoundation.org/",
+      "name": "Indian Classical Music and Arts Foundation (ICMAF)",
+      "rejection_reason": "extraction_failed",
+      "notes": "WebFetch returned HTTP 403. Bay Area non-profit promoting Indian classical music and arts. Needs event page verification to confirm volume and structure."
+    }
+  ]
+}
