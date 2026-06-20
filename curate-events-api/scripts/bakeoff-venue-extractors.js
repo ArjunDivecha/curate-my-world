@@ -104,6 +104,13 @@ const MODEL_SPECS = {
     inputPerMillion: 0.0983,
     outputPerMillion: 0.1966,
   },
+  deepseekV4Pro: {
+    provider: 'openrouter',
+    model: 'deepseek/deepseek-v4-pro',
+    // OpenRouter pricing as of 2026-06-20: $0.435/M input, $0.87/M output
+    inputPerMillion: 0.435,
+    outputPerMillion: 0.87,
+  },
 };
 
 const DEFAULT_SAMPLE_DOMAINS = [
@@ -604,10 +611,11 @@ async function main() {
   const openRouterKey = getOpenRouterKey();
   const anthropic = anthropicKey ? new Anthropic({ apiKey: anthropicKey }) : null;
 
-  // Head-to-head: Claude Haiku 4.5 (current prod fallback) vs DeepSeek V4 Flash.
+  // Head-to-head: Claude Haiku 4.5 vs DeepSeek V4 Flash vs DeepSeek V4 Pro.
   const models = [
     { key: 'haiku', label: 'Claude Haiku 4.5', enabled: !!anthropic },
     { key: 'deepseekV4Flash', label: 'DeepSeek V4 Flash', enabled: !!openRouterKey },
+    { key: 'deepseekV4Pro', label: 'DeepSeek V4 Pro', enabled: !!openRouterKey },
   ];
 
   ensureDir(REPORT_DIR);
