@@ -15,7 +15,8 @@
  *
  * DESCRIPTION:
  * Daily scheduled job that scrapes venue calendars via Jina Reader,
- * then extracts structured events using an LLM fallback (default: GPT-4o mini via OpenRouter). Results are cached
+ * then extracts structured events using an LLM (primary: DeepSeek V4 Flash via
+ * OpenRouter; on failure falls back to Claude Haiku via Anthropic). Results are cached
  * in venue-events-cache.json for the VenueScraperClient to serve at
  * request time (no network calls during API requests).
  *
@@ -23,7 +24,7 @@
  * cd curate-events-api && npm run scrape:venues
  *
  * DEPENDENCIES:
- * - @anthropic-ai/sdk (fallback extractor when OpenRouter is unavailable)
+ * - @anthropic-ai/sdk (Claude Haiku — error fallback when the DeepSeek/OpenRouter call fails)
  * - node-fetch (for Jina Reader HTTP calls)
  *
  * NOTES:
@@ -2153,10 +2154,15 @@ async function extractEventsWithOpenRouter(apiKey, venueName, venueCategory, cal
         'X-Title': 'Curate My World Venue Scraper'
       },
       body: JSON.stringify({
-        model: 'openai/gpt-4o-mini',
+        // Primary extractor: DeepSeek V4 Flash via OpenRouter. In the 2026-06-09
+        // bakeoff it matched Claude Haiku 4.5 on extraction quality (slightly
+        // better field coverage) at ~1/12th the cost. See
+        // data/reports/model-bakeoff-latest.md. Claude Haiku is the error fallback.
+        model: 'deepseek/deepseek-v4-flash',
         temperature: 0,
         // Large calendars (120k chars markdown) can produce 100+ events;
-        // 4096 tokens truncated mid-array and broke JSON parsing.
+        // 4096 tokens truncated mid-array and broke JSON parsing. DeepSeek is
+        // verbose so it needs the higher ceiling more than GPT-4o mini did.
         max_tokens: 16000,
         messages: [{
           role: 'user',
@@ -2174,10 +2180,10 @@ async function extractEventsWithOpenRouter(apiKey, venueName, venueCategory, cal
     const json = await response.json();
     const finishReason = json?.choices?.[0]?.finish_reason;
     if (finishReason === 'length') {
-      throw new Error(`GPT-4o mini response truncated at max_tokens for ${venueName} — calendar too large, JSON would be incomplete`);
+      throw new Error(`DeepSeek V4 Flash response truncated at max_tokens for ${venueName} — calendar too large, JSON would be incomplete`);
     }
     const text = json?.choices?.[0]?.message?.content || '';
-    return parseExtractedEvents(text, venueName, 'GPT-4o mini');
+    return parseExtractedEvents(text, venueName, 'DeepSeek V4 Flash');
   } finally {
     clearTimeout(timeoutId);
   }
@@ -2199,6 +2205,46 @@ async function extractEventsWithAnthropic(anthropic, venueName, venueCategory, c
     throw new Error(`Claude Haiku response truncated at max_tokens for ${venueName} — calendar too large, JSON would be incomplete`);
   }
   return parseExtractedEvents(response.content[0]?.text || '', venueName, 'Claude Haiku');
+}
+
+/**
+ * Extract events with DeepSeek V4 Flash (primary) and fall back to Claude Haiku
+ * ONLY if the DeepSeek call fails (HTTP error, timeout, truncation, or an
+ * unparseable/non-JSON response — all of which throw from the functions above).
+ *
+ * This is a true FAILURE-based fallback, not a key-presence switch: a successful
+ * DeepSeek extraction that legitimately finds zero events is NOT treated as a
+ * failure (it returns []), so we don't pay for a redundant Haiku call on every
+ * genuinely empty venue.
+ *
+ * @param {object} clients          - { openRouterApiKey, anthropic }
+ * @param {object} venue            - venue registry entry (uses .name, .category)
+ * @param {string} calendarMarkdown - page markdown from Jina Reader
+ * @returns {Promise<Array>} extracted events
+ */
+async function extractEventsWithFallback({ openRouterApiKey, anthropic }, venue, calendarMarkdown) {
+  const venueCategory = venue.category || 'general';
+
+  if (openRouterApiKey) {
+    try {
+      return await extractEventsWithOpenRouter(openRouterApiKey, venue.name, venueCategory, calendarMarkdown);
+    } catch (primaryError) {
+      console.error(`  Primary extractor (DeepSeek V4 Flash) failed for ${venue.name}: ${primaryError.message}`);
+      if (!anthropic) {
+        // No fallback configured — surface the real error (FAIL IS FAIL).
+        throw primaryError;
+      }
+      console.log(`  Falling back to Claude Haiku for ${venue.name}`);
+      return await extractEventsWithAnthropic(anthropic, venue.name, venueCategory, calendarMarkdown);
+    }
+  }
+
+  // No OpenRouter key: DeepSeek unavailable, use Haiku directly if present.
+  if (anthropic) {
+    return await extractEventsWithAnthropic(anthropic, venue.name, venueCategory, calendarMarkdown);
+  }
+
+  throw new Error('No extractor available: set OPENROUTER_API_KEY (DeepSeek) and/or ANTHROPIC_API_KEY (Haiku)');
 }
 
 /**
@@ -2322,8 +2368,10 @@ async function main() {
     }
 
     const anthropic = anthropicApiKey ? new Anthropic({ apiKey: anthropicApiKey }) : null;
-    const extractorLabel = openRouterApiKey ? 'GPT-4o mini via OpenRouter' : 'Claude Haiku fallback';
-    console.log(`Using fallback extractor: ${extractorLabel}`);
+    const extractorLabel = openRouterApiKey
+      ? (anthropic ? 'DeepSeek V4 Flash (primary) + Claude Haiku (fallback)' : 'DeepSeek V4 Flash via OpenRouter (no fallback key)')
+      : 'Claude Haiku (OpenRouter key missing)';
+    console.log(`Extractor: ${extractorLabel}`);
 
     // Load venue registry
     if (!fs.existsSync(VENUE_REGISTRY_PATH)) {
@@ -2570,20 +2618,12 @@ async function main() {
                 continue;
               }
 
-              // Extract events with the configured model fallback
-              const extractedEvents = openRouterApiKey
-                ? await extractEventsWithOpenRouter(
-                    openRouterApiKey,
-                    venue.name,
-                    venue.category || 'general',
-                    markdown
-                  )
-                : await extractEventsWithAnthropic(
-                    anthropic,
-                    venue.name,
-                    venue.category || 'general',
-                    markdown
-                  );
+              // Extract events: DeepSeek V4 Flash primary, Claude Haiku on failure.
+              const extractedEvents = await extractEventsWithFallback(
+                { openRouterApiKey, anthropic },
+                venue,
+                markdown
+              );
               events = addFallbackEventsFromCalendarUrls(extractedEvents, markdown, venue);
               events = applyFamsfVenueHints(events, markdown, venue);
               const addedByUrlScan = events.length - extractedEvents.length;

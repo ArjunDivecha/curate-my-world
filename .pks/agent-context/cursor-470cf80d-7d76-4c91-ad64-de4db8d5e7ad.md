@@ -6,8 +6,8 @@ repo_name: Curate-My-World Squirtle
 github_repo: ArjunDivecha/curate-my-world
 session_id: 470cf80d-7d76-4c91-ad64-de4db8d5e7ad
 source_file: 470cf80d-7d76-4c91-ad64-de4db8d5e7ad.jsonl
-exported_at: 2026-06-10T06:30:59.664292+00:00
-export_base_commit_sha: c830f0af390db95990b52dd14449213c09e87154
+exported_at: 2026-06-20T04:21:17.228287+00:00
+export_base_commit_sha: 0a3d2760f442a2474de798dd4580d61aa50663de
 redacted: true
 ---
 
@@ -219,3 +219,54 @@ The config doc (`docs/svda/MANAGED_AGENT_CONFIG.md`) claims *"Managed Agents `we
 <user_query>
 yes go ahead
 </user_query>
+
+
+**Assistant:** Let me work on both changes.
+
+
+**Assistant:** Good, I'm on PR #9's branch. Let me find and remove the ICC row.
+
+
+**Assistant:** Let me read the rest of the relevant runner script to understand the full flow before editing.
+
+
+**Assistant:** Now let me make the changes. First, PR #9 — remove ICC from the registry.
+
+
+**Assistant:** Good, ICC row removed from PR #9. Let me verify and commit, then move to the runner fix.
+
+
+**Assistant:** Good, ICC is gone. Let me commit this fix and then work on the runner script.
+
+
+**Assistant:** PR #9 is updated and pushed. Now let me switch back to main and fix the runner script.
+
+
+**Assistant:** Let me check out main and pop stash to edit the runner.
+
+
+**Assistant:** There are uncommitted changes from the stash. Let me check what they are and clean them up.
+
+
+**Assistant:** Now let me fix the runner script — switching from limited to full networking and adding an environment update path.
+
+
+**Assistant:** Good. Now let me update the config docs to match.
+
+
+**Assistant:** Let me update the networking section in the docs and verify the runner change.
+
+
+**Assistant:** Good. Let me verify the runner edit and commit.
+
+
+**Assistant:** Edit looks good. Let me commit and push.
+
+
+**Assistant:** Both changes are done and pushed.
+
+**PR #9** (`claude/svda-2026-06-01`): removed the broken ICC row from `venue-registry.json`. The PR now only proposes SIFA (southindiafinearts.org), which I verified — Jina returns a 200 with real concert listings, the calendar URL works. Ready for your review: the ICC candidate remains in the sidecar JSON for re-investigation when WebFetch is available.
+
+**SVDA runner fix** (`main`): switched the Managed Agents environment from `"networking": { "type": "limited", "allowed_hosts": [...] }` to `"networking": { "type": "full" }`. The old allowlist only permitted `github.com` / `api.github.com` / `api.githubcopilot.com` — every `web_fetch` to an actual venue site was being blocked with a 403, causing two consecutive runs to produce zero candidates.
+
+The runn
