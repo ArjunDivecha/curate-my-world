@@ -1,0 +1,160 @@
+{
+  "schema_version": "1.0",
+  "run_date": "2026-06-22",
+  "run_id": "svda-2026-06-22",
+  "managed_agent_session_url": "https://claude.ai/code/session_01QrjGPzUYASJBTmrcVCx8qG",
+  "category_targeted": "Desi",
+  "geographic_scope": [
+    "San Francisco",
+    "Oakland",
+    "Berkeley",
+    "San Mateo",
+    "Burlingame",
+    "Redwood City",
+    "Palo Alto",
+    "Menlo Park",
+    "San Jose",
+    "Mountain View",
+    "Cupertino",
+    "Santa Clara",
+    "Sunnyvale"
+  ],
+  "agent_model": "claude-sonnet-4-6",
+  "total_cost_usd": 0.0,
+  "session_duration_minutes": 25.0,
+  "candidates_proposed": [],
+  "candidates_rejected": [
+    {
+      "url": "https://www.aiaevents.org/events",
+      "name": "AIA Events (Association of Indo Americans)",
+      "rejection_reason": "extraction_failed",
+      "notes": "Bay Area's largest South Asian cultural events org — Holi Fest, Diwali Dhamaka, Navratri, MayaBazaar. Has confirmed 2026 events (Holi March 7, Swades August, Diwali October). WebFetch returned HTTP 403; site is likely behind Cloudflare. High-priority re-check recommended next run."
+    },
+    {
+      "url": "https://www.southindiafinearts.org/upcoming-events",
+      "name": "South India Fine Arts (SIFA)",
+      "rejection_reason": "extraction_failed",
+      "notes": "Bay Area's premier Carnatic music and classical dance org, 45 years. Confirmed 2026 events: Shanmukha (March 7, Ohlone College Fremont), Abhishek Raghuram concert (May 10, Santa Clara Convention Center). WebFetch returned HTTP 403. High-priority re-check."
+    },
+    {
+      "url": "https://carnaticamerica.com/events/",
+      "name": "Carnatic America",
+      "rejection_reason": "extraction_failed",
+      "notes": "Searchable Carnatic music event map for Bay Area. Active site with event listings. WebFetch returned HTTP 403."
+    },
+    {
+      "url": "https://www.carnaticchamberconcerts.com/",
+      "name": "Carnatic Chamber Concerts (CCC)",
+      "rejection_reason": "extraction_failed",
+      "notes": "Monthly Carnatic music events in Milpitas (Shirdi Sai Parivaar auditorium). Search data shows May 2026 event. Milpitas is outside scope list but adjacent to San Jose. WebFetch returned HTTP 403."
+    },
+    {
+      "url": "https://www.sangeethaamsha.com/events",
+      "name": "Sangeethaamsha",
+      "rejection_reason": "extraction_failed",
+      "notes": "501(c)(3) non-profit promoting South Asian classical music in Bay Area. Hosts live Carnatic and Hindustani concerts and workshops. WebFetch returned HTTP 403."
+    },
+    {
+      "url": "https://www.gcabayarea.org/events",
+      "name": "GCA Bay Area (Gujarati Cultural Association)",
+      "rejection_reason": "extraction_failed",
+      "notes": "Gujarati Cultural Association Bay Area — Holi, Navratri Garba, Diwali celebrations. Confirmed 2026 events from search. WebFetch returned HTTP 403."
+    },
+    {
+      "url": "https://www.bmfbayarea.org/events",
+      "name": "Bhartiya Mandal Foundation",
+      "rejection_reason": "extraction_failed",
+      "notes": "Non-profit promoting Indian-American cultural awareness in SF Bay Area. Classical arts calendar and annual events. WebFetch returned HTTP 403."
+    },
+    {
+      "url": "https://www.indiacc.org/events",
+      "name": "India Community Center (ICC)",
+      "rejection_reason": "extraction_failed",
+      "notes": "Major South Asian community center in Milpitas (outside geographic scope). Rich event calendar — Antakshari, Bollywood concerts, BACA Awards. Geographic note: Milpitas not in scope list. WebFetch returned HTTP 403."
+    },
+    {
+      "url": "https://navarasa.org/upcoming/",
+      "name": "Navarasa Dance Theater",
+      "rejection_reason": "extraction_failed",
+      "notes": "SF/San Jose-based Bharatanatyam and Kalari martial arts company. Performances at Bayview Opera House SF and Sindhoor Natya Center San Jose. Confirmed upcoming 2026 events from search. WebFetch returned HTTP 403."
+    },
+    {
+      "url": "https://idiadance.org/",
+      "name": "IDIA (I Dance Hence I Am) Bharatanatyam Festival",
+      "rejection_reason": "extraction_failed",
+      "notes": "Annual Bharatanatyam festival in Bay Area bringing international artists. WebFetch returned HTTP 403."
+    },
+    {
+      "url": "https://shrikrupa.org/",
+      "name": "Shri Krupa Dance Company",
+      "rejection_reason": "extraction_failed",
+      "notes": "Oldest Indian classical dance school in Bay Area, founded by Guru Vishal Ramani. Bharatanatyam. WebFetch returned HTTP 403."
+    },
+    {
+      "url": "https://bicsca.org/",
+      "name": "Bay Area Indian Cultural Society (BICS)",
+      "rejection_reason": "extraction_failed",
+      "notes": "Organizes Ugadi Mela and other South Indian cultural events in Dublin, CA (outside scope). WebFetch returned HTTP 403."
+    },
+    {
+      "url": "https://www.eknazar.com/bayarea/Events/mindex.php",
+      "name": "eKnazar Bay Area Indian Events",
+      "rejection_reason": "extraction_failed",
+      "notes": "Indian community event aggregator for Bay Area. Not a venue/org but an event listing site. WebFetch returned HTTP 403. Also note: aggregator category page, which per skill rules should be excluded."
+    },
+    {
+      "url": "https://iskconberkeley.us/events/",
+      "name": "ISKCON Berkeley",
+      "rejection_reason": "extraction_failed",
+      "notes": "Hindu Hare Krishna temple in Berkeley with regular Sunday Feast events and annual Rathayatra festival. WebFetch returned HTTP 403."
+    },
+    {
+      "url": "https://iskconsv.com/events/",
+      "name": "ISKCON of Silicon Valley",
+      "rejection_reason": "extraction_failed",
+      "notes": "Hare Krishna temple in South Bay area. WebFetch returned HTTP 403."
+    },
+    {
+      "url": "https://www.sfindian.com/desi/eventsall.asp",
+      "name": "SF Indian (sfindian.com)",
+      "rejection_reason": "extraction_failed",
+      "notes": "Bay Area Indian events aggregator site. Not a venue/org. WebFetch returned HTTP 403. Also: aggregator category page excluded per skill rules."
+    },
+    {
+      "url": "https://indiacurrents.com/events/",
+      "name": "India Currents",
+      "rejection_reason": "extraction_failed",
+      "notes": "Indian-American news and events publication based in San Jose. Maintains community event calendar. WebFetch returned HTTP 403."
+    },
+    {
+      "url": "https://fremonttemple.org/",
+      "name": "Fremont Hindu Temple (Vedic Dharma Samaj)",
+      "rejection_reason": "extraction_failed",
+      "notes": "Historic Hindu temple in Fremont (outside geographic scope). Has PDF calendars with monthly programs. WebFetch returned HTTP 403. Also geographic_mismatch: Fremont not in scope."
+    },
+    {
+      "url": "https://www.sunnyvale-hindutemple.org/festivals.php",
+      "name": "Sunnyvale Hindu Temple & Community Center",
+      "rejection_reason": "extraction_failed",
+      "notes": "Hindu temple in Sunnyvale (in scope) with annual festivals calendar. WebFetch returned HTTP 403."
+    },
+    {
+      "url": "https://www.sangamarts.org/",
+      "name": "Sangam Arts",
+      "rejection_reason": "dead_site",
+      "notes": "Indian classical arts presenter in Bay Area. ECONNREFUSED — site appears to be down or domain expired. Was listed on SFCV with no upcoming events."
+    },
+    {
+      "url": "https://gurdwarananaksar.org/english/events_e.html",
+      "name": "Gurdwara Nanaksar",
+      "rejection_reason": "extraction_failed",
+      "notes": "Sikh temple with monthly events. Location not confirmed in scope. WebFetch returned HTTP 403."
+    },
+    {
+      "url": "http://www.sjgurdwara.com/",
+      "name": "Sikh Gurdwara San Jose",
+      "rejection_reason": "extraction_failed",
+      "notes": "San Jose Sikh Gurdwara. Location in San Jose (in scope). WebFetch returned HTTP 403."
+    }
+  ]
+}
