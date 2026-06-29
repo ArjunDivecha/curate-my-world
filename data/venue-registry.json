@@ -1207,12 +1207,12 @@
   },
   {
     "name": "Hiller Aviation Museum",
-    "domain": "hilleraviation.org",
+    "domain": "hiller.org",
     "category": "kids",
     "city": "San Carlos",
     "state": "CA",
-    "website": "https://hilleraviation.org",
-    "calendar_url": "https://hilleraviation.org/events",
+    "website": "https://hiller.org",
+    "calendar_url": "https://hiller.org/events",
     "source": "existing_whitelist",
     "coordinates": {
       "lat": 37.504936,
@@ -2132,22 +2132,6 @@
     "geocoded_at": "2026-01-16T19:54:15.122264Z"
   },
   {
-    "name": "** [Venue not specified on the webpage]",
-    "domain": "worldfolkjam.com",
-    "category": "music",
-    "city": null,
-    "state": "CA",
-    "website": "https://worldfolkjam.com",
-    "calendar_url": "https://worldfolkjam.com/events",
-    "source": "existing_whitelist",
-    "coordinates": {
-      "lat": 37.4261565,
-      "lng": -121.905666
-    },
-    "lat": 37.4261565,
-    "lng": -121.905666
-  },
-  {
     "name": "** CMC Concert Hall",
     "domain": "sfcmc.org",
     "category": "music",
@@ -2203,22 +2187,6 @@
     "state": "CA",
     "website": "https://sf-emm.org",
     "calendar_url": "https://sf-emm.org/events",
-    "source": "existing_whitelist",
-    "coordinates": {
-      "lat": 37.4261565,
-      "lng": -121.905666
-    },
-    "lat": 37.4261565,
-    "lng": -121.905666
-  },
-  {
-    "name": "Another Test",
-    "domain": "another-test.com",
-    "category": "music",
-    "city": null,
-    "state": "CA",
-    "website": "https://another-test.com",
-    "calendar_url": "https://another-test.com/events",
     "source": "existing_whitelist",
     "coordinates": {
       "lat": 37.4261565,
@@ -3303,13 +3271,13 @@
   },
   {
     "name": "Aurora Theatre",
-    "website": "https://www2.auroratheatre.org/index.php",
-    "domain": "www2.auroratheatre.org",
+    "website": "https://www.auroratheatre.org",
+    "domain": "www.auroratheatre.org",
     "description": "![ Image] \n\n![ Image] \n\n![ Image] \n\n![ Image] \n\n## Upcoming Shows\n\n[![] \\\n**Crumbs from the Table of Joy** \\\n\\\nStarts Apr 27, 2025] \n\n[![] \\\n**The Search for Signs of Intelligent Life in the Universe*",
     "category": "theatre",
     "city": "San Francisco",
     "state": "CA",
-    "calendar_url": "https://www2.auroratheatre.org/events",
+    "calendar_url": "https://www.auroratheatre.org/events",
     "source": "exa_discovery",
     "discovered_at": "2026-01-16T18:12:03.442Z",
     "lat": 37.8711708,
