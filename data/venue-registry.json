@@ -5484,5 +5484,41 @@
     "calendar_url": "https://ai.sfsu.edu/events",
     "source": "manual_add_ai_seed",
     "discovered_at": "2026-02-28T01:11:59.266647+00:00"
+  },
+  {
+    "name": "South India Fine Arts",
+    "domain": "southindiafinearts.org",
+    "category": "desi",
+    "city": "Redwood City",
+    "state": "CA",
+    "website": "https://www.southindiafinearts.org",
+    "calendar_url": "https://www.southindiafinearts.org/upcoming-events",
+    "source": "svda_weekly",
+    "discovered_at": "2026-06-29T05:00:00Z",
+    "registry_row_proposed": true
+  },
+  {
+    "name": "Carnatic Chamber Concerts",
+    "domain": "carnaticchamberconcerts.com",
+    "category": "desi",
+    "city": "Milpitas",
+    "state": "CA",
+    "website": "https://www.carnaticchamberconcerts.com",
+    "calendar_url": "https://www.carnaticchamberconcerts.com/events/",
+    "source": "svda_weekly",
+    "discovered_at": "2026-06-29T05:00:00Z",
+    "registry_row_proposed": true
+  },
+  {
+    "name": "India Community Center",
+    "domain": "indiacc.org",
+    "category": "desi",
+    "city": "Milpitas",
+    "state": "CA",
+    "website": "https://www.indiacc.org",
+    "calendar_url": "https://www.indiacc.org/events/list/",
+    "source": "svda_weekly",
+    "discovered_at": "2026-06-29T05:00:00Z",
+    "registry_row_proposed": true
   }
 ]

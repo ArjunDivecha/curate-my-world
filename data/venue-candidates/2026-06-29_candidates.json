@@ -1,0 +1,321 @@
+{
+  "schema_version": "1.0",
+  "run_date": "2026-06-29",
+  "run_id": "svda-2026-06-29",
+  "managed_agent_session_url": "https://claude.ai/code/session_019qmWvNG3EKVdQDfdY3yJ2g",
+  "category_targeted": "Desi",
+  "geographic_scope": [
+    "San Francisco", "Oakland", "Berkeley",
+    "San Mateo", "Burlingame", "Redwood City", "Palo Alto", "Menlo Park",
+    "San Jose", "Mountain View", "Cupertino", "Santa Clara", "Sunnyvale",
+    "Mill Valley", "San Rafael", "Sausalito",
+    "Stanford", "Milpitas", "Belmont"
+  ],
+  "agent_model": "claude-sonnet-4-6",
+  "total_cost_usd": 0,
+  "session_duration_minutes": 28,
+  "candidates_proposed": [
+    {
+      "id": "cand-001",
+      "name": "South India Fine Arts",
+      "url": "https://www.southindiafinearts.org",
+      "discovery_theme": "Desi",
+      "registry_category": "desi",
+      "location": "Redwood City, CA (events across Bay Area Peninsula and South Bay)",
+      "venue_type": "classical music and arts organization",
+      "extraction_score": 0.75,
+      "monthly_event_estimate": 4,
+      "sample_events": [
+        {
+          "title": "Carnatic Vocal Concert by Abhishek Raghuram",
+          "date": "2026-05-10",
+          "time": null,
+          "url": "https://www.southindiafinearts.org/event-details/carnatic-vocal-concert-by-abhishek-raghuram"
+        },
+        {
+          "title": "Vid. Ranjani & Vid. Gayatri Carnatic Vocal Concert",
+          "date": "2026-05-16",
+          "time": "4:00 PM",
+          "url": "https://www.southindiafinearts.org/event-details/vid-ranjani-vid-gayatri-carnatic-vocal-concert"
+        },
+        {
+          "title": "SIFA Sangeetha Sreshta (S3) Competition Registration",
+          "date": "2026",
+          "time": null,
+          "url": "https://www.southindiafinearts.org/event-details/sifa-sangeetha-sreshta-s3-registration"
+        }
+      ],
+      "dedup_status": "novel",
+      "closest_existing_match": null,
+      "rationale": "Bay Area's premier Indian classical arts organization presenting Carnatic vocal and instrumental concerts by nationally recognized artists at Peninsula and South Bay venues. Individual event pages with specific 2026 dates confirmed via site-scoped web search. Typical season Sep–May yields 3–5 concerts/month; summer events possible. Fills a clear gap in classical Carnatic coverage not served by Ticketmaster or existing registry.",
+      "agent_confidence": 0.80,
+      "registry_row_proposed": true
+    },
+    {
+      "id": "cand-002",
+      "name": "Carnatic Chamber Concerts",
+      "url": "https://www.carnaticchamberconcerts.com",
+      "discovery_theme": "Desi",
+      "registry_category": "desi",
+      "location": "Milpitas, CA (also Cupertino, CA)",
+      "venue_type": "music organization",
+      "extraction_score": 0.85,
+      "monthly_event_estimate": 5,
+      "sample_events": [
+        {
+          "title": "CCC 17th Anniversary Carnatic Concert",
+          "date": "2026-01-11",
+          "time": "2:00 PM",
+          "url": "https://www.carnaticchamberconcerts.com/events/ccc-17/"
+        },
+        {
+          "title": "Papanasam Sivan Festival 2026",
+          "date": "2026-05-23",
+          "time": null,
+          "url": "https://www.carnaticchamberconcerts.com/papanasam-sivan-festival-2026-may-23rd-24th/"
+        },
+        {
+          "title": "ILP Youth Talent Show Contest 2026",
+          "date": "2026",
+          "time": null,
+          "url": "https://www.carnaticchamberconcerts.com/ilp-youth-talent-show-contest-2026/"
+        }
+      ],
+      "dedup_status": "novel",
+      "closest_existing_match": null,
+      "rationale": "Monthly Carnatic music concerts held at Shirdi Sai Parivaar auditorium (1221 California Circle, Milpitas) and Cupertino (10185 N Stelling Rd). Full 2026 monthly schedule confirmed in search: July 19, Aug 16, Sep 20, Oct 4, Nov 15, Dec 13. Also presents annual festival events with their own event pages. Consistently high event volume; strong, unique Carnatic coverage for South Bay.",
+      "agent_confidence": 0.88,
+      "registry_row_proposed": true
+    },
+    {
+      "id": "cand-003",
+      "name": "India Community Center",
+      "url": "https://www.indiacc.org",
+      "discovery_theme": "Desi",
+      "registry_category": "desi",
+      "location": "Milpitas, CA",
+      "venue_type": "community center",
+      "extraction_score": 0.75,
+      "monthly_event_estimate": 8,
+      "sample_events": [
+        {
+          "title": "ICC Summer Camps 2026",
+          "date": "2026 (Summer)",
+          "time": "9:00 AM",
+          "url": "https://www.indiacc.org/icc-summer-camps/"
+        },
+        {
+          "title": "Youthsava 2026 Indian Dance Competition",
+          "date": "2026",
+          "time": null,
+          "url": "https://www.indiacc.org/youthsava/"
+        },
+        {
+          "title": "Winter-Spring Bollywood Dance Session 2026",
+          "date": "2026 (Winter-Spring)",
+          "time": null,
+          "url": "https://www.indiacc.org/bollywoodlocations/"
+        }
+      ],
+      "dedup_status": "novel",
+      "closest_existing_match": null,
+      "rationale": "India Community Center at 525 Los Coches St, Milpitas is a dedicated South Asian community hub. Events include Bollywood dance classes, Youthsava dance competition, Antakshari, Gujarati theater (Gujjubhai play Aug 2), robotics, and youth camps. High event volume (8+/month) with multiple individual program pages on indiacc.org confirmed via search. Upcoming summer 2026 events (July 26 speed dating, Aug 2 play, Aug 9 Antakshari) verified.",
+      "agent_confidence": 0.75,
+      "registry_row_proposed": true
+    },
+    {
+      "id": "cand-004",
+      "name": "Sangeethaamsha",
+      "url": "https://www.sangeethaamsha.com",
+      "discovery_theme": "Desi",
+      "registry_category": "desi",
+      "location": "Belmont, CA (events also in Los Altos, CA)",
+      "venue_type": "classical music organization",
+      "extraction_score": 0.55,
+      "monthly_event_estimate": 3,
+      "sample_events": [
+        {
+          "title": "Navratri Concert Series: Vidwan Dr B Umashankar",
+          "date": "2025-10 (annual; 2026 October edition expected)",
+          "time": null,
+          "url": "https://www.sangeethaamsha.com/events/navratri-concert-series"
+        },
+        {
+          "title": "Swara Sandhya Baithak Series - Spring",
+          "date": "2026 (Spring series)",
+          "time": null,
+          "url": "https://www.sangeethaamsha.com/events/swarasandhya-sangeethaamsha-baithak-los-altos-spring"
+        },
+        {
+          "title": "Navratri Concert Series: Smt Lalita Sharma",
+          "date": "2025-10 (annual; 2026 October edition expected)",
+          "time": null,
+          "url": "https://www.sangeethaamsha.com/events/navratri-concert-series-smt-lalita-sharma"
+        }
+      ],
+      "dedup_status": "novel",
+      "closest_existing_match": null,
+      "rationale": "Bay Area-based organization presenting intimate Carnatic and Hindustani classical music baithaks in Belmont and Los Altos. Multiple event-specific pages confirmed in search including Navratri concert series and Swara Sandhya Baithak series. Sample events are from recurring annual series; 2026 editions expected Oct 2026. extraction_score held to 0.55 because no direct page fetch was possible (proxy-blocked) and no confirmed specific 2026 date was found for upcoming events.",
+      "agent_confidence": 0.70,
+      "registry_row_proposed": false
+    },
+    {
+      "id": "cand-005",
+      "name": "AIA Events",
+      "url": "https://www.aiaevents.org",
+      "discovery_theme": "Desi",
+      "registry_category": "desi",
+      "location": "San Jose, CA",
+      "venue_type": "cultural organization",
+      "extraction_score": 0.70,
+      "monthly_event_estimate": 2,
+      "sample_events": [
+        {
+          "title": "AIA Holi Fest 2026",
+          "date": "2026 (Spring)",
+          "time": null,
+          "url": "https://www.aiaevents.org/holi-fest.html"
+        },
+        {
+          "title": "AIA India Day Celebration 2026",
+          "date": "2026-08-15",
+          "time": "3:00 PM",
+          "url": "https://www.aiaevents.org/events"
+        },
+        {
+          "title": "Dussehra Diwali Dhamaka 2026",
+          "date": "2026-10-24",
+          "time": "2:00 PM",
+          "url": "https://www.aiaevents.org/events"
+        }
+      ],
+      "dedup_status": "novel",
+      "closest_existing_match": null,
+      "rationale": "Association of Indo Americans, presenting large-scale Bay Area South Asian festivals for 25+ years, including Holi Fest, India Day (Aug 15, 2026 at Cesar Chavez Park confirmed), Dussehra-Diwali Dhamaka (Oct 24, 2026 confirmed), and Swades competition. Strong Desi cultural focus and site presence. Fails monthly_event_estimate cutoff: approximately 4–6 major events per year (< 1/month annual average, below the 3/month threshold).",
+      "agent_confidence": 0.78,
+      "registry_row_proposed": false
+    },
+    {
+      "id": "cand-006",
+      "name": "Stanford Center for South Asia",
+      "url": "https://southasia.stanford.edu",
+      "discovery_theme": "Desi",
+      "registry_category": "desi",
+      "location": "Stanford, CA (Palo Alto)",
+      "venue_type": "university research center",
+      "extraction_score": 0.85,
+      "monthly_event_estimate": 3,
+      "sample_events": [
+        {
+          "title": "AYU: Film Screening and Discussion",
+          "date": "2026-02-10",
+          "time": "4:30 PM",
+          "url": "https://southasia.stanford.edu/events/ayu-film-screening-and-discussion"
+        },
+        {
+          "title": "Ghadar Geet: Blood and Ink - Dance Performance by Duniya Dance and Drum Company",
+          "date": "2026-02-21",
+          "time": "3:00 PM",
+          "url": "https://southasia.stanford.edu/events/ghadar-geet-blood-and-ink-dance-performance-duniya-dance-and-drum-company"
+        },
+        {
+          "title": "Anti-South Asian Hate: Understanding, Responding, and Building Solidarity",
+          "date": "2026-06-02",
+          "time": "6:00 PM",
+          "url": "https://southasia.stanford.edu/events/anti-south-asian-hate-understanding-responding-and-building-solidarity"
+        }
+      ],
+      "dedup_status": "novel",
+      "closest_existing_match": "anderson.stanford.edu (different Stanford unit, art category only)",
+      "rationale": "Stanford's Center for South Asia presents lectures, film screenings, dance performances, and panels focused on South Asian culture and diaspora. Multiple 2026 event pages with specific dates confirmed via site-scoped search. Structured individual event URLs at southasia.stanford.edu/events. Borderline: academic-year seasonal (Sep–June) with ~3–4 events/month in-season; currently off-season (June 29). Annual average ~2.5/month falls below the 3/month cutoff.",
+      "agent_confidence": 0.75,
+      "registry_row_proposed": false
+    },
+    {
+      "id": "cand-007",
+      "name": "Sikh Gurdwara San Jose",
+      "url": "https://sjgurdwara.com",
+      "discovery_theme": "Desi",
+      "registry_category": "desi",
+      "location": "San Jose, CA",
+      "venue_type": "house of worship and cultural center",
+      "extraction_score": 0.45,
+      "monthly_event_estimate": 3,
+      "sample_events": [
+        {
+          "title": "Bandhi-Chhor & Diwali Celebration",
+          "date": "2026-10 (annual)",
+          "time": null,
+          "url": "https://sjgurdwara.com/events/bandhi-chhor-diwali"
+        },
+        {
+          "title": "Gurpurab - Guru Nanak Dev Ji",
+          "date": "2026-11 (annual)",
+          "time": null,
+          "url": "https://sjgurdwara.com/events/gurpurab"
+        },
+        {
+          "title": "Prabhat Pheri",
+          "date": "2026-04 (annual, Vaisakhi season)",
+          "time": null,
+          "url": "https://sjgurdwara.com/events/prabhat-pheri"
+        }
+      ],
+      "dedup_status": "novel",
+      "closest_existing_match": null,
+      "rationale": "Largest Gurdwara in North America (3636 Gurdwara Ave, San Jose). Major Sikh community hub with annual events including Bandhi-Chhor/Diwali, Gurpurab, Prabhat Pheri, and semi-annual Gurmat Camps. Event URLs confirmed in search. However, many events are primarily religious ceremonies rather than structured calendar events with discrete ticket or RSVP pages, limiting extraction quality. Also, the daily-schedule style page structure may not scrape cleanly.",
+      "agent_confidence": 0.62,
+      "registry_row_proposed": false
+    },
+    {
+      "id": "cand-008",
+      "name": "BAPS Shri Swaminarayan Mandir San Jose",
+      "url": "https://www.baps.org/Global-Network/North-America/SanJose/Upcoming-Events.aspx",
+      "discovery_theme": "Desi",
+      "registry_category": "desi",
+      "location": "Milpitas, CA",
+      "venue_type": "temple and cultural organization",
+      "extraction_score": 0.40,
+      "monthly_event_estimate": 3,
+      "sample_events": [
+        {
+          "title": "Diwali & Annakut Celebration (annual)",
+          "date": "2026-10 (annual; 2024 edition confirmed indexed)",
+          "time": null,
+          "url": "https://www.baps.org/Global-Network/North-America/SanJose/Upcoming-Events.aspx"
+        }
+      ],
+      "dedup_status": "novel",
+      "closest_existing_match": null,
+      "rationale": "BAPS Swaminarayan temple at 1430 California Circle, Milpitas, with a dedicated upcoming events page on the global BAPS site. Serves a large Gujarati/South Asian community. Diwali & Annakut 2024 indexed in search. Insufficient 2026-specific event data found; the upcoming events page itself could not be fetched due to proxy restrictions. Needs re-evaluation once direct fetch is possible.",
+      "agent_confidence": 0.55,
+      "registry_row_proposed": false
+    }
+  ],
+  "candidates_rejected": [
+    {
+      "url": "https://www.eknazar.com/bayarea/Events/mindex.php",
+      "name": "eknazar.com Bay Area Indian Events",
+      "rejection_reason": "duplicate_existing",
+      "notes": "Broad Bay Area Indian events aggregator functionally identical to events.sulekha.com and eventmozo.com already in registry. Does not meet 'not an aggregator category page' requirement per SKILL.md."
+    },
+    {
+      "url": "https://carnaticalifornia.com/events",
+      "name": "CarnatiCalifornia",
+      "rejection_reason": "no_structured_events",
+      "notes": "Site describes itself as 'a resource to find out about all the music happenings in California' — an aggregator/calendar resource. Search returned only one result with no event listings. Cannot verify structured event listing."
+    },
+    {
+      "url": "https://www.sankritilaya.org/",
+      "name": "SanKritiLaya",
+      "rejection_reason": "low_event_volume",
+      "notes": "Bay Area non-profit presenting Carnatic concerts and classical dance. Search returned only sold-out historical pages and general org info. No 2026 events found. Appears to present 1–2 major concerts per year."
+    },
+    {
+      "url": "https://www.icmafoundation.org/",
+      "name": "ICMA Foundation",
+      "rejection_reason": "low_event_volume",
+      "notes": "Indian Classical Music and Arts Foundation, Bay Area. Only one June 2026 event confirmed (Indian Jazz Journey in collaboration with Stanford Jazz Festival). Insufficient regular monthly volume. Most indexed pages are from 2023 or earlier."
+    }
+  ]
+}
