@@ -61,8 +61,8 @@ Start here if you are new to the repository or need a safe map before changing c
 - Read `domain/venue-discovery-and-svda.md` before changing scraper or managed-agent automation.
 
 ## Existing docs worth keeping in mind
-- `README.md` is the main product overview and still reflects the live system well.
-- `CLAUDE.md` contains the deepest developer-facing architecture notes and current commands.
+- `README.md` is the main product overview, though its category count is stale (source has 12, README lists 10).
+- `.claude/CLAUDE.md` contains deep developer-facing architecture notes and commands, though some details (category count, scheduler timing) are outdated — verify against source.
 - `ENVIRONMENT.md` and `PORT_MANAGEMENT.md` capture operational conventions.
 - `docs/svda/` documents the managed-agent venue discovery setup.
 

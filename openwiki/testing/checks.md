@@ -13,7 +13,7 @@ From `package.json`:
 - `npm run port:cleanup` / `npm run stop` — remove lingering processes
 
 ## Backend checks
-From `CLAUDE.md` and `README.md`:
+From `.claude/CLAUDE.md` and `README.md`:
 
 - `curl http://127.0.0.1:8765/api/health`
 - `curl http://127.0.0.1:8765/api/health/deep`

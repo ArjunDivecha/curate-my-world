@@ -60,7 +60,7 @@ Useful checks:
 - Some root docs describe live operational reality and are more current than older planning docs.
 
 ## Where to start when unsure
-1. Read `README.md` and `CLAUDE.md`.
+1. Read `README.md` and `.claude/CLAUDE.md` (verify `.claude/CLAUDE.md` details against source — some are stale).
 2. Check `src/hooks/useDashboardLogic.ts` for frontend behavior.
 3. Check `curate-events-api/src/routes/events.js` for backend flow.
 4. Check `PORT_MANAGEMENT.md` before running the stack locally.
