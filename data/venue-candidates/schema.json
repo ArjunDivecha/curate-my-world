@@ -88,6 +88,7 @@
         "closest_existing_match",
         "rationale",
         "agent_confidence",
+        "event_page_fetched",
         "registry_row_proposed"
       ],
       "properties": {
@@ -170,6 +171,10 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        },
+        "event_page_fetched": {
+          "type": "boolean",
+          "description": "True only when the candidate event page was directly fetched in this run."
         },
         "registry_row_proposed": {
           "type": "boolean"

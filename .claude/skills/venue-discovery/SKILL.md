@@ -91,6 +91,7 @@ Set `registry_row_proposed: true` and append a registry row to the PR only when 
 - `extraction_score >= 0.70`
 - `dedup_status` is `novel`
 - `monthly_event_estimate >= 3`
+- `event_page_fetched` is `true`
 
 Rows not meeting the cutoff remain in `data/venue-candidates/YYYY-MM-DD_candidates.json` with `registry_row_proposed: false`.
 
@@ -124,7 +125,13 @@ Use only these strings:
 
 ## Output And PR
 
-Write the full run record to `data/venue-candidates/YYYY-MM-DD_candidates.json` and validate it against `data/venue-candidates/schema.json` before committing.
+Write the full run record to `data/venue-candidates/YYYY-MM-DD_candidates.json`, set
+`event_page_fetched` explicitly for every candidate, and validate it before
+committing:
+
+```sh
+python3 scripts/svda/validate_candidate_pr.py --base-ref origin/main
+```
 
 If validation or registry re-read checks fail, do not open a normal candidate PR. Instead write `data/venue-candidates/YYYY-MM-DD_ERROR.md` explaining the failure.
 
