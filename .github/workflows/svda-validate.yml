@@ -2,15 +2,13 @@ name: Validate SVDA Candidate PR
 
 on:
   pull_request:
-    paths:
-      - "data/venue-candidates/**"
-      - "data/venue-registry.json"
 
 permissions:
   contents: read
 
 jobs:
   validate:
+    name: SVDA contract
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
