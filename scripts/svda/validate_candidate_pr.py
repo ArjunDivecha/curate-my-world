@@ -138,6 +138,10 @@ def validate_pr(base_ref: str) -> None:
     ]
     registry_changed = "data/venue-registry.json" in paths
 
+    relevant_paths = candidate_paths or error_paths or registry_changed
+    if not relevant_paths:
+        return
+
     if candidate_paths and error_paths:
         raise ValidationError("a run cannot contain both candidate and ERROR artifacts")
     if len(candidate_paths) + len(error_paths) != 1:

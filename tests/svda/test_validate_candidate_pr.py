@@ -1,6 +1,7 @@
 import importlib.util
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 MODULE_PATH = Path(__file__).resolve().parents[2] / "scripts" / "svda" / "validate_candidate_pr.py"
@@ -37,6 +38,10 @@ def document(candidates):
 
 
 class CandidateValidationTests(unittest.TestCase):
+    def test_unrelated_pr_passes_without_svda_artifact(self):
+        with patch.object(validator, "changed_paths", return_value=["src/App.tsx"]):
+            validator.validate_pr("origin/main")
+
     def test_valid_proposal_passes(self):
         proposed = validator.validate_candidate_document(document([candidate()]))
         self.assertEqual(len(proposed), 1)
