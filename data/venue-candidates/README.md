@@ -15,3 +15,13 @@ Each run writes `YYYY-MM-DD_candidates.json` with:
 The JSON sidecar is an audit trail, not the production source of truth. The production venue list remains `data/venue-registry.json`, and any registry changes must arrive through a human-reviewed PR.
 
 Managed Agent sessions should validate candidate JSON against `schema.json` before opening a PR. If validation fails, the agent should write `YYYY-MM-DD_ERROR.md` instead of proposing registry rows.
+
+The required repository validator is:
+
+```sh
+python3 scripts/svda/validate_candidate_pr.py --base-ref origin/main
+```
+
+It rejects unfetched registry proposals, cap violations, cutoff violations,
+unrelated rewrites of existing registry rows, and registry additions that do
+not exactly match the candidate artifact.

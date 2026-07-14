@@ -1,19 +1,65 @@
 #!/usr/bin/env python3
 """
-Apply vetted candidates to data/venue-registry.json using add_venue_registry_strict.py.
+=============================================================================
+SCRIPT NAME: apply_vetted_candidates.py
+=============================================================================
 
-Input:
-- data/venue-vetting/<date>-results.json (from vet_candidates.py)
+DESCRIPTION:
+    Reads a results JSON file from vet_candidates.py (supplied via --results)
+    containing venue candidates with vetting recommendations. Filters for
+    entries where recommendation is "add", then invokes
+    add_venue_registry_strict.py as a subprocess for each candidate, passing
+    --url, --category, and --name. The calendar URL is chosen as the first
+    entry in suggested_calendar_urls (falling back to the venue website).
+    Results (successes and failures) are written to a dated JSON file and
+    a Markdown summary report.
 
-Behavior:
-- For each candidate with recommendation == "add":
-  - choose calendar_url = first suggested_calendar_urls entry (or fallback to website)
-  - call add_venue_registry_strict.py with --url, --category, and --name
-  - record successes/failures
+INPUT FILES:
+    {stamp}-results.json (supplied via --results argument)
+        JSON array of candidate venue objects from vet_candidates.py.
+        Each object must contain at least: name, website,
+        suggested_calendar_urls (list), category, and recommendation (str).
+        Convention: resides in data/venue-vetting/ directory.
 
-Output:
-- docs/venue-vetting/<date>-applied.md
-- data/venue-vetting/<date>-applied.json
+OUTPUT FILES:
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/data/venue-vetting/{stamp}-applied.json
+        JSON array of ApplyResult dataclass dicts with fields: name, domain,
+        category, website, calendar_url, ok, stdout, stderr.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/docs/venue-vetting/{stamp}-applied.md
+        Markdown summary listing attempted/added/failed counts and per-venue
+        details with error messages for failures.
+    (side effect) /Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/data/venue-registry.json
+        Modified indirectly via add_venue_registry_strict.py subprocess calls.
+
+VERSION: 1.0
+LAST UPDATED: 2026-06-05
+AUTHOR: Arjun Divecha
+
+DEPENDENCIES:
+    - argparse (stdlib)
+    - json (stdlib)
+    - subprocess (stdlib)
+    - dataclasses (stdlib)
+    - datetime (stdlib)
+    - pathlib (stdlib)
+    - typing (stdlib)
+    - urllib.parse (stdlib)
+    - add_venue_registry_strict.py (sibling in project root)
+
+USAGE:
+    python apply_vetted_candidates.py --results data/venue-vetting/2026-06-05-results.json
+    python apply_vetted_candidates.py --results data/venue-vetting/2026-06-05-results.json --limit 50
+
+NOTES:
+    - The --results path is user-supplied (not hardcoded); the convention
+      follows the output of vet_candidates.py.
+    - Each subprocess call to add_venue_registry_strict.py modifies
+      data/venue-registry.json in-place.
+    - The script filters for recommendation == "add" and respects --limit
+      (default 10,000).
+    - OUTPUT FILE PATHS: The {stamp} in output filenames is derived from
+      the current date (datetime.now()) at runtime, NOT from the input file.
+=============================================================================
 """
 
 from __future__ import annotations

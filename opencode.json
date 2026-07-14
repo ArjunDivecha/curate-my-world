@@ -1,0 +1,65 @@
+{
+	"mcp": {
+		"playwright": {
+			"type": "local",
+			"command": [
+				"npx",
+				"@playwright/mcp@latest"
+			]
+		}
+	},
+	"permission": {
+		"*": "ask",
+		"bash": {
+			"npm run dev:*": "allow",
+			"npx tsc:*": "allow",
+			"npm run lint": "allow",
+			"npx eslint:*": "allow",
+			"node:*": "allow",
+			"rm:*": "allow",
+			"git fetch:*": "allow",
+			"git pull:*": "allow",
+			"git stash:*": "allow",
+			"npx supabase:*": "allow",
+			"npm install:*": "allow",
+			"pkill:*": "allow",
+			"cd:*": "allow",
+			"env": "allow",
+			"supabase functions deploy:*": "allow",
+			"python test_pplx_direct.py:*": "allow",
+			"git add:*": "allow",
+			"git push:*": "allow",
+			"mkdir:*": "allow",
+			"ls:*": "allow",
+			"curl:*": "allow",
+			"cat:*": "allow",
+			"chmod:*": "allow",
+			"./scripts/curate-stack.sh:*": "allow",
+			"./scripts/health-monitor.sh:*": "allow",
+			"true": "allow",
+			"git restore:*": "allow",
+			"grep:*": "allow",
+			"git commit:*": "allow",
+			"timeout:*": "allow",
+			"claude mcp:*": "allow",
+			"\"/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Complete/Zen/.zen_venv/bin/python\" --version": "allow",
+			"\"/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Complete/Zen/.zen_venv/bin/python\" -c \"import sys; sys.path.insert(0, ''.''); from server import main; print(''Server imports OK'')\"": "allow",
+			"python3:*": "allow",
+			"\"/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Complete/Zen/.zen_venv/bin/pip\" list": "allow",
+			"\"/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Complete/Zen/.zen_venv/bin/python\" -c \"import sys; print(''Python:'', sys.version); import mcp; print(''MCP version:'', mcp.__version__ if hasattr(mcp, ''__version__'') else ''unknown'')\"": "allow",
+			"\"/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Complete/Zen/.zen_venv/bin/pip\" check": "allow",
+			"xargs ls:*": "allow"
+		},
+		"webfetch": {
+			"domain:github.com": "allow",
+			"domain:apidog.com": "allow",
+			"domain:mcpcat.io": "allow"
+		},
+		"read": {
+			"//Users/macbook2024/Library/Application Support/Claude/**": "allow",
+			"//Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Complete/Zen/**": "allow",
+			"//Users/macbook2024/**": "allow"
+		},
+		"websearch": "allow"
+	}
+}

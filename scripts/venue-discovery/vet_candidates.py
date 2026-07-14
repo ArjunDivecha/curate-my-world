@@ -1,17 +1,53 @@
 #!/usr/bin/env python3
 """
-Vet candidate venues before adding to data/venue-registry.json.
+=============================================================================
+SCRIPT NAME: vet_candidates.py
+=============================================================================
 
-Inputs:
-- data/venue-candidates-YYYY-MM-DD.csv (category,name,website,notes)
-- data/venue-registry.json
+DESCRIPTION:
+    Reads a CSV of candidate venues (name, website, category, notes) and the
+    existing venue registry JSON. For each candidate not already in the
+    registry, this script fetches the venue's homepage, scrapes for links
+    that look like events/calendar pages using heuristic scoring, verifies
+    the candidate URLs respond successfully (HTTP < 400), and produces a
+    recommendation: add (found working calendar URLs), skip (domain already
+    in registry), or investigate (HTTP error, parse error, or no calendar
+    URLs detected). Outputs a machine-readable JSON results file and a
+    human-readable Markdown report. Does NOT modify venue-registry.json.
 
-Outputs:
-- docs/venue-vetting/<date>-report.md (human review)
-- data/venue-vetting/<date>-results.json (machine readable)
+INPUT FILES:
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/data/venue-registry.json
+        Existing venue registry. Used to check which domains are already
+        registered so candidates can be marked as "skip".
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/data/venue-candidates-2026-02-09.csv
+        Default candidates CSV (category, name, website, notes columns).
+        Overridable via --candidates flag.
 
-This does NOT modify venue-registry.json. Use add_venue_registry_strict.py to add
-approved venues one-by-one (or extend later with batch-add once the workflow is proven).
+OUTPUT FILES:
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/data/venue-vetting/<date>-results.json
+        Machine-readable JSON array of vetting results with domain, status,
+        recommendation, suggested calendar URLs, and reason for each candidate.
+    /Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/docs/venue-vetting/<date>-report.md
+        Human-readable Markdown report summarising candidates by
+        recommendation (add / skip / investigate) with tables and links.
+
+VERSION: 1.0
+LAST UPDATED: 2026-06-05
+AUTHOR: Arjun Divecha
+
+DEPENDENCIES:
+    - requests (HTTP fetches)
+    - beautifulsoup4 (HTML parsing)
+
+USAGE:
+    python vet_candidates.py
+    python vet_candidates.py --candidates /path/to/candidates.csv --limit 10
+
+NOTES:
+    - Respects a --sleep delay between HTTP requests to be polite to servers.
+    - Requires internet access; fetches live websites.
+    - Does NOT modify venue-registry.json (read-only).
+=============================================================================
 """
 
 from __future__ import annotations

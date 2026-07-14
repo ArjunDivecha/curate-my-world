@@ -57,25 +57,22 @@ GitHub MCP authentication is stored in an Anthropic Vault as a `static_bearer` c
 
 ## Environment networking
 
-Use limited networking for shell-level access:
+The environment uses full networking so `web_fetch` can reach arbitrary venue
+sites for calendar scraping:
 
 ```json
 {
   "type": "cloud",
   "networking": {
-    "type": "limited",
-    "allowed_hosts": [
-      "github.com",
-      "api.github.com",
-      "api.githubcopilot.com"
-    ],
+    "type": "full",
     "allow_mcp_servers": true,
     "allow_package_managers": false
   }
 }
 ```
 
-Managed Agents `web_search` and `web_fetch` are not governed by this container networking allowlist, so venue research can still reach event pages through the native tools.
+The runner automatically detects and upgrades environments that still have the
+old "limited" networking config (delete + recreate).
 
 ## GitHub Actions secrets
 
