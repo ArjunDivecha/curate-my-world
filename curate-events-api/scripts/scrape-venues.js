@@ -62,7 +62,21 @@ const DATA_DIR = path.resolve(__dirname, '../../data');
 const VENUE_REGISTRY_PATH = path.join(DATA_DIR, 'venue-registry.json');
 const CACHE_PATH = path.join(DATA_DIR, 'venue-events-cache.json');
 const JINA_READER_BASE = 'https://r.jina.ai';
-const JINA_DELAY_MS = 1000; // 1 second between Jina calls
+const JINA_DELAY_MS = 1000; // 1 second between Jina calls (ICS/raw fetch pacing)
+
+// Venues are scraped concurrently; a full run is otherwise ~440 sequential
+// fetches of 30-50s each (~4-6 hours). Jina Reader tolerates far more
+// throughput when JINA_API_KEY is set, so default higher in that case and stay
+// conservative when running anonymously (low rate limit -> 429 storms).
+const SCRAPE_CONCURRENCY = Math.max(
+  1,
+  Number(process.env.SCRAPE_CONCURRENCY) || (process.env.JINA_API_KEY ? 8 : 3)
+);
+// The cache blob is ~2 MB, and persisting rewrites all of it (disk + Postgres).
+// Writing after every venue meant ~440 full rewrites per run. Persist every N
+// venues instead: still incremental (a crash loses at most N venues' results),
+// but ~95% less write churn.
+const SCRAPE_PERSIST_EVERY = Math.max(1, Number(process.env.SCRAPE_PERSIST_EVERY) || 25);
 const DEFAULT_MAX_MARKDOWN_LENGTH = 15000; // Truncate long pages to save tokens
 const MARKDOWN_LENGTH_OVERRIDES = {
   // These calendars front-load navigation and older events; we need deeper context
@@ -109,6 +123,26 @@ function getOpenRouterKey() {
  */
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Run `worker(item, index)` over `items` with at most `limit` in flight.
+ *
+ * Workers pull from a shared cursor, so a slow venue never blocks the others
+ * (unlike a chunked Promise.all, which waits for the slowest item per batch).
+ * Rejections propagate: the worker itself is expected to handle per-venue
+ * errors, so anything thrown here is a genuine bug and should fail loudly.
+ */
+async function runWithConcurrency(items, limit, worker) {
+  let cursor = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (true) {
+      const index = cursor++;
+      if (index >= items.length) return;
+      await worker(items[index], index);
+    }
+  });
+  await Promise.all(runners);
 }
 
 /**
@@ -2386,9 +2420,18 @@ async function main() {
     const venues = JSON.parse(fs.readFileSync(VENUE_REGISTRY_PATH, 'utf-8'));
     console.log(`Loaded ${venues.length} venues from registry`);
 
-    // Filter to venues with calendar URLs
-    let scrapableVenues = venues.filter(v => v.calendar_url && v.calendar_url.startsWith('http'));
-    console.log(`${scrapableVenues.length} venues have scrapable calendar URLs`);
+    // Filter to venues with calendar URLs. `enabled: false` quarantines a venue
+    // without deleting its registry record — used for sites that have been
+    // unfetchable for months, which otherwise burn ~3 min each per run on
+    // retries that can never succeed. Re-enable by flipping the flag.
+    const disabledCount = venues.filter(v => v.enabled === false).length;
+    let scrapableVenues = venues.filter(
+      v => v.enabled !== false && v.calendar_url && v.calendar_url.startsWith('http')
+    );
+    console.log(
+      `${scrapableVenues.length} venues have scrapable calendar URLs` +
+      (disabledCount ? ` (${disabledCount} disabled/quarantined)` : '')
+    );
 
     const domainFilters = getDomainFiltersFromArgs(process.argv);
     if (domainFilters.length > 0) {
@@ -2447,8 +2490,25 @@ async function main() {
     let failCount = 0;
     let skippedCount = 0;
 
-    for (let i = 0; i < scrapableVenues.length; i++) {
-      const venue = scrapableVenues[i];
+    // Batched, serialized cache persistence. Workers run concurrently, so two
+    // persists must never overlap (each rewrites the whole ~2 MB blob) — the
+    // promise chain guarantees one at a time. Intermediate failures are logged
+    // loudly but don't cascade into every subsequent venue; the final forced
+    // persist is awaited un-caught so a genuinely broken write fails the run.
+    let persistCounter = 0;
+    let persistChain = Promise.resolve();
+    const schedulePersist = (force = false) => {
+      if (!force && ++persistCounter < SCRAPE_PERSIST_EVERY) return persistChain;
+      persistCounter = 0;
+      persistChain = persistChain
+        .then(() => persistCache(cache, { writeDb: writeDbForThisRun }))
+        .catch(err => {
+          console.error(`  CACHE PERSIST FAILED: ${err.message}`);
+        });
+      return persistChain;
+    };
+
+    const processVenue = async (venue, i) => {
       const progress = `[${i + 1}/${scrapableVenues.length}]`;
       const attemptedAt = new Date().toISOString();
 
@@ -2482,9 +2542,8 @@ async function main() {
               status: preservedEvents.length > 0 ? 'empty_page_preserved' : 'empty_page',
               eventCount: preservedEvents.length
             };
-            await persistCache(cache, { writeDb: writeDbForThisRun });
-            await sleep(JINA_DELAY_MS);
-            continue;
+            await schedulePersist();
+            return;
           }
 
           events = parseIcsEvents(icsText, {
@@ -2613,9 +2672,8 @@ async function main() {
                   status: preservedEvents.length > 0 ? 'empty_page_preserved' : 'empty_page',
                   eventCount: preservedEvents.length
                 };
-                await persistCache(cache, { writeDb: writeDbForThisRun });
-                await sleep(JINA_DELAY_MS);
-                continue;
+                await schedulePersist();
+                return;
               }
 
               // Extract events: DeepSeek V4 Flash primary, Claude Haiku on failure.
@@ -2670,8 +2728,8 @@ async function main() {
         successCount++;
         console.log(`  Found ${stampedEvents.length} events`);
 
-        // Save incrementally
-        await persistCache(cache, { writeDb: writeDbForThisRun });
+        // Save incrementally (batched — see schedulePersist)
+        await schedulePersist();
 
       } catch (error) {
         console.error(`  ERROR: ${error.message}`);
@@ -2697,14 +2755,17 @@ async function main() {
           eventCount: preservedEvents.length,
           preservedEvents: preservedEvents.length
         };
-        await persistCache(cache, { writeDb: writeDbForThisRun });
+        await schedulePersist();
       }
+    };
 
-      // Rate limit between Jina calls
-      if (i < scrapableVenues.length - 1) {
-        await sleep(JINA_DELAY_MS);
-      }
-    }
+    console.log(
+      `Scraping ${scrapableVenues.length} venues with concurrency ${SCRAPE_CONCURRENCY}` +
+      ` (persisting every ${SCRAPE_PERSIST_EVERY})`
+    );
+    await runWithConcurrency(scrapableVenues, SCRAPE_CONCURRENCY, processVenue);
+    // Force a final write so the last partial batch is never lost.
+    await schedulePersist(true);
 
     // Final cache update — recount all events across the full cache (covers retry mode)
     let grandTotal = 0;
