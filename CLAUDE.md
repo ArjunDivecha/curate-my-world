@@ -37,7 +37,7 @@ exists in `package.json` but was not run this session.
 - Start both: `npm start` (root, `scripts/start-all.sh`) / stop: `npm run stop` (unverified).
 - Port status: `node scripts/port-manager.js status` — **verified** (also `npm run port:cleanup`).
 - Backend tests: `cd curate-events-api && npm test` — **verified**: prints "No tests found, exiting with code 0". There are currently **zero real tests** (see FABLE.md P0).
-- Venue scrape: `cd curate-events-api && npm run scrape:venues` (full) / `npm run scrape:retry` (failed only). Spends Anthropic/OpenRouter + Jina calls — do NOT run casually (unverified).
+- Venue scrape: `cd curate-events-api && npm run scrape:venues` (full) / `npm run scrape:retry` (failed only). Spends OpenRouter/Anthropic + Jina calls — do NOT run casually. Runs venues **concurrently** (`SCRAPE_CONCURRENCY`, default 8 with `JINA_API_KEY` else 3); full ~436-venue run ≈ 45 min. Cache persisted every `SCRAPE_PERSIST_EVERY` (25) venues.
 - Daily update job: `cd curate-events-api && npm run daily:update` — the job the scheduler spawns (unverified).
 - Health (needs running server): `curl http://127.0.0.1:8765/api/health` and `/api/health/deep` (unverified).
 
@@ -58,6 +58,7 @@ exists in `package.json` but was not run this session.
 - **Preview proxy is intentionally restricted** (`preview.js`): keep the private-host/SSRF block and the venue-registry+ticketing allowlist.
 - **Railway `staging` is the live backend**, not `production`. Frontend `VITE_API_BASE_URL=https://squirtle-api-staging.up.railway.app/api`. Do NOT run "sync/merge production into staging" — it previously proposed deleting staging services.
 - **Scraper is fail-loud by design:** a corrupt cache file makes `scrape-venues.js` refuse to run (prevents wiping venue history); a malformed LLM response throws instead of recording "success with 0 events". Don't "fix" these into silent fallbacks.
+- **Quarantine, don't delete, dead venues:** set `"enabled": false` (+ `disabled_reason`, `disabled_at`) on a `venue-registry.json` row to skip a chronically-unfetchable site. Keeps the record for later revival and stops it from forcing `latestRunStatus: error` via the daily retry pass. `npm run scrape:retry` matches cache keys by domain, so a renamed venue is NOT re-picked by retry — use `--domain=` for those.
 - **Two backends exist:** `curate-events-api/` is the live one. `backend/` (gitignored) is an abandoned parallel TypeScript implementation — ignore it. Root Python files (`user_input_processor.py`, etc.) are orphaned legacy.
 
 ## Current state

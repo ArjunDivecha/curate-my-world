@@ -16,7 +16,7 @@
 ### Architecture (v2.1 — Feb 2026)
 Three-layer event pipeline with Postgres-backed cache:
 1. **Ticketmaster API** (backbone) — ~1,600+ structured Bay Area events
-2. **Venue Calendar Scraper** (gap filler) — 286 venues, ~800+ cached events
+2. **Venue Calendar Scraper** (gap filler) — ~436 active venues (concurrent fetch), ~3,000 cached events
 3. **Event Validator** (quality gate) — rejects listing pages, bad data, out-of-area
 
 **Caching**: `/all-categories` endpoint never makes live TM calls. A background scheduler (30s after startup + every 6h) pre-computes the response and writes to Postgres. Fetch Events always reads from cache (instant).
@@ -53,7 +53,7 @@ curl "http://127.0.0.1:8765/api/events/music?location=San+Francisco"  # Test fet
 ```bash
 npm run dev                    # Frontend dev server
 cd curate-events-api && npm run dev  # Backend dev server
-npm run scrape:venues          # Full venue scrape
+npm run scrape:venues          # Full venue scrape (concurrent; ~45 min, SCRAPE_CONCURRENCY)
 npm run scrape:retry           # Retry failed venues only
 npm run port:cleanup           # Free ports 8765/8766
 ```

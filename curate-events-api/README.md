@@ -31,10 +31,16 @@ Default local URL: `http://127.0.0.1:8765`
 
 ## Recommended Environment Variables
 
-- `ANTHROPIC_API_KEY` (required for venue scraping jobs)
+- `OPENROUTER_API_KEY` (primary venue extractor: DeepSeek V4 Flash)
+- `ANTHROPIC_API_KEY` (Claude Haiku — extractor error-fallback)
+- `JINA_API_KEY` (Jina Reader page fetch; enables concurrency 8 vs 3 anonymous)
 - `DATABASE_URL` (required for DB list storage and DB-backed venue cache)
 - `LIST_STORAGE_MODE=db` (recommended in cloud)
 - `FRONTEND_URL=https://squirtle-eta.vercel.app` (CORS in production)
+
+Scraper performance tuning (optional):
+- `SCRAPE_CONCURRENCY` — parallel venues (default 8 with `JINA_API_KEY`, else 3)
+- `SCRAPE_PERSIST_EVERY` — persist cache every N venues (default 25)
 
 ## Caching & Background Refresh
 
@@ -56,6 +62,19 @@ Default local URL: `http://127.0.0.1:8765`
   - Typical production setting: 6:00 AM PT
 - Status endpoint:
   - `GET /api/events/refresh-status`
+
+### Venue Scrape Execution Model (`scrape-venues.js`)
+- Venues are fetched **concurrently** via a bounded worker pool
+  (`runWithConcurrency`), not one at a time. Workers pull from a shared cursor,
+  so one slow venue never blocks the rest. Concurrency = `SCRAPE_CONCURRENCY`
+  (default 8 with `JINA_API_KEY`, 3 anonymous). Full ~436-venue run ≈ 45 min.
+- Extractor: DeepSeek V4 Flash (via OpenRouter) primary, Claude Haiku fallback.
+  Large calendars can exceed the model token budget and fall back to Haiku.
+- Cache is persisted every `SCRAPE_PERSIST_EVERY` venues (default 25), serialized
+  so concurrent workers never overlap a write, with a forced final flush.
+- `"enabled": false` in `venue-registry.json` quarantines a venue (skipped, not
+  deleted). Used for chronically-unfetchable sites so they stop failing every
+  run and no longer force `latestRunStatus` to `error`.
 
 ## API Endpoints
 
