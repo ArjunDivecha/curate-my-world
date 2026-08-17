@@ -17,7 +17,7 @@ The weekly schedule is not part of Managed Agents itself. GitHub Actions starts 
 |---|---|
 | Agent name | `svda-weekly-managed` |
 | Environment name | `svda-weekly-cloud` |
-| Model | `claude-sonnet-4-6` by default |
+| Model | `claude-sonnet-5` by default |
 | Beta header | `managed-agents-2026-04-01` |
 | Cloud environment | `type: cloud` |
 | Repo mount | `/workspace/curate-my-world` |

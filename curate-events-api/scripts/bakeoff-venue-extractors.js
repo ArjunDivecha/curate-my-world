@@ -87,7 +87,7 @@ const MODEL_SPECS = {
   },
   gpt4oMini: {
     provider: 'openrouter',
-    model: 'openai/gpt-4o-mini',
+    model: 'openai/gpt-5.6-sol-mini',
     inputPerMillion: 0.15,
     outputPerMillion: 0.6,
   },

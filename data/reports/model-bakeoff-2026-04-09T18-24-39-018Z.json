@@ -27,7 +27,7 @@
         {
           "key": "gpt4oMini",
           "label": "GPT-4o mini",
-          "model": "openai/gpt-4o-mini",
+          "model": "openai/gpt-5.6-sol-mini",
           "skipped": false,
           "inputTokens": 3118,
           "outputTokens": 5,
@@ -84,7 +84,7 @@
         {
           "key": "gpt4oMini",
           "label": "GPT-4o mini",
-          "model": "openai/gpt-4o-mini",
+          "model": "openai/gpt-5.6-sol-mini",
           "skipped": false,
           "inputTokens": 5968,
           "outputTokens": 1250,
@@ -135,7 +135,7 @@
     {
       "key": "gpt4oMini",
       "label": "GPT-4o mini",
-      "model": "openai/gpt-4o-mini",
+      "model": "openai/gpt-5.6-sol-mini",
       "successCount": 2,
       "totalCost": 0.0021159,
       "totalInputTokens": 9086,

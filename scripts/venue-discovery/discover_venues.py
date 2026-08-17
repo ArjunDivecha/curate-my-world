@@ -58,7 +58,7 @@ NOTES:
     - Respects Nominatim rate limits (1 request/second) during geocoding.
     - Deduplicates venues by name+city to avoid redundant entries across
       overlapping categories and regions.
-    - The Claude model is hardcoded to claude-sonnet-4-20250514 in
+    - The Claude model is hardcoded to claude-sonnet-5 in
       VenueDiscoveryAgent.__init__; update to use a different model version.
 =============================================================================
 """
@@ -185,7 +185,7 @@ class VenueDiscoveryAgent:
 
     def __init__(self):
         self.client = anthropic.Anthropic()
-        self.model = "claude-sonnet-4-20250514"
+        self.model = "claude-sonnet-5"
         self.all_venues = []
         self.seen_venues = set()  # For deduplication
 

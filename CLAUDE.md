@@ -66,3 +66,12 @@ exists in `package.json` but was not run this session.
 - **Known-broken / gap:** zero automated tests despite a long history of correctness bugs; DB cache write/read failures are logged only, never alerted (`venueCacheDb.js`, `events.js`) — a Postgres outage degrades silently to an empty response.
 - **Owner action pending:** API keys (Ticketmaster, Anthropic, OpenRouter) were committed to git history in the past (`.env` added in commit `0d68f6b`) — rotate them. See FABLE.md / ARJUN.md.
 - Deep architecture/domain docs live in `openwiki/`; treat as a reference but verify against source before changing behavior.
+
+
+## Cross-session messaging
+
+Claude Code sessions can message each other directly. `ListAgents` (or `/list-agents`, `/peers`)
+lists reachable sessions; `SendMessage` delivers plain text to one by name. Same-machine delivery
+uses a local socket; cross-machine is reply-only via Remote Control. Use it to hand off a finding
+to a session working elsewhere instead of relaying it through the user. A message is text only —
+never conversation history or files; to share full context, resume the session instead.

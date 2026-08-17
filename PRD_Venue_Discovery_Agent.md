@@ -64,7 +64,7 @@ Two CLIs, one data flow. No backend changes, no new API routes, no frontend chan
 - `anthropic` SDK (already a dependency)
 - `requests` for direct HTTP (already a dependency)
 - `rapidfuzz` for name dedup (new dependency, lightweight)
-- Claude model: `claude-sonnet-4-5` for the agent loop, `claude-haiku-4-5-20251001` for extraction validation (matches existing VenueScraper usage)
+- Claude model: `claude-sonnet-5` for the agent loop, `claude-haiku-4-5-20251001` for extraction validation (matches existing VenueScraper usage)
 - No new infra. No DB. No Vercel/Railway changes.
 
 ## 6. File structure (new files only)
@@ -118,7 +118,7 @@ File: `YYYY-MM-DD_venue-candidates.json`
   "run_id": "svda-2026-06-01-001",
   "category_targeted": "Desi",
   "geographic_scope": ["San Francisco", "Oakland", "Berkeley", "Peninsula", "South Bay", "Marin"],
-  "agent_model": "claude-sonnet-4-5",
+  "agent_model": "claude-sonnet-5",
   "extraction_model": "claude-haiku-4-5-20251001",
   "total_cost_usd": 1.47,
   "candidates": [

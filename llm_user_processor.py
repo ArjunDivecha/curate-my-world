@@ -174,7 +174,7 @@ Be specific and actionable for event curation.
             self.log("🤖 Analyzing conversations with Claude Sonnet 4...")
             
             response = self.anthropic_client.messages.create(
-                model="claude-3-5-sonnet-20241022",
+                model="claude-sonnet-5",
                 max_tokens=2500,
                 temperature=0.3,
                 messages=[{"role": "user", "content": prompt}]

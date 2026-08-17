@@ -74,7 +74,7 @@ Two artifacts the agent produces every run:
 - Repo integration: GitHub repository session resource mounted at `/workspace/curate-my-world`.
 - PR tooling: GitHub MCP server plus the mounted repo.
 - Scheduler: GitHub Actions cron, plus `workflow_dispatch` for manual smoke tests.
-- Model: `claude-sonnet-4-6` by default, overrideable via `SVDA_AGENT_MODEL`.
+- Model: `claude-sonnet-5` by default, overrideable via `SVDA_AGENT_MODEL`.
 - In-repo dependencies: existing Python `requests`; no new runtime package required.
 - Secrets: GitHub Actions provides `github.token`; `ANTHROPIC_API_KEY` must be configured as a repository secret.
 

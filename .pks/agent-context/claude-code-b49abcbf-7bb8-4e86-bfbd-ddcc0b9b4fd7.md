@@ -60,7 +60,7 @@ Want me to go the CLI route (after you log in), or would you rather just change 
 
 The logic in `scripts/scrape-venues.js`:
 
-- **Primary**: `openai/gpt-4o-mini` via OpenRouter (used if `OPENROUTER_API_KEY` is set) — line 2112
+- **Primary**: `openai/gpt-5.6-sol-mini` via OpenRouter (used if `OPENROUTER_API_KEY` is set) — line 2112
 - **Fallback**: `claude-haiku-4-5-20251001` via Anthropic SDK (only if no OpenRouter key) — line 2139
 
 Selection happens at line 2496: `openRouterApiKey ? extractEventsWithOpenRouter(...) : extractEventsWithAnthropic(...)`. Sonnet/Opus are not used anywhere in the daily pipeline.
@@ -141,7 +141,7 @@ Here's what I verified directly from the code, and where the gap is.
 **The code logic** (`scrape-venues.js:2496`) picks the extractor by which key is present:
 ```js
 const extractedEvents = openRouterApiKey
-  ? extractEventsWithOpenRouter(...)   // openai/gpt-4o-mini   (line 2112)
+  ? extractEventsWithOpenRouter(...)   // openai/gpt-5.6-sol-mini   (line 2112)
   : extractEventsWithAnthropic(...)    // claude-haiku-4-5...   (line 2139)
 ```
 - `OPENROUTER_API_KEY` set → **GPT-4o mini** (Haiku never runs)
@@ -172,7 +172,7 @@ The chain, all verified in `scrape-venues.js`:
 1. **Selection** (line 2496): `openRouterApiKey ? extractEventsWithOpenRouter(...) : extractEventsWithAnthropic(...)` — OpenRouter wins whenever its key is present; Haiku is *only* the fallback.
 2. **Key resolution** (lines 95‑104): `getOpenRouterKey()` checks `process.env.OPENROUTER_API_KEY`, then falls back to `/Users/arjundivecha/Dropbox/AAA Backup/.env.txt`.
 3. **That shared file has `OPENROUTER_API_KEY` set** (just confirmed — 4 entries). So `openRouterApiKey` is truthy.
-4. → Therefore it calls `extractEventsWithOpenRouter`, which hardcodes `model: 'openai/gpt-4o-mini'` (line 2112).
+4. → Therefore it calls `extractEventsWithOpenRouter`, which hardcodes `model: 'openai/gpt-5.6-sol-mini'` (line 2112).
 
 `extractEventsWithAnthropic` with `claude-hai
 
@@ -425,7 +425,7 @@ deepseekV4Flash: { provider: 'openrouter', model: 'deepseek/deepseek-v4-flash', 
 and the runner dispatches `provider: 'openrouter'` to `runOpenRouterModel()`, which POSTs to `https://openrouter.ai/api/v1/chat/completions` with model `deepseek/deepseek-v4-flash`. So every DeepSeek call in the test went through your existing `OPENROUTER_API_KEY` — no DeepSeek account or separate key involved. The $0.26/day figure is OpenRouter's pricing ($0.098/M in, $0.197/M out).
 
 This actually lines up perfectly with the architecture you want:
-- **Primary = DeepSeek V4 Flash via OpenRouter** — set `model: 'deepseek/deepseek-v4-flash'` on the OpenRouter path in `scrape-venues.js` (currently `openai/gpt-4o-m
+- **Primary = DeepSeek V4 Flash via OpenRouter** — set `model: 'deepseek/deepseek-v4-flash'` on the OpenRouter path in `scrape-venues.js` (currently `openai/gpt-5.6-sol-m
 
 
 **User:** look up the costs for deepseek via openrouter vs native
