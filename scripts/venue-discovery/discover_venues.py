@@ -18,8 +18,8 @@ DESCRIPTION:
 
 INPUT FILES:
     /Users/arjundivecha/Dropbox/AAA Backup/.env.txt
-        Fallback credentials file read to obtain ANTHROPIC_API_KEY when
-        1Password credential loading fails and the env var is not already set.
+        Fallback credentials file read to obtain ANTHROPIC_API_KEY when the
+        environment variable is not already set.
     /Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squirtle/data/whitelist.xlsx
         Optional existing whitelist of venues loaded via pd.read_excel and
         merged with newly discovered venues to preserve previously validated
@@ -53,8 +53,8 @@ USAGE:
     conda run -p /path/to/venv python scripts/venue-discovery/discover_venues.py
 
 NOTES:
-    - Requires an ANTHROPIC_API_KEY, sourced in order: 1Password credentials,
-      environment variable, then /Users/arjundivecha/Dropbox/AAA Backup/.env.txt.
+    - Requires an ANTHROPIC_API_KEY, sourced from the environment or
+      /Users/arjundivecha/Dropbox/AAA Backup/.env.txt.
     - Respects Nominatim rate limits (1 request/second) during geocoding.
     - Deduplicates venues by name+city to avoid redundant entries across
       overlapping categories and regions.
@@ -72,23 +72,17 @@ import hashlib
 from datetime import datetime
 from pathlib import Path
 
-# MUST load credentials BEFORE importing anthropic
-sys.path.insert(0, '/Users/arjundivecha/python_utils')
-try:
-    from onepassword_credentials import load_credentials
-    load_credentials(['Anthropic'])
-    print("✅ Loaded Anthropic credentials from 1Password")
-except ImportError:
-    print("Warning: 1Password credentials not available, checking env vars")
-    if not os.environ.get('ANTHROPIC_API_KEY'):
-        # Try loading from .env.txt
-        env_file = Path('/Users/arjundivecha/Dropbox/AAA Backup/.env.txt')
-        if env_file.exists():
-            for line in env_file.read_text().splitlines():
-                if line.startswith('ANTHROPIC_API_KEY='):
-                    os.environ['ANTHROPIC_API_KEY'] = line.split('=', 1)[1].strip()
-                    print("✅ Loaded ANTHROPIC_API_KEY from .env.txt")
-                    break
+# Load credentials before importing anthropic. Claude Code itself uses OAuth;
+# this standalone API script uses an explicit environment variable or the
+# project's legacy credentials file.
+if not os.environ.get('ANTHROPIC_API_KEY'):
+    env_file = Path('/Users/arjundivecha/Dropbox/AAA Backup/.env.txt')
+    if env_file.exists():
+        for line in env_file.read_text().splitlines():
+            if line.startswith('ANTHROPIC_API_KEY='):
+                os.environ['ANTHROPIC_API_KEY'] = line.split('=', 1)[1].strip()
+                print("✅ Loaded ANTHROPIC_API_KEY from .env.txt")
+                break
 
 # Now import anthropic after credentials are set
 import anthropic
