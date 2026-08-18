@@ -22,6 +22,7 @@ const SCRAPER_SCRIPT = path.resolve(__dirname, './scrape-venues.js');
 const AGGREGATOR_INTEL_SCRIPT = path.resolve(__dirname, '../../scripts/venue-discovery/mine_aggregator_gaps.js');
 const ROOT_DATA_DIR = path.resolve(__dirname, '../../data');
 const FILE_CACHE_PATH = path.join(ROOT_DATA_DIR, 'venue-events-cache.json');
+const VENUE_REGISTRY_PATH = path.join(ROOT_DATA_DIR, 'venue-registry.json');
 const VETTING_DIR = path.join(ROOT_DATA_DIR, 'venue-vetting');
 const REPORT_DIR = process.env.DAILY_UPDATE_REPORT_DIR
   ? path.resolve(process.env.DAILY_UPDATE_REPORT_DIR)
@@ -138,11 +139,47 @@ async function loadCurrentCache() {
   return loadCacheFromFile();
 }
 
+/**
+ * Domains the scraper would actually scrape.
+ *
+ * Mirrors the filter in scrape-venues.js exactly: in the registry, not
+ * quarantined (`enabled: false`), and carrying an http(s) calendar_url. Any
+ * cache entry outside this set describes a venue that is never visited, so its
+ * status can never change and must not be read as a live failure.
+ */
+function inScopeDomains() {
+  const registry = loadJsonFromFile(VENUE_REGISTRY_PATH, null);
+  const venues = Array.isArray(registry) ? registry : (registry?.venues || []);
+  return new Set(
+    venues
+      .filter(v => v?.domain && v.enabled !== false
+                && typeof v.calendar_url === 'string' && v.calendar_url.startsWith('http'))
+      .map(v => v.domain)
+  );
+}
+
 function getRetryCandidates(cache) {
   const venues = cache?.venues || {};
   const candidates = [];
+  // 2026-08-18: without this the daily update could never report a clean run.
+  // The cache outlives the registry. Measured on the live cache that day, seven
+  // domains sat at status 'error': three quarantined on 2026-07-21 (dead domain,
+  // dead TLS, an amctheatres.com migration) and four -- another-test.com,
+  // worldfolkjam.com, hilleraviation.org, www2.auroratheatre.org -- no longer in
+  // the registry at all. None of the seven is ever scraped, so none of their
+  // statuses can ever change, yet all seven counted as failures. finalStatus
+  // therefore fell to 'partial_success' every single run, for 45 consecutive days.
+  //
+  // The retry pass was deadlocked in the same way: it offered these as candidates
+  // while scrape-venues.js refused to scrape any of them, which is the report line
+  // "Retry candidates before retries: 5 ... after retries: 5".
+  //
+  // Out of scope is not the same as broken -- the same reasoning that makes a HALT
+  // file an expected idle rather than a failure.
+  const inScope = inScopeDomains();
 
   for (const [domain, venue] of Object.entries(venues)) {
+    if (!inScope.has(domain)) continue;
     const status = String(venue?.status || '').toLowerCase();
     const shouldRetryError = status === 'error';
     const shouldRetryEmpty = RETRY_EMPTY_PAGE && (status === 'empty_page' || status === 'empty_page_preserved');

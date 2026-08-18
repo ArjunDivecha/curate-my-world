@@ -2425,7 +2425,10 @@
     "state": "CA",
     "calendar_url": "https://devt1.thewebindex.org/events",
     "source": "exa_discovery",
-    "discovered_at": "2026-01-16T18:11:59.841Z"
+    "discovered_at": "2026-01-16T18:11:59.841Z",
+    "enabled": false,
+    "disabled_reason": "host refuses connections on 80 and 443 (verified 2026-08-18); 'devt1' is a dev hostname, not a production calendar",
+    "disabled_at": "2026-08-18"
   },
   {
     "name": "Johnny Cash",
