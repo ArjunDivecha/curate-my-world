@@ -6,8 +6,8 @@ repo_name: Curate-My-World Squirtle
 github_repo: ArjunDivecha/curate-my-world
 session_id: 78e2b3cf-a522-4898-9fe5-8eccdd883877
 source_file: 78e2b3cf-a522-4898-9fe5-8eccdd883877.jsonl
-exported_at: 2026-08-18T20:43:35.627434+00:00
-export_base_commit_sha: 6a3c66054280ff7841640c00e392fe7a96680a09
+exported_at: 2026-08-20T04:09:16.843461+00:00
+export_base_commit_sha: 1496a9a74e14db31b86263fded6b98167efab6f8
 redacted: true
 ---
 
@@ -45,3 +45,22 @@ What was actually connecting at startup and what state it's in:
 | `octen` MCP server (`~/.claude.json`, starts every session) — used to shell out to `op read` for `OCTEN_API_KEY` | **Fixed today** (commit `a0f78dc`) — now reads `~/Dropbox/AAA Backup/.env.txt`. This was the real startup `op` call. |
 | `1password-credentials` skill symlink in `~/.claude/skills/` | **Removed** (dir mtime 17:47 today) — it no longer loads. The listing you saw in *this* session's prompt is stale from session start; a new session won't show it. |
 | `api-connection-tester` skill pointing at `load_credentials()` from 1Password | **Fixed just now** — dead reference rem
+
+
+**User:** 1 delete 2 yes
+
+
+**Assistant:** **#1 done. #2 needs one click from you — but it was never actually connected.**
+
+### 1. Skill deleted ✅
+`/Users/arjundivecha/code/claude-skills/1password-credentials/` removed (`SKILL.md` + `onepassword_credentials.py`), committed as `a6168db`. The Claude Code side is now completely clean:
+
+| | |
+|---|---|
+| `octen` MCP server's `op read` call at every session start | fixed, `a0f78dc` |
+| `1password-credentials` symlink in `~/.claude/skills/` | removed |
+| `1password-credentials` source in repo | deleted, `a6168db` |
+| `api-connection-tester` reference to it | removed, `fcd6abb` |
+
+### 2. Cursor plugin — the connection never worked
+Before you act: `1password-mcp` is **not on your PATH**, and the per-project `STATUS.md` files confirm *"The MCP server errored."* So the plugin has been failin

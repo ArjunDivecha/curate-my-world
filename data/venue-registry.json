@@ -2930,7 +2930,10 @@
     "state": "CA",
     "calendar_url": "https://techmeme.com/events",
     "source": "exa_discovery",
-    "discovered_at": "2026-01-16T18:12:38.788Z"
+    "discovered_at": "2026-01-16T18:12:38.788Z",
+    "enabled": false,
+    "disabled_reason": "global tech-conference calendar (Munich, Davos, London) plus earnings dates, not a San Francisco venue — the 'city: San Francisco' tag is an exa_discovery artifact. Its calendar overflows the 16k-token extraction ceiling because it is worldwide, so it failed every run; enabling it would import hundreds of non-Bay-Area events (verified 2026-08-19)",
+    "disabled_at": "2026-08-19"
   },
   {
     "name": "Bay Area Hacks: Made for Bay Area Students By Bay Area ...",
