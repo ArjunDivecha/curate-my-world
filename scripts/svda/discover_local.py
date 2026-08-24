@@ -427,10 +427,19 @@ PAGE MARKDOWN (truncated):
 
 def extract_events(name: str, website: str, md: str) -> Dict[str, Any]:
     truncated = md[:16000]
-    raw = claude(EXTRACT_PROMPT.format(name=name, website=website, markdown=truncated))
-    parsed = parse_json_block(raw)
-    if isinstance(parsed, dict):
-        return parsed
+    prompt = EXTRACT_PROMPT.format(name=name, website=website, markdown=truncated)
+    parsed: Optional[Dict[str, Any]] = None
+    raw = ""
+    for attempt in range(2):  # one retry on transient empties
+        raw = claude(prompt)
+        parsed = parse_json_block(raw)
+        if isinstance(parsed, dict):
+            return parsed
+        if not raw:
+            log("    empty LLM response - pausing 45s before retry")
+            time.sleep(45)
+        else:
+            break  # non-empty but unparsable: retrying rarely helps
     # Distinguish "LLM lane unavailable" from "page truly has no listings".
     return {"_error": "empty_llm_response"} if not raw else {}
 
@@ -723,6 +732,7 @@ def main() -> None:
     todo = [s for s in unique if (s.get("domain") or s["name"]) not in done_keys][: args.limit]
     log(f"To process this run: {len(todo)}")
 
+    consecutive_llm_failures = 0
     for i, seed in enumerate(todo, 1):
         log(f"[{i}/{len(todo)}] {seed['name']} ({seed['domain']}) cat={seed['category']}")
         try:
@@ -730,6 +740,17 @@ def main() -> None:
         except Exception as exc:  # never let one candidate kill the run
             rec = {**seed, "status": "done", "recommendation": "investigate",
                    "reason": "extraction_failed", "notes": f"exception: {exc}"}
+        if rec.get("reason") == "extraction_failed" and "LLM lane" in str(rec.get("notes")):
+            consecutive_llm_failures += 1
+            time.sleep(20)
+            if consecutive_llm_failures >= 3:
+                log("ABORT: LLM lane failing repeatedly (rate limit?). "
+                    f"{len(records)} candidates checkpointed; resume later - "
+                    "the run picks up where it left off.")
+                break
+        else:
+            consecutive_llm_failures = 0
+            time.sleep(3)  # politeness throttle on the subscription lane
         rec["processed_at"] = datetime.now(timezone.utc).isoformat()
         records.append(rec)
         with ckpt_path.open("a", encoding="utf-8") as f:
