@@ -154,16 +154,26 @@ _JKEY = jina_key()
 
 
 def jina_fetch(url: str, timeout: int = 45) -> tuple[Optional[str], Optional[int]]:
-    """Fetch a page as markdown via Jina Reader. Returns (markdown, http_status)."""
-    headers = {"User-Agent": USER_AGENT, "X-Return-Format": "markdown"}
+    """Fetch a page as markdown via Jina Reader. Returns (markdown, http_status).
+
+    X-Timeout raises Jina's internal page-load budget (default 15s) - slow
+    venue sites were coming back as 422 TimeoutError and being mislabeled dead.
+    """
+    headers = {"User-Agent": USER_AGENT, "X-Return-Format": "markdown", "X-Timeout": "25"}
     if _JKEY:
         headers["Authorization"] = f"Bearer {_JKEY}"
     target = url if url.startswith("http://r.jina.ai") or "r.jina.ai/" in url else f"https://r.jina.ai/{url}"
-    for attempt in range(3):
+    tried_long = False
+    for attempt in range(4):
         try:
             r = requests.get(target, timeout=timeout, headers=headers)
             if r.status_code == 200 and r.text.strip():
                 return r.text, 200
+            if r.status_code == 422 and not tried_long:
+                # Jina gave up loading the page; retry once with a bigger budget.
+                tried_long = True
+                headers["X-Timeout"] = "45"
+                continue
             if r.status_code == 429:
                 wait = 8 * (attempt + 1)
                 log(f"    Jina 429, backing off {wait}s")
@@ -171,11 +181,11 @@ def jina_fetch(url: str, timeout: int = 45) -> tuple[Optional[str], Optional[int
                 continue
             return None, r.status_code
         except requests.RequestException as exc:
-            if attempt == 2:
+            if attempt >= 2:
                 log(f"    Jina failed: {exc}")
                 return None, None
             time.sleep(3)
-    return None, 429
+    return None, 422
 
 
 def claude(prompt: str, timeout: int = 180) -> str:
@@ -197,6 +207,14 @@ def claude(prompt: str, timeout: int = 180) -> str:
             capture_output=True, text=True, timeout=timeout, env=env,
         )
         text = (out.stdout or "").strip()
+        # Subscription-limit notices arrive as stdout content - they must be
+        # treated as "lane unavailable", never as a model answer.
+        low = text.lower()
+        if low and any(sig in low for sig in (
+                "session limit", "rate limit", "usage limit",
+                "key limit exceeded", "resets ", "failed to authenticate")):
+            log(f"    claude lane limited: {text[:120]}")
+            return ""
         if not text and out.stderr:
             log(f"    claude stderr: {out.stderr.strip()[:200]}")
         return text
@@ -537,59 +555,69 @@ def process_candidate(seed: Dict[str, Any], idx: Dict[str, set]) -> Dict[str, An
     # 2a. homepage
     home_md, home_status = jina_fetch(website)
     rec["evidence"].append(f"homepage_fetch={home_status}")
-    if not home_md or page_is_soft_fail(home_md):
+    if not home_md:
+        # 422 from Jina = load timeout / DNS failure - site may well be alive.
+        reason = "fetch_failed_slow" if home_status == 422 else "dead_site"
         rec.update(recommendation="investigate", status="done",
-                   reason="dead_site",
-                   notes=f"homepage HTTP {home_status} (soft-404/parked: {bool(home_md) and page_is_soft_fail(home_md)})")
+                   reason=reason, notes=f"homepage HTTP {home_status}")
+        return rec
+    if page_is_soft_fail(home_md):
+        rec.update(recommendation="investigate", status="done",
+                   reason="dead_site", notes="homepage parked/soft-404")
         return rec
 
-    # 2b. calendar URL hunt - keep trying until a REAL content page is found
+    # 2b. calendar hunt WITH extraction in the loop: a plausible URL that
+    # yields zero dated listings is not evidence of absence (nav-only
+    # landing pages) - keep trying the next-best candidate URL.
     cal_candidates = find_calendar_urls(home_md, website)
-    cal_md, cal_url = None, None
-    tried = []
+    cal_md, cal_url, info, events = None, None, {}, []
+    extraction_attempts = 0
     for cu in cal_candidates[:9]:
         md, st = jina_fetch(cu)
         time.sleep(1.0)
-        tried.append(cu)
-        if md and len(md) > 300 and not page_is_soft_fail(md):
-            cal_md, cal_url = md, cu
-            rec["evidence"].append(f"calendar_fetch=200:{cu}")
+        if not md or len(md) <= 300 or page_is_soft_fail(md):
+            rec["evidence"].append(f"calendar_miss({st}):{cu}")
+            continue
+        if extraction_attempts >= 3:  # bounded LLM spend per candidate
             break
-        rec["evidence"].append(f"calendar_miss({st}):{cu}")
-    if not cal_md:
-        rec.update(recommendation="investigate", status="done",
-                   reason="no_structured_events",
-                   notes="no reachable events/calendar page among candidates")
-        return rec
-
-    # 2c. archive-index rescue (one bounded follow)
-    if looks_like_archive(cal_md):
-        nxt = pick_followup_link(cal_md, cal_url)
-        if nxt:
-            md2, st2 = jina_fetch(nxt)
-            time.sleep(1.0)
-            if md2 and len(md2) > 400:
-                cal_md, cal_url = md2, nxt
-                rec["evidence"].append(f"archive_follow={st2}:{nxt}")
-
-    # 3. extraction
-    info = extract_events(name, website, cal_md)
+        extraction_attempts += 1
+        info = extract_events(name, website, md)
+        found = [e for e in (info.get("events", []) or []) if isinstance(e, dict) and e.get("title")]
+        rec["evidence"].append(f"extract@{cu}:{len(found)} events")
+        if info.get("_error") == "empty_llm_response":
+            return rec  # caller handles LLM-outage labeling via _error below
+        if found:
+            cal_md, cal_url, events = md, cu, found
+            break
+        # archive-index rescue on THIS page before moving on
+        if looks_like_archive(md):
+            nxt = pick_followup_link(md, cu)
+            if nxt:
+                md2, st2 = jina_fetch(nxt)
+                time.sleep(1.0)
+                if md2 and len(md2) > 300 and not page_is_soft_fail(md2):
+                    info2 = extract_events(name, website, md2)
+                    found2 = [e for e in (info2.get("events", []) or []) if isinstance(e, dict) and e.get("title")]
+                    rec["evidence"].append(f"archive_follow({st2}):{nxt}:{len(found2)} events")
+                    if found2:
+                        cal_md, cal_url, events, info = md2, nxt, found2, info2
+                        break
     if info.get("_error") == "empty_llm_response":
         rec.update(recommendation="investigate", status="done",
                    reason="extraction_failed",
                    notes="LLM lane returned nothing (rate limit?) - retry later")
         return rec
-    events = info.get("events", []) if isinstance(info, dict) else []
-    events = [e for e in events if isinstance(e, dict) and e.get("title")]
+
+    if not cal_md or not events:
+        rec.update(recommendation="investigate", status="done",
+                   reason="no_structured_events",
+                   notes=f"tried {len(rec['evidence'])-1} calendar URLs; "
+                         f"no page yielded dated listings (extraction_attempts={extraction_attempts})")
+        return rec
+
     rec["calendar_url"] = cal_url
     rec["page_kind"] = info.get("page_kind", "unclear")
     rec["sample_events"] = events[:6]
-
-    if not events:
-        rec.update(recommendation="investigate", status="done",
-                   reason="no_structured_events",
-                   notes=f"page_kind={rec['page_kind']}; no dated listings found")
-        return rec
 
     rate, future_n, span = estimate_volume(events)
     rec["events_seen"], rec["events_per_month_est"] = len(events), rate
@@ -721,7 +749,7 @@ def main() -> None:
                     help="LLM-seed these categories (default: all, extra effort on thin ones)")
     ap.add_argument("--no-report-file", action="store_true", help="skip parsing missing_venues_report.md")
     ap.add_argument("--no-llm-seed", action="store_true", help="skip LLM candidate generation")
-    ap.add_argument("--limit", type=int, default=40, help="max candidates processed")
+    ap.add_argument("--limit", type=int, default=400, help="max candidates processed this invocation")
     args = ap.parse_args()
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
