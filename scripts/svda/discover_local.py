@@ -206,12 +206,22 @@ def claude(prompt: str, timeout: int = 180) -> str:
 
 
 def parse_json_block(text: str) -> Optional[Any]:
-    """Best-effort extraction of the first JSON array/object from LLM output."""
+    """Best-effort extraction of the first JSON object/array from LLM output.
+
+    Order matters: try the whole stripped string first, then prefer OBJECT
+    matches over ARRAY matches - the greedy \\[.*\\] pattern otherwise captures
+    the inner "events": [...] array of a larger JSON object and loses the
+    wrapper keys.
+    """
     if not text:
         return None
-    text = re.sub(r"^```(?:json)?|```$", "", text.strip(), flags=re.MULTILINE).strip()
-    for pattern in (r"\[.*\]", r"\{.*\}"):
-        m = re.search(pattern, text, flags=re.DOTALL)
+    stripped = re.sub(r"^```(?:json)?\s*|```\s*$", "", text.strip(), flags=re.MULTILINE).strip()
+    try:
+        return json.loads(stripped)
+    except json.JSONDecodeError:
+        pass
+    for pattern in (r"\{.*\}", r"\[.*\]"):
+        m = re.search(pattern, stripped, flags=re.DOTALL)
         if m:
             try:
                 return json.loads(m.group(0))
@@ -433,6 +443,9 @@ def extract_events(name: str, website: str, md: str) -> Dict[str, Any]:
     for attempt in range(2):  # one retry on transient empties
         raw = claude(prompt)
         parsed = parse_json_block(raw)
+        if isinstance(parsed, list):
+            # Bare events array without the wrapper object - accept it.
+            return {"events": parsed}
         if isinstance(parsed, dict):
             return parsed
         if not raw:
