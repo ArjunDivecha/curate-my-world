@@ -11,65 +11,39 @@
  "counts": {
   "proposed": 0,
   "borderline": 0,
-  "investigate": 3,
+  "investigate": 7,
   "skipped_existing": 0
  },
  "candidates": [
   {
    "name": "Elbo Room",
    "website": "https://elbo.com",
-   "category": "all",
+   "category": "music",
    "city": "San Francisco",
    "origin": "missing_venues_report",
    "domain": "elbo.com",
    "status": "done",
    "recommendation": "investigate",
-   "reason": "no_structured_events",
-   "calendar_url": "https://elbo.com/events",
+   "reason": "dead_site",
+   "calendar_url": null,
    "sample_events": [],
    "events_seen": 0,
    "events_per_month_est": 0.0,
    "lat": null,
    "lng": null,
    "evidence": [
-    "homepage_fetch=200",
-    "calendar_fetch=200:https://elbo.com/events"
+    "homepage_fetch=200"
    ],
-   "page_kind": "unclear",
-   "notes": "page_kind=unclear; no dated listings found",
-   "processed_at": "2026-08-24T20:13:51.844959+00:00"
+   "notes": "homepage HTTP 200 (soft-404/parked: True)",
+   "processed_at": "2026-08-24T20:17:08.840811+00:00"
   },
   {
    "name": "The Golden Bull",
    "website": "https://thegoldenbullbar.com",
-   "category": "all",
+   "category": "music",
    "city": "Oakland",
    "origin": "missing_venues_report",
    "domain": "thegoldenbullbar.com",
-   "status": "done",
-   "recommendation": "investigate",
-   "reason": "no_structured_events",
-   "calendar_url": "https://thegoldenbullbar.com/events",
-   "sample_events": [],
-   "events_seen": 0,
-   "events_per_month_est": 0.0,
-   "lat": null,
-   "lng": null,
-   "evidence": [
-    "homepage_fetch=200",
-    "calendar_fetch=200:https://thegoldenbullbar.com/events"
-   ],
-   "page_kind": "unclear",
-   "notes": "page_kind=unclear; no dated listings found",
-   "processed_at": "2026-08-24T20:14:13.583717+00:00"
-  },
-  {
-   "name": "Eli's Mile High Club",
-   "website": "https://elismilehigh.com",
-   "category": "all",
-   "city": "Oakland",
-   "origin": "missing_venues_report",
-   "domain": "elismilehigh.com",
    "status": "done",
    "recommendation": "investigate",
    "reason": "no_structured_events",
@@ -80,10 +54,129 @@
    "lat": null,
    "lng": null,
    "evidence": [
-    "homepage_fetch=200"
+    "homepage_fetch=200",
+    "calendar_miss(200):https://thegoldenbullbar.com/events",
+    "calendar_miss(200):https://thegoldenbullbar.com/calendar",
+    "calendar_miss(200):https://thegoldenbullbar.com/shows",
+    "calendar_miss(200):https://thegoldenbullbar.com/schedule",
+    "calendar_miss(200):https://thegoldenbullbar.com/whats-on",
+    "calendar_miss(200):https://thegoldenbullbar.com/tickets",
+    "calendar_miss(200):https://thegoldenbullbar.com/events/calendar",
+    "calendar_miss(200):https://thegoldenbullbar.com/calendar/latest.html",
+    "calendar_miss(200):https://thegoldenbullbar.com/events/upcoming"
    ],
    "notes": "no reachable events/calendar page among candidates",
-   "processed_at": "2026-08-24T20:14:39.438749+00:00"
+   "processed_at": "2026-08-24T20:18:01.232413+00:00"
+  },
+  {
+   "name": "Eli's Mile High Club",
+   "website": "https://elismilehigh.com",
+   "category": "music",
+   "city": "Oakland",
+   "origin": "missing_venues_report",
+   "domain": "elismilehigh.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "dead_site",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200"
+   ],
+   "notes": "homepage HTTP 200 (soft-404/parked: True)",
+   "processed_at": "2026-08-24T20:18:07.937458+00:00"
+  },
+  {
+   "name": "The Caravan Lounge",
+   "website": "https://thecaravanlounge.com",
+   "category": "music",
+   "city": "San Jose",
+   "origin": "missing_venues_report",
+   "domain": "thecaravanlounge.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "dead_site",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=422"
+   ],
+   "notes": "homepage HTTP 422 (soft-404/parked: False)",
+   "processed_at": "2026-08-24T20:18:12.135043+00:00"
+  },
+  {
+   "name": "The Ritz",
+   "website": "https://theritzsj.com",
+   "category": "music",
+   "city": "San Jose",
+   "origin": "missing_venues_report",
+   "domain": "theritzsj.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "dead_site",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=422"
+   ],
+   "notes": "homepage HTTP 422 (soft-404/parked: False)",
+   "processed_at": "2026-08-24T20:18:16.328144+00:00"
+  },
+  {
+   "name": "Back Bar Sofa",
+   "website": "https://backbarsofa.com",
+   "category": "music",
+   "city": "San Jose",
+   "origin": "missing_venues_report",
+   "domain": "backbarsofa.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "dead_site",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=422"
+   ],
+   "notes": "homepage HTTP 422 (soft-404/parked: False)",
+   "processed_at": "2026-08-24T20:18:20.548253+00:00"
+  },
+  {
+   "name": "Curran Theatre",
+   "website": "https://curran.com",
+   "category": "all",
+   "city": "San Francisco",
+   "origin": "missing_venues_report",
+   "domain": "curran.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "dead_site",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=422"
+   ],
+   "notes": "homepage HTTP 422 (soft-404/parked: False)",
+   "processed_at": "2026-08-24T20:18:51.969157+00:00"
   }
  ]
 }

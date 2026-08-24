@@ -390,6 +390,24 @@ def looks_like_archive(md: str) -> bool:
     return ("archive" in low or "past events" in low) and low.count("2026") < 3
 
 
+def page_is_soft_fail(md: str) -> bool:
+    """True when Jina delivered an error/parked page rather than real content."""
+    if not md:
+        return True
+    head = md[:600]
+    low = md.lower()[:2500]
+    if "warning: target url returned error" in low:
+        return True
+    if "http status: 4" in low and "markdown content:" not in low[low.find("http status"):low.find("http status") + 60]:
+        return True
+    if "is for sale" in low and ("make an offer" in low or "trustpilot" in low):
+        return True
+    if "domain name" in low and "make an offer" in low:
+        return True
+    del head
+    return False
+
+
 def pick_followup_link(md: str, base_url: str) -> Optional[str]:
     """On an archive/index page, find a 'latest'/'current'/current-year sub-link."""
     best, best_score = None, 0
@@ -519,21 +537,25 @@ def process_candidate(seed: Dict[str, Any], idx: Dict[str, set]) -> Dict[str, An
     # 2a. homepage
     home_md, home_status = jina_fetch(website)
     rec["evidence"].append(f"homepage_fetch={home_status}")
-    if not home_md:
+    if not home_md or page_is_soft_fail(home_md):
         rec.update(recommendation="investigate", status="done",
-                   reason="dead_site", notes=f"homepage HTTP {home_status}")
+                   reason="dead_site",
+                   notes=f"homepage HTTP {home_status} (soft-404/parked: {bool(home_md) and page_is_soft_fail(home_md)})")
         return rec
 
-    # 2b. calendar URL hunt
+    # 2b. calendar URL hunt - keep trying until a REAL content page is found
     cal_candidates = find_calendar_urls(home_md, website)
     cal_md, cal_url = None, None
-    for cu in cal_candidates[:7]:
+    tried = []
+    for cu in cal_candidates[:9]:
         md, st = jina_fetch(cu)
         time.sleep(1.0)
-        if md and len(md) > 400:
+        tried.append(cu)
+        if md and len(md) > 300 and not page_is_soft_fail(md):
             cal_md, cal_url = md, cu
-            rec["evidence"].append(f"calendar_fetch={st}:{cu}")
+            rec["evidence"].append(f"calendar_fetch=200:{cu}")
             break
+        rec["evidence"].append(f"calendar_miss({st}):{cu}")
     if not cal_md:
         rec.update(recommendation="investigate", status="done",
                    reason="no_structured_events",
