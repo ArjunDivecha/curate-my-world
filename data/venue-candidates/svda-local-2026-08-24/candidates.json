@@ -1,0 +1,43 @@
+{
+ "schema_version": "3.0-local",
+ "run_id": "svda-local-2026-08-24",
+ "run_date": "2026-08-24",
+ "runner": "scripts/svda/discover_local.py",
+ "llm_lane": "claude CLI (subscription)",
+ "geographic_scope": [
+  "San Francisco Bay Area"
+ ],
+ "registry_rows_written": 0,
+ "counts": {
+  "proposed": 0,
+  "borderline": 0,
+  "investigate": 1,
+  "skipped_existing": 0
+ },
+ "candidates": [
+  {
+   "name": "Elbo Room",
+   "website": "https://elbo.com",
+   "category": "all",
+   "city": "San Francisco",
+   "origin": "missing_venues_report",
+   "domain": "elbo.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "no_structured_events",
+   "calendar_url": "https://elbo.com/events",
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "calendar_fetch=200:https://elbo.com/events"
+   ],
+   "page_kind": "unclear",
+   "notes": "page_kind=unclear; no dated listings found",
+   "processed_at": "2026-08-24T20:13:51.844959+00:00"
+  }
+ ]
+}
