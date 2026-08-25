@@ -11,7 +11,7 @@
  "counts": {
   "proposed": 3,
   "borderline": 3,
-  "investigate": 28,
+  "investigate": 29,
   "skipped_existing": 0
  },
  "candidates": [
@@ -1258,6 +1258,39 @@
    "span_months": 0,
    "notes": "0 future events over ~0mo (rate 0.0/mo)",
    "processed_at": "2026-08-25T11:31:21.234199+00:00"
+  },
+  {
+   "name": "Just Dance Ballroom",
+   "website": "https://justdanceballroom.com",
+   "category": "dance",
+   "city": "Oakland",
+   "note": "Weekly salsa and ballroom socials, published schedule",
+   "origin": "recovered_seed",
+   "domain": "justdanceballroom.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "low_event_volume",
+   "calendar_url": "https://justdanceballroom.com/events",
+   "sample_events": [
+    {
+     "title": "Untitled Event",
+     "date": "2021-06-01",
+     "url": "https://justdanceballroom.com/events/general-dance-parties"
+    }
+   ],
+   "events_seen": 1,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "extract@https://justdanceballroom.com/events:1 events"
+   ],
+   "page_kind": "upcoming_calendar",
+   "future_events": 0,
+   "span_months": 0,
+   "notes": "0 future events over ~0mo (rate 0.0/mo)",
+   "processed_at": "2026-08-25T11:31:58.087402+00:00"
   }
  ]
 }
