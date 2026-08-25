@@ -11,7 +11,7 @@
  "counts": {
   "proposed": 3,
   "borderline": 2,
-  "investigate": 24,
+  "investigate": 25,
   "skipped_existing": 0
  },
  "candidates": [
@@ -1034,6 +1034,32 @@
     "lng": null
    },
    "processed_at": "2026-08-25T11:26:41.940288+00:00"
+  },
+  {
+   "name": "SAFEhouse Arts",
+   "website": "https://safehousearts.org",
+   "category": "dance",
+   "city": "San Francisco",
+   "note": "RAW residency showcases new dance works frequently",
+   "origin": "recovered_seed",
+   "domain": "safehousearts.org",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "no_structured_events",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "extract@https://safehousearts.org/events:0 events",
+    "extract@https://safehousearts.org/calendar:0 events",
+    "extract@https://safehousearts.org/shows:0 events"
+   ],
+   "notes": "tried 3 calendar URLs; no page yielded dated listings (extraction_attempts=3)",
+   "processed_at": "2026-08-25T11:27:29.655749+00:00"
   }
  ]
 }
