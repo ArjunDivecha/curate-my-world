@@ -10,7 +10,7 @@
  "registry_rows_written": 0,
  "counts": {
   "proposed": 3,
-  "borderline": 3,
+  "borderline": 4,
   "investigate": 33,
   "skipped_existing": 0
  },
@@ -1415,6 +1415,56 @@
    "span_months": 0,
    "notes": "0 future events over ~0mo (rate 0.0/mo)",
    "processed_at": "2026-08-25T11:35:33.584895+00:00"
+  },
+  {
+   "name": "EnActe Arts",
+   "website": "https://enacte.org",
+   "category": "desi",
+   "city": "Sunnyvale",
+   "note": "South Asian theatre company with regular Bay Area productions",
+   "origin": "recovered_seed",
+   "domain": "enacte.org",
+   "status": "done",
+   "recommendation": "borderline",
+   "reason": null,
+   "calendar_url": "https://www.enacte.org/filmlab/#filmevents",
+   "sample_events": [
+    {
+     "title": "Fiction Screenwriting: From Idea to Screen — FREE 1-Hour Intro Class",
+     "date": "2026-08-25",
+     "url": "https://www.enacte.org/filmlab/"
+    },
+    {
+     "title": "Fiction Screenwriting: From Idea to Screen (8-week course, Sept 5 – Oct 24)",
+     "date": "2026-09-05",
+     "url": "https://www.enacte.org/filmlab/"
+    }
+   ],
+   "events_seen": 2,
+   "events_per_month_est": 2.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "extract@https://www.enacte.org/filmlab/#filmevents:2 events"
+   ],
+   "page_kind": "upcoming_calendar",
+   "future_events": 2,
+   "span_months": 1,
+   "registry_row_proposed": {
+    "name": "EnActe Arts",
+    "domain": "enacte.org",
+    "category": "desi",
+    "city": "Sunnyvale",
+    "state": "CA",
+    "website": "https://enacte.org",
+    "calendar_url": "https://www.enacte.org/filmlab/#filmevents",
+    "source": "svda-local-2026-08-24",
+    "coordinates": null,
+    "lat": null,
+    "lng": null
+   },
+   "processed_at": "2026-08-25T11:36:27.819656+00:00"
   }
  ]
 }
