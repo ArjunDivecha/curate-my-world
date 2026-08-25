@@ -785,12 +785,25 @@ def main() -> None:
     done_keys = set()
     records: List[Dict[str, Any]] = []
     if ckpt_path.exists():
+        dropped_llm_failures = 0
         for line in ckpt_path.read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                r = json.loads(line)
-                records.append(r)
-                done_keys.add(r["domain"] or r["name"])
-        log(f"Resuming: {len(records)} candidates already checkpointed")
+            if not line.strip():
+                continue
+            r = json.loads(line)
+            # LLM-outage placeholders are not verdicts - drop them so the
+            # candidate is retried this run.
+            if "LLM lane unavailable" in str(r.get("notes", "")):
+                dropped_llm_failures += 1
+                continue
+            records.append(r)
+            done_keys.add(r["domain"] or r["name"])
+        if dropped_llm_failures:
+            # Rewrite the checkpoint file without the placeholder records.
+            with ckpt_path.open("w", encoding="utf-8") as f:
+                for r in records:
+                    f.write(json.dumps(r, ensure_ascii=False) + "\n")
+        log(f"Resuming: {len(records)} valid candidates checkpointed "
+            f"({dropped_llm_failures} LLM-outage placeholders dropped for retry)")
 
     todo = [s for s in unique if (s.get("domain") or s["name"]) not in done_keys][: args.limit]
     log(f"To process this run: {len(todo)}")
@@ -803,13 +816,27 @@ def main() -> None:
         except Exception as exc:  # never let one candidate kill the run
             rec = {**seed, "status": "done", "recommendation": "investigate",
                    "reason": "extraction_failed", "notes": f"exception: {exc}"}
+        # LLM-lane outage: process_candidate returns a pending record with no
+        # verdict. Label it explicitly so it is retried on resume, and count
+        # it toward the abort gate.
+        if rec.get("recommendation") is None:
+            rec.update(
+                status="done", recommendation="investigate",
+                reason="extraction_failed",
+                notes="LLM lane unavailable during this candidate - will retry on resume",
+            )
         if rec.get("reason") == "extraction_failed" and "LLM lane" in str(rec.get("notes")):
             consecutive_llm_failures += 1
             time.sleep(20)
             if consecutive_llm_failures >= 3:
+                # Drop the three failed records so a resumed run reprocesses them.
+                del records[-consecutive_llm_failures:]
+                with ckpt_path.open("w", encoding="utf-8") as f:  # rewrite without failures
+                    for r in records:
+                        f.write(json.dumps(r, ensure_ascii=False) + "\n")
                 log("ABORT: LLM lane failing repeatedly (rate limit?). "
-                    f"{len(records)} candidates checkpointed; resume later - "
-                    "the run picks up where it left off.")
+                    f"{len(records)} valid candidates checkpointed; the failed "
+                    "ones were removed and will retry on resume.")
                 break
         else:
             consecutive_llm_failures = 0
