@@ -9,7 +9,7 @@
  ],
  "registry_rows_written": 0,
  "counts": {
-  "proposed": 1,
+  "proposed": 2,
   "borderline": 0,
   "investigate": 22,
   "skipped_existing": 0
@@ -710,6 +710,71 @@
    "span_months": 0,
    "notes": "0 future events over ~0mo (rate 0.0/mo)",
    "processed_at": "2026-08-25T11:22:55.371642+00:00"
+  },
+  {
+   "name": "Old First Concerts",
+   "website": "https://oldfirstconcerts.org",
+   "category": "all",
+   "city": "San Francisco",
+   "note": "Long-running chamber music series at Old First Church",
+   "origin": "recovered_seed",
+   "domain": "oldfirstconcerts.org",
+   "status": "done",
+   "recommendation": "add",
+   "reason": null,
+   "calendar_url": "https://oldfirstconcerts.org/events",
+   "sample_events": [
+    {
+     "title": "San Francisco International Piano Festival – Stephen Prutsman and TNTeague Duo",
+     "date": "2026-08-28",
+     "url": "https://www.oldfirstconcerts.org/performance/san-francisco-international-piano-festival-tnteague-duo-friday-august-28-at-8-pm/"
+    },
+    {
+     "title": "San Francisco International Piano Festival – Festival Finale",
+     "date": "2026-08-30",
+     "url": "https://www.oldfirstconcerts.org/performance/san-francisco-international-piano-festival-festival-finale-sunday-august-30-at-4-pm/"
+    },
+    {
+     "title": "Mike Greensill & Friends – Celebrating his 80th birthday!",
+     "date": "2026-09-06",
+     "url": "https://www.oldfirstconcerts.org/performance/mike-greensill-friends-celebrating-his-80th-birthday-sunday-september-6-at-4-pm/"
+    },
+    {
+     "title": "Pianist Kevin Lee Sun & Friends – Look to This Day",
+     "date": "2026-09-13",
+     "url": "https://www.oldfirstconcerts.org/performance/kevin-lee-sun-friends-look-to-this-day-sunday-september-13-at-4-pm/"
+    },
+    {
+     "title": "Noël Wan – Les fleurs du mal",
+     "date": "2026-09-20",
+     "url": "https://www.oldfirstconcerts.org/performance/noel-wan-les-fleurs-du-mal-sunday-september-20-at-4-pm/"
+    }
+   ],
+   "events_seen": 5,
+   "events_per_month_est": 5.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "extract@https://oldfirstconcerts.org/events:5 events"
+   ],
+   "page_kind": "unclear",
+   "future_events": 5,
+   "span_months": 1,
+   "registry_row_proposed": {
+    "name": "Old First Concerts",
+    "domain": "oldfirstconcerts.org",
+    "category": "all",
+    "city": "San Francisco",
+    "state": "CA",
+    "website": "https://oldfirstconcerts.org",
+    "calendar_url": "https://oldfirstconcerts.org/events",
+    "source": "svda-local-2026-08-24",
+    "coordinates": null,
+    "lat": null,
+    "lng": null
+   },
+   "processed_at": "2026-08-25T11:23:42.613229+00:00"
   }
  ]
 }
