@@ -803,9 +803,9 @@ def main() -> None:
             if not line.strip():
                 continue
             r = json.loads(line)
-            # LLM-outage placeholders are not verdicts - drop them so the
-            # candidate is retried this run.
-            if "LLM lane unavailable" in str(r.get("notes", "")):
+            # No recommendation == never reached a verdict (pre-fix LLM-outage
+            # placeholder or unlabeled record) - not a result, so requeue it.
+            if not r.get("recommendation"):
                 dropped_llm_failures += 1
                 continue
             records.append(r)
