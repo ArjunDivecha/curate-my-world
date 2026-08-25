@@ -11,7 +11,7 @@
  "counts": {
   "proposed": 2,
   "borderline": 0,
-  "investigate": 22,
+  "investigate": 23,
   "skipped_existing": 0
  },
  "candidates": [
@@ -775,6 +775,32 @@
     "lng": null
    },
    "processed_at": "2026-08-25T11:23:42.613229+00:00"
+  },
+  {
+   "name": "Manny's",
+   "website": "https://welcometomannys.com",
+   "category": "all",
+   "city": "San Francisco",
+   "note": "Civic gathering space, near-nightly speaker events",
+   "origin": "recovered_seed",
+   "domain": "welcometomannys.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "no_structured_events",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "extract@https://welcometomannys.com/events:0 events",
+    "extract@https://welcometomannys.com/calendar:0 events",
+    "extract@https://welcometomannys.com/shows:0 events"
+   ],
+   "notes": "tried 3 calendar URLs; no page yielded dated listings (extraction_attempts=3)",
+   "processed_at": "2026-08-25T11:24:33.887170+00:00"
   }
  ]
 }
