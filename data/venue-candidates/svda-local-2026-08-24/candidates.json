@@ -11,7 +11,7 @@
  "counts": {
   "proposed": 3,
   "borderline": 3,
-  "investigate": 32,
+  "investigate": 33,
   "skipped_existing": 0
  },
  "candidates": [
@@ -1377,6 +1377,44 @@
    ],
    "notes": "tried 3 calendar URLs; no page yielded dated listings (extraction_attempts=3)",
    "processed_at": "2026-08-25T11:34:15.157599+00:00"
+  },
+  {
+   "name": "Naatak",
+   "website": "https://naatak.org",
+   "category": "desi",
+   "city": "Santa Clara",
+   "note": "Largest US Indian theatre; year-round plays at Naatak House",
+   "origin": "recovered_seed",
+   "domain": "naatak.org",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "low_event_volume",
+   "calendar_url": "https://naatak.org/tickets",
+   "sample_events": [
+    {
+     "title": "K.K.",
+     "date": "2022-12-03",
+     "url": "https://naatak.org/2022-kk"
+    }
+   ],
+   "events_seen": 1,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "calendar_miss(200):https://naatak.org/events",
+    "calendar_miss(200):https://naatak.org/calendar",
+    "calendar_miss(200):https://naatak.org/shows",
+    "calendar_miss(200):https://naatak.org/schedule",
+    "calendar_miss(200):https://naatak.org/whats-on",
+    "extract@https://naatak.org/tickets:1 events"
+   ],
+   "page_kind": "upcoming_calendar",
+   "future_events": 0,
+   "span_months": 0,
+   "notes": "0 future events over ~0mo (rate 0.0/mo)",
+   "processed_at": "2026-08-25T11:35:33.584895+00:00"
   }
  ]
 }
