@@ -11,7 +11,7 @@
  "counts": {
   "proposed": 3,
   "borderline": 3,
-  "investigate": 27,
+  "investigate": 28,
   "skipped_existing": 0
  },
  "candidates": [
@@ -1200,6 +1200,64 @@
     "lng": null
    },
    "processed_at": "2026-08-25T11:29:25.938423+00:00"
+  },
+  {
+   "name": "Allegro Ballroom",
+   "website": "https://allegroballroom.com",
+   "category": "dance",
+   "city": "Emeryville",
+   "note": "Nonprofit ballroom with nightly socials and calendar",
+   "origin": "recovered_seed",
+   "domain": "allegroballroom.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "low_event_volume",
+   "calendar_url": "https://allegroballroom.com/schedule/",
+   "sample_events": [
+    {
+     "title": "Sunday: Bachata Class – both classes and social for single low price",
+     "date": "2026-07-26",
+     "url": "https://allegroballroom.com/events/event/sunday-bachata-class-both-classes-and-social-for-single-low-price/"
+    },
+    {
+     "title": "Sunday: Salsa Class",
+     "date": "2026-07-26",
+     "url": "https://allegroballroom.com/events/event/sunday-salsa-and-bachata-all-levels-salsa-class/"
+    },
+    {
+     "title": "Sunday: Hot Salsa and Bachata Social",
+     "date": "2026-07-26",
+     "url": "https://allegroballroom.com/events/event/sunday-hot-salsa-and-bachata-social/"
+    },
+    {
+     "title": "JB 6:30-7:30 Irish Steppers – Amy",
+     "date": "2026-07-27",
+     "url": "https://allegroballroom.com/events/event/jb-630-730-irish-steppers-amy/"
+    },
+    {
+     "title": "Beginner American Style: Viennese Waltz w/Mark",
+     "date": "2026-07-28",
+     "url": "https://allegroballroom.com/events/event/beginner-american-style-viennese-waltz/"
+    },
+    {
+     "title": "American Rhythm: Cha Cha continues with Mark",
+     "date": "2026-07-28",
+     "url": "https://allegroballroom.com/events/event/american-rhythm-cha-cha-continues-with-mark/"
+    }
+   ],
+   "events_seen": 70,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "extract@https://allegroballroom.com/schedule/:70 events"
+   ],
+   "page_kind": "upcoming_calendar",
+   "future_events": 0,
+   "span_months": 0,
+   "notes": "0 future events over ~0mo (rate 0.0/mo)",
+   "processed_at": "2026-08-25T11:31:21.234199+00:00"
   }
  ]
 }
