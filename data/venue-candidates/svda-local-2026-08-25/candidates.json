@@ -11,7 +11,7 @@
  "counts": {
   "proposed": 1,
   "borderline": 0,
-  "investigate": 12,
+  "investigate": 13,
   "skipped_existing": 0
  },
  "candidates": [
@@ -409,6 +409,64 @@
    ],
    "notes": "homepage HTTP 422",
    "processed_at": "2026-08-25T06:30:22.176664+00:00"
+  },
+  {
+   "name": "Red Poppy Art House",
+   "website": "https://redpoppyarthouse.org",
+   "category": "all",
+   "city": "San Francisco",
+   "note": "Intimate Mission arts space, frequent concerts and gallery events",
+   "origin": "llm_seed",
+   "domain": "redpoppyarthouse.org",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "low_event_volume",
+   "calendar_url": "https://redpoppyarthouse.org/programs/the-mapp-program/",
+   "sample_events": [
+    {
+     "title": "December 7th MAPP",
+     "date": "2024-12-07",
+     "url": "https://redpoppyarthouse.org/event/december-7th-mapp/"
+    },
+    {
+     "title": "October 5th MAPP",
+     "date": "2024-10-05",
+     "url": "https://redpoppyarthouse.org/event/october-5th-mapp/"
+    },
+    {
+     "title": "August 3rd MAPP",
+     "date": "2024-08-03",
+     "url": "https://redpoppyarthouse.org/event/august-3rd-mapp/"
+    },
+    {
+     "title": "June 1st MAPP — Youth on Fire",
+     "date": "2024-06-01",
+     "url": "https://redpoppyarthouse.org/event/june-1st-mapp-youth-on-fire/"
+    },
+    {
+     "title": "April 6th MAPP",
+     "date": "2024-04-06",
+     "url": "https://redpoppyarthouse.org/event/april-6th-mapp/"
+    },
+    {
+     "title": "February 3rd MAPP",
+     "date": "2024-02-03",
+     "url": "https://redpoppyarthouse.org/event/mapp-february-3rd-2024/"
+    }
+   ],
+   "events_seen": 12,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "extract@https://redpoppyarthouse.org/programs/the-mapp-program/:12 events"
+   ],
+   "page_kind": "archive_index",
+   "future_events": 0,
+   "span_months": 0,
+   "notes": "0 future events over ~0mo (rate 0.0/mo)",
+   "processed_at": "2026-08-25T06:31:09.400710+00:00"
   }
  ]
 }
