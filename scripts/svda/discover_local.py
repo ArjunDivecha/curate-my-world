@@ -753,6 +753,8 @@ def main() -> None:
     ap.add_argument("--limit", type=int, default=400, help="max candidates processed this invocation")
     ap.add_argument("--run-id", default=None,
                     help="pin the run directory (survives midnight date rollover on multi-day resumes)")
+    ap.add_argument("--seeds-file", default=None,
+                    help="JSON array of seed dicts {name, website, category, ...} to process")
     args = ap.parse_args()
 
     if args.run_id:
@@ -781,6 +783,15 @@ def main() -> None:
             time.sleep(1)
     elif ckpt_exists and not args.no_llm_seed:
         log("Checkpoint exists - skipping LLM seed regeneration (already seeded)")
+
+    if args.seeds_file:
+        extra = json.loads(Path(args.seeds_file).read_text(encoding="utf-8"))
+        for s in extra:
+            if s.get("website") and not str(s["website"]).startswith("http"):
+                s["website"] = "https://" + str(s["website"])
+            s.setdefault("origin", "seeds_file")
+        seeds.extend(extra)
+        log(f"Seeds from {args.seeds_file}: {len(extra)}")
 
     # dedupe seeds (by domain/name, and vs registry)
     seen_keys: set = set()
