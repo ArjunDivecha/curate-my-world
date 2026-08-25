@@ -11,7 +11,7 @@
  "counts": {
   "proposed": 3,
   "borderline": 3,
-  "investigate": 31,
+  "investigate": 32,
   "skipped_existing": 0
  },
  "candidates": [
@@ -1351,6 +1351,32 @@
    ],
    "notes": "tried 3 calendar URLs; no page yielded dated listings (extraction_attempts=3)",
    "processed_at": "2026-08-25T11:33:27.979561+00:00"
+  },
+  {
+   "name": "Dance Palace Community Center",
+   "website": "https://dancepalace.org",
+   "category": "dance",
+   "city": "Point Reyes Station",
+   "note": "North Bay community center with dance calendar",
+   "origin": "recovered_seed",
+   "domain": "dancepalace.org",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "no_structured_events",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "extract@https://dancepalace.org/events:0 events",
+    "extract@https://dancepalace.org/calendar:0 events",
+    "extract@https://dancepalace.org/shows:0 events"
+   ],
+   "notes": "tried 3 calendar URLs; no page yielded dated listings (extraction_attempts=3)",
+   "processed_at": "2026-08-25T11:34:15.157599+00:00"
   }
  ]
 }
