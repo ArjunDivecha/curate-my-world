@@ -11,7 +11,7 @@
  "counts": {
   "proposed": 3,
   "borderline": 3,
-  "investigate": 29,
+  "investigate": 30,
   "skipped_existing": 0
  },
  "candidates": [
@@ -1291,6 +1291,40 @@
    "span_months": 0,
    "notes": "0 future events over ~0mo (rate 0.0/mo)",
    "processed_at": "2026-08-25T11:31:58.087402+00:00"
+  },
+  {
+   "name": "Rhythmix Cultural Works",
+   "website": "https://rhythmix.org",
+   "category": "dance",
+   "city": "Alameda",
+   "note": "Community arts venue presenting dance regularly",
+   "origin": "recovered_seed",
+   "domain": "rhythmix.org",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "low_event_volume",
+   "calendar_url": "https://rhythmix.org/events/diwali-2026/",
+   "sample_events": [
+    {
+     "title": "Family Friendly Diwali Celebration with Non Stop Bhangra",
+     "date": "2026-11-21",
+     "url": "https://rhythmix.org/events/diwali-2026/"
+    }
+   ],
+   "events_seen": 1,
+   "events_per_month_est": 0.3,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "calendar_miss(200):https://www.rhythmix.org/wp-content/uploads/24events/Diwali2024_340.jpg",
+    "extract@https://rhythmix.org/events/diwali-2026/:1 events"
+   ],
+   "page_kind": "single_event",
+   "future_events": 1,
+   "span_months": 3,
+   "notes": "1 future events over ~3mo (rate 0.3/mo)",
+   "processed_at": "2026-08-25T11:32:35.709502+00:00"
   }
  ]
 }
