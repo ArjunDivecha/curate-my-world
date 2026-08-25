@@ -1,6 +1,6 @@
 # SVDA Local Discovery — Venue Approval Sheet
 
-Run: `svda-local-2026-08-24` · Generated 2026-08-25 04:07 UTC · Registry untouched. Approve individually by ID (e.g. "approve A03, B02").
+Run: `svda-local-2026-08-24` · Generated 2026-08-25 11:04 UTC · Registry untouched. Approve individually by ID (e.g. "approve A03, B02").
 
 | ID | Verdict | Name | Category | City | Dated events seen | Est./mo | Calendar |
 |---|---|---|---|---|---|---|---|
