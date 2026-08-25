@@ -11,7 +11,7 @@
  "counts": {
   "proposed": 3,
   "borderline": 4,
-  "investigate": 33,
+  "investigate": 34,
   "skipped_existing": 0
  },
  "candidates": [
@@ -1465,6 +1465,32 @@
     "lng": null
    },
    "processed_at": "2026-08-25T11:36:27.819656+00:00"
+  },
+  {
+   "name": "India Community Center",
+   "website": "https://indiacc.org",
+   "category": "desi",
+   "city": "Milpitas",
+   "note": "Indian cultural center hosting frequent community events and concerts",
+   "origin": "recovered_seed",
+   "domain": "indiacc.org",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "no_structured_events",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "extract@https://www.indiacc.org/youth-programs/:0 events",
+    "extract@https://www.indiacc.org/toddler-program/:0 events",
+    "extract@https://www.indiacc.org/afterschoolprogram/:0 events"
+   ],
+   "notes": "tried 3 calendar URLs; no page yielded dated listings (extraction_attempts=3)",
+   "processed_at": "2026-08-25T11:37:26.946625+00:00"
   }
  ]
 }
