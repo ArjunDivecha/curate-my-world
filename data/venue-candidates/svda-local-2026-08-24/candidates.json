@@ -11,7 +11,7 @@
  "counts": {
   "proposed": 3,
   "borderline": 3,
-  "investigate": 30,
+  "investigate": 31,
   "skipped_existing": 0
  },
  "candidates": [
@@ -1325,6 +1325,32 @@
    "span_months": 3,
    "notes": "1 future events over ~3mo (rate 0.3/mo)",
    "processed_at": "2026-08-25T11:32:35.709502+00:00"
+  },
+  {
+   "name": "BrasArte / Casa de Cultura",
+   "website": "https://brasarte.com",
+   "category": "dance",
+   "city": "Berkeley",
+   "note": "Brazilian dance and culture events venue",
+   "origin": "recovered_seed",
+   "domain": "brasarte.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "no_structured_events",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "extract@https://brasarte.com/events:0 events",
+    "extract@https://brasarte.com/calendar:0 events",
+    "extract@https://brasarte.com/shows:0 events"
+   ],
+   "notes": "tried 3 calendar URLs; no page yielded dated listings (extraction_attempts=3)",
+   "processed_at": "2026-08-25T11:33:27.979561+00:00"
   }
  ]
 }
