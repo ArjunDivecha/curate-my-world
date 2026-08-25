@@ -11,7 +11,7 @@
  "counts": {
   "proposed": 3,
   "borderline": 2,
-  "investigate": 26,
+  "investigate": 27,
   "skipped_existing": 0
  },
  "candidates": [
@@ -1092,6 +1092,44 @@
    ],
    "notes": "tried 9 calendar URLs; no page yielded dated listings (extraction_attempts=1)",
    "processed_at": "2026-08-25T11:28:24.035927+00:00"
+  },
+  {
+   "name": "Bay Area Country Dance Society",
+   "website": "https://bacds.org",
+   "category": "dance",
+   "city": "Berkeley",
+   "note": "Weekly contra and English dances, own calendar",
+   "origin": "recovered_seed",
+   "domain": "bacds.org",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "low_event_volume",
+   "calendar_url": "https://bacds.org/events/",
+   "sample_events": [
+    {
+     "title": "33rd Annual No Snow Ball",
+     "date": "2019-12-08",
+     "url": "https://bacds.org/events/NoSnow"
+    },
+    {
+     "title": "New Year's Eve at the Palo Alto Contra",
+     "date": "2019-12-31",
+     "url": "https://bacds.org/mailings/201909/2019-12-31-PANYE.pdf"
+    }
+   ],
+   "events_seen": 2,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "extract@https://bacds.org/events/:2 events"
+   ],
+   "page_kind": "unclear",
+   "future_events": 0,
+   "span_months": 0,
+   "notes": "0 future events over ~0mo (rate 0.0/mo)",
+   "processed_at": "2026-08-25T11:28:54.217296+00:00"
   }
  ]
 }
