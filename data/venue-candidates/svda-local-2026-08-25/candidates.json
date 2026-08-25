@@ -11,7 +11,7 @@
  "counts": {
   "proposed": 1,
   "borderline": 0,
-  "investigate": 10,
+  "investigate": 12,
   "skipped_existing": 0
  },
  "candidates": [
@@ -361,6 +361,54 @@
    "span_months": 0,
    "notes": "0 future events over ~0mo (rate 0.0/mo)",
    "processed_at": "2026-08-25T06:28:16.942633+00:00"
+  },
+  {
+   "name": "Rooster T. Feathers",
+   "website": "https://roostertfeathers.com",
+   "category": "comedy",
+   "city": "Sunnyvale",
+   "origin": "missing_venues_report",
+   "domain": "roostertfeathers.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "no_structured_events",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "calendar_miss(200):https://roostertfeathers.com/images/rtf-upcomingshows-btn2.png",
+    "extract@https://roostertfeathers.com/events:0 events",
+    "extract@https://roostertfeathers.com/calendar:0 events",
+    "extract@https://roostertfeathers.com/shows:0 events"
+   ],
+   "notes": "tried 4 calendar URLs; no page yielded dated listings (extraction_attempts=3)",
+   "processed_at": "2026-08-25T06:30:17.599457+00:00"
+  },
+  {
+   "name": "Pier 27",
+   "website": "https://pier27sanfrancisco.com",
+   "category": "tech",
+   "city": "San Francisco",
+   "origin": "missing_venues_report",
+   "domain": "pier27sanfrancisco.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "fetch_failed_slow",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=422"
+   ],
+   "notes": "homepage HTTP 422",
+   "processed_at": "2026-08-25T06:30:22.176664+00:00"
   }
  ]
 }
