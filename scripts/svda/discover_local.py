@@ -742,6 +742,7 @@ def write_review_md(records: List[Dict[str, Any]], out_path: Path) -> None:
 
 
 def main() -> None:
+    global RUN_ID, OUT_DIR
     import argparse
 
     ap = argparse.ArgumentParser(description="SVDA v3 local venue discovery (read-only vs registry)")
@@ -750,9 +751,15 @@ def main() -> None:
     ap.add_argument("--no-report-file", action="store_true", help="skip parsing missing_venues_report.md")
     ap.add_argument("--no-llm-seed", action="store_true", help="skip LLM candidate generation")
     ap.add_argument("--limit", type=int, default=400, help="max candidates processed this invocation")
+    ap.add_argument("--run-id", default=None,
+                    help="pin the run directory (survives midnight date rollover on multi-day resumes)")
     args = ap.parse_args()
 
+    if args.run_id:
+        RUN_ID = args.run_id
+        OUT_DIR = PROJECT_ROOT / "data" / "venue-candidates" / RUN_ID
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+
     registry = load_registry()
     idx = registry_index(registry)
     log(f"Registry loaded: {len(registry)} venues")
@@ -761,13 +768,19 @@ def main() -> None:
     seeds: List[Dict[str, Any]] = [] if args.no_report_file else seeds_from_report()
     log(f"Seeds from missing_venues_report.md: {len(seeds)}")
 
-    if not args.no_llm_seed:
+    # Resuming a run that already has processed candidates? Its seed list was
+    # generated once already - regenerating burns scarce subscription-window
+    # budget on calls whose results dedup away.
+    ckpt_exists = (OUT_DIR / "checkpoints.jsonl").exists()
+    if not args.no_llm_seed and not ckpt_exists:
         cats = args.categories or VALID_CATEGORIES
         for cat in sorted(cats):
             n = 14 if cat in THIN_CATEGORIES else 8
             for s in llm_seeds(cat, idx, n=n):
                 seeds.append(s)
             time.sleep(1)
+    elif ckpt_exists and not args.no_llm_seed:
+        log("Checkpoint exists - skipping LLM seed regeneration (already seeded)")
 
     # dedupe seeds (by domain/name, and vs registry)
     seen_keys: set = set()
