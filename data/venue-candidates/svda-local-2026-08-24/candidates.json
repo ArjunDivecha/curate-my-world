@@ -1,0 +1,182 @@
+{
+ "schema_version": "3.0-local",
+ "run_id": "svda-local-2026-08-24",
+ "run_date": "2026-08-24",
+ "runner": "scripts/svda/discover_local.py",
+ "llm_lane": "claude CLI (subscription)",
+ "geographic_scope": [
+  "San Francisco Bay Area"
+ ],
+ "registry_rows_written": 0,
+ "counts": {
+  "proposed": 0,
+  "borderline": 0,
+  "investigate": 7,
+  "skipped_existing": 0
+ },
+ "candidates": [
+  {
+   "name": "Elbo Room",
+   "website": "https://elbo.com",
+   "category": "all",
+   "city": "San Francisco",
+   "origin": "missing_venues_report",
+   "domain": "elbo.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "dead_site",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200"
+   ],
+   "notes": "homepage parked/soft-404",
+   "processed_at": "2026-08-25T01:21:58.358542+00:00"
+  },
+  {
+   "name": "The Golden Bull",
+   "website": "https://thegoldenbullbar.com",
+   "category": "all",
+   "city": "Oakland",
+   "origin": "missing_venues_report",
+   "domain": "thegoldenbullbar.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "no_structured_events",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "calendar_miss(200):https://thegoldenbullbar.com/events",
+    "calendar_miss(200):https://thegoldenbullbar.com/calendar",
+    "calendar_miss(200):https://thegoldenbullbar.com/shows",
+    "calendar_miss(200):https://thegoldenbullbar.com/schedule",
+    "calendar_miss(200):https://thegoldenbullbar.com/whats-on",
+    "calendar_miss(200):https://thegoldenbullbar.com/tickets",
+    "calendar_miss(200):https://thegoldenbullbar.com/events/calendar",
+    "calendar_miss(200):https://thegoldenbullbar.com/calendar/latest.html",
+    "calendar_miss(200):https://thegoldenbullbar.com/events/upcoming"
+   ],
+   "notes": "tried 9 calendar URLs; no page yielded dated listings (extraction_attempts=0)",
+   "processed_at": "2026-08-25T01:23:00.234435+00:00"
+  },
+  {
+   "name": "Eli's Mile High Club",
+   "website": "https://elismilehigh.com",
+   "category": "all",
+   "city": "Oakland",
+   "origin": "missing_venues_report",
+   "domain": "elismilehigh.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "dead_site",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200"
+   ],
+   "notes": "homepage parked/soft-404",
+   "processed_at": "2026-08-25T01:23:06.760382+00:00"
+  },
+  {
+   "name": "The Caravan Lounge",
+   "website": "https://thecaravanlounge.com",
+   "category": "all",
+   "city": "San Jose",
+   "origin": "missing_venues_report",
+   "domain": "thecaravanlounge.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "fetch_failed_slow",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=422"
+   ],
+   "notes": "homepage HTTP 422",
+   "processed_at": "2026-08-25T01:23:11.104233+00:00"
+  },
+  {
+   "name": "The Ritz",
+   "website": "https://theritzsj.com",
+   "category": "all",
+   "city": "San Jose",
+   "origin": "missing_venues_report",
+   "domain": "theritzsj.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "fetch_failed_slow",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=422"
+   ],
+   "notes": "homepage HTTP 422",
+   "processed_at": "2026-08-25T01:23:15.495814+00:00"
+  },
+  {
+   "name": "Back Bar Sofa",
+   "website": "https://backbarsofa.com",
+   "category": "all",
+   "city": "San Jose",
+   "origin": "missing_venues_report",
+   "domain": "backbarsofa.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "fetch_failed_slow",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=422"
+   ],
+   "notes": "homepage HTTP 422",
+   "processed_at": "2026-08-25T01:23:19.853969+00:00"
+  },
+  {
+   "name": "Curran Theatre",
+   "website": "https://curran.com",
+   "category": "all",
+   "city": "San Francisco",
+   "origin": "missing_venues_report",
+   "domain": "curran.com",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "dead_site",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=None"
+   ],
+   "notes": "homepage HTTP None",
+   "processed_at": "2026-08-25T01:25:34.480031+00:00"
+  }
+ ]
+}
