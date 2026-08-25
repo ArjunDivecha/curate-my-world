@@ -11,7 +11,7 @@
  "counts": {
   "proposed": 1,
   "borderline": 0,
-  "investigate": 21,
+  "investigate": 22,
   "skipped_existing": 0
  },
  "candidates": [
@@ -652,6 +652,64 @@
    ],
    "notes": "tried 4 calendar URLs; no page yielded dated listings (extraction_attempts=3)",
    "processed_at": "2026-08-25T11:13:16.610162+00:00"
+  },
+  {
+   "name": "Red Poppy Art House",
+   "website": "https://redpoppyarthouse.org",
+   "category": "all",
+   "city": "San Francisco",
+   "note": "Mission community arts house, weekly intimate concerts",
+   "origin": "recovered_seed",
+   "domain": "redpoppyarthouse.org",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "low_event_volume",
+   "calendar_url": "https://redpoppyarthouse.org/programs/the-mapp-program/",
+   "sample_events": [
+    {
+     "title": "MAPP – December 7th, 2024",
+     "date": "2024-12-07",
+     "url": "https://redpoppyarthouse.org/event/december-7th-mapp/"
+    },
+    {
+     "title": "MAPP – October 5th, 2024",
+     "date": "2024-10-05",
+     "url": "https://redpoppyarthouse.org/event/october-5th-mapp/"
+    },
+    {
+     "title": "MAPP – August 3rd, 2024",
+     "date": "2024-08-03",
+     "url": "https://redpoppyarthouse.org/event/august-3rd-mapp/"
+    },
+    {
+     "title": "MAPP – June 1st, 2024 (Youth on Fire)",
+     "date": "2024-06-01",
+     "url": "https://redpoppyarthouse.org/event/june-1st-mapp-youth-on-fire/"
+    },
+    {
+     "title": "MAPP – April 6th, 2024",
+     "date": "2024-04-06",
+     "url": "https://redpoppyarthouse.org/event/april-6th-mapp/"
+    },
+    {
+     "title": "MAPP – February 3rd, 2024",
+     "date": "2024-02-03",
+     "url": "https://redpoppyarthouse.org/event/mapp-february-3rd-2024/"
+    }
+   ],
+   "events_seen": 12,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "extract@https://redpoppyarthouse.org/programs/the-mapp-program/:12 events"
+   ],
+   "page_kind": "archive_index",
+   "future_events": 0,
+   "span_months": 0,
+   "notes": "0 future events over ~0mo (rate 0.0/mo)",
+   "processed_at": "2026-08-25T11:22:55.371642+00:00"
   }
  ]
 }
