@@ -10,7 +10,7 @@
  "registry_rows_written": 0,
  "counts": {
   "proposed": 2,
-  "borderline": 0,
+  "borderline": 1,
   "investigate": 23,
   "skipped_existing": 0
  },
@@ -801,6 +801,56 @@
    ],
    "notes": "tried 3 calendar URLs; no page yielded dated listings (extraction_attempts=3)",
    "processed_at": "2026-08-25T11:24:33.887170+00:00"
+  },
+  {
+   "name": "Root Division",
+   "website": "https://rootdivision.org",
+   "category": "art",
+   "city": "San Francisco",
+   "note": "Nonprofit studios with monthly exhibitions, openings, and art classes",
+   "origin": "recovered_seed",
+   "domain": "rootdivision.org",
+   "status": "done",
+   "recommendation": "borderline",
+   "reason": null,
+   "calendar_url": "https://rootdivision.org/gallery/events/",
+   "sample_events": [
+    {
+     "title": "Art21's Realms of the Real",
+     "date": "2026-08-27",
+     "url": "https://rootdivision.org/events/event/art21s-realms-of-the-real/"
+    },
+    {
+     "title": "2nd Saturday September 2026: INTRODUCTIONS",
+     "date": "2026-09-12",
+     "url": "https://rootdivision.org/events/event/2nd-saturday-september-2026/"
+    }
+   ],
+   "events_seen": 2,
+   "events_per_month_est": 2.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "extract@https://rootdivision.org/gallery/events/:2 events"
+   ],
+   "page_kind": "upcoming_calendar",
+   "future_events": 2,
+   "span_months": 1,
+   "registry_row_proposed": {
+    "name": "Root Division",
+    "domain": "rootdivision.org",
+    "category": "art",
+    "city": "San Francisco",
+    "state": "CA",
+    "website": "https://rootdivision.org",
+    "calendar_url": "https://rootdivision.org/gallery/events/",
+    "source": "svda-local-2026-08-24",
+    "coordinates": null,
+    "lat": null,
+    "lng": null
+   },
+   "processed_at": "2026-08-25T11:25:03.999940+00:00"
   }
  ]
 }
