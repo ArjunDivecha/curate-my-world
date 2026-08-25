@@ -11,7 +11,7 @@
  "counts": {
   "proposed": 3,
   "borderline": 2,
-  "investigate": 25,
+  "investigate": 26,
   "skipped_existing": 0
  },
  "candidates": [
@@ -1060,6 +1060,38 @@
    ],
    "notes": "tried 3 calendar URLs; no page yielded dated listings (extraction_attempts=3)",
    "processed_at": "2026-08-25T11:27:29.655749+00:00"
+  },
+  {
+   "name": "Shawl-Anderson Dance Center",
+   "website": "https://shawl-anderson.org",
+   "category": "dance",
+   "city": "Berkeley",
+   "note": "East Bay dance hub with recurring performances",
+   "origin": "recovered_seed",
+   "domain": "shawl-anderson.org",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "no_structured_events",
+   "calendar_url": null,
+   "sample_events": [],
+   "events_seen": 0,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "extract@https://shawl-anderson.org/events:0 events",
+    "calendar_miss(200):https://shawl-anderson.org/calendar",
+    "calendar_miss(200):https://shawl-anderson.org/shows",
+    "calendar_miss(200):https://shawl-anderson.org/schedule",
+    "calendar_miss(200):https://shawl-anderson.org/whats-on",
+    "calendar_miss(200):https://shawl-anderson.org/tickets",
+    "calendar_miss(200):https://shawl-anderson.org/events/calendar",
+    "calendar_miss(200):https://shawl-anderson.org/calendar/latest.html",
+    "calendar_miss(200):https://shawl-anderson.org/events/upcoming"
+   ],
+   "notes": "tried 9 calendar URLs; no page yielded dated listings (extraction_attempts=1)",
+   "processed_at": "2026-08-25T11:28:24.035927+00:00"
   }
  ]
 }
