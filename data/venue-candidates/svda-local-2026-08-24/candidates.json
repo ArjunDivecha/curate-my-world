@@ -11,7 +11,7 @@
  "counts": {
   "proposed": 1,
   "borderline": 0,
-  "investigate": 8,
+  "investigate": 9,
   "skipped_existing": 0
  },
  "candidates": [
@@ -271,6 +271,54 @@
    ],
    "notes": "homepage HTTP 422",
    "processed_at": "2026-08-25T01:26:33.408537+00:00"
+  },
+  {
+   "name": "Aurora Theatre Company",
+   "website": "https://auroratheatre.org",
+   "category": "all",
+   "city": "Berkeley",
+   "origin": "missing_venues_report",
+   "domain": "auroratheatre.org",
+   "status": "done",
+   "recommendation": "investigate",
+   "reason": "low_event_volume",
+   "calendar_url": "https://auroratheatre.org/events",
+   "sample_events": [
+    {
+     "title": "The Kilbanes",
+     "date": "2021-07-31",
+     "url": ""
+    },
+    {
+     "title": "That's What We're Waiting to Find Out",
+     "date": "2021-06-05",
+     "url": "https://auroratheatre.org/thatswhatwerewaitingtofindout"
+    },
+    {
+     "title": "Deirdre the Queer Queen",
+     "date": "2021-03-20",
+     "url": ""
+    },
+    {
+     "title": "Colonialism is terrible, but pho is delicious",
+     "date": "2021-02-13",
+     "url": ""
+    }
+   ],
+   "events_seen": 4,
+   "events_per_month_est": 0.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "extract@https://auroratheatre.org/index.php/shows-events:0 events",
+    "extract@https://auroratheatre.org/events:4 events"
+   ],
+   "page_kind": "archive_index",
+   "future_events": 0,
+   "span_months": 0,
+   "notes": "0 future events over ~0mo (rate 0.0/mo)",
+   "processed_at": "2026-08-25T01:27:22.620032+00:00"
   }
  ]
 }
