@@ -10,7 +10,7 @@
  "registry_rows_written": 0,
  "counts": {
   "proposed": 2,
-  "borderline": 1,
+  "borderline": 2,
   "investigate": 24,
   "skipped_existing": 0
  },
@@ -909,6 +909,76 @@
    "span_months": 0,
    "notes": "0 future events over ~0mo (rate 0.0/mo)",
    "processed_at": "2026-08-25T11:25:43.822591+00:00"
+  },
+  {
+   "name": "Alameda Comedy Club",
+   "website": "https://alamedacomedy.com",
+   "category": "comedy",
+   "city": "Alameda",
+   "note": "East Bay stand-up club with weekly calendar",
+   "origin": "recovered_seed",
+   "domain": "alamedacomedy.com",
+   "status": "done",
+   "recommendation": "borderline",
+   "reason": null,
+   "calendar_url": "https://alamedacomedy.com/events",
+   "sample_events": [
+    {
+     "title": "Live Comedy at the Alameda Theatre Cinema Grill",
+     "date": "2026-09-09",
+     "url": "https://alamedacomedy.com/shows/376937"
+    },
+    {
+     "title": "Live Comedy at the Alameda Theatre Cinema Grill",
+     "date": "2026-09-23",
+     "url": "https://alamedacomedy.com/shows/376938"
+    },
+    {
+     "title": "Live Comedy at the Alameda Theatre Cinema Grill",
+     "date": "2026-10-14",
+     "url": "https://alamedacomedy.com/shows/383817"
+    },
+    {
+     "title": "Live Comedy at the Alameda Theatre Cinema Grill",
+     "date": "2026-10-28",
+     "url": "https://alamedacomedy.com/shows/383818"
+    },
+    {
+     "title": "Live Comedy at the Alameda Theatre Cinema Grill",
+     "date": "2026-11-11",
+     "url": "https://alamedacomedy.com/shows/383819"
+    },
+    {
+     "title": "Live Comedy at the Alameda Theatre Cinema Grill",
+     "date": "2026-11-25",
+     "url": "https://alamedacomedy.com/shows/383820"
+    }
+   ],
+   "events_seen": 10,
+   "events_per_month_est": 2.5,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "extract@https://alamedacomedy.com/events:10 events"
+   ],
+   "page_kind": "upcoming_calendar",
+   "future_events": 10,
+   "span_months": 4,
+   "registry_row_proposed": {
+    "name": "Alameda Comedy Club",
+    "domain": "alamedacomedy.com",
+    "category": "comedy",
+    "city": "Alameda",
+    "state": "CA",
+    "website": "https://alamedacomedy.com",
+    "calendar_url": "https://alamedacomedy.com/events",
+    "source": "svda-local-2026-08-24",
+    "coordinates": null,
+    "lat": null,
+    "lng": null
+   },
+   "processed_at": "2026-08-25T11:26:08.299049+00:00"
   }
  ]
 }
