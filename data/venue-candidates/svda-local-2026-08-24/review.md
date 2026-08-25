@@ -1,6 +1,6 @@
 # SVDA Local Discovery — Venue Approval Sheet
 
-Run: `svda-local-2026-08-24` · Generated 2026-08-25 11:04 UTC · Registry untouched. Approve individually by ID (e.g. "approve A03, B02").
+Run: `svda-local-2026-08-24` · Generated 2026-08-25 11:13 UTC · Registry untouched. Approve individually by ID (e.g. "approve A03, B02").
 
 | ID | Verdict | Name | Category | City | Dated events seen | Est./mo | Calendar |
 |---|---|---|---|---|---|---|---|
@@ -25,6 +25,7 @@ Run: `svda-local-2026-08-24` · Generated 2026-08-25 11:04 UTC · Registry untou
 | I18 | investigate | Charlie's Corner | kids | San Francisco | 0 | 0.0 | — |
 | I19 | investigate | Jewish Community Center of San Francisco | lectures | San Francisco | 0 | 0.0 | — |
 | I20 | investigate | The Pear Theatre | theatre | Mountain View | 0 | 0.0 | — |
+| I21 | investigate | Rooster T. Feathers | comedy | Sunnyvale | 0 | 0.0 | — |
 
 ## PROPOSED — meet the >=3 events/month cutoff (say "approve A01" etc.)
 
@@ -180,6 +181,12 @@ Run: `svda-local-2026-08-24` · Generated 2026-08-25 11:04 UTC · Registry untou
 - Website: https://thepear.org
 - City: Mountain View · Page kind: — · Dated events seen: 0 · Rate est: 0.0/mo
 - Note: Intimate five-play season plus local playwrights series
+- Reason: no_structured_events
+
+### I21 — Rooster T. Feathers (comedy)
+
+- Website: https://roostertfeathers.com
+- City: Sunnyvale · Page kind: — · Dated events seen: 0 · Rate est: 0.0/mo
 - Reason: no_structured_events
 
 
