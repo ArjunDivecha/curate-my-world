@@ -10,7 +10,7 @@
  "registry_rows_written": 0,
  "counts": {
   "proposed": 3,
-  "borderline": 2,
+  "borderline": 3,
   "investigate": 27,
   "skipped_existing": 0
  },
@@ -1130,6 +1130,76 @@
    "span_months": 0,
    "notes": "0 future events over ~0mo (rate 0.0/mo)",
    "processed_at": "2026-08-25T11:28:54.217296+00:00"
+  },
+  {
+   "name": "North Bay Country Dance Society",
+   "website": "https://nbcds.org",
+   "category": "dance",
+   "city": "Sebastopol",
+   "note": "Recurring contra and English dances in North Bay",
+   "origin": "recovered_seed",
+   "domain": "nbcds.org",
+   "status": "done",
+   "recommendation": "borderline",
+   "reason": null,
+   "calendar_url": "https://nbcds.org/events/",
+   "sample_events": [
+    {
+     "title": "Napa English Country Dance",
+     "date": "2026-07-26",
+     "url": "https://nbcds.org/event/napa-english-country-dance-20/2026-07-26/"
+    },
+    {
+     "title": "Sebastopol English Country Dance",
+     "date": "2026-08-02",
+     "url": "https://nbcds.org/event/sebastopol-english-country-dance-54-2023-01-01-2023-01-15-2023-03-19-2023-07-02-2023-10-01-2026-08-02/"
+    },
+    {
+     "title": "Petaluma Contra",
+     "date": "2026-08-02",
+     "url": "https://nbcds.org/event/petaluma-contra-40/"
+    },
+    {
+     "title": "Marin English Country Dance",
+     "date": "2026-08-08",
+     "url": "https://nbcds.org/event/marin-english-country-dance-16/"
+    },
+    {
+     "title": "San Rafael Contra",
+     "date": "2026-08-08",
+     "url": "https://nbcds.org/event/san-rafael-contra-37/"
+    },
+    {
+     "title": "No Santa Rosa contra",
+     "date": "2026-08-15",
+     "url": "https://nbcds.org/event/no-santa-rosa-contra/"
+    }
+   ],
+   "events_seen": 10,
+   "events_per_month_est": 2.0,
+   "lat": null,
+   "lng": null,
+   "evidence": [
+    "homepage_fetch=200",
+    "extract@https://nbcds.org/events/:10 events"
+   ],
+   "page_kind": "upcoming_calendar",
+   "future_events": 2,
+   "span_months": 1,
+   "registry_row_proposed": {
+    "name": "North Bay Country Dance Society",
+    "domain": "nbcds.org",
+    "category": "dance",
+    "city": "Sebastopol",
+    "state": "CA",
+    "website": "https://nbcds.org",
+    "calendar_url": "https://nbcds.org/events/",
+    "source": "svda-local-2026-08-24",
+    "coordinates": null,
+    "lat": null,
+    "lng": null
+   },
+   "processed_at": "2026-08-25T11:29:25.938423+00:00"
   }
  ]
 }
