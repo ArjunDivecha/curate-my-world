@@ -171,16 +171,24 @@ Be specific and actionable for event curation.
 """
         
         try:
-            self.log("🤖 Analyzing conversations with Claude Sonnet 4...")
+            self.log("🤖 Analyzing conversations with Claude Sonnet 5...")
             
             response = self.anthropic_client.messages.create(
                 model="claude-sonnet-5",
-                max_tokens=2500,
-                temperature=0.3,
+                # 2026-09-16: `temperature` is REJECTED with a 400 on Sonnet 5
+                # ("temperature is deprecated for this model") — verified live.
+                # Adaptive thinking is always on and its tokens come out of
+                # max_tokens, so 2500 risked truncating the JSON mid-answer.
+                max_tokens=16000,
                 messages=[{"role": "user", "content": prompt}]
             )
             
-            analysis_text = response.content[0].text
+            # content[0] is a THINKING block whenever adaptive thinking engages
+            # (verified: reasoning-heavy prompts return ['thinking','text']), so
+            # indexing [0].text raises AttributeError. Select by block type.
+            analysis_text = next(
+                (b.text for b in response.content if b.type == "text"), ""
+            )
             self.log("✅ Claude analysis completed")
             
             # Parse JSON response
