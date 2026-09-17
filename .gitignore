@@ -66,3 +66,7 @@ curate-events-api/data/reports/
 IMPLEMENTATION_PLAN.md
 REDESIGN_REPORT.md
 backend/
+
+# compiled bytecode — kept stale copies of old model strings in the repo (2026-09-17)
+__pycache__/
+*.pyc
