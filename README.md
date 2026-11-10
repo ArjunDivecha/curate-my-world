@@ -19,9 +19,9 @@ Important: Railway `staging` is currently the live backend environment. Railway 
 
 - Aggregates events from:
   - Ticketmaster API (structured, high-volume)
-  - Venue scraper cache (Jina Reader + Claude Haiku extraction)
-- Normalizes into 10 categories:
-  - Music, Theatre, Comedy, Movies, Art, Food, Tech, Lectures, Kids, Desi
+  - Venue scraper cache (Jina Reader + DeepSeek V4 Flash extraction via OpenRouter, Claude Haiku fallback)
+- Normalizes into 12 categories:
+  - Music, Theatre, Comedy, Movies, Art, Food, Tech, Lectures, Kids, Desi, Dance, LGBTQ
 - Supports search, category filters, date filters/presets, and two primary viewing modes:
   - Event View
   - Date View (adapts by preset: Today, Next 7 Days, This Weekend, Next 30 Days)

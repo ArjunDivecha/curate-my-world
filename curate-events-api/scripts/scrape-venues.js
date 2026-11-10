@@ -25,7 +25,7 @@
  *
  * DEPENDENCIES:
  * - @anthropic-ai/sdk (Claude Haiku — error fallback when the DeepSeek/OpenRouter call fails)
- * - node-fetch (for Jina Reader HTTP calls)
+ * - global fetch (Node 18+) for Jina Reader HTTP calls
  *
  * NOTES:
  * - Rate limiting: 1s between Jina calls to avoid 429s
@@ -1662,7 +1662,7 @@ async function fetchTribeEvents(venue) {
   const startDate = new Date();
   const endDate = new Date();
   endDate.setDate(endDate.getDate() + TRIBE_LOOKAHEAD_DAYS);
-  const toDateString = (date) => date.toISOString().slice(0, 10);
+  const toDateString = (date) => pacificDateStamp(date);
   const start = toDateString(startDate);
   const end = toDateString(endDate);
 
@@ -1800,10 +1800,25 @@ function parseTribeHtmlDateTime(datePart, timeHtml) {
   };
 }
 
+// YYYY-MM-DD in the events' time zone. "Today" must be the Pacific date, not
+// the UTC date: after ~4-5 PM Pacific the UTC date is already tomorrow.
+function pacificDateStamp(date = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(date);
+}
+
 function extractTribeHtmlEventsFromHtml(html, venue) {
   const source = String(html || '');
   if (!source) return [];
-  if (/No upcoming events right now/i.test(source)) return null;
+  // Only trust the "no upcoming events" phrase on an actual Tribe Events page.
+  // On any other site it is just page text, and returning null here would
+  // record the venue as a confirmed-empty success and drop its events.
+  const isTribePage = /tribe-events/i.test(source);
+  if (isTribePage && /No upcoming events right now/i.test(source)) return null;
   if (!/tribe-events-calendar-list__event-row/i.test(source)) return [];
 
   const chunks = source
@@ -2111,7 +2126,7 @@ function extractEventsFromGoogleCalendarLinks(markdown, venue) {
  * Extract events from markdown using the configured fallback extractor
  */
 function buildEventExtractionPrompt(venueName, venueCategory, calendarMarkdown) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = pacificDateStamp();
   return `Extract upcoming events from this venue calendar page. Today is ${today}.
 
 VENUE: ${venueName}

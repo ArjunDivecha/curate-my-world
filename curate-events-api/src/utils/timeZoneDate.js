@@ -106,3 +106,39 @@ export function getEndOfZonedDay(baseDate = new Date(), timeZone = getEventsTime
   end.setMilliseconds(999);
   return end;
 }
+
+const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const NAIVE_DATE_TIME_RE = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?$/;
+
+/**
+ * Parse an event date. Strings without a UTC offset are venue-local wall-clock
+ * times (the scraper emits e.g. "2026-02-09T19:00:00"), so they are interpreted
+ * in the events time zone, never the server's zone (Railway runs UTC).
+ * Date-only strings resolve to noon in the events time zone.
+ * Strings with an explicit offset / "Z" are parsed as the instant they name.
+ * @returns {Date|null}
+ */
+export function parseEventDate(value, timeZone = getEventsTimeZone()) {
+  if (!value) return null;
+  if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+
+  if (typeof value === 'string') {
+    const text = value.trim();
+    const dateOnly = text.match(DATE_ONLY_RE);
+    if (dateOnly) {
+      return new Date(zonedTimeToUtcMs({
+        year: Number(dateOnly[1]), month: Number(dateOnly[2]), day: Number(dateOnly[3]), hour: 12
+      }, timeZone));
+    }
+    const naive = text.match(NAIVE_DATE_TIME_RE);
+    if (naive) {
+      return new Date(zonedTimeToUtcMs({
+        year: Number(naive[1]), month: Number(naive[2]), day: Number(naive[3]),
+        hour: Number(naive[4]), minute: Number(naive[5]), second: Number(naive[6] || 0)
+      }, timeZone));
+    }
+  }
+
+  const parsed = new Date(value);
+  return isNaN(parsed.getTime()) ? null : parsed;
+}

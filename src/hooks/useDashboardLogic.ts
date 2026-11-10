@@ -7,6 +7,24 @@ import { buildEventSearchMatcher } from "@/lib/eventSearch";
 
 // Constants from original Dashboard
 const LOCAL_EVENTS_CACHE_KEY = 'cmw_events_cache_v5';
+
+// The backend sends priceRange as a display string (Ticketmaster, e.g.
+// "$25 - $50" or "See Event Page"), as { min, max } (legacy clients), or not
+// at all (scraped venues). An unknown price stays unknown: no amount and never
+// a fabricated "Free".
+const normalizePrice = (priceRange: unknown): { type: 'free' | 'paid' | 'donation'; amount?: string } => {
+  if (typeof priceRange === 'string' && priceRange.trim()) {
+    return { type: 'paid', amount: priceRange.trim() };
+  }
+  if (priceRange && typeof priceRange === 'object') {
+    const { min, max } = priceRange as { min?: unknown; max?: unknown };
+    if (typeof min === 'number' && typeof max === 'number') {
+      if (min === 0 && max === 0) return { type: 'free' };
+      return { type: 'paid', amount: max > min ? `$${min} - $${max}` : `$${min}` };
+    }
+  }
+  return { type: 'paid' };
+};
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 
 export interface Preferences {
@@ -375,7 +393,7 @@ export const useDashboardLogic = () => {
           category: canonical,
           categories: normCats,
           personalRelevanceScore: e.relevance || 8,
-          price: e.priceRange ? { type: e.priceRange.min === 0 && e.priceRange.max === 0 ? 'free' : 'paid', amount: e.priceRange.min === 0 && e.priceRange.max === 0 ? undefined : `$${e.priceRange.min} - $${e.priceRange.max}` } : { type: 'free' },
+          price: normalizePrice(e.priceRange),
           ticketUrl: e.ticketUrl || e.externalUrl,
           eventUrl: e.eventUrl || e.externalUrl,
           aiReasoning: e.aiReasoning || 'Curated sources.',

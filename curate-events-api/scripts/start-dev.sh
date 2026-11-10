@@ -22,7 +22,8 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-API_DIR="/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Working/Curate-My-World/curate-events-api"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+API_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo -e "${BLUE}🎭 Curate Events API - Development Mode${NC}"
 echo "=================================="
@@ -34,7 +35,7 @@ if [ ! -f ".env" ]; then
   if [ -f ".env.example" ]; then
     echo -e "${YELLOW}📋 Copying .env.example to .env${NC}"
     cp .env.example .env
-    echo -e "${YELLOW}⚠️  Please edit .env and add your PERPLEXITY_API_KEY${NC}"
+    echo -e "${YELLOW}⚠️  Please edit .env and add your TICKETMASTER_CONSUMER_KEY${NC}"
   else
     echo -e "${RED}❌ No .env.example found${NC}"
     exit 1

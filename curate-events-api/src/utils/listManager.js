@@ -354,6 +354,11 @@ async function ensureDbInitialized() {
       dbPool = new PoolCtor({
         connectionString: DATABASE_URL,
       });
+      // Without a listener, an idle-client failure is an uncaught exception
+      // that exits the process.
+      dbPool.on('error', (error) => {
+        logger.error('List storage pg pool error (idle client)', { error: error.message });
+      });
 
       await createDbSchema();
       await seedDbFromFilesIfEmpty();

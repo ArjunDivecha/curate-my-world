@@ -76,9 +76,9 @@ fi
 
 log "INFO" "🧹 Cleaning up port ${BACKEND_PORT}..."
 
-# Use our port manager to clean up
+# port-manager's start command frees only this service's own port. Do not run
+# the global "cleanup" here: it kills the other service as well.
 cd "$PROJECT_ROOT"
-node scripts/port-manager.js cleanup
 
 log "INFO" "🚀 Starting backend API server on port ${BACKEND_PORT}..."
 

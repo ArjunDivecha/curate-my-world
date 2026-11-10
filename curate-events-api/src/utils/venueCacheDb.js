@@ -33,7 +33,14 @@ async function getPool() {
     }
 
     try {
-      return new PoolCtor({ connectionString: DATABASE_URL });
+      const pool = new PoolCtor({ connectionString: DATABASE_URL });
+      // pg emits 'error' on the pool when an idle client dies (DB restart,
+      // network drop). Without a listener that is an uncaught exception and
+      // takes the whole API process down.
+      pool.on('error', (error) => {
+        logger.error('Venue cache pg pool error (idle client)', { error: error.message });
+      });
+      return pool;
     } catch (error) {
       logger.warn('Failed to create pg pool; venue cache DB mode disabled', { error: error.message });
       return null;

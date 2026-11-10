@@ -197,6 +197,10 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
       console.log('📋 Events by category:', eventsByCategory);
       
       if (totalEvents === 0) {
+        // The backend may be rebuilding an empty cache; keep polling for it.
+        if (onBackgroundRefreshing) {
+          onBackgroundRefreshing(!!data.backgroundRefreshing);
+        }
         if (!silent) {
           toast({
             title: "No events found",

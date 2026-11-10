@@ -8,11 +8,10 @@ window.addEventListener('error', (event) => {
   const errorMessage = event.message || '';
   const errorSource = event.filename || '';
   
-  // Check for various "Element not found" error patterns
-  if (errorMessage.includes('Element not found') || 
-      errorMessage.includes('element not found') ||
-      errorMessage.includes('Cannot read properties') ||
-      (errorSource && !errorSource.includes('localhost:8766') && !errorSource.includes('127.0.0.1:8766'))) {
+  // Only suppress errors whose script comes from another origin (extensions,
+  // injected scripts). Errors from this app's own origin must stay visible;
+  // in production that origin is not localhost:8766.
+  if (errorSource && !errorSource.startsWith(window.location.origin)) {
     console.warn('Caught external error (likely from browser extension):', {
       message: errorMessage,
       source: errorSource,

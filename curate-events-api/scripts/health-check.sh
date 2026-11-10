@@ -63,7 +63,7 @@ test_api_functionality() {
   # Test event fetching
   echo -ne "${YELLOW}🎭 Testing event fetch...${NC} "
   
-  test_url="$BASE_URL/api/events/theatre?location=San Francisco, CA&limit=5"
+  test_url="$BASE_URL/api/events/theatre?location=San%20Francisco,%20CA&limit=5"
   if response=$(curl -s -m 30 "$test_url" 2>/dev/null); then
     if echo "$response" | grep -q '"success":true'; then
       event_count=$(echo "$response" | grep -o '"count":[0-9]*' | cut -d':' -f2 || echo "0")
@@ -102,7 +102,7 @@ check_resources() {
 
 # Function to check logs for errors
 check_logs() {
-  local log_dir="/Users/macbook2024/Library/CloudStorage/Dropbox/AAA Backup/A Working/Curate-My-World/curate-events-api/logs"
+  local log_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/logs"
   
   if [ -d "$log_dir" ]; then
     echo -e "\n${BLUE}📋 Recent Log Activity${NC}"
@@ -110,7 +110,7 @@ check_logs() {
     
     # Check for recent errors
     if [ -f "$log_dir/error.log" ]; then
-      error_count=$(tail -100 "$log_dir/error.log" 2>/dev/null | grep -c "ERROR" || echo "0")
+      error_count=$(tail -100 "$log_dir/error.log" 2>/dev/null | grep -c "ERROR" || true)
       if [ "$error_count" -gt 0 ]; then
         echo -e "${RED}⚠️  Recent errors: $error_count${NC}"
         echo "   Latest error:"

@@ -13,6 +13,10 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createLogger } from '../utils/logger.js';
+import { getEventsTimeZone } from '../utils/timeZoneDate.js';
+
+// Event times are venue-local (Pacific); never format them in the server's zone.
+const EVENTS_TIME_ZONE = getEventsTimeZone();
 
 const router = express.Router();
 const logger = createLogger('PreviewRoute');
@@ -215,9 +219,9 @@ router.get('/event', (req, res) => {
     try {
       const d = new Date(date);
       if (!isNaN(d.getTime())) {
-        dateDisplay = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        dateDisplay = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: EVENTS_TIME_ZONE });
         if (!time) {
-          const t = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+          const t = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: EVENTS_TIME_ZONE });
           if (t && t !== '12:00 AM') dateDisplay += ` at ${t}`;
         }
       }

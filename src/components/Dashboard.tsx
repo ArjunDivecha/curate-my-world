@@ -55,8 +55,10 @@ export const Dashboard = () => {
   };
 
   const handleDateClick = (date: Date) => {
-    if (datePreset) return;
+    // Day headers are labelled "Open this day in Event View".
     setSelectedDate(date);
+    setDatePreset(null);
+    setActiveTab('events');
   };
 
   const calendarEvents = state.calendarEvents;

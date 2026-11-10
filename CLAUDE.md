@@ -27,7 +27,7 @@ Repo root: `/Users/arjundivecha/Dropbox/AAA Backup/A Working/Curate-My-World Squ
 - `src/hooks/useDashboardLogic.ts` — main frontend state machine + auto-fetch.
 - `src/components/Dashboard.tsx` — dashboard shell + view switching.
 - `data/venue-registry.json` — production venue list; `data/venue-events-cache.json` — scraped-event cache.
-- `openwiki/` — generated deep docs (start at `openwiki/quickstart.md`); auto-updated by CI.
+- `openwiki/` — generated deep docs (start at `openwiki/quickstart.md`); no longer auto-updated (the OpenWiki CI workflow was removed in `033d832`; last refresh 2026-07-09).
 
 ## Commands
 Run from the paths shown. "verified" = executed during this review; "(unverified)" = script

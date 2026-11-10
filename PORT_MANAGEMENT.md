@@ -159,7 +159,7 @@ The port manager automatically sets these environment variables:
 **Frontend:**
 - `PORT=8766`
 - `VITE_PORT=8766` 
-- `VITE_API_BASE_URL=http://localhost:8765`
+- `VITE_API_BASE_URL=http://localhost:8765/api`
 
 **Backend:**
 - `PORT=8765`

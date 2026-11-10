@@ -19,7 +19,7 @@ Three-layer event pipeline with Postgres-backed cache:
 2. **Venue Calendar Scraper** (gap filler) — ~436 active venues (concurrent fetch), ~3,000 cached events
 3. **Event Validator** (quality gate) — rejects listing pages, bad data, out-of-area
 
-**Caching**: `/all-categories` endpoint never makes live TM calls. A background scheduler (30s after startup + every 6h) pre-computes the response and writes to Postgres. Fetch Events always reads from cache (instant).
+**Caching**: `/all-categories` endpoint never makes live TM calls. A background scheduler (daily at 6:00 AM Pacific, `venueRefreshScheduler.js`) pre-computes the response and writes to Postgres. Fetch Events always reads from cache (instant).
 
 **Removed providers**: Perplexity, Exa, Apyflux, SerpAPI, Serper, Super-Hybrid
 
@@ -32,9 +32,9 @@ Three-layer event pipeline with Postgres-backed cache:
 
 ### Categorization
 - **Single source of truth**: `categoryMapping.js` → `normalizeCategory()` (40+ aliases)
-- 9 categories: music, theatre, comedy, movies, art, food, tech, lectures, kids
+- 12 categories: music, theatre, comedy, movies, art, food, tech, lectures, kids, desi, dance, lgbtq
 - `art` has no TM mapping (TM "Arts & Theatre" is theatre/comedy, NOT visual art)
-- Frontend cache key: `cmw_events_cache_v3`
+- Frontend cache key: `cmw_events_cache_v5`
 
 ### Testing
 ```bash
@@ -47,7 +47,7 @@ curl "http://127.0.0.1:8765/api/events/music?location=San+Francisco"  # Test fet
 - `curate-events-api/.env` (API keys)
 - `curate-events-api/src/routes/events.js` (three-layer pipeline)
 - `curate-events-api/src/utils/categoryMapping.js` (category definitions)
-- `data/venue-registry.json` (286 venue definitions)
+- `data/venue-registry.json` (440 venue rows, 434 enabled)
 
 ### Key Commands
 ```bash
@@ -81,5 +81,5 @@ Provider fetch → dedup → rules filter → blacklist → eventValidator → l
 ---
 
 **Project Status**: Production Ready
-**Architecture**: v2.0 — Three-layer pipeline (Ticketmaster + Venue Scraper + Validator)
-**Last Updated**: February 2026
+**Architecture**: v2.1 — Three-layer pipeline (Ticketmaster + Venue Scraper + Validator)
+**Last Updated**: November 2026

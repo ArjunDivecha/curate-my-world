@@ -68,16 +68,16 @@ fi
 
 log "INFO" "🧹 Cleaning up port ${FRONTEND_PORT}..."
 
-# Use our port manager to clean up
+# port-manager's start command frees only this service's own port. Do not run
+# the global "cleanup" here: it kills the other service as well.
 cd "$PROJECT_ROOT"
-node scripts/port-manager.js cleanup
 
 log "INFO" "🚀 Starting frontend development server on port ${FRONTEND_PORT}..."
 
 # Set environment variables
 export PORT=$FRONTEND_PORT
 export VITE_PORT=$FRONTEND_PORT
-export VITE_API_BASE_URL="http://localhost:8765"  # Backend port
+export VITE_API_BASE_URL="http://localhost:8765/api"  # Backend API base (must include /api)
 
 # Check if package.json exists
 if [ ! -f "package.json" ]; then

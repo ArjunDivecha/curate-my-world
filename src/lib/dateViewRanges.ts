@@ -1,7 +1,6 @@
 export const startOfLocalDay = (date: Date) =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate());
 const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})(?!T)/;
-const MIDNIGHT_Z_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})T00:00:00(?:\.000)?Z$/;
 
 export const parseEventDateLocalAware = (
   value: string | Date | null | undefined
@@ -19,15 +18,8 @@ export const parseEventDateLocalAware = (
       // Noon local avoids date-only timezone shifts.
       return new Date(year, month - 1, day, 12, 0, 0, 0);
     }
-    const midnightMatch = value.match(MIDNIGHT_Z_DATE_RE);
-    if (midnightMatch) {
-      const year = Number(midnightMatch[1]);
-      const month = Number(midnightMatch[2]);
-      const day = Number(midnightMatch[3]);
-      // Historical transformed cache may encode date-only values this way.
-      // Treat as intended local calendar date.
-      return new Date(year, month - 1, day, 12, 0, 0, 0);
-    }
+    // A full ISO instant of exactly 00:00:00Z is a real time (4 PM PST /
+    // 5 PM PDT), not a date-only value, so it is deliberately not special-cased.
   }
   const parsed = new Date(value);
   return isNaN(parsed.getTime()) ? null : parsed;

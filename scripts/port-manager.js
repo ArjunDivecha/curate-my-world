@@ -187,7 +187,7 @@ class PortManager {
     const env = {
       ...process.env,
       PORT: CONFIG.FRONTEND_PORT.toString(),
-      VITE_API_BASE_URL: `http://localhost:${CONFIG.BACKEND_PORT}`,
+      VITE_API_BASE_URL: `http://localhost:${CONFIG.BACKEND_PORT}/api`,
       VITE_PORT: CONFIG.FRONTEND_PORT.toString()
     };
 
