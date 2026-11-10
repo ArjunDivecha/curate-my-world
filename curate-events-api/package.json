@@ -13,7 +13,6 @@
     "dev": "node --watch server.js",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch --passWithNoTests",
-    "test:integration": "jest tests/integration",
     "smoke:api": "node scripts/smoke-api.js",
     "load:test": "node scripts/load-test-api.js",
     "load:test:stress": "PROFILE=stress node scripts/load-test-api.js",
@@ -49,7 +48,6 @@
   },
   "keywords": [
     "events",
-    "perplexity",
     "api",
     "theatre",
     "music",

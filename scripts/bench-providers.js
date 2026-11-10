@@ -90,7 +90,7 @@ function appendCsv(row) {
 // Provider benches
 
 async function benchEventbrite() {
-  const token = process.env.EVENTBRITE_TOKEN || process.env.EVENTBRITE_API_TOKEN || 'QTQLJLTFNS74VHZHBR6B';
+  const token = process.env.EVENTBRITE_TOKEN || process.env.EVENTBRITE_API_TOKEN;
   if (!token) return { skipped: true, note: 'EVENTBRITE_TOKEN missing' };
   const url = new URL('https://www.eventbriteapi.com/v3/events/search/');
   const params = new URLSearchParams({

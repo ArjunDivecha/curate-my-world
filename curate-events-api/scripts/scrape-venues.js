@@ -176,7 +176,7 @@ async function fetchViaJina(calendarUrl, { maxMarkdownLength = DEFAULT_MAX_MARKD
         headers,
         signal: controller.signal
       });
-      clearTimeout(timeoutId);
+      // Timer stays armed until the body is read: a stalled body must abort too.
 
       if (!response.ok) {
         const retryable = response.status === 429 || response.status >= 500;
@@ -190,6 +190,7 @@ async function fetchViaJina(calendarUrl, { maxMarkdownLength = DEFAULT_MAX_MARKD
       if (markdown.length > maxMarkdownLength) {
         markdown = markdown.substring(0, maxMarkdownLength) + '\n\n[... truncated ...]';
       }
+      clearTimeout(timeoutId);
       return markdown;
     } catch (error) {
       clearTimeout(timeoutId);
@@ -227,13 +228,15 @@ async function fetchRawText(url) {
       },
       signal: controller.signal
     });
-    clearTimeout(timeoutId);
+    // Timer stays armed until the body is read: a stalled body must abort too.
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    return await response.text();
+    const body = await response.text();
+    clearTimeout(timeoutId);
+    return body;
   } catch (error) {
     clearTimeout(timeoutId);
     throw error;
@@ -253,13 +256,15 @@ async function fetchRawHtml(url) {
       },
       signal: controller.signal
     });
-    clearTimeout(timeoutId);
+    // Timer stays armed until the body is read: a stalled body must abort too.
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    return await response.text();
+    const body = await response.text();
+    clearTimeout(timeoutId);
+    return body;
   } catch (error) {
     clearTimeout(timeoutId);
     throw error;
@@ -1680,9 +1685,9 @@ async function fetchTribeEvents(venue) {
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
-    let response;
+    let payload;
     try {
-      response = await fetch(url.toString(), {
+      const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -1690,15 +1695,17 @@ async function fetchTribeEvents(venue) {
         },
         signal: controller.signal
       });
+
+      if (!response.ok) {
+        throw new Error(`Tribe HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      // Read the body inside the timeout: a stalled body must abort too.
+      payload = await response.json();
     } finally {
       clearTimeout(timeoutId);
     }
 
-    if (!response.ok) {
-      throw new Error(`Tribe HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const payload = await response.json();
     const items = Array.isArray(payload?.events) ? payload.events : [];
     if (!items.length) break;
 
@@ -2220,7 +2227,6 @@ async function extractEventsWithOpenRouter(apiKey, venueName, venueCategory, cal
       }),
       signal: controller.signal
     });
-    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`OpenRouter HTTP ${response.status}: ${await response.text()}`);

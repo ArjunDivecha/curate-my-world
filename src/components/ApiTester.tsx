@@ -228,10 +228,15 @@ export const ApiTester: React.FC = () => {
   const filteredJsonString = () => {
     if (!response) return '';
     
-    let jsonStr = JSON.stringify(response.data, null, 2);
+    // The payload contains scraped third-party text and this string is rendered
+    // as HTML, so escape it first; the search term is matched literally.
+    const escapeHtml = (value: string) =>
+      value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    let jsonStr = escapeHtml(JSON.stringify(response.data, null, 2));
     
     if (searchTerm) {
-      const regex = new RegExp(searchTerm, 'gi');
+      const literal = escapeHtml(searchTerm).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(literal, 'gi');
       jsonStr = jsonStr.replace(regex, `<mark>$&</mark>`);
     }
     
