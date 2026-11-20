@@ -82,6 +82,8 @@ export const useDashboardLogic = () => {
   const [categoryStats, setCategoryStats] = useState<any>({});
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
+  const [psychologyOnly, setPsychologyOnly] = useState(false);
+  const [inPersonOnly, setInPersonOnly] = useState(false);
   const [transformedEventsByCategory, setTransformedEventsByCategory] = useState<any>({});
   const [activeTab, setActiveTab] = useState<'events' | 'date'>('events');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -227,11 +229,20 @@ export const useDashboardLogic = () => {
   ]);
 
   // --- Memoized Derived Data ---
+  const lectureBuckets = useMemo(() => {
+    if (!psychologyOnly || !activeCategories.includes('lectures')) return transformedEventsByCategory;
+    const lectures = (transformedEventsByCategory.lectures || []).filter(
+      (event: { topic?: string; attendanceMode?: string }) => event.topic === 'psychology-child-development'
+        && (!inPersonOnly || event.attendanceMode === 'inPerson' || event.attendanceMode === 'hybrid')
+    );
+    return { ...transformedEventsByCategory, lectures };
+  }, [transformedEventsByCategory, activeCategories, psychologyOnly, inPersonOnly]);
+
   const calendarEvents = useMemo(() => {
-    if (!Object.keys(transformedEventsByCategory).length) return [];
+    if (!Object.keys(lectureBuckets).length) return [];
     let evs: any[] = activeCategories.length === 0
-      ? dedupeEvents(Object.values(transformedEventsByCategory).flat())
-      : dedupeEvents(activeCategories.flatMap((categoryKey) => getBucketEventsForCategory(transformedEventsByCategory, categoryKey)));
+      ? dedupeEvents(Object.values(lectureBuckets).flat())
+      : dedupeEvents(activeCategories.flatMap((categoryKey) => getBucketEventsForCategory(lectureBuckets, categoryKey)));
 
     if (datePreset) {
       const start = startOfLocalDay(new Date());
@@ -261,7 +272,7 @@ export const useDashboardLogic = () => {
         .map((row) => row.event);
     }
     return evs;
-  }, [activeCategories, transformedEventsByCategory, datePreset, searchQuery]);
+  }, [activeCategories, lectureBuckets, datePreset, searchQuery]);
 
   const eventsForEventView = useMemo(() => {
     let evs = calendarEvents;
@@ -296,13 +307,13 @@ export const useDashboardLogic = () => {
       return searchMatcher.matches(e);
     };
 
-    Object.entries(transformedEventsByCategory).forEach(([rawCat, catEvents]) => {
+    Object.entries(lectureBuckets).forEach(([rawCat, catEvents]) => {
       const canonical = rawCat === 'technology' ? 'tech' : rawCat;
       const matchCount = (catEvents as any[]).filter(e => matchesDate(e) && matchesSearch(e)).length;
       counts[canonical] = (counts[canonical] || 0) + matchCount;
     });
     return counts;
-  }, [transformedEventsByCategory, datePreset, selectedDate, searchQuery]);
+  }, [lectureBuckets, datePreset, selectedDate, searchQuery]);
 
   // --- Handlers ---
   const handleSaveToCalendar = (eventId: string) => {
@@ -374,7 +385,11 @@ export const useDashboardLogic = () => {
           category: canonical,
           categories: normCats,
           personalRelevanceScore: e.relevance || 8,
-          price: e.priceRange ? { type: e.priceRange.min === 0 && e.priceRange.max === 0 ? 'free' : 'paid', amount: e.priceRange.min === 0 && e.priceRange.max === 0 ? undefined : `$${e.priceRange.min} - $${e.priceRange.max}` } : { type: 'free' },
+          keywords: e.keywords,
+          topic: e.topic,
+          attendanceMode: e.attendanceMode,
+          audience: e.audience,
+          price: e.priceRange ? { type: e.priceRange.min === 0 && e.priceRange.max === 0 ? 'free' : 'paid', amount: e.priceRange.min === 0 && e.priceRange.max === 0 ? undefined : `$${e.priceRange.min} - $${e.priceRange.max}` } : { type: e.topic === 'psychology-child-development' ? 'unknown' : 'free' },
           ticketUrl: e.ticketUrl || e.externalUrl,
           eventUrl: e.eventUrl || e.externalUrl,
           aiReasoning: e.aiReasoning || 'Curated sources.',
@@ -402,11 +417,11 @@ export const useDashboardLogic = () => {
     state: {
       preferences, events, savedEvents, eventsByCategory, categoryStats, availableCategories, activeCategories,
       transformedEventsByCategory, activeTab, selectedDate, selectedProviders, providerDetails,
-      totalProcessingTime, backgroundRefreshing, refreshStatusText, searchQuery, dateQuery,
+      psychologyOnly, inPersonOnly, totalProcessingTime, backgroundRefreshing, refreshStatusText, searchQuery, dateQuery,
       datePreset, fetcherReady, calendarEvents, eventsForEventView, filteredCategoryCounts
     },
     actions: {
-      setPreferences, setEvents, setSavedEvents, setActiveCategories, setActiveTab, setSelectedDate,
+      setPsychologyOnly, setInPersonOnly, setPreferences, setEvents, setSavedEvents, setActiveCategories, setActiveTab, setSelectedDate,
       setSelectedProviders, setProviderDetails, setTotalProcessingTime, setBackgroundRefreshing,
       setRefreshStatusText, setSearchQuery, setDateQuery, setDatePreset, setFetcherReady,
       handleProviderToggle, handleBackgroundRefreshing, handleSaveToCalendar, handleRemoveFromCalendar,

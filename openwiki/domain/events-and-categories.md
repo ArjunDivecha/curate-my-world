@@ -80,3 +80,7 @@ Important consumers:
 - Verify `SUPPORTED_CATEGORIES` and any frontend ordering or display maps after category edits.
 - Do not treat Ticketmaster's "Arts & Theatre" segment as visual art; the code explicitly avoids that shortcut.
 - If a change affects `startDate` formats or timezone conversions, revisit `TicketmasterClient.js`, `dateFilter.js`, and the frontend date views together.
+
+## Psychology & Child Development
+
+The Lectures filter includes a curated topic supplied by `UniversityTalksClient`. Berkeley's Institute of Human Development publishes dated rows on its colloquium schedule. Stanford Psychology publishes its seminar titles and speakers on department detail pages. Stanford's Localist API supplies public WorkLife and Psychiatry programs about parenting and child development. The API refreshes these sources in the background at startup and every six hours. A failed source retains its last successful listings for up to 48 hours. Attendance format and audience are separate fields. Campus seminar listings with unspecified visitor access are labeled accordingly.

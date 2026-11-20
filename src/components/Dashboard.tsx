@@ -48,7 +48,13 @@ export const Dashboard = () => {
     console.log('🔍 Events state CHANGED:', events.length, events);
   }, [events]);
 
+  const clearLectureFilters = () => {
+    actions.setPsychologyOnly(false);
+    actions.setInPersonOnly(false);
+  };
+
   const handleCategoryFilter = (category: string | null) => {
+    if (category === null || category === 'lectures') clearLectureFilters();
     if (category === null) {
       setActiveCategories([]);
       return;
@@ -324,8 +330,24 @@ export const Dashboard = () => {
                 })}
               </div>
 
+              {activeCategories.includes('lectures') && (
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                  <Button size="sm" variant={state.psychologyOnly ? 'default' : 'outline'}
+                    aria-pressed={state.psychologyOnly}
+                    onClick={() => { actions.setPsychologyOnly(!state.psychologyOnly); actions.setInPersonOnly(false); }}>
+                    Psychology &amp; Child Development
+                  </Button>
+                  {state.psychologyOnly && (
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={state.inPersonOnly} onChange={e => actions.setInPersonOnly(e.target.checked)} />
+                      In person
+                    </label>
+                  )}
+                </div>
+              )}
+
               <div className="mt-3 flex justify-center">
-                <Button size="sm" className="w-full max-w-xl rounded-2xl border justify-center gap-3 h-14 bg-gray-100 text-gray-700" onClick={() => { setActiveCategories([]); setSelectedDate(null); setDatePreset('30d'); setSearchQuery(''); }}>
+                <Button size="sm" className="w-full max-w-xl rounded-2xl border justify-center gap-3 h-14 bg-gray-100 text-gray-700" onClick={() => { clearLectureFilters(); setActiveCategories([]); setSelectedDate(null); setDatePreset('30d'); setSearchQuery(''); }}>
                   <RefreshCw className="h-5 w-5" /><span className="font-semibold">Reset Filters</span>
                 </Button>
               </div>
@@ -373,7 +395,7 @@ export const Dashboard = () => {
                         {selectedDate && <Badge variant="secondary">Date: {selectedDate.toLocaleDateString()}</Badge>}
                         <span className="text-xs text-muted-foreground">({eventsForEventView.length} results)</span>
                       </div>
-                      <Button variant="outline" size="sm" onClick={() => { setActiveCategories([]); setSelectedDate(null); setSearchQuery(''); }}>Clear Filters</Button>
+                      <Button variant="outline" size="sm" onClick={() => { clearLectureFilters(); setActiveCategories([]); setSelectedDate(null); setSearchQuery(''); }}>Clear Filters</Button>
                     </div>
                   </div>
                 )}

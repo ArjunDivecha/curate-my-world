@@ -8,6 +8,7 @@ export interface SearchableEventLike {
   venue?: VenueLike;
   categories?: string[];
   category?: string;
+  keywords?: string[];
   source?: string;
   sources?: string[] | string;
   eventUrl?: string;
@@ -420,6 +421,7 @@ function getIndexedFields(event: SearchableEventLike): IndexedField[] {
   const categories = [
     ...(Array.isArray(event.categories) ? event.categories : []),
     event.category || '',
+    ...(Array.isArray(event.keywords) ? event.keywords : []),
   ].filter(Boolean).join(' ');
 
   const sourceText = [

@@ -18,6 +18,7 @@ import rulesRoutes from './src/routes/rules.js';
 import previewRoutes from './src/routes/preview.js';
 import listsRoutes from './src/routes/lists.js';
 import { startVenueRefreshScheduler } from './src/utils/venueRefreshScheduler.js';
+import { universityTalksClient } from './src/clients/UniversityTalksClient.js';
 import { sceneFClient } from './src/clients/SceneFClient.js';
 
 // Get directory paths for serving static files
@@ -228,6 +229,7 @@ const server = app.listen(config.port, config.host, () => {
   // Uses Postgres advisory lock, so it is safe even if multiple app instances exist.
   startVenueRefreshScheduler();
   sceneFClient.start();
+  universityTalksClient.start();
 });
 
 // Graceful shutdown handling
