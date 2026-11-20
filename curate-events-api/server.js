@@ -18,6 +18,7 @@ import rulesRoutes from './src/routes/rules.js';
 import previewRoutes from './src/routes/preview.js';
 import listsRoutes from './src/routes/lists.js';
 import { startVenueRefreshScheduler } from './src/utils/venueRefreshScheduler.js';
+import { sceneFClient } from './src/clients/SceneFClient.js';
 
 // Get directory paths for serving static files
 const __filename = fileURLToPath(import.meta.url);
@@ -226,6 +227,7 @@ const server = app.listen(config.port, config.host, () => {
   // Daily scheduled refresh (6am America/Los_Angeles) for venue scraper cache.
   // Uses Postgres advisory lock, so it is safe even if multiple app instances exist.
   startVenueRefreshScheduler();
+  sceneFClient.start();
 });
 
 // Graceful shutdown handling

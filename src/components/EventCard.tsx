@@ -29,6 +29,7 @@ const getSourceLabel = (source: string): string => {
   const labels: Record<string, string> = {
     ticketmaster: 'Ticketmaster',
     venue_scraper: 'Venue Scraper',
+    scenef: 'SceneF',
     whitelist: '⭐ Whitelist',
   };
   return labels[source?.toLowerCase()] || source;
@@ -345,6 +346,13 @@ export const EventCard = ({ event }: EventCardProps) => {
         <div className="space-y-2 sm:space-y-3">
           {/* Primary actions row */}
           <div className="flex items-center gap-2">
+            {event.source === 'scenef' && event.ticketUrl && (
+              <Button asChild variant="outline" size="sm">
+                <a href={event.ticketUrl} onClick={click => click.stopPropagation()} onKeyDown={key => key.stopPropagation()}>
+                  Tickets
+                </a>
+              </Button>
+            )}
             {(event.eventUrl || event.ticketUrl) && (
               <div 
                 className="relative"

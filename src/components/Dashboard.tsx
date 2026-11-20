@@ -17,6 +17,8 @@ import { useDashboardLogic } from "@/hooks/useDashboardLogic";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as DatePickerCalendar } from "@/components/ui/calendar";
 
+const EVENT_CARD_BATCH_SIZE = 60;
+
 export const Dashboard = () => {
   const { state, actions, refs } = useDashboardLogic();
   const {
@@ -35,6 +37,11 @@ export const Dashboard = () => {
 
   const { fetchEventsRef } = refs;
   const [datePickerOpen, setDatePickerOpen] = React.useState(false);
+  const [visibleEventCount, setVisibleEventCount] = React.useState(EVENT_CARD_BATCH_SIZE);
+
+  useEffect(() => {
+    setVisibleEventCount(EVENT_CARD_BATCH_SIZE);
+  }, [activeCategories, searchQuery, datePreset, selectedDate]);
 
   // Track when events state changes
   useEffect(() => {
@@ -335,6 +342,11 @@ export const Dashboard = () => {
           <div className="mt-12">
             {activeTab === 'date' ? (
               <div className="space-y-6">
+                {calendarEvents.some(event => event.source === 'scenef') && (
+                  <a href="https://scenef.com" className="text-xs text-muted-foreground underline">
+                    Showtimes via SceneF.com
+                  </a>
+                )}
                 {showDayTimetableInDateView ? (
                   <DayTimetable events={calendarEvents} savedEvents={savedEvents} initialSelectedDay={selectedDate} title={dateViewTitle} renderMode="compact-table" onEventToggleSaved={(id) => savedEvents.find(s => s.id === id) ? handleRemoveFromCalendar(id) : handleSaveToCalendar(id)} />
                 ) : showWeekendSplitInDateView ? (
@@ -368,9 +380,18 @@ export const Dashboard = () => {
                 {eventsForEventView.length === 0 ? (
                   <div className="text-center text-muted-foreground py-12 border rounded-lg">No events match your current filters.<div className="mt-2 text-xs">Try a different date or clear filters.</div></div>
                 ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                    {eventsForEventView.map(event => <EventCard key={event.id} event={event} />)}
-                  </div>
+                  <>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                      {eventsForEventView.slice(0, visibleEventCount).map(event => (
+                        <EventCard key={event.id} event={event} />
+                      ))}
+                    </div>
+                    {eventsForEventView.length > visibleEventCount && (
+                      <Button variant="outline" onClick={() => setVisibleEventCount(count => count + EVENT_CARD_BATCH_SIZE)}>
+                        Show more events
+                      </Button>
+                    )}
+                  </>
                 )}
               </div>
             )}

@@ -221,7 +221,6 @@ export const useDashboardLogic = () => {
     datePreset,
     selectedDateSignature,
     dateQuery,
-    searchQuery,
     preferences.location.address,
     preferences.aiInstructions,
     selectedProvidersSignature,
@@ -389,7 +388,12 @@ export const useDashboardLogic = () => {
 
     setTransformedEventsByCategory(newTransformed);
     try {
-      localStorage.setItem(LOCAL_EVENTS_CACHE_KEY, JSON.stringify({ buckets: newTransformed, stats: fetchedCategoryStats, timestamp: Date.now() }));
+      // SceneF is reloaded from the API so expired showtimes won't be restored
+      // from localStorage. Its full weekly schedule also exceeds browser quotas.
+      const movies = (newTransformed.movies || []).filter((event: { source?: string }) => event.source !== 'scenef');
+      const buckets = { ...newTransformed, movies };
+      const stats = { ...fetchedCategoryStats, movies: { ...fetchedCategoryStats?.movies, count: movies.length } };
+      localStorage.setItem(LOCAL_EVENTS_CACHE_KEY, JSON.stringify({ buckets, stats, timestamp: Date.now() }));
     } catch (err) { console.error('Cache save failed', err); }
     setEvents(dedupeEvents(Object.values(newTransformed).flat()));
   };
