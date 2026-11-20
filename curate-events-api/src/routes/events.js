@@ -27,6 +27,7 @@ import { EventDeduplicator } from '../utils/eventDeduplicator.js';
 import TicketmasterClient from '../clients/TicketmasterClient.js';
 import { VenueScraperClient } from '../clients/VenueScraperClient.js';
 import WhitelistClient from '../clients/WhitelistClient.js';
+import { universityTalksClient } from '../clients/UniversityTalksClient.js';
 import { sceneFClient } from '../clients/SceneFClient.js';
 import { LocationFilter } from '../utils/locationFilter.js';
 import { DateFilter } from '../utils/dateFilter.js';
@@ -155,24 +156,32 @@ function ensureAllCategoriesPayloadShape(payload = {}) {
   };
 }
 
-function getMovieShowtimes(location, dateRange) {
+function filterCalendarEvents(events, location, dateRange) {
   if (typeof location !== 'string' || (dateRange && typeof dateRange !== 'string')) return [];
-  const events = sceneFClient.getEvents();
-  // SceneF's selected boards already cover the Bay Area for the default SF search.
   const isBayAreaSearch = /^san francisco(?:\s*,\s*ca)?$/i.test(location.trim());
   const localEvents = isBayAreaSearch ? events : locationFilter.filterEventsByLocation(events, location);
   const { filteredEvents } = dateFilter.filterEventsByDateRange(localEvents, dateRange || 'next 30 days');
   return filterBlacklistedEvents(applyRulesFilter(filteredEvents));
 }
 
-function withMovieShowtimes(payload, showtimes) {
-  if (!showtimes.length) return payload;
+function mergeTalks(existing, talks) {
+  if (!talks.length) return existing;
+  const occurrence = e => e.eventUrl && e.startDate ? e.eventUrl + '|' + Date.parse(e.startDate) : null;
+  const incoming = new Set(talks.map(occurrence));
+  return [...existing.filter(e => !incoming.has(occurrence(e))), ...talks];
+}
+
+function withCalendarEvents(payload, showtimes, talks) {
+  if (!showtimes.length && !talks.length) return payload;
   const movies = [...payload.eventsByCategory.movies, ...showtimes];
+  const lectures = mergeTalks(payload.eventsByCategory.lectures, talks);
   return {
     ...payload,
-    eventsByCategory: { ...payload.eventsByCategory, movies },
-    categoryStats: { ...payload.categoryStats, movies: { ...payload.categoryStats.movies, count: movies.length } },
-    totalEvents: payload.totalEvents + showtimes.length
+    eventsByCategory: { ...payload.eventsByCategory, movies, lectures },
+    categoryStats: { ...payload.categoryStats,
+      movies: { ...payload.categoryStats.movies, count: movies.length },
+      lectures: { ...payload.categoryStats.lectures, count: lectures.length } },
+    totalEvents: payload.totalEvents + showtimes.length + lectures.length - payload.eventsByCategory.lectures.length
   };
 }
 
@@ -404,8 +413,9 @@ router.get('/all-categories', async (req, res) => {
   const includeTicketmaster = selectedProviders.has('ticketmaster');
   const includeVenueScraper = selectedProviders.has('venue_scraper');
   const includeWhitelist = selectedProviders.has('whitelist');
-  const showtimes = includeVenueScraper ? getMovieShowtimes(location, date_range) : [];
-  const showtimesLoading = includeVenueScraper && sceneFClient.loading;
+  const showtimes = includeVenueScraper ? filterCalendarEvents(sceneFClient.getEvents(), location, date_range) : [];
+  const talks = includeVenueScraper ? filterCalendarEvents(universityTalksClient.getEvents(), location, date_range) : [];
+  const calendarsLoading = includeVenueScraper && (sceneFClient.loading || universityTalksClient.loading);
 
   // Postgres-backed cache: ALWAYS serve cached data if it exists.
   // This endpoint NEVER makes live TM API calls.
@@ -437,8 +447,8 @@ router.get('/all-categories', async (req, res) => {
         duration: `${duration}ms`
       });
       res.json({
-        ...withMovieShowtimes(hydratedPayload, showtimes),
-        backgroundRefreshing: shouldRefresh || _bgRefreshInProgress || showtimesLoading || !!hydratedPayload.backgroundRefreshing,
+        ...withCalendarEvents(hydratedPayload, showtimes, talks),
+        backgroundRefreshing: shouldRefresh || _bgRefreshInProgress || calendarsLoading || !!hydratedPayload.backgroundRefreshing,
         metadata: {
           ...(hydratedPayload.metadata || {}),
           dbCache: true,
@@ -484,7 +494,7 @@ router.get('/all-categories', async (req, res) => {
     emptyStats[cat] = { count: 0 };
   });
 
-  res.json(withMovieShowtimes({
+  res.json(withCalendarEvents({
     success: true,
     eventsByCategory: emptyByCategory,
     categoryStats: emptyStats,
@@ -493,7 +503,7 @@ router.get('/all-categories', async (req, res) => {
     providerStats: {},
     providerDetails: [],
     processingTime: duration,
-    backgroundRefreshing: shouldRefresh || _bgRefreshInProgress || showtimesLoading,
+    backgroundRefreshing: shouldRefresh || _bgRefreshInProgress || calendarsLoading,
     metadata: {
       location,
       dateRange: date_range || 'next 30 days',
@@ -507,7 +517,7 @@ router.get('/all-categories', async (req, res) => {
         : 'The Ticketmaster and venue cache is unavailable. It is rebuilt at 6:00 AM Pacific.',
       requestId: `all_categories_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     }
-  }, showtimes));
+  }, showtimes, talks));
   logResponse(logger, res, 'allCategoriesEvents-empty', duration, { totalEvents: 0 });
   if (shouldRefresh) {
     triggerBackgroundAllCategoriesRefresh(requestKey, {
@@ -526,7 +536,7 @@ router.get('/refresh-status', async (req, res) => {
   const health = await venueScraperClient.getHealthStatus();
   const refreshingAllCategories = _bgRefreshInProgress;
   res.json({
-    refreshing: (health.backgroundRefreshing || false) || refreshingAllCategories || sceneFClient.loading,
+    refreshing: (health.backgroundRefreshing || false) || refreshingAllCategories || sceneFClient.loading || universityTalksClient.loading,
     lastUpdated: health.lastUpdated || null,
     ageHours: health.ageHours,
     isStale: health.isStale || false,
@@ -680,14 +690,20 @@ router.get('/:category', async (req, res) => {
       pastFilterResult.filteredEvents,
       date_range || 'next 30 days'
     );
-    const showtimes = normalizeCategory(category) === 'movies' ? getMovieShowtimes(location, date_range) : [];
+    const showtimes = normalizeCategory(category) === 'movies' ? filterCalendarEvents(sceneFClient.getEvents(), location, date_range) : [];
     if (showtimes.length) sourceStats.scenef = { count: showtimes.length };
 
+    const talks = normalizeCategory(category) === 'lectures' ? filterCalendarEvents(universityTalksClient.getEvents(), location, date_range) : [];
+    for (const talk of talks) {
+      sourceStats[talk.source] ??= { count: 0 };
+      sourceStats[talk.source].count++;
+    }
+    const events = [...mergeTalks(dateFilterResult.filteredEvents, talks), ...showtimes];
     const result = {
       success: true,
-      events: [...dateFilterResult.filteredEvents, ...showtimes],
-      count: dateFilterResult.filteredCount + showtimes.length,
-      sources: ['ticketmaster', 'venue_scraper', ...(showtimes.length ? ['scenef'] : [])],
+      events,
+      count: events.length,
+      sources: Object.keys(sourceStats),
       sourceStats,
       deduplication: {
         totalProcessed: deduplicationResult.totalProcessed,

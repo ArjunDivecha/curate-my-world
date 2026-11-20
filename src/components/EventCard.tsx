@@ -30,6 +30,8 @@ const getSourceLabel = (source: string): string => {
     ticketmaster: 'Ticketmaster',
     venue_scraper: 'Venue Scraper',
     scenef: 'SceneF',
+    uc_berkeley: 'UC Berkeley',
+    stanford: 'Stanford',
     whitelist: '⭐ Whitelist',
   };
   return labels[source?.toLowerCase()] || source;
@@ -50,8 +52,10 @@ interface Event {
   category?: string;
   categories: string[];
   personalRelevanceScore: number;
+  attendanceMode?: 'inPerson' | 'online' | 'hybrid' | 'unknown';
+  audience?: string;
   price: {
-    type: 'free' | 'paid' | 'donation';
+    type: 'free' | 'paid' | 'donation' | 'unknown';
     amount?: string;
   };
   ticketUrl?: string;
@@ -324,6 +328,8 @@ export const EventCard = ({ event }: EventCardProps) => {
                 {getSourceLabel(event.source)}
               </Badge>
             )}
+            {event.attendanceMode && <Badge variant="outline">{{ inPerson: 'In person', online: 'Online', hybrid: 'In person and online', unknown: 'Format unconfirmed' }[event.attendanceMode]}</Badge>}
+            {event.audience && <Badge variant="outline">{event.audience}</Badge>}
             {/* Category Badges */}
             {event.categories.slice(0, 3).map((category, idx) => {
               const badgeColor = getCategoryColor(category);

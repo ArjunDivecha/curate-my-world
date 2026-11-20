@@ -197,6 +197,8 @@ export const FetchEventsButton: React.FC<FetchEventsButtonProps> = ({
       console.log('📋 Events by category:', eventsByCategory);
       
       if (totalEvents === 0) {
+        onBackgroundRefreshing?.(!!data.backgroundRefreshing);
+        onAllEventsFetched?.(eventsByCategory, categoryStats, providerDetails, categories);
         if (!silent) {
           toast({
             title: "No events found",
