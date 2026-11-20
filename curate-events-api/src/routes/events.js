@@ -27,6 +27,7 @@ import { EventDeduplicator } from '../utils/eventDeduplicator.js';
 import TicketmasterClient from '../clients/TicketmasterClient.js';
 import { VenueScraperClient } from '../clients/VenueScraperClient.js';
 import WhitelistClient from '../clients/WhitelistClient.js';
+import { sceneFClient } from '../clients/SceneFClient.js';
 import { LocationFilter } from '../utils/locationFilter.js';
 import { DateFilter } from '../utils/dateFilter.js';
 import { filterValidEvents } from '../utils/eventValidator.js';
@@ -151,6 +152,27 @@ function ensureAllCategoriesPayloadShape(payload = {}) {
     categoryStats,
     categories: supportedCategories,
     totalEvents,
+  };
+}
+
+function getMovieShowtimes(location, dateRange) {
+  if (typeof location !== 'string' || (dateRange && typeof dateRange !== 'string')) return [];
+  const events = sceneFClient.getEvents();
+  // SceneF's selected boards already cover the Bay Area for the default SF search.
+  const isBayAreaSearch = /^san francisco(?:\s*,\s*ca)?$/i.test(location.trim());
+  const localEvents = isBayAreaSearch ? events : locationFilter.filterEventsByLocation(events, location);
+  const { filteredEvents } = dateFilter.filterEventsByDateRange(localEvents, dateRange || 'next 30 days');
+  return filterBlacklistedEvents(applyRulesFilter(filteredEvents));
+}
+
+function withMovieShowtimes(payload, showtimes) {
+  if (!showtimes.length) return payload;
+  const movies = [...payload.eventsByCategory.movies, ...showtimes];
+  return {
+    ...payload,
+    eventsByCategory: { ...payload.eventsByCategory, movies },
+    categoryStats: { ...payload.categoryStats, movies: { ...payload.categoryStats.movies, count: movies.length } },
+    totalEvents: payload.totalEvents + showtimes.length
   };
 }
 
@@ -382,6 +404,8 @@ router.get('/all-categories', async (req, res) => {
   const includeTicketmaster = selectedProviders.has('ticketmaster');
   const includeVenueScraper = selectedProviders.has('venue_scraper');
   const includeWhitelist = selectedProviders.has('whitelist');
+  const showtimes = includeVenueScraper ? getMovieShowtimes(location, date_range) : [];
+  const showtimesLoading = includeVenueScraper && sceneFClient.loading;
 
   // Postgres-backed cache: ALWAYS serve cached data if it exists.
   // This endpoint NEVER makes live TM API calls.
@@ -413,8 +437,8 @@ router.get('/all-categories', async (req, res) => {
         duration: `${duration}ms`
       });
       res.json({
-        ...hydratedPayload,
-        backgroundRefreshing: shouldRefresh || _bgRefreshInProgress || !!hydratedPayload.backgroundRefreshing,
+        ...withMovieShowtimes(hydratedPayload, showtimes),
+        backgroundRefreshing: shouldRefresh || _bgRefreshInProgress || showtimesLoading || !!hydratedPayload.backgroundRefreshing,
         metadata: {
           ...(hydratedPayload.metadata || {}),
           dbCache: true,
@@ -460,7 +484,7 @@ router.get('/all-categories', async (req, res) => {
     emptyStats[cat] = { count: 0 };
   });
 
-  res.json({
+  res.json(withMovieShowtimes({
     success: true,
     eventsByCategory: emptyByCategory,
     categoryStats: emptyStats,
@@ -469,7 +493,7 @@ router.get('/all-categories', async (req, res) => {
     providerStats: {},
     providerDetails: [],
     processingTime: duration,
-    backgroundRefreshing: shouldRefresh || _bgRefreshInProgress,
+    backgroundRefreshing: shouldRefresh || _bgRefreshInProgress || showtimesLoading,
     metadata: {
       location,
       dateRange: date_range || 'next 30 days',
@@ -480,10 +504,10 @@ router.get('/all-categories', async (req, res) => {
       nextScheduledRefreshUtc,
       message: shouldRefresh
         ? 'Cache is being built now due to explicit refresh request.'
-        : 'No cache is available yet. Automatic build runs in the daily 6:00 AM Pacific orchestrated update; pass refresh=true to build now.',
+        : 'The Ticketmaster and venue cache is unavailable. It is rebuilt at 6:00 AM Pacific.',
       requestId: `all_categories_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     }
-  });
+  }, showtimes));
   logResponse(logger, res, 'allCategoriesEvents-empty', duration, { totalEvents: 0 });
   if (shouldRefresh) {
     triggerBackgroundAllCategoriesRefresh(requestKey, {
@@ -502,7 +526,7 @@ router.get('/refresh-status', async (req, res) => {
   const health = await venueScraperClient.getHealthStatus();
   const refreshingAllCategories = _bgRefreshInProgress;
   res.json({
-    refreshing: (health.backgroundRefreshing || false) || refreshingAllCategories,
+    refreshing: (health.backgroundRefreshing || false) || refreshingAllCategories || sceneFClient.loading,
     lastUpdated: health.lastUpdated || null,
     ageHours: health.ageHours,
     isStale: health.isStale || false,
@@ -656,12 +680,14 @@ router.get('/:category', async (req, res) => {
       pastFilterResult.filteredEvents,
       date_range || 'next 30 days'
     );
+    const showtimes = normalizeCategory(category) === 'movies' ? getMovieShowtimes(location, date_range) : [];
+    if (showtimes.length) sourceStats.scenef = { count: showtimes.length };
 
     const result = {
       success: true,
-      events: dateFilterResult.filteredEvents,
-      count: dateFilterResult.filteredCount,
-      sources: ['ticketmaster', 'venue_scraper'],
+      events: [...dateFilterResult.filteredEvents, ...showtimes],
+      count: dateFilterResult.filteredCount + showtimes.length,
+      sources: ['ticketmaster', 'venue_scraper', ...(showtimes.length ? ['scenef'] : [])],
       sourceStats,
       deduplication: {
         totalProcessed: deduplicationResult.totalProcessed,

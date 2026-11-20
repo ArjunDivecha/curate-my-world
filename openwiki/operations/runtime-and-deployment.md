@@ -29,6 +29,10 @@ The backend is currently expected to run from the Railway `staging` environment.
 
 The backend defaults CORS in production to the known frontend URL instead of `*` when `FRONTEND_URL` is missing.
 
+## Movie showtimes
+
+The API fetches the next seven nights from [SceneF](https://scenef.com/agents) at startup and every 30 minutes. It reads seven Bay Area boards, revalidates each with its ETag, and serves upcoming, current screenings from memory. A failed board refresh keeps the last snapshot until its screenings expire. The overlay works with or without the Postgres events cache and is included when Venue Scraper is selected. Movie cards credit SceneF and link to its listing and ticket redirect.
+
 ## Caching and refresh behavior
 Two production caches matter most:
 
